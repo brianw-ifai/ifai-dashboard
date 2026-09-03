@@ -47,7 +47,7 @@ function convertScFor(src) {
   const convertedInner = convertTemplate(inner);
   return (
     src.slice(0, startIdx) +
-    `{${listExpr}.map((${asName}, _i) => (\n${convertedInner}\n))}` +
+    `{${listExpr}.map((${asName}, _i) => (\n<Fragment key={_i}>\n${convertedInner}\n</Fragment>\n))}` +
     src.slice(endIdx)
   );
 }
@@ -108,6 +108,16 @@ function convertAttributes(attrs) {
     if (name === "onClick") return ` onClick={${e.trim()}}`;
     return ` ${name}={${e.trim()}}`;
   });
+  for (const [from, to] of [
+    ["stroke-width", "strokeWidth"],
+    ["stroke-linejoin", "strokeLinejoin"],
+    ["stroke-dasharray", "strokeDasharray"],
+    ["font-size", "fontSize"],
+    ["font-family", "fontFamily"],
+    ["font-weight", "fontWeight"],
+  ]) {
+    a = a.replace(new RegExp(`\\s${from}=`, "g"), ` ${to}=`);
+  }
   return a;
 }
 
@@ -168,6 +178,7 @@ const header = `/* eslint-disable */
 // @ts-nocheck
 "use client";
 
+import { Fragment } from "react";
 import { css } from "@/lib/intofocus-portal/css";
 import { HoverButton } from "@/components/intofocus-portal/HoverButton";
 import type { PortalVals } from "@/lib/intofocus-portal/types";

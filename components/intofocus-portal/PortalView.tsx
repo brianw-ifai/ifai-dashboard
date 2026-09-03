@@ -2,6 +2,7 @@
 // @ts-nocheck
 "use client";
 
+import { Fragment } from "react";
 import { css } from "@/lib/intofocus-portal/css";
 import { HoverButton } from "@/components/intofocus-portal/HoverButton";
 import type { PortalVals } from "@/lib/intofocus-portal/types";
@@ -87,6 +88,7 @@ export function PortalView({ v }: Props) {
         </div>
         <div style={css("padding:0 10px;display:flex;flex-direction:column;gap:1px")}>
           {nav.map((n, _i) => (
+    <Fragment key={_i}>
     
             <HoverButton onClick={n.go} style={{ all: "unset", cursor: n.cursor, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "7px 10px", borderRadius: "6px", fontSize: "13px", fontWeight: n.weight, color: n.color, background: n.bg }} hoverStyle="background:#f6f6f8">
               <span>{n.label}</span>
@@ -97,6 +99,7 @@ export function PortalView({ v }: Props) {
     )}
             </HoverButton>
           
+    </Fragment>
     ))}
         </div>
         <div style={css("margin-top:auto;padding:16px 20px 20px 20px;display:flex;flex-direction:column;gap:12px")}>
@@ -152,21 +155,27 @@ export function PortalView({ v }: Props) {
               <div style={css("background:#ffffff;border:1px solid #e8e8ec;border-radius:8px;overflow:hidden")}>
                 <div style={{ display: "grid", gridTemplateColumns: dataGrid, padding: "8px 14px", background: "#fafafb", borderBottom: "1px solid #e8e8ec", fontSize: "10.5px", letterSpacing: "0.06em", textTransform: "uppercase", color: "#8e8e99", fontWeight: "600" }}>
                   {dataCols.map((c, _i) => (
+    <Fragment key={_i}>
     
                     <div style={{ textAlign: c.align }}>{c.label}</div>
                   
+    </Fragment>
     ))}
                 </div>
                 {dataRows.map((r, _i) => (
+    <Fragment key={_i}>
     
                   <div style={{ display: "grid", gridTemplateColumns: dataGrid, padding: "7px 14px", borderBottom: "1px solid #f4f4f6", fontSize: "12.5px", alignItems: "center" }}>
                     {r.cells.map((c, _i) => (
+    <Fragment key={_i}>
     
                       <div style={{ textAlign: c.align, color: c.color, fontWeight: c.weight, fontFamily: c.font, fontVariantNumeric: "tabular-nums", paddingRight: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.v}</div>
                     
+    </Fragment>
     ))}
                   </div>
                 
+    </Fragment>
     ))}
               </div>
               <div style={css("font-size:11.5px;color:#a8a8b2")}>Sortable columns, inline filters and export are the operator path — the same rows the simple view renders as opinion.</div>
@@ -187,6 +196,7 @@ export function PortalView({ v }: Props) {
                   <HoverButton onClick={goSug} style={css("all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#4b45c6")}>All 8 suggestions →</HoverButton>
                 </div>
                 {topFour.map((s, _i) => (
+    <Fragment key={_i}>
     
                   <HoverButton onClick={s.open} style={css("all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;border-bottom:1px solid #f4f4f6;padding:15px 20px")} hoverStyle="background:#fcfcfd">
                     <div style={css("display:flex;align-items:flex-start;gap:16px")}>
@@ -209,6 +219,7 @@ export function PortalView({ v }: Props) {
                     </div>
                   </HoverButton>
                 
+    </Fragment>
     ))}
               </div>
     
@@ -228,7 +239,7 @@ export function PortalView({ v }: Props) {
                       <div style={css("font-size:11.5px;color:#8e8e99")}>Was 47 on 3 Aug</div>
                     </div>
                     <svg viewBox="0 0 220 56" style={css("width:200px;height:52px;margin-left:auto")}>
-                      <polyline points="2,12 10,14 18,10 26,15 34,13 42,19 50,17 58,22 66,20 74,26 82,24 90,31 98,29 106,34 114,32 122,37 130,35 138,40 146,38 154,42 162,40 170,44 178,42 186,46 194,44 202,47 210,45 218,49" fill="none" stroke="#b3372c" stroke-width="1.6" stroke-linejoin="round"></polyline>
+                      <polyline points="2,12 10,14 18,10 26,15 34,13 42,19 50,17 58,22 66,20 74,26 82,24 90,31 98,29 106,34 114,32 122,37 130,35 138,40 146,38 154,42 162,40 170,44 178,42 186,46 194,44 202,47 210,45 218,49" fill="none" stroke="#b3372c" strokeWidth="1.6" strokeLinejoin="round"></polyline>
                       <circle cx="218" cy="49" r="3" fill="#b3372c" />
                     </svg>
                   </div>
@@ -267,6 +278,7 @@ export function PortalView({ v }: Props) {
                 <div style={css("font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8e8e99;font-weight:600")}>Your modules</div>
                 <div style={css("display:grid;grid-template-columns:repeat(3,1fr);gap:16px")}>
                   {tiles.map((t, _i) => (
+    <Fragment key={_i}>
     
                     <HoverButton onClick={t.go} style={{ all: "unset", cursor: t.cursor, background: t.bg, border: "1px solid #e8e8ec", borderRadius: "10px", padding: "17px 18px 15px 18px", display: "flex", flexDirection: "column", gap: "9px", height: "136px" }} hoverStyle="border-color:#c9c9d2">
                       <div style={css("display:flex;align-items:center;justify-content:space-between;width:100%")}>
@@ -277,6 +289,7 @@ export function PortalView({ v }: Props) {
                       <div style={{ marginTop: "auto", fontSize: "12.5px", fontWeight: "600", color: t.metricColor, fontVariantNumeric: "tabular-nums" }}>{t.metric}</div>
                     </HoverButton>
                   
+    </Fragment>
     ))}
                 </div>
               </div>
@@ -316,6 +329,7 @@ export function PortalView({ v }: Props) {
                         <div style={{ fontSize: "12px", color: m.t.bad, borderTop: `1px solid ${m.t.border}`, paddingTop: "10px" }}>3 e-com issues suppressing AI visibility</div>
                       </div>
                       {m.groups.map((g, _i) => (
+    <Fragment key={_i}>
     
                         <div style={css("display:flex;flex-direction:column;gap:8px")}>
                           <HoverButton onClick={g.go} style={css("all:unset;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:12px")}>
@@ -324,16 +338,19 @@ export function PortalView({ v }: Props) {
                           </HoverButton>
                           <div style={{ display: "flex", flexDirection: "column", gap: "1px", paddingLeft: "12px", borderLeft: `1px solid ${m.t.line}` }}>
                             {g.items.map((i, _i) => (
+    <Fragment key={_i}>
     
                               <HoverButton onClick={i.go} style={{ all: "unset", cursor: "pointer", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "12px", padding: "7px 0", borderBottom: `1px solid ${m.t.border}` }}>
                                 <span style={{ fontSize: "12.5px", color: m.t.ink2 }}>{i.label}</span>
                                 <span style={{ fontSize: "12px", color: m.t.ink3, fontVariantNumeric: "tabular-nums" }}>{i.stat}</span>
                               </HoverButton>
                             
+    </Fragment>
     ))}
                           </div>
                         </div>
                       
+    </Fragment>
     ))}
                       <div style={{ fontSize: "11.5px", color: m.t.ink3, textWrap: "pretty" }}>Below 1024px the diagram becomes a nested list — same nodes, same state, no shrinking.</div>
                     </div>
@@ -345,18 +362,18 @@ export function PortalView({ v }: Props) {
     
                   <div style={{ position: "relative", width: "1112px", height: "760px", background: m.t.bg }}>
                     <svg viewBox="0 0 1112 760" style={css("position:absolute;left:0;top:0;width:1112px;height:760px")}>
-                      <line x1="556" y1="380" x2="331" y2="200" stroke={m.t.line} stroke-width="1.5" />
-                      <line x1="556" y1="380" x2="781" y2="200" stroke={m.t.line} stroke-width="1.5" />
-                      <line x1="556" y1="380" x2="556" y2="650" stroke={m.t.line} stroke-width="1.5" />
-                      <line x1="556" y1="380" x2="250" y2="640" stroke={m.t.border} stroke-width="1" />
-                      <line x1="556" y1="380" x2="862" y2="640" stroke={m.t.border} stroke-width="1" />
-                      <line x1="331" y1="200" x2="172" y2="105" stroke={m.t.line} stroke-width="1" />
-                      <line x1="331" y1="200" x2="97" y2="250" stroke={m.t.line} stroke-width="1" />
-                      <line x1="781" y1="200" x2="940" y2="105" stroke={m.t.line} stroke-width="1" />
-                      <line x1="781" y1="200" x2="1015" y2="250" stroke={m.t.line} stroke-width="1" />
-                      <line x1="781" y1="200" x2="960" y2="395" stroke={m.t.line} stroke-width="1" />
-                      <line x1="781" y1="200" x2="830" y2="470" stroke={m.t.line} stroke-width="1" />
-                      <line x1="417" y1="200" x2="695" y2="200" stroke={m.t.bad} stroke-width="1.5" />
+                      <line x1="556" y1="380" x2="331" y2="200" stroke={m.t.line} strokeWidth="1.5" />
+                      <line x1="556" y1="380" x2="781" y2="200" stroke={m.t.line} strokeWidth="1.5" />
+                      <line x1="556" y1="380" x2="556" y2="650" stroke={m.t.line} strokeWidth="1.5" />
+                      <line x1="556" y1="380" x2="250" y2="640" stroke={m.t.border} strokeWidth="1" />
+                      <line x1="556" y1="380" x2="862" y2="640" stroke={m.t.border} strokeWidth="1" />
+                      <line x1="331" y1="200" x2="172" y2="105" stroke={m.t.line} strokeWidth="1" />
+                      <line x1="331" y1="200" x2="97" y2="250" stroke={m.t.line} strokeWidth="1" />
+                      <line x1="781" y1="200" x2="940" y2="105" stroke={m.t.line} strokeWidth="1" />
+                      <line x1="781" y1="200" x2="1015" y2="250" stroke={m.t.line} strokeWidth="1" />
+                      <line x1="781" y1="200" x2="960" y2="395" stroke={m.t.line} strokeWidth="1" />
+                      <line x1="781" y1="200" x2="830" y2="470" stroke={m.t.line} strokeWidth="1" />
+                      <line x1="417" y1="200" x2="695" y2="200" stroke={m.t.bad} strokeWidth="1.5" />
                       <circle cx="417" cy="200" r="2.5" fill={m.t.bad} />
                       <circle cx="695" cy="200" r="2.5" fill={m.t.bad} />
                     </svg>
@@ -387,6 +404,7 @@ export function PortalView({ v }: Props) {
                     </div>
     
                     {m.nodes.map((n, _i) => (
+    <Fragment key={_i}>
     
                       <HoverButton onClick={n.go} style={{ all: "unset", boxSizing: "border-box", cursor: n.cursor, position: "absolute", left: n.left, top: n.top, width: n.size, height: n.size, border: `${n.borderW} solid ${n.border}`, borderRadius: "50%", background: n.bg, padding: n.pad, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2px", textAlign: "center" }} hoverStyle="border-color:{{ m.t.ink3 }}">
                         <span style={{ fontSize: n.titleSize, fontWeight: "600", letterSpacing: "-0.01em", color: n.color, lineHeight: "1.25" }}>{n.title}</span>
@@ -407,6 +425,7 @@ export function PortalView({ v }: Props) {
     )}
                       </HoverButton>
                     
+    </Fragment>
     ))}
                   </div>
                 
@@ -424,25 +443,31 @@ export function PortalView({ v }: Props) {
               <div style={css("display:flex;align-items:center;gap:14px;flex-wrap:wrap")}>
                 <div style={css("display:flex;align-items:center;gap:6px")}>
                   {areaChips.map((c, _i) => (
+    <Fragment key={_i}>
     
                     <HoverButton onClick={c.go} style={{ all: "unset", cursor: "pointer", fontSize: "12px", fontWeight: "600", padding: "5px 11px", borderRadius: "20px", color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>{c.label}</HoverButton>
                   
+    </Fragment>
     ))}
                 </div>
                 <div style={css("width:1px;height:20px;background:#e8e8ec")}></div>
                 <div style={css("display:flex;align-items:center;gap:6px")}>
                   {statusChips.map((c, _i) => (
+    <Fragment key={_i}>
     
                     <HoverButton onClick={c.go} style={{ all: "unset", cursor: "pointer", fontSize: "12px", padding: "5px 11px", borderRadius: "20px", color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>{c.label}</HoverButton>
                   
+    </Fragment>
     ))}
                 </div>
                 <div style={css("margin-left:auto;display:flex;align-items:center;gap:7px")}>
                   <span style={css("font-size:12px;color:#8e8e99")}>Sort</span>
                   {sortChips.map((c, _i) => (
+    <Fragment key={_i}>
     
                     <HoverButton onClick={c.go} style={{ all: "unset", cursor: "pointer", fontSize: "12px", fontWeight: "600", padding: "5px 10px", borderRadius: "6px", color: c.color, background: c.bg }}>{c.label}</HoverButton>
                   
+    </Fragment>
     ))}
                   <HoverButton onClick={toggleResp} style={css("all:unset;cursor:pointer;font-size:12px;color:#5c5c66;border:1px solid #e8e8ec;background:#ffffff;border-radius:6px;padding:5px 10px;margin-left:6px")}>{respLabel}</HoverButton>
                 </div>
@@ -453,6 +478,7 @@ export function PortalView({ v }: Props) {
                   <div>#</div><div>Action & why it was suggested</div><div>Est. impact</div><div>Effort</div><div>Status</div>
                 </div>
                 {rows.map((s, _i) => (
+    <Fragment key={_i}>
     
                   <div style={{ display: "grid", gridTemplateColumns: "42px 1fr 148px 116px 126px", padding: "15px 20px", borderBottom: "1px solid #f4f4f6", alignItems: "flex-start", background: s.rowBg }}>
                     <HoverButton onClick={s.open} style={css("all:unset;cursor:pointer;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#a8a8b2;padding-top:3px;font-variant-numeric:tabular-nums")}>{s.rank}</HoverButton>
@@ -461,9 +487,11 @@ export function PortalView({ v }: Props) {
                       <div style={css("font-size:12.5px;color:#5c5c66;text-wrap:pretty")}>{s.whyShort}</div>
                       <div style={css("display:flex;gap:6px;flex-wrap:wrap")}>
                         {s.chips.map((ch, _i) => (
+    <Fragment key={_i}>
     
                           <span style={{ fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace", fontSize: "10.5px", padding: "3px 7px", borderRadius: "4px", background: ch.bg, color: ch.color }}>{ch.text}</span>
                         
+    </Fragment>
     ))}
                       </div>
                     </HoverButton>
@@ -478,6 +506,7 @@ export function PortalView({ v }: Props) {
                     </div>
                   </div>
                 
+    </Fragment>
     ))}
                 <div style={css("padding:11px 20px;font-size:12px;color:#8e8e99;background:#fcfcfd")}>{rowCount}</div>
               </div>
@@ -500,6 +529,7 @@ export function PortalView({ v }: Props) {
                         </div>
                       </div>
                       {respRows.map((s, _i) => (
+    <Fragment key={_i}>
     
                         <div style={css("padding:13px 15px;border-bottom:1px solid #f4f4f6;display:flex;flex-direction:column;gap:7px")}>
                           <div style={css("display:flex;gap:9px;align-items:baseline")}>
@@ -515,6 +545,7 @@ export function PortalView({ v }: Props) {
                           </div>
                         </div>
                       
+    </Fragment>
     ))}
                       <div style={css("padding:11px 15px;font-size:11.5px;color:#a8a8b2")}>Impact and effort collapse under the action; status moves to the row end. Filters scroll horizontally.</div>
                     </div>
@@ -553,6 +584,7 @@ export function PortalView({ v }: Props) {
               </div>
     
               {positions.map((p, _i) => (
+    <Fragment key={_i}>
     
                 <div style={css("background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden")}>
                   <div style={css("padding:12px 20px;border-bottom:1px solid #f0f0f3;display:flex;align-items:center;justify-content:space-between;background:#fcfcfd")}>
@@ -560,6 +592,7 @@ export function PortalView({ v }: Props) {
                     <div style={{ fontSize: "12.5px", fontWeight: "600", color: p.scoreColor, fontVariantNumeric: "tabular-nums" }}>{p.score}</div>
                   </div>
                   {p.checks.map((c, _i) => (
+    <Fragment key={_i}>
     
                     <div style={css("border-bottom:1px solid #f4f4f6")}>
                       <div style={css("display:grid;grid-template-columns:26px 1fr 132px 132px 150px;padding:12px 20px;align-items:center;gap:8px")}>
@@ -593,9 +626,11 @@ export function PortalView({ v }: Props) {
     )}
                     </div>
                   
+    </Fragment>
     ))}
                 </div>
               
+    </Fragment>
     ))}
             </div>
           
@@ -624,26 +659,26 @@ export function PortalView({ v }: Props) {
     
                 <svg viewBox="0 0 1040 260" style={css("width:100%;height:260px")}>
                   <rect x="0" y="0" width="1040" height="260" fill="#ffffff" />
-                  <line x1="40" y1="30" x2="1030" y2="30" stroke="#f4f4f6" stroke-width="1" />
-                  <line x1="40" y1="90" x2="1030" y2="90" stroke="#f4f4f6" stroke-width="1" />
-                  <line x1="40" y1="150" x2="1030" y2="150" stroke="#f4f4f6" stroke-width="1" />
-                  <line x1="40" y1="210" x2="1030" y2="210" stroke="#e8e8ec" stroke-width="1" />
-                  <text x="8" y="34" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">60</text>
-                  <text x="8" y="94" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">45</text>
-                  <text x="8" y="154" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">30</text>
-                  <text x="8" y="214" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">15</text>
-                  <line x1="452" y1="24" x2="452" y2="210" stroke="#b3372c" stroke-width="1" stroke-dasharray="3 3" />
+                  <line x1="40" y1="30" x2="1030" y2="30" stroke="#f4f4f6" strokeWidth="1" />
+                  <line x1="40" y1="90" x2="1030" y2="90" stroke="#f4f4f6" strokeWidth="1" />
+                  <line x1="40" y1="150" x2="1030" y2="150" stroke="#f4f4f6" strokeWidth="1" />
+                  <line x1="40" y1="210" x2="1030" y2="210" stroke="#e8e8ec" strokeWidth="1" />
+                  <text x="8" y="34" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">60</text>
+                  <text x="8" y="94" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">45</text>
+                  <text x="8" y="154" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">30</text>
+                  <text x="8" y="214" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">15</text>
+                  <line x1="452" y1="24" x2="452" y2="210" stroke="#b3372c" strokeWidth="1" strokeDasharray="3 3" />
                   <circle cx="452" cy="24" r="3" fill="#b3372c" />
-                  <text x="460" y="22" font-size="11" fill="#b3372c" font-family="-apple-system,Helvetica,sans-serif" font-weight="600">11 Aug · Trailhead Mini loses buy box</text>
-                  <line x1="700" y1="48" x2="700" y2="210" stroke="#b3372c" stroke-width="1" stroke-dasharray="3 3" />
+                  <text x="460" y="22" fontSize="11" fill="#b3372c" fontFamily="-apple-system,Helvetica,sans-serif" fontWeight="600">11 Aug · Trailhead Mini loses buy box</text>
+                  <line x1="700" y1="48" x2="700" y2="210" stroke="#b3372c" strokeWidth="1" strokeDasharray="3 3" />
                   <circle cx="700" cy="48" r="3" fill="#b3372c" />
-                  <text x="708" y="46" font-size="11" fill="#b3372c" font-family="-apple-system,Helvetica,sans-serif" font-weight="600">19 Aug · Roadster 20 rank 16 → 41</text>
-                  <polyline points="40,84 74,79 108,88 142,82 176,95 210,90 244,101 278,97 312,92 346,105 380,112 414,108 452,110 486,138 520,134 554,142 588,137 622,148 656,144 700,146 734,168 768,162 802,171 836,167 870,176 904,172 938,180 972,176 1006,182" fill="none" stroke="#4b45c6" stroke-width="2" stroke-linejoin="round"></polyline>
+                  <text x="708" y="46" fontSize="11" fill="#b3372c" fontFamily="-apple-system,Helvetica,sans-serif" fontWeight="600">19 Aug · Roadster 20 rank 16 → 41</text>
+                  <polyline points="40,84 74,79 108,88 142,82 176,95 210,90 244,101 278,97 312,92 346,105 380,112 414,108 452,110 486,138 520,134 554,142 588,137 622,148 656,144 700,146 734,168 768,162 802,171 836,167 870,176 904,172 938,180 972,176 1006,182" fill="none" stroke="#4b45c6" strokeWidth="2" strokeLinejoin="round"></polyline>
                   <circle cx="1006" cy="182" r="3.5" fill="#4b45c6" />
-                  <text x="40" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">3 Aug</text>
-                  <text x="440" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">14 Aug</text>
-                  <text x="690" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">22 Aug</text>
-                  <text x="975" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">2 Sep</text>
+                  <text x="40" y="232" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">3 Aug</text>
+                  <text x="440" y="232" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">14 Aug</text>
+                  <text x="690" y="232" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">22 Aug</text>
+                  <text x="975" y="232" fontSize="10" fill="#a8a8b2" fontFamily="ui-monospace,Menlo,monospace">2 Sep</text>
                 </svg>
     
                 <div style={css("border-top:1px solid #f0f0f3;padding-top:14px;display:flex;gap:10px;align-items:stretch")}>
@@ -662,6 +697,7 @@ export function PortalView({ v }: Props) {
                     <div style={css("font-size:11.5px;color:#8e8e99")}>Each prompt is run 20× per assistant across 5 assistants. Open a row to see the runs behind it.</div>
                   </div>
                   {prompts.map((p, _i) => (
+    <Fragment key={_i}>
     
                     <div style={css("border-bottom:1px solid #f4f4f6")}>
                       <div style={css("display:grid;grid-template-columns:1fr 104px 74px 58px 24px;padding:11px 18px;align-items:center;gap:10px")}>
@@ -683,12 +719,14 @@ export function PortalView({ v }: Props) {
                             <div style={css("font-size:12px;color:#5c5c66")}>{p.runs}</div>
                             <div style={css("display:grid;grid-template-columns:repeat(2,1fr);gap:8px 20px")}>
                               {p.detail.map((d, _i) => (
+    <Fragment key={_i}>
     
                                 <div style={css("display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #f0f0f3;padding-bottom:5px")}>
                                   <span style={css("font-size:11.5px;color:#8e8e99")}>{d.k}</span>
                                   <span style={css("font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums")}>{d.v}</span>
                                 </div>
                               
+    </Fragment>
     ))}
                             </div>
                             <div style={css("display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #f0f0f3;padding-top:10px")}>
@@ -702,6 +740,7 @@ export function PortalView({ v }: Props) {
     )}
                     </div>
                   
+    </Fragment>
     ))}
                 </div>
     
@@ -713,6 +752,7 @@ export function PortalView({ v }: Props) {
                     </div>
                     <div style={css("display:flex;flex-direction:column;gap:12px")}>
                       {sources.map((s, _i) => (
+    <Fragment key={_i}>
     
                         <div style={css("display:flex;flex-direction:column;gap:5px")}>
                           <div style={css("display:flex;align-items:baseline;justify-content:space-between")}>
@@ -725,6 +765,7 @@ export function PortalView({ v }: Props) {
                           <div style={css("font-size:11px;color:#a8a8b2;font-variant-numeric:tabular-nums")}>{s.cites} naming you</div>
                         </div>
                       
+    </Fragment>
     ))}
                     </div>
                     <div style={css("border-top:1px solid #f0f0f3;margin-top:16px;padding-top:12px;font-size:11.5px;color:#5c5c66;text-wrap:pretty")}>Source weighting is industry-specific. In musical instruments, community threads outweigh editorial round-ups; in home appliances the order reverses. These weights are modelled for your category, not global.</div>
@@ -769,6 +810,7 @@ export function PortalView({ v }: Props) {
               <div style={css("background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden")}>
                 <div style={css("padding:14px 18px;border-bottom:1px solid #f0f0f3;font-size:13px;font-weight:600")}>Findings</div>
                 {findings.map((f, _i) => (
+    <Fragment key={_i}>
     
                   <div style={css("border-bottom:1px solid #f4f4f6;padding:16px 18px;display:flex;flex-direction:column;gap:10px")}>
                     <div style={css("display:flex;align-items:flex-start;gap:12px")}>
@@ -793,18 +835,21 @@ export function PortalView({ v }: Props) {
     
                       <div style={css("margin-left:70px;background:#fafafb;border:1px solid #f0f0f3;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px 20px;animation:fadeIn 0.15s ease")}>
                         {f.ev.map((e, _i) => (
+    <Fragment key={_i}>
     
                           <div style={css("display:flex;flex-direction:column;gap:2px")}>
                             <span style={css("font-size:11px;color:#8e8e99")}>{e.k}</span>
                             <span style={css("font-size:13px;font-weight:600;font-variant-numeric:tabular-nums")}>{e.v}</span>
                           </div>
                         
+    </Fragment>
     ))}
                       </div>
                     
     )}
                   </div>
                 
+    </Fragment>
     ))}
               </div>
     
@@ -817,6 +862,7 @@ export function PortalView({ v }: Props) {
                   <div>Product</div><div style={css("text-align:right")}>Buy box</div><div style={css("text-align:right")}>Rank</div><div style={css("text-align:right")}>Δ rank</div><div style={css("text-align:right")}>Price</div><div style={css("text-align:right")}>Reviews</div><div style={css("text-align:right")}>Sellers</div>
                 </div>
                 {products.map((p, _i) => (
+    <Fragment key={_i}>
     
                   <div style={css("display:grid;grid-template-columns:1.5fr 90px 70px 74px 78px 84px 76px;padding:12px 18px;border-bottom:1px solid #f4f4f6;align-items:center")}>
                     <div style={css("display:flex;flex-direction:column;gap:1px")}>
@@ -831,6 +877,7 @@ export function PortalView({ v }: Props) {
                     <div style={css("font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums")}>{p.sellers}</div>
                   </div>
                 
+    </Fragment>
     ))}
               </div>
             </div>
@@ -883,6 +930,7 @@ export function PortalView({ v }: Props) {
                 </div>
                 <div style={css("border:1px solid #f0f0f3;border-radius:8px;overflow:hidden")}>
                   {drawer.evidence.map((e, _i) => (
+    <Fragment key={_i}>
     
                     <div style={css("display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:10px 14px;border-bottom:1px solid #f4f4f6")}>
                       <span style={css("font-size:12.5px;color:#5c5c66")}>{e.k}</span>
@@ -892,6 +940,7 @@ export function PortalView({ v }: Props) {
                       </div>
                     </div>
                   
+    </Fragment>
     ))}
                 </div>
                 {drawer.drillOpen && (
@@ -900,11 +949,13 @@ export function PortalView({ v }: Props) {
                     <div style={css("font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600")}>Where this came from</div>
                     <div style={css("display:flex;flex-direction:column;gap:7px")}>
                       {drawer.traces.map((t, _i) => (
+    <Fragment key={_i}>
     
                         <HoverButton onClick={t.go} style={css("all:unset;cursor:pointer;font-size:12.5px;color:#4b45c6;font-weight:600;display:flex;align-items:center;gap:8px")}>
                           <span style={css("width:5px;height:5px;border-radius:50%;background:#4b45c6")}></span>{t.label} →
                         </HoverButton>
                       
+    </Fragment>
     ))}
                     </div>
                     <div style={css("font-size:11.5px;color:#8e8e99;text-wrap:pretty")}>Every number above opens the screen that produced it, and every one of those screens traces back here.</div>
@@ -920,6 +971,7 @@ export function PortalView({ v }: Props) {
                 </div>
                 <div style={css("display:flex;flex-direction:column;gap:8px")}>
                   {drawer.options.map((o, _i) => (
+    <Fragment key={_i}>
     
                     <HoverButton onClick={o.go} style={{ all: "unset", cursor: "pointer", display: "flex", alignItems: "flex-start", gap: "11px", border: `1px solid ${o.border}`, background: o.bg, borderRadius: "9px", padding: "13px 15px" }} hoverStyle="border-color:#c9c9d2">
                       <span style={{ width: "15px", height: "15px", borderRadius: "50%", border: `1.5px solid ${o.dotBorder}`, background: o.dot, flex: "0 0 15px", marginTop: "2px", boxShadow: "inset 0 0 0 2.5px #ffffff" }}></span>
@@ -929,6 +981,7 @@ export function PortalView({ v }: Props) {
                       </span>
                     </HoverButton>
                   
+    </Fragment>
     ))}
                 </div>
                 {drawer.hasChoice && (
