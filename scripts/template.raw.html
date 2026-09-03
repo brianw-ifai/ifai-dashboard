@@ -1,0 +1,816 @@
+<div style="display:flex;width:1440px;min-height:1024px;background:#fafafb;color:#16161a;font-size:14px;line-height:1.45">
+
+  <div style="width:236px;flex:0 0 236px;background:#ffffff;border-right:1px solid #e8e8ec;display:flex;flex-direction:column;height:1024px;position:sticky;top:0">
+    <div style="padding:22px 20px 16px 20px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:20px;height:20px;border-radius:5px;background:#16161a;display:flex;align-items:center;justify-content:center">
+          <div style="width:7px;height:7px;border-radius:50%;background:#ffffff"></div>
+        </div>
+        <div style="font-size:14px;font-weight:600;letter-spacing:-0.01em">IntoFocus</div>
+      </div>
+      <div style="border:1px solid #e8e8ec;border-radius:7px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;background:#fafafb">
+        <div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:#8e8e99;font-weight:600">Client</div>
+        <div style="font-size:13px;font-weight:600">Fender Guitars</div>
+      </div>
+    </div>
+    <div style="padding:0 10px;display:flex;flex-direction:column;gap:1px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+        <button onClick="{{ n.go }}" style="all:unset;cursor:{{ n.cursor }};display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:6px;font-size:13px;font-weight:{{ n.weight }};color:{{ n.color }};background:{{ n.bg }}" style-hover="background:#f6f6f8">
+          <span>{{ n.label }}</span>
+          <sc-if value="{{ n.locked }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size:10px;color:#b3b3bd">Not in plan</span>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+    <div style="margin-top:auto;padding:16px 20px 20px 20px;display:flex;flex-direction:column;gap:12px">
+      <button onClick="{{ openHelp }}" style="all:unset;cursor:pointer;font-size:12px;color:#5c5c66;display:flex;align-items:center;gap:7px" style-hover="color:#16161a">
+        <span style="width:15px;height:15px;border-radius:50%;border:1px solid #c9c9d2;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#8e8e99">?</span>
+        Help &amp; walkthrough
+      </button>
+      <div style="border-top:1px solid #f0f0f3;padding-top:12px;display:flex;flex-direction:column;gap:5px">
+        <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:0.04em;color:#b3372c;background:#fdeceb;border-radius:4px;padding:4px 6px">PLACEHOLDER DATA</div>
+        <div style="font-size:11px;color:#a8a8b2">Nothing here is live.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1;min-width:0;position:relative">
+    <div style="padding:28px 44px 80px 44px;max-width:1204px">
+
+      <button onClick="{{ goHub }}" style="all:unset;cursor:pointer;font-size:12px;color:#8e8e99;display:inline-block;margin-bottom:12px;visibility:{{ crumbVis }}" style-hover="color:#16161a">← Home &nbsp;/&nbsp; <span style="color:#5c5c66">{{ title }}</span></button>
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:24px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;color:#8e8e99;font-variant-numeric:tabular-nums">{{ stamp }}</div>
+          <div style="font-size:25px;font-weight:600;letter-spacing:-0.02em">{{ title }}</div>
+          <div style="font-size:13.5px;color:#5c5c66;max-width:640px;text-wrap:pretty">{{ subtitle }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex:0 0 auto">
+          <sc-if value="{{ isHub }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;border:1px solid #e8e8ec;border-radius:7px;overflow:hidden;background:#ffffff;margin-right:6px">
+              <button onClick="{{ setToday }}" style="all:unset;cursor:pointer;padding:6px 13px;font-size:12px;font-weight:600;color:{{ todayColor }};background:{{ todayBg }}">Today</button>
+              <button onClick="{{ setMap }}" style="all:unset;cursor:pointer;padding:6px 13px;font-size:12px;font-weight:600;color:{{ mapColor }};background:{{ mapBg }}">Map</button>
+            </div>
+          </sc-if>
+          <div style="font-size:11px;color:#a8a8b2;text-align:right;max-width:110px;line-height:1.3">Same data,<br>two audiences</div>
+          <div style="display:flex;border:1px solid #e8e8ec;border-radius:7px;overflow:hidden;background:#ffffff">
+            <button onClick="{{ setSimple }}" style="all:unset;cursor:pointer;padding:6px 13px;font-size:12px;font-weight:600;color:{{ simpleColor }};background:{{ simpleBg }}">Simple</button>
+            <button onClick="{{ setData }}" style="all:unset;cursor:pointer;padding:6px 13px;font-size:12px;font-weight:600;color:{{ dataColor }};background:{{ dataBg }}">Data</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== DATA VIEW (generic, every screen) ===== -->
+      <sc-if value="{{ isData }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;animation:fadeIn 0.16s ease">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#5c5c66;border:1px solid #e8e8ec;border-radius:5px;padding:4px 8px;background:#ffffff">{{ dataset }}</div>
+            <button style="all:unset;cursor:pointer;font-size:11px;font-weight:600;color:#4b45c6;border:1px solid #dcdbf6;background:#f4f3fd;border-radius:5px;padding:4px 9px">Export CSV</button>
+            <button style="all:unset;cursor:pointer;font-size:11px;color:#5c5c66;border:1px solid #e8e8ec;background:#ffffff;border-radius:5px;padding:4px 9px">Add filter</button>
+            <div style="margin-left:auto;font-size:11px;color:#a8a8b2;font-variant-numeric:tabular-nums">{{ dataCount }}</div>
+          </div>
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:8px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:{{ dataGrid }};padding:8px 14px;background:#fafafb;border-bottom:1px solid #e8e8ec;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#8e8e99;font-weight:600">
+              <sc-for list="{{ dataCols }}" as="c" hint-placeholder-count="5">
+                <div style="text-align:{{ c.align }}">{{ c.label }}</div>
+              </sc-for>
+            </div>
+            <sc-for list="{{ dataRows }}" as="r" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:{{ dataGrid }};padding:7px 14px;border-bottom:1px solid #f4f4f6;font-size:12.5px;align-items:center">
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+                  <div style="text-align:{{ c.align }};color:{{ c.color }};font-weight:{{ c.weight }};font-family:{{ c.font }};font-variant-numeric:tabular-nums;padding-right:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.v }}</div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:11.5px;color:#a8a8b2">Sortable columns, inline filters and export are the operator path — the same rows the simple view renders as opinion.</div>
+        </div>
+      </sc-if>
+
+      <!-- ===== HUB ===== -->
+      <sc-if value="{{ hubSimple }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:28px">
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden">
+            <div style="padding:16px 20px;border-bottom:1px solid #f0f0f3;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:14px;font-weight:600">Do these first</div>
+                <div style="font-size:12px;color:#8e8e99">Ranked by estimated visibility recovered per hour of effort.</div>
+              </div>
+              <button onClick="{{ goSug }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#4b45c6">All 8 suggestions →</button>
+            </div>
+            <sc-for list="{{ topFour }}" as="s" hint-placeholder-count="4">
+              <button onClick="{{ s.open }}" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;border-bottom:1px solid #f4f4f6;padding:15px 20px" style-hover="background:#fcfcfd">
+                <div style="display:flex;align-items:flex-start;gap:16px">
+                  <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#a8a8b2;width:14px;padding-top:2px;font-variant-numeric:tabular-nums">{{ s.rank }}</div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+                    <div style="font-size:14px;font-weight:600;letter-spacing:-0.01em;text-wrap:pretty">{{ s.title }}</div>
+                    <div style="font-size:12.5px;color:#5c5c66;text-wrap:pretty;max-width:660px">{{ s.whyShort }}</div>
+                  </div>
+                  <div style="display:flex;align-items:flex-start;gap:22px;flex:0 0 auto">
+                    <div style="display:flex;flex-direction:column;gap:2px;width:112px">
+                      <div style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Impact</div>
+                      <div style="font-size:12.5px;font-weight:600;color:{{ s.impactColor }};font-variant-numeric:tabular-nums">{{ s.impactNote }}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:2px;width:96px">
+                      <div style="font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Effort</div>
+                      <div style="font-size:12.5px;color:#5c5c66;font-variant-numeric:tabular-nums">{{ s.effort }}</div>
+                    </div>
+                    <div style="font-size:12px;color:#a8a8b2;padding-top:12px">→</div>
+                  </div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:20px">
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="font-size:13px;font-weight:600">AI Visibility Score</div>
+                  <div style="font-size:11.5px;color:#8e8e99">Share of 100 tracked prompts where you appear</div>
+                </div>
+                <button onClick="{{ goAeo }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#4b45c6">AEO →</button>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:18px">
+                <div style="font-size:54px;font-weight:600;letter-spacing:-0.035em;line-height:0.95;font-variant-numeric:tabular-nums">34</div>
+                <div style="display:flex;flex-direction:column;gap:2px;padding-bottom:6px">
+                  <div style="font-size:13px;font-weight:600;color:#b3372c;font-variant-numeric:tabular-nums">−13 pts / 30 days</div>
+                  <div style="font-size:11.5px;color:#8e8e99">Was 47 on 3 Aug</div>
+                </div>
+                <svg viewBox="0 0 220 56" style="width:200px;height:52px;margin-left:auto">
+                  <polyline points="2,12 10,14 18,10 26,15 34,13 42,19 50,17 58,22 66,20 74,26 82,24 90,31 98,29 106,34 114,32 122,37 130,35 138,40 146,38 154,42 162,40 170,44 178,42 186,46 194,44 202,47 210,45 218,49" fill="none" stroke="#b3372c" stroke-width="1.6" stroke-linejoin="round"></polyline>
+                  <circle cx="218" cy="49" r="3" fill="#b3372c"></circle>
+                </svg>
+              </div>
+              <div style="border-top:1px solid #f0f0f3;padding-top:12px;display:flex;gap:10px;align-items:stretch">
+                <div style="width:3px;background:#b3372c;border-radius:2px;flex:0 0 3px"></div>
+                <div style="font-size:12px;color:#5c5c66;text-wrap:pretty">9 of the 13 lost points trace to two e-commerce events: the Trailhead Mini buy-box loss (11 Aug) and the Roadster 20 rank slide (19 Aug). <button onClick="{{ goAeo }}" style="all:unset;cursor:pointer;color:#4b45c6;font-weight:600">See the paired timeline</button></div>
+              </div>
+            </div>
+
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:13px">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div style="font-size:13px;font-weight:600">Readiness Score</div>
+                  <div style="font-size:11.5px;color:#8e8e99">Objective checks — pass or fail</div>
+                </div>
+                <button onClick="{{ goRead }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#4b45c6">Checklist →</button>
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:6px">
+                <div style="font-size:54px;font-weight:600;letter-spacing:-0.035em;line-height:0.95;font-variant-numeric:tabular-nums">11</div>
+                <div style="font-size:22px;color:#a8a8b2;font-weight:500;padding-bottom:6px;font-variant-numeric:tabular-nums">/ 18</div>
+                <div style="font-size:12px;color:#5c5c66;padding-bottom:9px;margin-left:8px">checks passing</div>
+              </div>
+              <div style="display:flex;gap:3px">
+                <div style="height:6px;flex:11;background:#10744a;border-radius:3px"></div>
+                <div style="height:6px;flex:7;background:#ececed;border-radius:3px"></div>
+              </div>
+              <div style="border-top:1px solid #f0f0f3;padding-top:12px;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#5c5c66">Amazon strategy</span><span style="font-weight:600;color:#b3372c;font-variant-numeric:tabular-nums">1 / 4</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#5c5c66">Category &amp; taxonomy</span><span style="font-weight:600;color:#8a5a00;font-variant-numeric:tabular-nums">2 / 3</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#5c5c66">Brand keyword defense</span><span style="font-weight:600;color:#b3372c;font-variant-numeric:tabular-nums">0 / 2</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:#8e8e99;font-weight:600">Your modules</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+              <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="6">
+                <button onClick="{{ t.go }}" style="all:unset;cursor:{{ t.cursor }};background:{{ t.bg }};border:1px solid #e8e8ec;border-radius:10px;padding:17px 18px 15px 18px;display:flex;flex-direction:column;gap:9px;height:136px" style-hover="border-color:#c9c9d2">
+                  <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+                    <div style="font-size:13.5px;font-weight:600;color:{{ t.titleColor }}">{{ t.title }}</div>
+                    <div style="font-size:10.5px;color:#b3b3bd">{{ t.badge }}</div>
+                  </div>
+                  <div style="font-size:12px;color:{{ t.bodyColor }};text-wrap:pretty;text-align:left">{{ t.body }}</div>
+                  <div style="margin-top:auto;font-size:12.5px;font-weight:600;color:{{ t.metricColor }};font-variant-numeric:tabular-nums">{{ t.metric }}</div>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== HUB — MAP VIEW ===== -->
+      <sc-if value="{{ mapSimple }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#8e8e99;font-weight:600">Module map</div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+              <button onClick="{{ m.toggleStack }}" style="all:unset;cursor:pointer;font-size:12px;color:#5c5c66;border:1px solid #e8e8ec;background:#ffffff;border-radius:6px;padding:5px 10px" style-hover="border-color:#c9c9d2">{{ m.stackLabel }}</button>
+              <button onClick="{{ m.toggleTheme }}" style="all:unset;cursor:pointer;font-size:12px;color:#5c5c66;border:1px solid #e8e8ec;background:#ffffff;border-radius:6px;padding:5px 10px" style-hover="border-color:#c9c9d2">{{ m.themeLabel }} theme</button>
+            </div>
+          </div>
+
+          <div style="border:1px solid {{ m.t.border }};border-radius:12px;background:{{ m.t.bg }};overflow:hidden">
+            <sc-if value="{{ m.stacked }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:24px;display:flex;justify-content:center;background:{{ m.t.bg }}">
+                <div style="width:390px;display:flex;flex-direction:column;gap:16px">
+                  <div style="border:1.5px solid {{ m.t.border }};border-radius:10px;background:{{ m.t.node }};padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                    <div style="font-size:14px;font-weight:600;color:{{ m.t.ink }}">Fender Guitars</div>
+                    <div style="display:flex;gap:24px">
+                      <div style="display:flex;flex-direction:column;gap:1px">
+                        <span style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ m.t.ink3 }};font-weight:600">Readiness</span>
+                        <span style="font-size:20px;font-weight:600;color:{{ m.t.ink }};font-variant-numeric:tabular-nums">11 / 18</span>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:1px">
+                        <span style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ m.t.ink3 }};font-weight:600">Visibility</span>
+                        <span style="font-size:20px;font-weight:600;color:{{ m.t.ink }};font-variant-numeric:tabular-nums">34 <span style="font-size:12px;color:{{ m.t.bad }}">↓ 13</span></span>
+                      </div>
+                    </div>
+                    <div style="font-size:12px;color:{{ m.t.bad }};border-top:1px solid {{ m.t.border }};padding-top:10px">3 e-com issues suppressing AI visibility</div>
+                  </div>
+                  <sc-for list="{{ m.groups }}" as="g" hint-placeholder-count="3">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <button onClick="{{ g.go }}" style="all:unset;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+                        <span style="font-size:13px;font-weight:600;color:{{ m.t.ink }}">{{ g.name }}</span>
+                        <span style="font-size:12px;font-weight:600;color:{{ g.tone }};font-variant-numeric:tabular-nums">{{ g.stat }}</span>
+                      </button>
+                      <div style="display:flex;flex-direction:column;gap:1px;padding-left:12px;border-left:1px solid {{ m.t.line }}">
+                        <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+                          <button onClick="{{ i.go }}" style="all:unset;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid {{ m.t.border }}">
+                            <span style="font-size:12.5px;color:{{ m.t.ink2 }}">{{ i.label }}</span>
+                            <span style="font-size:12px;color:{{ m.t.ink3 }};font-variant-numeric:tabular-nums">{{ i.stat }}</span>
+                          </button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="font-size:11.5px;color:{{ m.t.ink3 }};text-wrap:pretty">Below 1024px the diagram becomes a nested list — same nodes, same state, no shrinking.</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ m.diagram }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative;width:1112px;height:760px;background:{{ m.t.bg }}">
+                <svg viewBox="0 0 1112 760" style="position:absolute;left:0;top:0;width:1112px;height:760px">
+                  <line x1="556" y1="380" x2="331" y2="200" stroke="{{ m.t.line }}" stroke-width="1.5"></line>
+                  <line x1="556" y1="380" x2="781" y2="200" stroke="{{ m.t.line }}" stroke-width="1.5"></line>
+                  <line x1="556" y1="380" x2="556" y2="650" stroke="{{ m.t.line }}" stroke-width="1.5"></line>
+                  <line x1="556" y1="380" x2="250" y2="640" stroke="{{ m.t.border }}" stroke-width="1"></line>
+                  <line x1="556" y1="380" x2="862" y2="640" stroke="{{ m.t.border }}" stroke-width="1"></line>
+                  <line x1="331" y1="200" x2="172" y2="105" stroke="{{ m.t.line }}" stroke-width="1"></line>
+                  <line x1="331" y1="200" x2="97" y2="250" stroke="{{ m.t.line }}" stroke-width="1"></line>
+                  <line x1="781" y1="200" x2="940" y2="105" stroke="{{ m.t.line }}" stroke-width="1"></line>
+                  <line x1="781" y1="200" x2="1015" y2="250" stroke="{{ m.t.line }}" stroke-width="1"></line>
+                  <line x1="781" y1="200" x2="960" y2="395" stroke="{{ m.t.line }}" stroke-width="1"></line>
+                  <line x1="781" y1="200" x2="830" y2="470" stroke="{{ m.t.line }}" stroke-width="1"></line>
+                  <line x1="417" y1="200" x2="695" y2="200" stroke="{{ m.t.bad }}" stroke-width="1.5"></line>
+                  <circle cx="417" cy="200" r="2.5" fill="{{ m.t.bad }}"></circle>
+                  <circle cx="695" cy="200" r="2.5" fill="{{ m.t.bad }}"></circle>
+                </svg>
+
+                <div style="position:absolute;left:406px;top:184px;width:300px;display:flex;justify-content:center">
+                  <div style="background:{{ m.t.bg }};padding:3px 10px;font-size:11.5px;font-weight:600;color:{{ m.t.bad }};text-align:center;text-wrap:pretty;line-height:1.3">3 e-com issues suppressing<br>AI visibility</div>
+                </div>
+
+                <div style="position:absolute;left:426px;top:250px;width:260px;height:260px;box-sizing:border-box;border:1.5px solid {{ m.t.border }};border-radius:50%;background:{{ m.t.node }};padding:0 34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
+                    <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:{{ m.t.ink3 }};font-weight:600">Client</div>
+                    <div style="font-size:17px;font-weight:600;letter-spacing:-0.015em;color:{{ m.t.ink }}">Fender Guitars</div>
+                  </div>
+                  <div style="width:64px;height:1px;background:{{ m.t.border }}"></div>
+                  <div style="display:flex;align-items:flex-start;gap:22px">
+                    <button onClick="{{ goRead }}" style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;width:82px">
+                      <span style="font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ m.t.ink3 }};font-weight:600">Readiness</span>
+                      <span style="font-size:23px;font-weight:600;letter-spacing:-0.03em;color:{{ m.t.ink }};font-variant-numeric:tabular-nums;line-height:1.15">11/18</span>
+                      <span style="font-size:10.5px;color:{{ m.t.ink2 }};text-align:center">7 failing</span>
+                    </button>
+                    <div style="width:1px;height:44px;background:{{ m.t.border }}"></div>
+                    <button onClick="{{ goAeo }}" style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;width:82px">
+                      <span style="font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase;color:{{ m.t.ink3 }};font-weight:600">Visibility</span>
+                      <span style="font-size:23px;font-weight:600;letter-spacing:-0.03em;color:{{ m.t.ink }};font-variant-numeric:tabular-nums;line-height:1.15">34</span>
+                      <span style="font-size:10.5px;font-weight:600;color:{{ m.t.bad }};font-variant-numeric:tabular-nums;text-align:center">↓ 13 / 30d</span>
+                    </button>
+                  </div>
+                </div>
+
+                <sc-for list="{{ m.nodes }}" as="n" hint-placeholder-count="11">
+                  <button onClick="{{ n.go }}" style="all:unset;box-sizing:border-box;cursor:{{ n.cursor }};position:absolute;left:{{ n.left }};top:{{ n.top }};width:{{ n.size }};height:{{ n.size }};border:{{ n.borderW }} solid {{ n.border }};border-radius:50%;background:{{ n.bg }};padding:{{ n.pad }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center" style-hover="border-color:{{ m.t.ink3 }}">
+                    <span style="font-size:{{ n.titleSize }};font-weight:600;letter-spacing:-0.01em;color:{{ n.color }};line-height:1.25">{{ n.title }}</span>
+                    <span style="font-size:{{ n.statSize }};font-weight:600;letter-spacing:-0.025em;color:{{ n.statColor }};font-variant-numeric:tabular-nums;line-height:1.2">{{ n.stat }}</span>
+                    <span style="font-size:{{ n.metaSize }};color:{{ n.metaColor }};line-height:1.3;text-wrap:pretty">{{ n.meta }}</span>
+                    <sc-if value="{{ n.urgent }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:absolute;top:{{ n.dotOffset }};right:{{ n.dotOffset }};width:7px;height:7px;border-radius:50%;background:{{ n.urgentColor }}"></span>
+                    </sc-if>
+                    <sc-if value="{{ n.locked }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                        <span style="width:9px;height:7px;border:1px solid {{ m.t.lockInk }};border-radius:2px;display:inline-block;border-top-width:3px;border-top-left-radius:5px;border-top-right-radius:5px"></span>
+                        <span style="font-size:9.5px;letter-spacing:0.05em;text-transform:uppercase;color:{{ m.t.lockInk }};font-weight:600">{{ n.lockLabel }}</span>
+                      </span>
+                    </sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="font-size:11.5px;color:#8e8e99;text-wrap:pretty;max-width:760px">Every node opens its spoke screen, and every spoke returns here. The line between AEO and E-commerce is the product's argument: the two are one system, and the e-commerce side is currently holding the other down.</div>
+        </div>
+      </sc-if>
+
+      <!-- ===== SUGGESTION ENGINE ===== -->
+      <sc-if value="{{ sugSimple }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px">
+              <sc-for list="{{ areaChips }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.go }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:5px 11px;border-radius:20px;color:{{ c.color }};background:{{ c.bg }};border:1px solid {{ c.border }}">{{ c.label }}</button>
+              </sc-for>
+            </div>
+            <div style="width:1px;height:20px;background:#e8e8ec"></div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="4">
+                <button onClick="{{ c.go }}" style="all:unset;cursor:pointer;font-size:12px;padding:5px 11px;border-radius:20px;color:{{ c.color }};background:{{ c.bg }};border:1px solid {{ c.border }}">{{ c.label }}</button>
+              </sc-for>
+            </div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:7px">
+              <span style="font-size:12px;color:#8e8e99">Sort</span>
+              <sc-for list="{{ sortChips }}" as="c" hint-placeholder-count="3">
+                <button onClick="{{ c.go }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:5px 10px;border-radius:6px;color:{{ c.color }};background:{{ c.bg }}">{{ c.label }}</button>
+              </sc-for>
+              <button onClick="{{ toggleResp }}" style="all:unset;cursor:pointer;font-size:12px;color:#5c5c66;border:1px solid #e8e8ec;background:#ffffff;border-radius:6px;padding:5px 10px;margin-left:6px">{{ respLabel }}</button>
+            </div>
+          </div>
+
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:42px 1fr 148px 116px 126px;padding:9px 20px;background:#fafafb;border-bottom:1px solid #e8e8ec;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#8e8e99;font-weight:600">
+              <div>#</div><div>Action &amp; why it was suggested</div><div>Est. impact</div><div>Effort</div><div>Status</div>
+            </div>
+            <sc-for list="{{ rows }}" as="s" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:42px 1fr 148px 116px 126px;padding:15px 20px;border-bottom:1px solid #f4f4f6;align-items:flex-start;background:{{ s.rowBg }}">
+                <button onClick="{{ s.open }}" style="all:unset;cursor:pointer;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#a8a8b2;padding-top:3px;font-variant-numeric:tabular-nums">{{ s.rank }}</button>
+                <button onClick="{{ s.open }}" style="all:unset;cursor:pointer;display:flex;flex-direction:column;gap:7px;padding-right:24px">
+                  <div style="font-size:14px;font-weight:600;letter-spacing:-0.01em;text-wrap:pretty">{{ s.title }}</div>
+                  <div style="font-size:12.5px;color:#5c5c66;text-wrap:pretty">{{ s.whyShort }}</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <sc-for list="{{ s.chips }}" as="ch" hint-placeholder-count="2">
+                      <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;padding:3px 7px;border-radius:4px;background:{{ ch.bg }};color:{{ ch.color }}">{{ ch.text }}</span>
+                    </sc-for>
+                  </div>
+                </button>
+                <div style="display:flex;flex-direction:column;gap:2px;padding-top:2px">
+                  <div style="font-size:13px;font-weight:600;color:{{ s.impactColor }}">{{ s.impact }}</div>
+                  <div style="font-size:11.5px;color:#8e8e99;font-variant-numeric:tabular-nums">{{ s.impactNote }}</div>
+                </div>
+                <div style="font-size:12.5px;color:#5c5c66;padding-top:3px;font-variant-numeric:tabular-nums">{{ s.effort }}</div>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+                  <button onClick="{{ s.cycle }}" style="all:unset;cursor:pointer;font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:20px;color:{{ s.statusColor }};background:{{ s.statusBg }};border:1px solid {{ s.statusBorder }}">{{ s.status }}</button>
+                  <button onClick="{{ s.open }}" style="all:unset;cursor:pointer;font-size:11.5px;color:#4b45c6;font-weight:600">Open →</button>
+                </div>
+              </div>
+            </sc-for>
+            <div style="padding:11px 20px;font-size:12px;color:#8e8e99;background:#fcfcfd">{{ rowCount }}</div>
+          </div>
+
+          <sc-if value="{{ resp }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:26px;align-items:flex-start;padding-top:12px;animation:fadeIn 0.18s ease">
+              <div style="width:376px;flex:0 0 376px;background:#ffffff;border:1px solid #e8e8ec;border-radius:24px;padding:9px">
+                <div style="border:1px solid #f0f0f3;border-radius:17px;overflow:hidden">
+                  <div style="padding:13px 15px 11px 15px;border-bottom:1px solid #f0f0f3;display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                      <span style="font-size:12px;color:#8e8e99">← Home</span>
+                      <span style="font-size:11px;font-weight:600;color:#5c5c66;border:1px solid #e8e8ec;border-radius:14px;padding:3px 8px">Simple</span>
+                    </div>
+                    <div style="font-size:17px;font-weight:600;letter-spacing:-0.015em">Suggestions</div>
+                    <div style="display:flex;gap:6px">
+                      <span style="font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:20px;background:#16161a;color:#ffffff">All 8</span>
+                      <span style="font-size:11.5px;padding:4px 9px;border-radius:20px;border:1px solid #e8e8ec;color:#5c5c66">AEO</span>
+                      <span style="font-size:11.5px;padding:4px 9px;border-radius:20px;border:1px solid #e8e8ec;color:#5c5c66">E-com</span>
+                    </div>
+                  </div>
+                  <sc-for list="{{ respRows }}" as="s" hint-placeholder-count="3">
+                    <div style="padding:13px 15px;border-bottom:1px solid #f4f4f6;display:flex;flex-direction:column;gap:7px">
+                      <div style="display:flex;gap:9px;align-items:baseline">
+                        <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#a8a8b2">{{ s.rank }}</span>
+                        <span style="font-size:13.5px;font-weight:600;letter-spacing:-0.01em;text-wrap:pretty">{{ s.title }}</span>
+                      </div>
+                      <div style="font-size:12px;color:#5c5c66;text-wrap:pretty;padding-left:20px">{{ s.whyMobile }}</div>
+                      <div style="display:flex;align-items:center;gap:8px;padding-left:20px;flex-wrap:wrap">
+                        <span style="font-size:11px;font-weight:600;color:{{ s.impactColor }}">{{ s.impactNote }}</span>
+                        <span style="width:3px;height:3px;border-radius:50%;background:#c9c9d2"></span>
+                        <span style="font-size:11px;color:#8e8e99">{{ s.effort }}</span>
+                        <span style="margin-left:auto;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;color:{{ s.statusColor }};background:{{ s.statusBg }}">{{ s.status }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="padding:11px 15px;font-size:11.5px;color:#a8a8b2">Impact and effort collapse under the action; status moves to the row end. Filters scroll horizontally.</div>
+                </div>
+              </div>
+              <div style="max-width:320px;display:flex;flex-direction:column;gap:10px;padding-top:8px">
+                <div style="font-size:13px;font-weight:600">Responsive treatment · 390px</div>
+                <div style="font-size:12.5px;color:#5c5c66;text-wrap:pretty">One column, rank stays as the anchor, the three metadata columns become a single meta line. The opinionated default order is what survives the squeeze — sorting drops to a sheet.</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ===== READINESS ===== -->
+      <sc-if value="{{ readSimple }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:20px 22px;display:flex;align-items:center;gap:34px">
+            <div style="display:flex;align-items:flex-end;gap:6px">
+              <div style="font-size:44px;font-weight:600;letter-spacing:-0.035em;line-height:0.95;font-variant-numeric:tabular-nums">11</div>
+              <div style="font-size:19px;color:#a8a8b2;font-weight:500;padding-bottom:4px;font-variant-numeric:tabular-nums">/ 18</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex:1">
+              <div style="display:flex;gap:4px">
+                <div style="height:8px;flex:11;background:#10744a;border-radius:2px"></div>
+                <div style="height:8px;flex:7;background:#ececed;border-radius:2px"></div>
+              </div>
+              <div style="font-size:12px;color:#8e8e99">11 checks pass, 7 fail. Each line below is measured, not estimated — the value and the threshold it was compared against are both shown.</div>
+            </div>
+            <div style="border-left:1px solid #f0f0f3;padding-left:24px;display:flex;flex-direction:column;gap:3px;max-width:230px">
+              <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Not a forecast</div>
+              <div style="font-size:12px;color:#5c5c66;text-wrap:pretty">Unlike the AI Visibility Score, nothing here is sampled or modelled. Re-run it and you get the same answer.</div>
+            </div>
+          </div>
+
+          <sc-for list="{{ positions }}" as="p" hint-placeholder-count="6">
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden">
+              <div style="padding:12px 20px;border-bottom:1px solid #f0f0f3;display:flex;align-items:center;justify-content:space-between;background:#fcfcfd">
+                <div style="font-size:13px;font-weight:600">{{ p.name }}</div>
+                <div style="font-size:12.5px;font-weight:600;color:{{ p.scoreColor }};font-variant-numeric:tabular-nums">{{ p.score }}</div>
+              </div>
+              <sc-for list="{{ p.checks }}" as="c" hint-placeholder-count="3">
+                <div style="border-bottom:1px solid #f4f4f6">
+                  <div style="display:grid;grid-template-columns:26px 1fr 132px 132px 150px;padding:12px 20px;align-items:center;gap:8px">
+                    <div style="width:18px;height:18px;border-radius:4px;background:{{ c.markBg }};color:{{ c.markColor }};font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">{{ c.mark }}</div>
+                    <div style="font-size:13px;text-wrap:pretty">{{ c.label }}</div>
+                    <div style="font-size:12.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;color:{{ c.markColor }}">{{ c.value }}</div>
+                    <div style="font-size:11.5px;color:#a8a8b2;text-align:right;font-variant-numeric:tabular-nums">{{ c.threshold }}</div>
+                    <div style="display:flex;justify-content:flex-end">
+                      <button onClick="{{ c.toggle }}" style="all:unset;cursor:pointer;font-size:11.5px;font-weight:600;color:#4b45c6">{{ c.caret }}</button>
+                    </div>
+                  </div>
+                  <sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:0 20px 16px 46px;display:flex;flex-direction:column;gap:10px;animation:fadeIn 0.15s ease">
+                      <div style="background:#fafafb;border:1px solid #f0f0f3;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+                        <div style="font-size:12.5px;color:#16161a;text-wrap:pretty">{{ c.why }}</div>
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#8e8e99;background:#ffffff;border:1px solid #e8e8ec;border-radius:4px;padding:3px 7px">{{ c.source }}</span>
+                          <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#8e8e99">measured value {{ c.value }} · {{ c.threshold }}</span>
+                        </div>
+                      </div>
+                      <sc-if value="{{ c.trace }}" hint-placeholder-val="{{ false }}">
+                        <button onClick="{{ c.traceGo }}" style="all:unset;cursor:pointer;font-size:12px;color:#4b45c6;font-weight:600;display:flex;align-items:center;gap:7px">
+                          <span style="font-size:11px;color:#a8a8b2;font-weight:400">Traces up to</span> {{ c.traceLabel }} →
+                        </button>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ===== AEO ===== -->
+      <sc-if value="{{ aeoSimple }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px">
+              <div style="display:flex;align-items:flex-end;gap:20px">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Visibility</div>
+                  <div style="display:flex;align-items:flex-end;gap:10px">
+                    <div style="font-size:44px;font-weight:600;letter-spacing:-0.035em;line-height:0.95;font-variant-numeric:tabular-nums">34</div>
+                    <div style="font-size:13px;font-weight:600;color:#b3372c;padding-bottom:5px;font-variant-numeric:tabular-nums">−13 / 30d</div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:18px;font-size:11.5px;color:#5c5c66">
+                <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#4b45c6;display:inline-block"></span> Visibility score</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="width:14px;border-top:1px dashed #b3372c;display:inline-block"></span> E-commerce event</div>
+              </div>
+            </div>
+
+            <svg viewBox="0 0 1040 260" style="width:100%;height:260px">
+              <rect x="0" y="0" width="1040" height="260" fill="#ffffff"></rect>
+              <line x1="40" y1="30" x2="1030" y2="30" stroke="#f4f4f6" stroke-width="1"></line>
+              <line x1="40" y1="90" x2="1030" y2="90" stroke="#f4f4f6" stroke-width="1"></line>
+              <line x1="40" y1="150" x2="1030" y2="150" stroke="#f4f4f6" stroke-width="1"></line>
+              <line x1="40" y1="210" x2="1030" y2="210" stroke="#e8e8ec" stroke-width="1"></line>
+              <text x="8" y="34" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">60</text>
+              <text x="8" y="94" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">45</text>
+              <text x="8" y="154" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">30</text>
+              <text x="8" y="214" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">15</text>
+              <line x1="452" y1="24" x2="452" y2="210" stroke="#b3372c" stroke-width="1" stroke-dasharray="3 3"></line>
+              <circle cx="452" cy="24" r="3" fill="#b3372c"></circle>
+              <text x="460" y="22" font-size="11" fill="#b3372c" font-family="-apple-system,Helvetica,sans-serif" font-weight="600">11 Aug · Trailhead Mini loses buy box</text>
+              <line x1="700" y1="48" x2="700" y2="210" stroke="#b3372c" stroke-width="1" stroke-dasharray="3 3"></line>
+              <circle cx="700" cy="48" r="3" fill="#b3372c"></circle>
+              <text x="708" y="46" font-size="11" fill="#b3372c" font-family="-apple-system,Helvetica,sans-serif" font-weight="600">19 Aug · Roadster 20 rank 16 → 41</text>
+              <polyline points="40,84 74,79 108,88 142,82 176,95 210,90 244,101 278,97 312,92 346,105 380,112 414,108 452,110 486,138 520,134 554,142 588,137 622,148 656,144 700,146 734,168 768,162 802,171 836,167 870,176 904,172 938,180 972,176 1006,182" fill="none" stroke="#4b45c6" stroke-width="2" stroke-linejoin="round"></polyline>
+              <circle cx="1006" cy="182" r="3.5" fill="#4b45c6"></circle>
+              <text x="40" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">3 Aug</text>
+              <text x="440" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">14 Aug</text>
+              <text x="690" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">22 Aug</text>
+              <text x="975" y="232" font-size="10" fill="#a8a8b2" font-family="ui-monospace,Menlo,monospace">2 Sep</text>
+            </svg>
+
+            <div style="border-top:1px solid #f0f0f3;padding-top:14px;display:flex;gap:10px;align-items:stretch">
+              <div style="width:3px;background:#b3372c;border-radius:2px;flex:0 0 3px"></div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:12.5px;color:#16161a;text-wrap:pretty;max-width:760px">Both step-downs follow an e-commerce event by 7–9 days — the interval it takes the sources assistants cite to refresh. The visibility line is a lagging indicator of what happens on the listing.</div>
+                <button onClick="{{ goEcom }}" style="all:unset;cursor:pointer;font-size:12px;color:#4b45c6;font-weight:600">See both events in E-commerce →</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:20px;align-items:start">
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden">
+              <div style="padding:14px 18px;border-bottom:1px solid #f0f0f3;display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:13px;font-weight:600">Tracked prompts</div>
+                <div style="font-size:11.5px;color:#8e8e99">Each prompt is run 20× per assistant across 5 assistants. Open a row to see the runs behind it.</div>
+              </div>
+              <sc-for list="{{ prompts }}" as="p" hint-placeholder-count="8">
+                <div style="border-bottom:1px solid #f4f4f6">
+                  <div style="display:grid;grid-template-columns:1fr 104px 74px 58px 24px;padding:11px 18px;align-items:center;gap:10px">
+                    <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+                      <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">“{{ p.q }}”</div>
+                      <div style="height:4px;background:#f4f4f6;border-radius:2px;overflow:hidden;width:100%">
+                        <div style="height:4px;width:{{ p.pct }};background:{{ p.barColor }};border-radius:2px"></div>
+                      </div>
+                    </div>
+                    <div style="font-size:12.5px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums">{{ p.rate }}</div>
+                    <div style="font-size:11.5px;color:#8e8e99;text-align:right;font-variant-numeric:tabular-nums">{{ p.pct }} appear</div>
+                    <div style="font-size:12px;font-weight:600;text-align:right;color:{{ p.deltaColor }};font-variant-numeric:tabular-nums">{{ p.delta }}</div>
+                    <button onClick="{{ p.toggle }}" style="all:unset;cursor:pointer;font-size:14px;color:#a8a8b2;text-align:right;font-weight:600">{{ p.caret }}</button>
+                  </div>
+                  <sc-if value="{{ p.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:0 18px 14px 18px;animation:fadeIn 0.15s ease">
+                      <div style="background:#fafafb;border:1px solid #f0f0f3;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+                        <div style="font-size:12px;color:#5c5c66">{{ p.runs }}</div>
+                        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px 20px">
+                          <sc-for list="{{ p.detail }}" as="d" hint-placeholder-count="4">
+                            <div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #f0f0f3;padding-bottom:5px">
+                              <span style="font-size:11.5px;color:#8e8e99">{{ d.k }}</span>
+                              <span style="font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums">{{ d.v }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #f0f0f3;padding-top:10px">
+                          <span style="font-size:11px;color:#a8a8b2">Supports the conclusion</span>
+                          <span style="font-size:12px;font-weight:600">“{{ p.conclusion }}”</span>
+                          <button onClick="{{ p.traceGo }}" style="all:unset;cursor:pointer;font-size:12px;color:#4b45c6;font-weight:600;margin-left:auto">{{ p.traceLabel }} →</button>
+                        </div>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:18px">
+                <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:14px">
+                  <div style="font-size:13px;font-weight:600">Where the answers came from</div>
+                  <div style="font-size:11.5px;color:#8e8e99">Citation share, 30 days</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px">
+                  <sc-for list="{{ sources }}" as="s" hint-placeholder-count="5">
+                    <div style="display:flex;flex-direction:column;gap:5px">
+                      <div style="display:flex;align-items:baseline;justify-content:space-between">
+                        <span style="font-size:12.5px">{{ s.name }}</span>
+                        <span style="font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums">{{ s.weight }}</span>
+                      </div>
+                      <div style="height:6px;background:#f4f4f6;border-radius:3px;overflow:hidden">
+                        <div style="height:6px;width:{{ s.bar }};background:{{ s.color }};border-radius:3px"></div>
+                      </div>
+                      <div style="font-size:11px;color:#a8a8b2;font-variant-numeric:tabular-nums">{{ s.cites }} naming you</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="border-top:1px solid #f0f0f3;margin-top:16px;padding-top:12px;font-size:11.5px;color:#5c5c66;text-wrap:pretty">Source weighting is industry-specific. In musical instruments, community threads outweigh editorial round-ups; in home appliances the order reverses. These weights are modelled for your category, not global.</div>
+              </div>
+              <div style="background:#f4f3fd;border:1px solid #dcdbf6;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:7px">
+                <div style="font-size:12.5px;font-weight:600;color:#4b45c6">Every finding here names its e-commerce cause</div>
+                <div style="font-size:12px;color:#5c5c66;text-wrap:pretty">Open any prompt row and the last line traces up to the suggestion it produced — the same pattern works in reverse from the E-commerce findings.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== E-COMMERCE ===== -->
+      <sc-if value="{{ ecomSimple }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:11.5px;color:#8e8e99">Buy-box coverage</div>
+              <div style="font-size:30px;font-weight:600;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">62%</div>
+              <div style="font-size:11.5px;font-weight:600;color:#b3372c;font-variant-numeric:tabular-nums">−31 pp / 30d</div>
+            </div>
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:11.5px;color:#8e8e99">Median rank, tracked</div>
+              <div style="font-size:30px;font-weight:600;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">38</div>
+              <div style="font-size:11.5px;font-weight:600;color:#b3372c;font-variant-numeric:tabular-nums">↓ 22 places</div>
+            </div>
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:11.5px;color:#8e8e99">Unauthorised sellers</div>
+              <div style="font-size:30px;font-weight:600;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">14</div>
+              <div style="font-size:11.5px;font-weight:600;color:#b3372c;font-variant-numeric:tabular-nums">+9 / 30d</div>
+            </div>
+            <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:11.5px;color:#8e8e99">Review velocity</div>
+              <div style="font-size:30px;font-weight:600;letter-spacing:-0.03em;font-variant-numeric:tabular-nums">5.4</div>
+              <div style="font-size:11.5px;color:#8e8e99;font-variant-numeric:tabular-nums">per week · median 11.4</div>
+            </div>
+          </div>
+
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden">
+            <div style="padding:14px 18px;border-bottom:1px solid #f0f0f3;font-size:13px;font-weight:600">Findings</div>
+            <sc-for list="{{ findings }}" as="f" hint-placeholder-count="5">
+              <div style="border-bottom:1px solid #f4f4f6;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:3px 7px;border-radius:4px;color:{{ f.sevColor }};background:{{ f.sevBg }};flex:0 0 auto;margin-top:1px">{{ f.sev }}</span>
+                  <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+                    <div style="font-size:14px;font-weight:600;letter-spacing:-0.01em;text-wrap:pretty">{{ f.title }}</div>
+                    <div style="font-size:12.5px;color:#5c5c66;text-wrap:pretty;max-width:760px">{{ f.desc }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:stretch;margin-left:70px">
+                  <div style="width:3px;background:#4b45c6;border-radius:2px;flex:0 0 3px"></div>
+                  <div style="display:flex;flex-direction:column;gap:3px">
+                    <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">What it did to your AI visibility</div>
+                    <div style="font-size:12.5px;color:#16161a;text-wrap:pretty;max-width:720px">{{ f.effect }}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;margin-left:70px">
+                  <button onClick="{{ f.toggle }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#4b45c6">{{ f.caret }}</button>
+                  <button onClick="{{ f.traceGo }}" style="all:unset;cursor:pointer;font-size:12px;color:#5c5c66" style-hover="color:#16161a">{{ f.traceLabel }} →</button>
+                </div>
+                <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-left:70px;background:#fafafb;border:1px solid #f0f0f3;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px 20px;animation:fadeIn 0.15s ease">
+                    <sc-for list="{{ f.ev }}" as="e" hint-placeholder-count="4">
+                      <div style="display:flex;flex-direction:column;gap:2px">
+                        <span style="font-size:11px;color:#8e8e99">{{ e.k }}</span>
+                        <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ e.v }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#ffffff;border:1px solid #e8e8ec;border-radius:10px;overflow:hidden">
+            <div style="padding:14px 18px;border-bottom:1px solid #f0f0f3;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13px;font-weight:600">Catalogue</div>
+              <div style="font-size:11.5px;color:#a8a8b2">Amazon + Keepa · through 1 September</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.5fr 90px 70px 74px 78px 84px 76px;padding:9px 18px;background:#fafafb;border-bottom:1px solid #e8e8ec;font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#8e8e99;font-weight:600">
+              <div>Product</div><div style="text-align:right">Buy box</div><div style="text-align:right">Rank</div><div style="text-align:right">Δ rank</div><div style="text-align:right">Price</div><div style="text-align:right">Reviews</div><div style="text-align:right">Sellers</div>
+            </div>
+            <sc-for list="{{ products }}" as="p" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:1.5fr 90px 70px 74px 78px 84px 76px;padding:12px 18px;border-bottom:1px solid #f4f4f6;align-items:center">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:13px;font-weight:600">{{ p.name }}</span>
+                  <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#a8a8b2">{{ p.asin }}</span>
+                </div>
+                <div style="font-size:12.5px;font-weight:600;text-align:right;color:{{ p.buyboxColor }};font-variant-numeric:tabular-nums">{{ p.buybox }}</div>
+                <div style="font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums">{{ p.rank }}</div>
+                <div style="font-size:12.5px;text-align:right;color:{{ p.moveColor }};font-variant-numeric:tabular-nums">{{ p.move }}</div>
+                <div style="font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums">{{ p.price }}</div>
+                <div style="font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums">{{ p.reviews }}</div>
+                <div style="font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums">{{ p.sellers }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- ===== SUGGESTION DETAIL DRAWER ===== -->
+    <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;top:0;right:0;bottom:0;width:560px;background:#ffffff;border-left:1px solid #e8e8ec;box-shadow:-24px 0 48px rgba(20,20,30,0.08);z-index:40;display:flex;flex-direction:column;animation:drawerIn 0.2s cubic-bezier(0.2,0.7,0.3,1)">
+        <div style="padding:18px 26px 14px 26px;border-bottom:1px solid #f0f0f3;display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">{{ drawer.rank }}</div>
+            <div style="font-size:12px;color:#8e8e99">{{ drawer.area }} signal · placeholder data</div>
+          </div>
+          <button onClick="{{ drawer.close }}" style="all:unset;cursor:pointer;font-size:12px;color:#8e8e99;padding:2px 6px;border-radius:5px" style-hover="background:#f4f4f6;color:#16161a">Close ✕</button>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:22px 26px 28px 26px;display:flex;flex-direction:column;gap:22px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:19px;font-weight:600;letter-spacing:-0.02em;text-wrap:pretty">{{ drawer.title }}</div>
+            <div style="display:flex;align-items:center;gap:22px">
+              <div style="display:flex;flex-direction:column;gap:1px">
+                <span style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Impact</span>
+                <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ drawer.impactNote }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:1px">
+                <span style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Effort</span>
+                <span style="font-size:13px;font-variant-numeric:tabular-nums">{{ drawer.effort }}</span>
+              </div>
+              <button onClick="{{ drawer.cycle }}" style="all:unset;cursor:pointer;margin-left:auto;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:20px;color:{{ drawer.statusColor }};background:{{ drawer.statusBg }};border:1px solid {{ drawer.statusBorder }}">{{ drawer.status }}</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Why we suggested this</div>
+            <div style="font-size:13.5px;color:#16161a;text-wrap:pretty;line-height:1.55">{{ drawer.rationale }}</div>
+            <div style="display:flex;gap:9px;align-items:stretch;margin-top:4px">
+              <div style="width:3px;background:#4b45c6;border-radius:2px;flex:0 0 3px"></div>
+              <div style="font-size:12px;color:#5c5c66">{{ drawer.link }}</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Supporting data</div>
+              <button onClick="{{ drawer.toggleDrill }}" style="all:unset;cursor:pointer;font-size:11.5px;font-weight:600;color:#4b45c6">{{ drawer.drillLabel }}</button>
+            </div>
+            <div style="border:1px solid #f0f0f3;border-radius:8px;overflow:hidden">
+              <sc-for list="{{ drawer.evidence }}" as="e" hint-placeholder-count="4">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:10px 14px;border-bottom:1px solid #f4f4f6">
+                  <span style="font-size:12.5px;color:#5c5c66">{{ e.k }}</span>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
+                    <span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums">{{ e.v }}</span>
+                    <span style="font-size:11px;color:#a8a8b2;font-variant-numeric:tabular-nums">{{ e.n }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ drawer.drillOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fafafb;border:1px solid #f0f0f3;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;animation:fadeIn 0.15s ease">
+                <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Where this came from</div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <sc-for list="{{ drawer.traces }}" as="t" hint-placeholder-count="3">
+                    <button onClick="{{ t.go }}" style="all:unset;cursor:pointer;font-size:12.5px;color:#4b45c6;font-weight:600;display:flex;align-items:center;gap:8px">
+                      <span style="width:5px;height:5px;border-radius:50%;background:#4b45c6"></span>{{ t.label }} →
+                    </button>
+                  </sc-for>
+                </div>
+                <div style="font-size:11.5px;color:#8e8e99;text-wrap:pretty">Every number above opens the screen that produced it, and every one of those screens traces back here.</div>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">How do you want this handled?</div>
+              <div style="font-size:12px;color:#8e8e99">Change it any time. Nothing is billed by this choice.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ drawer.options }}" as="o" hint-placeholder-count="3">
+                <button onClick="{{ o.go }}" style="all:unset;cursor:pointer;display:flex;align-items:flex-start;gap:11px;border:1px solid {{ o.border }};background:{{ o.bg }};border-radius:9px;padding:13px 15px" style-hover="border-color:#c9c9d2">
+                  <span style="width:15px;height:15px;border-radius:50%;border:1.5px solid {{ o.dotBorder }};background:{{ o.dot }};flex:0 0 15px;margin-top:2px;box-shadow:inset 0 0 0 2.5px #ffffff"></span>
+                  <span style="display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:13.5px;font-weight:600;color:{{ o.titleColor }}">{{ o.label }}</span>
+                    <span style="font-size:12px;color:#5c5c66;text-wrap:pretty">{{ o.body }}</span>
+                  </span>
+                </button>
+              </sc-for>
+            </div>
+            <sc-if value="{{ drawer.hasChoice }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#f4f3fd;border:1px solid #dcdbf6;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;animation:fadeIn 0.15s ease">
+                <div style="font-size:12.5px;color:#3a35a8;text-wrap:pretty;flex:1">{{ drawer.chosenAfter }}</div>
+                <sc-if value="{{ drawer.showMark }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ drawer.markDone }}" style="all:unset;cursor:pointer;font-size:12px;font-weight:600;color:#ffffff;background:#4b45c6;border-radius:6px;padding:6px 12px;flex:0 0 auto">Mark complete</button>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ===== HELP ===== -->
+    <sc-if value="{{ help }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;top:0;right:0;bottom:0;width:400px;background:#ffffff;border-left:1px solid #e8e8ec;box-shadow:-24px 0 48px rgba(20,20,30,0.08);z-index:50;padding:20px 24px;display:flex;flex-direction:column;gap:18px;animation:drawerIn 0.2s cubic-bezier(0.2,0.7,0.3,1)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:15px;font-weight:600">Help</div>
+          <button onClick="{{ closeHelp }}" style="all:unset;cursor:pointer;font-size:12px;color:#8e8e99">Close ✕</button>
+        </div>
+        <div style="border:1px solid #e8e8ec;border-radius:9px;padding:14px;display:flex;gap:12px;align-items:center">
+          <div style="width:38px;height:38px;border-radius:50%;background:#f1f1f4;flex:0 0 38px"></div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <div style="font-size:13px;font-weight:600">Dana Whitfield</div>
+            <div style="font-size:11.5px;color:#8e8e99">Your liaison · replies in ~2h</div>
+          </div>
+          <button style="all:unset;cursor:pointer;margin-left:auto;font-size:12px;font-weight:600;color:#4b45c6">Message</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#a8a8b2;font-weight:600">Common questions</div>
+          <div style="font-size:12.5px;color:#5c5c66;border-bottom:1px solid #f4f4f6;padding-bottom:8px">Why did my visibility score drop?</div>
+          <div style="font-size:12.5px;color:#5c5c66;border-bottom:1px solid #f4f4f6;padding-bottom:8px">How is Readiness different from Visibility?</div>
+          <div style="font-size:12.5px;color:#5c5c66;border-bottom:1px solid #f4f4f6;padding-bottom:8px">What happens when I choose “Do it for me”?</div>
+          <div style="font-size:12.5px;color:#5c5c66">How often is the data refreshed?</div>
+        </div>
+        <div style="border:1px solid #e8e8ec;border-radius:9px;overflow:hidden">
+          <div style="height:150px;background:repeating-linear-gradient(135deg,#f4f4f6 0 8px,#fafafb 8px 16px);display:flex;align-items:center;justify-content:center">
+            <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#8e8e99">2-min explainer video · placeholder</div>
+          </div>
+          <div style="padding:11px 13px;font-size:12.5px;font-weight:600">Reading the Suggestion Engine</div>
+        </div>
+        <button style="all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:#4b45c6;border:1px solid #dcdbf6;background:#f4f3fd;border-radius:7px;padding:9px;text-align:center">Restart the guided walkthrough</button>
+      </div>
+    </sc-if>
+  </div>
+</div>

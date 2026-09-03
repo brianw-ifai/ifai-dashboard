@@ -1,0 +1,18 @@
+export const C = {
+  ink: "#16161a",
+  ink2: "#5c5c66",
+  ink3: "#8e8e99",
+  ink4: "#a8a8b2",
+  line: "#e8e8ec",
+  acc: "#4b45c6",
+  accBg: "#f4f3fd",
+  accBorder: "#dcdbf6",
+  bad: "#b3372c",
+  badBg: "#fdeceb",
+  good: "#10744a",
+  goodBg: "#e9f4ee",
+  warn: "#8a5a00",
+  warnBg: "#fdf3e2",
+  mono: "ui-monospace,SFMono-Regular,Menlo,monospace",
+  sans: "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Helvetica,sans-serif",
+} as const;
