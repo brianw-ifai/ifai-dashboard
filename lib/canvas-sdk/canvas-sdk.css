@@ -454,6 +454,12 @@
       filter: drop-shadow(0 0 14px var(--border-glow));
     }
 
+    .node-halo {
+      fill: none;
+      stroke: transparent;
+      pointer-events: none;
+    }
+
     .node-circle {
       fill: var(--map-node-bg);
       stroke: var(--map-node-stroke);

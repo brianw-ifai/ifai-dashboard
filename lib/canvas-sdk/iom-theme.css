@@ -1,0 +1,582 @@
+/* Internal Operating Maps visual language, scoped to canvases with appearance: "iom".
+   Stage, bubbles, spokes, and motion follow iom/index.html. Content stays in the spec. */
+
+.ifai-canvas.theme-iom {
+  --bg-primary: #071321;
+  --bg-surface: rgba(8, 22, 40, 0.96);
+  --bg-surface-hover: rgba(17, 40, 64, 0.98);
+  --bg-card: rgba(12, 28, 47, 0.95);
+  --bg-glass: rgba(6, 16, 30, 0.78);
+  --text-main: #f5f9ff;
+  --text-muted: #8fa8c2;
+  --text-subtle: #5e7894;
+  --border-color: rgba(100, 160, 207, 0.24);
+  --border-dark: rgba(56, 189, 248, 0.42);
+  --border-glow: rgba(46, 183, 255, 0.38);
+  --map-bg: #071321;
+  --map-node-bg: rgba(8, 22, 40, 0.88);
+  --map-node-stroke: #2eb7ff;
+  --node-pill-bg: rgba(6, 16, 30, 0.88);
+  --node-pill-stroke: rgba(148, 163, 184, 0.38);
+  --conn-satellite: #2eb7ff;
+  --danger-red: #fb7185;
+  --danger-bg: rgba(251, 113, 133, 0.14);
+  --danger-border: rgba(251, 113, 133, 0.4);
+  --danger-text: #fecdd3;
+  --success-green: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.14);
+  --success-border: rgba(52, 211, 153, 0.4);
+  --success-text: #a7f3d0;
+  --warning-amber: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.14);
+  --warning-border: rgba(251, 191, 36, 0.42);
+  --warning-text: #fde68a;
+  --accent-purple: #38bdf8;
+  --accent-cyan: #2eb7ff;
+  --color-sky: #2eb7ff;
+  --color-indigo: #2563eb;
+  --correlation-badge-bg: rgba(6, 16, 30, 0.9);
+  --shadow-soft: 0 22px 48px rgba(0, 0, 0, 0.55);
+}
+
+.ifai-canvas.theme-iom .top-header {
+  height: 64px;
+  background: #ffffff;
+  border-bottom: 1px solid #d7e3ef;
+  color: #0b1f33;
+  box-shadow: none;
+}
+
+.ifai-canvas.theme-iom .brand-name,
+.ifai-canvas.theme-iom .filter-selector,
+.ifai-canvas.theme-iom .filter-selector select,
+.ifai-canvas.theme-iom .hdr-btn {
+  color: #0b1f33;
+}
+
+.ifai-canvas.theme-iom .brand-sub {
+  color: #64748b;
+}
+
+.ifai-canvas.theme-iom .pill-divider {
+  background: #d7e3ef;
+}
+
+.ifai-canvas.theme-iom .filter-selector,
+.ifai-canvas.theme-iom .search-input,
+.ifai-canvas.theme-iom .hdr-btn {
+  background: #ffffff;
+  border: 1px solid #c5d6e8;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.ifai-canvas.theme-iom .search-input {
+  color: #0b1f33;
+}
+
+.ifai-canvas.theme-iom .search-input:focus,
+.ifai-canvas.theme-iom:not(.light-theme) .search-input:focus {
+  border-color: rgba(46, 183, 255, 0.7);
+  outline-color: rgba(46, 183, 255, 0.45);
+}
+
+.ifai-canvas.theme-iom .hdr-btn {
+  transition: transform 0.35s ease, background 0.35s ease, border-color 0.35s ease;
+}
+
+.ifai-canvas.theme-iom .hdr-btn:hover {
+  background: rgba(46, 183, 255, 0.12);
+  border-color: rgba(46, 183, 255, 0.45);
+  color: #0b1f33;
+  transform: translateY(-1px);
+}
+
+.ifai-canvas.theme-iom .hdr-btn-primary {
+  background: #0b1f33;
+  border-color: #0b1f33;
+  color: #f0f9ff;
+}
+
+.ifai-canvas.theme-iom .hdr-btn-primary:hover {
+  background: #12304d;
+  border-color: #12304d;
+  color: #f0f9ff;
+}
+
+.ifai-canvas.theme-iom .ticker-badge-danger {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.ifai-canvas.theme-iom .ticker-badge-warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.ifai-canvas.theme-iom .ticker-badge-success {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.ifai-canvas.theme-iom .stage-washes-light {
+  display: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .stage-washes-dark {
+  display: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .stage-washes-light {
+  display: inline;
+}
+
+.ifai-canvas.theme-iom svg.canvas-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom svg.canvas-svg {
+  position: relative;
+  z-index: 1;
+}
+
+.ifai-canvas.theme-iom.panel-open .viewport-container {
+  right: var(--drilldown-width);
+}
+
+.ifai-canvas.theme-iom .viewport-container {
+  background-color: #071321;
+  background-image: none;
+}
+
+.ifai-canvas.theme-iom svg.canvas-svg.camera-animating {
+  transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ifai-canvas.theme-iom .orbit-ring {
+  fill: none;
+  stroke: rgba(46, 183, 255, 0.16);
+  stroke-width: 1.25;
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom .satellite-group {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.ifai-canvas.theme-iom .satellite-group.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ifai-canvas.theme-iom .conn-line {
+  stroke: #2eb7ff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.28;
+  transition: opacity 0.4s ease, stroke-width 0.4s ease;
+}
+
+.ifai-canvas.theme-iom .conn-line.critical {
+  stroke: #fb7185;
+  stroke-width: 1.8;
+  opacity: 0.34;
+  animation: iomLineGlow 3.6s ease-in-out infinite;
+}
+
+.ifai-canvas.theme-iom .conn-line.warning {
+  stroke: #fbbf24;
+  stroke-width: 1.7;
+  opacity: 0.32;
+  animation: iomLineGlow 4.2s ease-in-out infinite;
+}
+
+.ifai-canvas.theme-iom .conn-line.active-spoke {
+  stroke: #34d399;
+  stroke-width: 1.8;
+  opacity: 0.4;
+}
+
+.ifai-canvas.theme-iom .conn-path {
+  stroke: rgba(251, 113, 133, 0.7);
+  stroke-width: 1.6;
+  opacity: 0.55;
+}
+
+@keyframes iomLineGlow {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.62; }
+}
+
+.ifai-canvas.theme-iom .graph-node {
+  filter: none;
+  transition: none;
+}
+
+.ifai-canvas.theme-iom .graph-node:hover {
+  filter: none;
+}
+
+.ifai-canvas.theme-iom .node-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.4s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.ifai-canvas.theme-iom .graph-node:hover .node-inner,
+.ifai-canvas.theme-iom .graph-node:focus-visible .node-inner {
+  transform: scale(1.04);
+}
+
+.ifai-canvas.theme-iom .node-halo {
+  fill: none;
+  stroke-width: 6;
+  opacity: 0;
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.ifai-canvas.theme-iom .node-halo.status-danger { stroke: #fb7185; }
+.ifai-canvas.theme-iom .node-halo.status-warning { stroke: #fbbf24; }
+.ifai-canvas.theme-iom .node-halo.status-success { stroke: #34d399; }
+.ifai-canvas.theme-iom .node-halo:not(.status-danger):not(.status-warning):not(.status-success) {
+  stroke: #2eb7ff;
+}
+
+.ifai-canvas.theme-iom .graph-node:hover .node-halo,
+.ifai-canvas.theme-iom .graph-node:focus-visible .node-halo {
+  opacity: 0.38;
+  transform: scale(1.05);
+}
+
+.ifai-canvas.theme-iom .node-circle,
+.ifai-canvas.theme-iom .node-circle.status-danger,
+.ifai-canvas.theme-iom .node-circle.status-warning,
+.ifai-canvas.theme-iom .node-circle.status-success {
+  fill: rgba(8, 22, 40, 0.88);
+  stroke-width: 1.6px;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+  transition: fill 0.4s ease, stroke-width 0.4s ease, filter 0.4s ease;
+}
+
+.ifai-canvas.theme-iom .node-circle.status-danger { stroke: #fb7185; }
+.ifai-canvas.theme-iom .node-circle.status-warning { stroke: #fbbf24; }
+.ifai-canvas.theme-iom .node-circle.status-success { stroke: #34d399; }
+.ifai-canvas.theme-iom .node-circle:not(.status-danger):not(.status-warning):not(.status-success):not(.hub-core) {
+  stroke: #2eb7ff;
+}
+
+.ifai-canvas.theme-iom .graph-node:hover .node-circle,
+.ifai-canvas.theme-iom .graph-node:focus-visible .node-circle {
+  stroke-width: 2.4px;
+  fill: rgba(12, 32, 54, 0.94);
+}
+
+.ifai-canvas.theme-iom .graph-node .node-title {
+  font-weight: 700;
+  letter-spacing: 0.02px;
+  fill: #f8fafc;
+}
+
+.ifai-canvas.theme-iom .hub-logo {
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom .hub-title {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  fill: #ffffff;
+}
+
+.ifai-canvas.theme-iom .spoke-primary .node-circle,
+.ifai-canvas.theme-iom .spoke-primary .node-circle.status-danger,
+.ifai-canvas.theme-iom .spoke-primary .node-circle.status-warning,
+.ifai-canvas.theme-iom .spoke-primary .node-circle.status-success {
+  fill: rgba(8, 24, 42, 0.92);
+  stroke: #2eb7ff;
+  stroke-width: 2px;
+}
+
+.ifai-canvas.theme-iom .spoke-primary .node-title,
+.ifai-canvas.theme-iom .spoke-primary .node-face-title {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  fill: #ffffff;
+}
+
+.ifai-canvas.theme-iom .spoke-primary .node-glyph-wrap {
+  color: #7dd3fc;
+}
+
+.ifai-canvas.theme-iom .spoke-primary .node-face-stat,
+.ifai-canvas.theme-iom .spoke-primary .node-face-stat.status-danger,
+.ifai-canvas.theme-iom .spoke-primary .node-face-stat.status-warning,
+.ifai-canvas.theme-iom .spoke-primary .node-face-stat.status-success {
+  fill: #2eb7ff;
+}
+
+.ifai-canvas.theme-iom .strategy-roadmap-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1.5px solid #2eb7ff;
+  border-radius: 12px;
+  background: rgba(8, 24, 42, 0.94);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.ifai-canvas.theme-iom .strategy-roadmap-btn:hover,
+.ifai-canvas.theme-iom .strategy-roadmap-btn.active {
+  background: rgba(14, 42, 68, 0.96);
+  border-color: #7dd3fc;
+  color: #7dd3fc;
+}
+
+.ifai-canvas.theme-iom .node-face-title {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  fill: #f8fafc;
+}
+
+.ifai-canvas.theme-iom .node-glyph-wrap {
+  color: #f8fafc;
+}
+
+.ifai-canvas.theme-iom .node-glyph {
+  overflow: visible;
+}
+
+.ifai-canvas.theme-iom .hub-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+  fill: #38bdf8;
+}
+
+.ifai-canvas.theme-iom .hub-divider {
+  stroke: rgba(46, 183, 255, 0.32);
+  stroke-width: 1.1;
+}
+
+.ifai-canvas.theme-iom .node-face-stat {
+  font-weight: 800;
+  fill: #7dd3fc;
+}
+
+.ifai-canvas.theme-iom .node-face-stat.status-danger { fill: #fb7185; }
+.ifai-canvas.theme-iom .node-face-stat.status-warning { fill: #fbbf24; }
+.ifai-canvas.theme-iom .node-face-stat.status-success { fill: #34d399; }
+
+.ifai-canvas.theme-iom .node-face-stat.hub-stat {
+  fill: #2eb7ff;
+}
+
+.ifai-canvas.theme-iom .node-stat-pill,
+.ifai-canvas.theme-iom .node-stat-pill.status-danger,
+.ifai-canvas.theme-iom .node-stat-pill.status-warning,
+.ifai-canvas.theme-iom .node-stat-pill.status-success {
+  fill: rgba(6, 16, 30, 0.88);
+  stroke: rgba(148, 163, 184, 0.38);
+  stroke-width: 1;
+}
+
+.ifai-canvas.theme-iom .node-stat-text {
+  fill: #cbd5e1;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ifai-canvas.theme-iom .node-stat-pill.status-danger + .node-stat-text { fill: #fecdd3; }
+.ifai-canvas.theme-iom .node-stat-pill.status-warning + .node-stat-text { fill: #fde68a; }
+.ifai-canvas.theme-iom .node-stat-pill.status-success + .node-stat-text { fill: #a7f3d0; }
+
+.ifai-canvas.theme-iom .node-meta {
+  fill: #8fa8c2;
+  font-weight: 600;
+}
+
+.ifai-canvas.theme-iom .hub-mid-ring {
+  display: none;
+}
+
+.ifai-canvas.theme-iom .hub-halo-pulse {
+  fill: #2eb7ff;
+  stroke: none;
+  opacity: 0.12;
+  filter: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: iomHubBreathe 4s ease-in-out infinite;
+}
+
+.ifai-canvas.theme-iom .node-circle.hub-core {
+  fill: rgba(8, 24, 42, 0.92);
+  stroke: #2eb7ff;
+  stroke-width: 2px;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
+}
+
+.ifai-canvas.theme-iom .graph-hub:hover .node-circle.hub-core,
+.ifai-canvas.theme-iom .graph-hub:focus-visible .node-circle.hub-core {
+  stroke: #7dd3fc;
+  fill: rgba(14, 36, 58, 0.96);
+}
+
+@keyframes iomHubBreathe {
+  0%, 100% { opacity: 0.07; transform: scale(0.97); }
+  50% { opacity: 0.2; transform: scale(1.035); }
+}
+
+.ifai-canvas.theme-iom .correlation-badge {
+  fill: rgba(6, 16, 30, 0.9);
+  stroke: rgba(251, 113, 133, 0.7);
+}
+
+.ifai-canvas.theme-iom .node-tooltip {
+  background: rgba(8, 22, 40, 0.96);
+  border: 1px solid rgba(46, 183, 255, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
+  transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s ease;
+}
+
+.ifai-canvas.theme-iom .drilldown-panel {
+  background: rgba(8, 22, 40, 0.96);
+  border-left: 1px solid rgba(46, 183, 255, 0.28);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
+  transition: transform 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.ifai-canvas.theme-iom .drilldown-header,
+.ifai-canvas.theme-iom .drilldown-tabs {
+  background: rgba(6, 16, 30, 0.72);
+}
+
+.ifai-canvas.theme-iom .drilldown-title {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.ifai-canvas.theme-iom .drilldown-tab-btn.active {
+  color: #38bdf8;
+}
+
+.ifai-canvas.theme-iom .drilldown-tab-btn.active::after {
+  background: #2eb7ff;
+}
+
+.ifai-canvas.theme-iom .canvas-hud-legend,
+.ifai-canvas.theme-iom .hud-btn-group {
+  background: rgba(6, 16, 30, 0.78);
+  border: 1px solid rgba(46, 183, 255, 0.18);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.ifai-canvas.theme-iom .metric-card-sm,
+.ifai-canvas.theme-iom .content-box,
+.ifai-canvas.theme-iom .action-card {
+  background: rgba(12, 28, 47, 0.95);
+  border-color: rgba(100, 160, 207, 0.24);
+  border-radius: 16px;
+}
+
+.ifai-canvas.theme-iom.light-theme {
+  --bg-primary: #eef5fb;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #e7f1fa;
+  --bg-card: #ffffff;
+  --text-main: #0b1f33;
+  --text-muted: #5e7894;
+  --text-subtle: #7c93ab;
+  --map-bg: #e7f1fa;
+  --map-node-bg: rgba(255, 255, 255, 0.94);
+  --border-color: rgba(14, 48, 84, 0.12);
+}
+
+.ifai-canvas.theme-iom.light-theme .viewport-container {
+  background-color: #e7f1fa;
+  background-image: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .node-circle,
+.ifai-canvas.theme-iom.light-theme .node-circle.status-danger,
+.ifai-canvas.theme-iom.light-theme .node-circle.status-warning,
+.ifai-canvas.theme-iom.light-theme .node-circle.status-success,
+.ifai-canvas.theme-iom.light-theme .node-circle.hub-core {
+  fill: rgba(255, 255, 255, 0.94);
+  filter: drop-shadow(0 8px 18px rgba(11, 31, 51, 0.12));
+}
+
+.ifai-canvas.theme-iom.light-theme .graph-node:hover .node-circle {
+  fill: #f4fbff;
+}
+
+.ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn {
+  background: rgba(255, 255, 255, 0.96);
+  color: #0b1f33;
+  box-shadow: 0 8px 18px rgba(11, 31, 51, 0.12);
+}
+
+.ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn:hover,
+.ifai-canvas.theme-iom.light-theme .strategy-roadmap-btn.active {
+  background: #f4fbff;
+  color: #0369a1;
+}
+
+.ifai-canvas.theme-iom.light-theme .hub-logo {
+  mix-blend-mode: multiply;
+  filter: invert(1);
+}
+
+.ifai-canvas.theme-iom.light-theme .graph-node .node-title,
+.ifai-canvas.theme-iom.light-theme .hub-title,
+.ifai-canvas.theme-iom.light-theme .node-glyph-wrap {
+  fill: #0b1f33;
+  color: #0b1f33;
+}
+
+.ifai-canvas.theme-iom.light-theme .node-meta {
+  fill: #5e7894;
+}
+
+.ifai-canvas.theme-iom.light-theme .orbit-ring {
+  stroke: rgba(37, 99, 235, 0.18);
+}
+
+.ifai-canvas.theme-iom.light-theme .drilldown-panel,
+.ifai-canvas.theme-iom.light-theme .node-tooltip,
+.ifai-canvas.theme-iom.light-theme .drilldown-header,
+.ifai-canvas.theme-iom.light-theme .drilldown-tabs,
+.ifai-canvas.theme-iom.light-theme .canvas-hud-legend,
+.ifai-canvas.theme-iom.light-theme .hud-btn-group {
+  background: rgba(255, 255, 255, 0.94);
+  color: #0b1f33;
+}

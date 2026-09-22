@@ -34,18 +34,20 @@ export function CurvedHeader({
   title,
   fontSize,
   inset,
+  className = "node-title",
 }: {
   id: string;
   radius: number;
   title: string;
   fontSize: number;
   inset?: number;
+  className?: string;
 }) {
   const pathId = `node-header-arc-${id}`;
   return (
     <>
       <path id={pathId} d={headerArcPath(radius, fontSize, title, inset)} fill="none" />
-      <text className="node-title" fontSize={fontSize} dy={fontSize * 0.82}>
+      <text className={className} fontSize={fontSize} dy={fontSize * 0.82}>
         <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
           {title}
         </textPath>
@@ -125,6 +127,169 @@ export function CenteredStack({
   );
 }
 
+type BubbleIcon = "sparkles" | "bag" | "radar" | "clipboard" | "wrench";
+
+const PRIMARY_SPOKES = new Set([
+  "spoke-aeo",
+  "spoke-retail",
+  "spoke-competitors",
+  "spoke-specs",
+  "spoke-fixes",
+]);
+
+const SPOKE_ICONS: Record<string, BubbleIcon> = {
+  "spoke-aeo": "sparkles",
+  "spoke-retail": "bag",
+  "spoke-competitors": "radar",
+  "spoke-specs": "clipboard",
+  "spoke-fixes": "wrench",
+};
+
+function BubbleGlyph({ icon }: { icon: BubbleIcon }) {
+  return (
+    <svg
+      className="node-glyph"
+      x={-11}
+      y={-11}
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {icon === "sparkles" ? (
+        <path d="M9.9 15.5A2 2 0 0 0 8.5 14.1L2.4 12.5a.5.5 0 0 1 0-1L8.5 9.9A2 2 0 0 0 9.9 8.5l1.6-6.1a.5.5 0 0 1 1 0l1.6 6.1a2 2 0 0 0 1.4 1.4l6.1 1.6a.5.5 0 0 1 0 1l-6.1 1.6a2 2 0 0 0-1.4 1.4l-1.6 6.1a.5.5 0 0 1-1 0z" />
+      ) : null}
+      {icon === "bag" ? (
+        <>
+          <path d="M6 7h12l-1 13H7L6 7z" />
+          <path d="M9 7a3 3 0 0 1 6 0" />
+        </>
+      ) : null}
+      {icon === "radar" ? (
+        <>
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+          <path d="M12 12 17 7" />
+        </>
+      ) : null}
+      {icon === "clipboard" ? (
+        <>
+          <rect x="7" y="4" width="10" height="16" rx="2" />
+          <path d="M9 4.5h6v2H9z" />
+          <path d="m9 13 2 2 4-4" />
+        </>
+      ) : null}
+      {icon === "wrench" ? (
+        <path d="M14.7 6.3a4.5 4.5 0 0 0-6.2 6.2L4 17a2 2 0 1 0 3 3l4.5-4.5a4.5 4.5 0 0 0 6.2-6.2L15 12l-3-3z" />
+      ) : null}
+    </svg>
+  );
+}
+
+function titleLines(title: string) {
+  const words = title.trim().split(/\s+/);
+  if (words.length < 2 || title.length <= 12) return [title];
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+}
+
+function CenteredFace({
+  title,
+  stat,
+  status,
+  icon,
+  radius,
+  hub,
+  prominent,
+  logoSrc,
+}: {
+  title: string;
+  stat?: string;
+  status: NodeStatus;
+  icon?: BubbleIcon;
+  radius: number;
+  hub?: boolean;
+  prominent?: boolean;
+  logoSrc?: string;
+}) {
+  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+  if (hub) {
+    const lines = titleLines(title);
+    const titleY = logoSrc ? 6 : -16;
+    const titleStep = logoSrc ? 26 : 28;
+    const titleSize = logoSrc ? 20 : 22;
+    return (
+      <g className="node-face">
+        {logoSrc ? (
+          <image
+            className="hub-logo"
+            href={logoSrc}
+            x={-60}
+            y={-72}
+            width={120}
+            height={45}
+            preserveAspectRatio="xMidYMid meet"
+          />
+        ) : null}
+        {lines.map((line, index) => (
+          <text
+            key={line}
+            className="node-title hub-title"
+            y={titleY + index * titleStep}
+            textAnchor="middle"
+            fontSize={titleSize}
+          >
+            {line}
+          </text>
+        ))}
+      </g>
+    );
+  }
+
+  const lines = titleLines(title);
+  const titleSize = prominent ? 20 : radius >= 74 ? 12 : 11;
+  const lineH = titleSize + 4;
+  const iconY = icon ? -radius * (prominent ? 0.46 : 0.38) : 0;
+  const titleStart = icon ? (prominent ? 2 : -radius * 0.05) : -lineH * (lines.length / 2);
+  const statY = titleStart + lines.length * lineH + 11;
+
+  return (
+    <g className="node-face">
+      {icon ? (
+        <g className="node-glyph-wrap" transform={`translate(0, ${iconY})`}>
+          <BubbleGlyph icon={icon} />
+        </g>
+      ) : null}
+      {lines.map((line, index) => (
+        <text
+          key={`${line}-${index}`}
+          className="node-title node-face-title"
+          y={titleStart + index * lineH}
+          textAnchor="middle"
+          fontSize={titleSize}
+        >
+          {line}
+        </text>
+      ))}
+      {stat ? (
+        <text
+          className={`node-face-stat${statusClass}`}
+          y={statY}
+          textAnchor="middle"
+          fontSize={radius >= 70 ? 12 : 11}
+        >
+          {stat}
+        </text>
+      ) : null}
+    </g>
+  );
+}
+
 type BubbleProps = {
   id: string;
   x: number;
@@ -135,6 +300,8 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
+  centered?: boolean;
+  logoSrc?: string;
   onClick: () => void;
   onMouseEnter: (evt: MouseEvent) => void;
   onMouseLeave: () => void;
@@ -150,6 +317,7 @@ export function GraphBubble({
   titleSize,
   stats,
   meta,
+  centered = false,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -160,15 +328,31 @@ export function GraphBubble({
 
   return (
     <g
-      className="graph-node"
+      className={`graph-node${PRIMARY_SPOKES.has(id) ? " spoke-primary" : ""}`}
       transform={`translate(${x}, ${y})`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
-      <CurvedHeader id={id} radius={r} title={title} fontSize={headerSize} />
-      <CenteredStack radius={r} stats={stats} meta={meta} pillSize={statSize} />
+      <circle r={r + 10} className={`node-halo${statusClass}`} />
+      <g className="node-inner">
+        <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
+        {centered ? (
+          <CenteredFace
+            title={title}
+            stat={stats[0]}
+            status={status}
+            icon={SPOKE_ICONS[id]}
+            radius={r}
+            prominent={PRIMARY_SPOKES.has(id)}
+          />
+        ) : (
+          <>
+            <CurvedHeader id={id} radius={r} title={title} fontSize={headerSize} />
+            <CenteredStack radius={r} stats={stats} meta={meta} pillSize={statSize} />
+          </>
+        )}
+      </g>
     </g>
   );
 }
@@ -183,6 +367,8 @@ export function GraphHub({
   titleSize,
   stats,
   meta,
+  centered = false,
+  logoSrc,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -193,23 +379,32 @@ export function GraphHub({
 
   return (
     <g
-      className="graph-node"
+      className="graph-node graph-hub"
       transform={`translate(${x}, ${y})`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring" />
-      <circle
-        r={midR}
-        fill="url(#brandHubGradient)"
-        filter="url(#nodeShadow)"
-        stroke="var(--border-dark)"
-        strokeWidth="3"
-      />
-      <circle r={r} className="node-circle hub-core" />
-      <CurvedHeader id={id} radius={r} title={title} fontSize={headerSize} />
-      <CenteredStack radius={r} stats={stats} meta={meta} pillSize={12} status={status} />
+      <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
+      <g className="node-inner">
+        <circle
+          className="hub-mid-ring"
+          r={midR}
+          fill="url(#brandHubGradient)"
+          filter="url(#nodeShadow)"
+          stroke="var(--border-dark)"
+          strokeWidth="3"
+        />
+        <circle r={r} className="node-circle hub-core" />
+        {centered ? (
+          <CenteredFace title={title} stat={stats[0]} status={status} radius={r} hub logoSrc={logoSrc} />
+        ) : (
+          <>
+            <CurvedHeader id={id} radius={r} title={title} fontSize={headerSize} className="node-title hub-title" />
+            <CenteredStack radius={r} stats={stats} meta={meta} pillSize={12} status={status} />
+          </>
+        )}
+      </g>
     </g>
   );
 }

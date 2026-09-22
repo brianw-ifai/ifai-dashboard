@@ -24,6 +24,8 @@ export type CanvasNode = {
     hasMoreInfo?: boolean;
   };
   variant?: "bubble" | "hub";
+  /** Wordmark drawn inside a centered hub. */
+  logoSrc?: string;
 };
 
 export type CanvasEdge = {
@@ -131,6 +133,8 @@ export type CanvasSpec = {
   focusTargets: Record<string, { x: number; y: number }>;
   tour?: TourStep[];
   showThemeToggle?: boolean;
+  /** Visual system. `iom` uses the Internal Operating Maps map language. */
+  appearance?: "default" | "iom";
 };
 
 export type CanvasRenderContext = {
@@ -143,6 +147,7 @@ export type CanvasRenderContext = {
   tourCategory: string;
   focusNode: (spokeId: string, subTab?: string) => void;
   resetView: () => void;
+  overviewNonce: number;
   showTooltip: (
     evt: MouseEvent,
     title: string,

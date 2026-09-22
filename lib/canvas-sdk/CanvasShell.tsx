@@ -1,6 +1,7 @@
 "use client";
 
 import "@/lib/canvas-sdk/canvas-sdk.css";
+import "@/lib/canvas-sdk/iom-theme.css";
 import type {
   CanvasRenderContext,
   CanvasSpec,
@@ -15,6 +16,7 @@ import {
   Minus,
   Moon,
   Plus,
+  Route,
   Search,
   Sparkles,
   Sun,
@@ -79,10 +81,13 @@ export function CanvasShell({ spec, children }: Props) {
       svgRef,
     });
 
-  const [lightTheme, setLightTheme] = useState(true);
+  const iom = spec.appearance === "iom";
+  const [lightTheme, setLightTheme] = useState(!iom);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
+  const [activeSpoke, setActiveSpoke] = useState<string | null>(
+    iom && spec.spokes.roadmap ? "roadmap" : null,
+  );
   const [activeTab, setActiveTab] = useState(0);
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -91,14 +96,17 @@ export function CanvasShell({ spec, children }: Props) {
   tourStepRef.current = tourStep;
 
   const closeDrilldown = useCallback(() => {
+    if (iom) return;
     setActiveSpoke(null);
     if (!tourActiveRef.current) frameOverview();
-  }, [frameOverview]);
+  }, [frameOverview, iom]);
 
+  const [overviewNonce, setOverviewNonce] = useState(0);
   const resetCanvasView = useCallback(() => {
-    setActiveSpoke(null);
+    if (!iom) setActiveSpoke(null);
+    setOverviewNonce((nonce) => nonce + 1);
     frameOverview();
-  }, [frameOverview]);
+  }, [frameOverview, iom]);
 
   const focusNode = useCallback(
     (spokeId: string, subTab?: string) => {
@@ -116,9 +124,9 @@ export function CanvasShell({ spec, children }: Props) {
       setTooltipVisible(false);
       const key = subTab ? `${spokeId}:${subTab}` : spokeId;
       const pos = spec.focusTargets[key] ?? spec.focusTargets[spokeId];
-      if (pos) framePoint(pos.x, pos.y, focusScale, drilldownWidth);
+      if (pos) framePoint(pos.x, pos.y, focusScale, iom ? 0 : drilldownWidth);
     },
-    [drilldownWidth, focusScale, framePoint, spec.focusTargets, spec.spokes],
+    [drilldownWidth, focusScale, framePoint, iom, spec.focusTargets, spec.spokes],
   );
 
   const closeTour = useCallback(() => {
@@ -190,8 +198,15 @@ export function CanvasShell({ spec, children }: Props) {
 
     function onMouseDown(e: MouseEvent) {
       const target = e.target as Element;
-      if (target.closest(".graph-node") || target.closest(".hud-btn-group")) return;
-      if (activeSpokeRef.current) {
+      if (
+        target.closest(".graph-node") ||
+        target.closest(".hud-btn-group") ||
+        target.closest(".panel-toggle") ||
+        target.closest(".strategy-roadmap-btn")
+      ) {
+        return;
+      }
+      if (activeSpokeRef.current && spec.appearance !== "iom") {
         closeDrilldown();
         return;
       }
@@ -234,10 +249,10 @@ export function CanvasShell({ spec, children }: Props) {
       window.removeEventListener("mouseup", onMouseUp);
       viewport.removeEventListener("wheel", onWheel);
     };
-  }, [applyTransform, closeDrilldown, pan]);
+  }, [applyTransform, closeDrilldown, pan, spec.appearance]);
 
   useEffect(() => {
-    if (!activeSpoke) return;
+    if (!activeSpoke || spec.appearance === "iom") return;
 
     function onPointerDown(e: PointerEvent) {
       const target = e.target;
@@ -251,7 +266,7 @@ export function CanvasShell({ spec, children }: Props) {
 
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [activeSpoke, closeDrilldown]);
+  }, [activeSpoke, closeDrilldown, spec.appearance]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -326,6 +341,7 @@ export function CanvasShell({ spec, children }: Props) {
     tourCategory: currentTour?.category ?? "",
     focusNode,
     resetView: resetCanvasView,
+    overviewNonce,
     showTooltip,
     hideTooltip,
   };
@@ -340,7 +356,7 @@ export function CanvasShell({ spec, children }: Props) {
   return (
     <div
       ref={rootRef}
-      className={`ifai-canvas${lightTheme ? " light-theme" : ""}${spoke ? " panel-open" : ""}`}
+      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${spoke ? " panel-open" : ""}`}
       style={{ "--drilldown-width": `${drilldownWidth}px` } as CSSProperties}
     >
       <div className="canvas-layout">
@@ -457,6 +473,16 @@ export function CanvasShell({ spec, children }: Props) {
         </header>
 
         <div className="viewport-container" id="viewport" ref={viewportRef}>
+          {iom && spec.spokes.roadmap ? (
+            <button
+              type="button"
+              className={`strategy-roadmap-btn${activeSpoke === "roadmap" ? " active" : ""}`}
+              onClick={() => focusNode("roadmap")}
+            >
+              <Route size={16} strokeWidth={1.75} />
+              Strategy Roadmap
+            </button>
+          ) : null}
           {viewport}
         </div>
 
@@ -512,9 +538,11 @@ export function CanvasShell({ spec, children }: Props) {
               <h2 className="drilldown-title">{spoke?.title ?? ""}</h2>
               <p className="drilldown-desc">{spoke?.desc ?? ""}</p>
             </div>
-            <button className="drilldown-close-btn" onClick={closeDrilldown} title="Close (ESC)">
-              <X size={18} />
-            </button>
+            {iom ? null : (
+              <button className="drilldown-close-btn" onClick={closeDrilldown} title="Close panel">
+                <X size={18} />
+              </button>
+            )}
           </div>
 
           <div className="drilldown-tabs">

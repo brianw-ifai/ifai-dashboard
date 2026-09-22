@@ -15,1206 +15,64 @@ export type SpokeDefinition = {
   render: (tabIdx: number) => string;
 };
 
+function spokeTabs(tabs: string[]) {
+  return (tabIdx: number) => tabs[tabIdx] ?? "";
+}
+
 export const spokeData = {
-      hub: {
-        badge: "PORTFOLIO CORE · MASTER COMMAND",
-        title: "FMIC Brand Portfolio Command & Executive Briefing",
-        desc: "Unified omnichannel intelligence across 124 monitored SKUs in 5 divisions: Electric (Strat/Tele), Acoustic/Hybrid (Acoustasonic), Bass (P-Bass/Jazz), Amps (Tone Master), and Squier.",
-        tabs: ["Executive Briefing & Dual-Index", "Division Performance Matrix", "Enterprise Commercial Sizing"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>Executive Briefing · For CEO Joe</span>
-                </div>
-                <div class="ceo-callout-body">
-                  Fender is at a generational inflection point: over 40% of instrument discovery and pre-purchase research now happens in AI conversational engines (ChatGPT, Perplexity, Claude, Gemini). While Fender retains unmatched heritage recognition, our products lose head-to-head recommendations in the critical $600–$1,200 bracket because competitors (PRS SE, Taylor, Yamaha) possess unified reviews and clean structured specifications that AI crawlers can parse as indisputable facts.
-                </div>
-                <div class="ceo-callout-footer">
-                  Strategic takeaway: Catalog fragmentation on Amazon and missing schema on Fender.com directly starves AI models of authoritative data.
-                </div>
-              </div>
-
-              <div class="dual-index-grid" style="margin-top:12px;">
-                <div class="dual-index-card">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="metric-card-label">External AI Scan Index</span>
-                    <span class="dual-index-badge tag-danger">Volatile LLM Scan</span>
-                  </div>
-                  <div class="dual-index-val" style="color:var(--danger-red);">
-                    41 <span style="font-size:14px; color:var(--text-subtle); font-weight:600;">/ 100</span>
-                  </div>
-                  <span class="metric-card-sub" style="color:var(--danger-text);">🔻 −11 pts in past 30 days</span>
-                  <p style="font-size:11px; color:var(--text-subtle); margin-top:4px; line-height:1.35;">
-                    Non-deterministic external scan across 100 category prompts. Fluctuates with LLM stochastic sampling and web drift.
-                  </p>
-                </div>
-
-                <div class="dual-index-card" style="border-color:rgba(99, 102, 241, 0.4);">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="metric-card-label">IntoFocus Readiness Score</span>
-                    <span class="dual-index-badge tag-success">Deterministic Control</span>
-                  </div>
-                  <div class="dual-index-val" style="color:var(--accent-purple);">
-                    52% <span style="font-size:14px; color:var(--success-green); font-weight:700;">➔ Target: 94%</span>
-                  </div>
-                  <div class="readiness-progress-bar">
-                    <div class="readiness-progress-fill" style="width: 52%;"></div>
-                  </div>
-                  <p style="font-size:11px; color:var(--text-subtle); margin-top:6px; line-height:1.35;">
-                    Measures the 4 factors Fender 100% controls: Canonical Schemas (34%), Brand Registry (46%), MAP (58%), Community Grounding (70%).
-                  </p>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">
-                  <span>Portfolio Quick-Look (124 Monitored ASINs)</span>
-                  <span class="tag-badge tag-neutral">5 Brand Divisions</span>
-                </div>
-                <div class="metric-grid-2">
-                  <div class="metric-card-sm">
-                    <span class="metric-card-label">Buy Box Retention</span>
-                    <div class="metric-card-val" style="color:var(--danger-red);">68%</div>
-                    <span class="metric-card-sub">18% Suppressed · 14% Lost to 3P</span>
-                  </div>
-                  <div class="metric-card-sm">
-                    <span class="metric-card-label">Enterprise Potential</span>
-                    <div class="metric-card-val" style="color:var(--success-green);">+$28.4M</div>
-                    <span class="metric-card-sub">Annualized GMV Lift across FMIC</span>
-                  </div>
-                </div>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">Portfolio Health by Product Division</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Division</th><th>SKUs</th><th>Buy Box</th><th>Splinter ASINs</th><th>Schema</th><th>Primary Rival Threat</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Solid-Body Electrics</strong></td>
-                      <td>46</td>
-                      <td><span style="color:var(--danger-red); font-weight:700;">64%</span></td>
-                      <td>12 Bundles</td>
-                      <td><span class="tag-badge tag-warning">68%</span></td>
-                      <td>PRS SE Series (-3% SOV)</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Acoustic & Hybrids</strong></td>
-                      <td>28</td>
-                      <td><span style="color:var(--danger-red); font-weight:700;">61%</span></td>
-                      <td>6 Bundles</td>
-                      <td><span class="tag-badge tag-danger">42%</span></td>
-                      <td>Taylor GS Mini (-47% SOV)</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Bass Guitars</strong></td>
-                      <td>22</td>
-                      <td><span style="color:var(--warning-amber); font-weight:700;">71%</span></td>
-                      <td>4 Bundles</td>
-                      <td><span class="tag-badge tag-warning">55%</span></td>
-                      <td>Ibanez GSR / Sire (-18% SOV)</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Digital Amps & Audio</strong></td>
-                      <td>16</td>
-                      <td><span style="color:var(--success-green); font-weight:700;">81%</span></td>
-                      <td>2 Bundles</td>
-                      <td><span class="tag-badge tag-warning">75%</span></td>
-                      <td>Boss Katana / Spark (-36% SOV)</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Squier Entry Tier</strong></td>
-                      <td>12</td>
-                      <td><span style="color:var(--warning-amber); font-weight:700;">69%</span></td>
-                      <td>4 Bundles</td>
-                      <td><span class="tag-badge tag-warning">48%</span></td>
-                      <td>Yamaha Pacifica (-24% SOV)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">Commercial Sizing: Pilot vs Full Enterprise Portfolio</div>
-                <p style="font-size:12px; color:var(--text-muted); line-height:1.45;">
-                  To properly justify an enterprise advisory retainer ($20,000/month = $240,000/year), IntoFocus models ROI across both the immediate 14-ASIN pilot and the broader FMIC catalog (Fender USA, Ensenada, Squier, Jackson, Gretsch, EVH).
-                </p>
-
-                <div class="dual-index-grid" style="margin-top:10px;">
-                  <div class="dual-index-card" style="border-color:var(--border-color);">
-                    <span class="metric-card-label">Phase 1 Pilot (14 ASINs)</span>
-                    <div class="metric-card-val" style="color:var(--success-green);">+$680,000 <span style="font-size:12px; color:var(--text-subtle);">/ yr</span></div>
-                    <span class="metric-card-sub">Immediate Buy Box & Review Consolidation</span>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:6px;">
-                      Recovers 1,405 reviews across Player Strat/Tele and Acoustasonic, instantly boosting conversion on core hero listings.
-                    </div>
-                  </div>
-
-                  <div class="dual-index-card" style="border-color:rgba(16, 185, 129, 0.4); background:rgba(16, 185, 129, 0.04);">
-                    <span class="metric-card-label" style="color:var(--success-text);">Full Enterprise Scale (1,450+ SKUs)</span>
-                    <div class="metric-card-val" style="color:var(--success-green);">+$28.4M – $42.6M <span style="font-size:12px; color:var(--text-subtle);">/ yr</span></div>
-                    <span class="metric-card-sub">Catalog-Wide Buy Box + AEO Conversion Grounding</span>
-                    <div style="font-size:11.5px; color:var(--text-muted); margin-top:6px;">
-                      Across Fender, Squier, Jackson, EVH, and Gretsch. Yields a <strong>118x enterprise ROI</strong> on annual service fee.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-          return "";
-        }
-      },
-
-      ecommerce: {
-        badge: "CRITICAL SPOKE · RETAIL HEALTH",
-        title: "Full-Catalog E-Commerce, Buy Box & Brand Registry",
-        desc: "Catalog Buy Box retention is currently 68% across 124 monitored SKUs. 14 critical ASINs suffer from algorithmic suppression or 3P bundle undercutting across Amazon, Reverb, and Walmart.",
-        tabs: ["14-ASIN Buy Box & Price Leakage Explorer", "Brand Registry & Partner Harmonization", "Multi-Marketplace MAP (Amazon, Reverb, Walmart)"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>Explain to CEO Joe · What Does "Buy Box 68%" Actually Mean?</span>
-                </div>
-                <div class="ceo-callout-body">
-                  When a customer searches for a Fender guitar on Amazon and clicks "Add to Cart", the sale goes to whoever owns the <strong>Buy Box</strong> button. At 68%, Fender and its verified direct channels only capture 68 out of every 100 customer purchases. The other 32% are lost in two distinct ways:
-                  <ul style="margin:6px 0 0 16px; padding:0;">
-                    <li><strong>18% are "Suppressed Buy Boxes" (No Winner):</strong> Amazon's algorithm detected a lower price on Walmart or Reverb, removing the 1-click buy button entirely. Conversion drops by ~65%.</li>
-                    <li><strong>14% are Won by 3P Bundlers:</strong> Authorized partners (Austin Bazaar, GearTree) bundle cheap bags or cables to undercut our minimum advertised price (MAP).</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="metric-grid-2" style="margin-top:12px;">
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Portfolio Buy Box</span>
-                  <div class="metric-card-val" style="color:var(--danger-red);">68% <span style="font-size:12px; color:var(--text-subtle);">(Target: 95%)</span></div>
-                  <span class="metric-card-sub">18% Suppressed · 14% Lost to 3P</span>
-                </div>
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Splintered Reviews</span>
-                  <div class="metric-card-val" style="color:var(--warning-amber);">2,420+</div>
-                  <span class="metric-card-sub">Scattered across 14 rogue bundles</span>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">
-                  <span>14 Flagged ASINs Drill-Down (Catalog Price Leakage)</span>
-                  <span class="tag-badge tag-danger">14 Urgent ASINs</span>
-                </div>
-                
-                <div style="overflow-x:auto;">
-                  <table class="table-sm" id="asin-table">
-                    <thead>
-                      <tr><th>SKU / Model</th><th>Child ASIN</th><th>Partner / Bundle</th><th>MAP</th><th>Offer</th><th>Leak</th><th>Reviews</th><th>Channels</th></tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><strong>Player II Stratocaster</strong></td>
-                        <td><span class="asin-chip">B0D8TFXHHT</span></td>
-                        <td>Austin Bazaar Gig Bag & Cable</td>
-                        <td>$849.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$808.00</td>
-                        <td>-$41.99</td>
-                        <td><strong style="color:var(--warning-amber);">240</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-rev">REV</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Player II Telecaster</strong></td>
-                        <td><span class="asin-chip">B0D8TN41XS</span></td>
-                        <td>Photo4Less Hard Case Bundle</td>
-                        <td>$849.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$814.99</td>
-                        <td>-$35.00</td>
-                        <td><strong style="color:var(--warning-amber);">180</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Acoustasonic Player Tele</strong></td>
-                        <td><span class="asin-chip">B0C9Q8X11P</span></td>
-                        <td>GearTree Starter Kit Bundle</td>
-                        <td>$1,199.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$1,149.00</td>
-                        <td>-$50.99</td>
-                        <td><strong style="color:var(--warning-amber);">310</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-wmt">WMT</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Player Precision Bass</strong></td>
-                        <td><span class="asin-chip">B09KM14J88</span></td>
-                        <td>Austin Bazaar Deluxe Gig Bag</td>
-                        <td>$869.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$829.00</td>
-                        <td>-$40.99</td>
-                        <td><strong style="color:var(--warning-amber);">195</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Player Jazz Bass</strong></td>
-                        <td><span class="asin-chip">B09KM22K77</span></td>
-                        <td>GearDirect Express Bundle</td>
-                        <td>$899.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$854.99</td>
-                        <td>-$45.00</td>
-                        <td><strong style="color:var(--warning-amber);">140</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-rev">REV</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>American Pro II Strat</strong></td>
-                        <td><span class="asin-chip">B08KGX4199</span></td>
-                        <td>GearDirect Instrument Cable Kit</td>
-                        <td>$1,799.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$1,719.99</td>
-                        <td>-$80.00</td>
-                        <td><strong style="color:var(--warning-amber);">210</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>American Pro II Tele</strong></td>
-                        <td><span class="asin-chip">B08KGY8821</span></td>
-                        <td>Austin Bazaar Tweed Strap Pack</td>
-                        <td>$1,799.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$1,724.99</td>
-                        <td>-$75.00</td>
-                        <td><strong style="color:var(--warning-amber);">165</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-rev">REV</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Mustang Micro Amp</strong></td>
-                        <td><span class="asin-chip">B08K3V4M99</span></td>
-                        <td>Headphone + Cable Bundle</td>
-                        <td>$119.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$109.99</td>
-                        <td>-$10.00</td>
-                        <td><strong style="color:var(--warning-amber);">480</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-wmt">WMT</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Tone Master Deluxe Reverb</strong></td>
-                        <td><span class="asin-chip">B07X81ML33</span></td>
-                        <td>Fitted Cover + Footswitch Pack</td>
-                        <td>$1,049.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$989.99</td>
-                        <td>-$60.00</td>
-                        <td><strong style="color:var(--warning-amber);">95</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Squier Classic Vibe '60s Strat</strong></td>
-                        <td><span class="asin-chip">B07N25DDK8</span></td>
-                        <td>Austin Bazaar Stand & Bag Pack</td>
-                        <td>$459.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$429.99</td>
-                        <td>-$30.00</td>
-                        <td><strong style="color:var(--warning-amber);">320</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Squier Classic Vibe '50s Tele</strong></td>
-                        <td><span class="asin-chip">B07N24MM91</span></td>
-                        <td>Photo4Less Clip-on Tuner Kit</td>
-                        <td>$459.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$434.99</td>
-                        <td>-$25.00</td>
-                        <td><strong style="color:var(--warning-amber);">290</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-wmt">WMT</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Squier Affinity P-Bass</strong></td>
-                        <td><span class="asin-chip">B092BG24LL</span></td>
-                        <td>GearTree Essentials Pack</td>
-                        <td>$299.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$279.99</td>
-                        <td>-$20.00</td>
-                        <td><strong style="color:var(--warning-amber);">175</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Fender CD-60S Acoustic</strong></td>
-                        <td><span class="asin-chip">B071KNF2L4</span></td>
-                        <td>Austin Bazaar Starter Kit</td>
-                        <td>$229.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$209.99</td>
-                        <td>-$20.00</td>
-                        <td><strong style="color:var(--warning-amber);">510</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span><span class="channel-tag channel-rev">REV</span></td>
-                      </tr>
-                      <tr>
-                        <td><strong>Fender FA-115 Acoustic Pack</strong></td>
-                        <td><span class="asin-chip">B07B8X8GZ8</span></td>
-                        <td>GearDirect Spare Strings Kit</td>
-                        <td>$199.99</td>
-                        <td style="color:var(--danger-red); font-weight:700;">$184.99</td>
-                        <td>-$15.00</td>
-                        <td><strong style="color:var(--warning-amber);">380</strong></td>
-                        <td><span class="channel-tag channel-amz">AMZ</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="ceo-callout" style="border-color:rgba(16, 185, 129, 0.4);">
-                <div class="ceo-callout-header" style="color:var(--success-text);">
-                  <span>Partner Governance · Why We Do NOT Send Cease & Desists</span>
-                </div>
-                <div class="ceo-callout-body">
-                  Key sellers like <strong>Austin Bazaar</strong> and <strong>Crazy Dave's Music</strong> are Fender's most valuable e-commerce distribution partners. They hold legitimate <strong>Amazon Brand Registry catalog access</strong> granted by Fender to create bundles.
-                  <br/><br/>
-                  The issue is NOT piracy or counterfeit—it is <strong>listing architecture</strong>. By creating separate standalone ASINs for their bundles, their customer reviews are isolated from Fender's official catalog. 
-                  <br/><br/>
-                  <strong>The Real Danger to Fender:</strong>
-                  <ul style="margin:4px 0 0 16px;">
-                    <li><strong>Review Dilution:</strong> 2,420+ reviews are splintered away from the parent Player Stratocaster and Telecaster listings.</li>
-                    <li><strong>Lost Badges:</strong> Because reviews are fragmented across 4–5 bundle pages, Fender misses the critical review threshold needed to win the <strong>"Amazon's Overall Pick" badge</strong>, which instead goes to PRS SE or Yamaha Pacifica.</li>
-                    <li><strong>AI Hallucinations:</strong> When 3P dealers write custom bundle titles with inaccuracies, generative AI engines scrape those descriptions as canonical facts!</li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">The Solution: Brand Registry Variation Harmonization</div>
-                <div class="action-card" style="border-left-color:var(--success-green);">
-                  <div class="action-head">Fold Bundles into Canonical Parent-Child Variations</div>
-                  <div class="action-details">
-                    Work collaboratively with Austin Bazaar and GearTree through Amazon Brand Registry to nest authorized bundles as secondary variations under the official Fender Parent ASIN. 
-                    <br/><br/>
-                    <strong>Immediate Outcome:</strong> Austin Bazaar keeps their bundle sales, but all 1,405 reviews immediately pool onto the parent listing, instantly triggering the Amazon "Overall Pick" badge and protecting MAP integrity.
-                  </div>
-                  <div class="action-impact">
-                    Recovers 2,420 reviews · Zero partner friction · +$380,000/yr Buy Box recapture
-                  </div>
-                </div>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>MAP (Minimum Advertised Price) Health & Cross-Channel Dynamics</span>
-                </div>
-                <div class="ceo-callout-body">
-                  <strong>What is MAP?</strong> Minimum Advertised Price is the lowest price a retailer agrees to publicly display for a brand's product.
-                  <br/><br/>
-                  <strong>The Starter Kit Loophole:</strong> Partners bundle a $1,199 Acoustasonic Player with a $20 bag and sell the bundle for $1,149. This technically sidesteps strict single-item MAP rules, but wrecks marketplace price integrity.
-                  <br/><br/>
-                  <strong>Cross-Channel Price Crawlers:</strong>
-                  When a bundle is listed below MAP on Amazon, scraping bots from <strong>Walmart</strong> and <strong>Reverb</strong> instantly match or beat the lower price. Amazon's Fair Pricing algorithm then detects the off-Amazon discount and suppresses Fender's Buy Box on Amazon entirely!
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">Multi-Marketplace Leakage Overview</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Marketplace Channel</th><th>Violations</th><th>Average Price Drift</th><th>Algorithmic Impact</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Amazon</strong></td>
-                      <td>14 ASINs</td>
-                      <td>-$42.00</td>
-                      <td><span class="tag-badge tag-danger">Buy Box Suppression</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Walmart Marketplace</strong></td>
-                      <td>8 Listings</td>
-                      <td>-$38.00</td>
-                      <td><span class="tag-badge tag-warning">Automated Price Match</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Reverb (Brand New / Open Box)</strong></td>
-                      <td>11 Listings</td>
-                      <td>-$55.00</td>
-                      <td><span class="tag-badge tag-danger">MAP Floor Erosion</span></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          }
-          return "";
-        }
-      },
-
-      aeo: {
-        badge: "CRITICAL SPOKE · BRAND AEO",
-        title: "Brand AI Visibility, Citations & AI Simulations",
-        desc: "Fender's brand visibility across 100 conversational prompts in ChatGPT, Perplexity, Claude, Gemini, and Copilot averages 41/100. Controllable Readiness Score is 52%.",
-        tabs: ["Dual-Index Health & Executive Briefing", "100 AI Simulations Explorer", "Citation Ecosystem & DTC Opportunity", "AI Spec Hallucination Engine"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>Explain to CEO Joe · Why AEO Determines Future Market Share</span>
-                </div>
-                <div class="ceo-callout-body">
-                  When potential buyers ask ChatGPT or Perplexity, <em>"What electric guitar should I buy under $1,000 for blues and indie rock?"</em>, the AI doesn't return a list of blue links. It generates a synthesized recommendation with 2 or 3 specific guitars. If Fender's Player II isn't structured for AI ingestion, the LLM recommends PRS SE or Yamaha Pacifica instead. <strong>Zero-click conversational search is replacing Google SEO.</strong>
-                </div>
-              </div>
-
-              <div class="dual-index-grid" style="margin-top:12px;">
-                <div class="dual-index-card">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="metric-card-label">External AI Scan Index</span>
-                    <span class="dual-index-badge tag-danger">Volatile LLM Scan</span>
-                  </div>
-                  <div class="dual-index-val" style="color:var(--danger-red);">
-                    41 <span style="font-size:14px; color:var(--text-subtle); font-weight:600;">/ 100</span>
-                  </div>
-                  <span class="metric-card-sub" style="color:var(--danger-text);">🔻 −11 pts in past 30 days</span>
-                  <p style="font-size:11px; color:var(--text-subtle); margin-top:4px; line-height:1.35;">
-                    Down 11 points due to non-deterministic crawler updates and competitor comparison videos on YouTube.
-                  </p>
-                </div>
-
-                <div class="dual-index-card" style="border-color:rgba(99, 102, 241, 0.4);">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="metric-card-label">IntoFocus Readiness Score</span>
-                    <span class="dual-index-badge tag-success">Deterministic Control</span>
-                  </div>
-                  <div class="dual-index-val" style="color:var(--accent-purple);">
-                    52% <span style="font-size:14px; color:var(--success-green); font-weight:700;">➔ Target: 94%</span>
-                  </div>
-                  <div class="readiness-progress-bar">
-                    <div class="readiness-progress-fill" style="width: 52%;"></div>
-                  </div>
-                  <p style="font-size:11px; color:var(--text-subtle); margin-top:6px; line-height:1.35;">
-                    The true compass: ticks upward as we inject JSON-LD specs, nest Brand Registry ASINs, and harmonize MAP.
-                  </p>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">Heritage vs Value Prompt Disparity</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Prompt Query Category</th><th>Fender Appearance</th><th>Primary Winner</th><th>Root Cause</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Heritage & Icon Prompts</strong> ("Classic rock guitars", "Stratocaster history")</td>
-                      <td><span style="color:var(--success-green); font-weight:700;">84%</span></td>
-                      <td>Fender</td>
-                      <td>Unassailable 70-year brand legacy in training weights</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Value & Spec Comparisons</strong> ("Best guitar under $900", "Best fretwork")</td>
-                      <td><span style="color:var(--danger-red); font-weight:700;">18%</span></td>
-                      <td>PRS SE / Yamaha</td>
-                      <td>Competitors provide clean tabular specs; Fender pages lack schema</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">
-                  <span>100 AI Simulations Query Explorer</span>
-                  <span class="tag-badge tag-danger">100 Simulations Run</span>
-                </div>
-                <p style="font-size:12px; color:var(--text-muted); line-height:1.4;">
-                  Drill down into simulated user queries tracked across ChatGPT-4o, Perplexity AI, Claude 3.5 Sonnet, and Google Gemini:
-                </p>
-
-                <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-                  <div class="action-card critical">
-                    <div class="action-head">
-                      <span>Query: "Best electric guitar under $900 for versatile tones"</span>
-                      <span class="tag-badge tag-danger">Fender Win: 28%</span>
-                    </div>
-                    <div class="action-details">
-                      • <strong>Engines Tracked:</strong> ChatGPT (Lost), Perplexity (Lost), Claude (Won), Gemini (Lost).<br/>
-                      • <strong>AI Consensual Winner:</strong> PRS SE Custom 24 / Yamaha Pacifica 611.<br/>
-                      • <strong>Why Fender Lost:</strong> AI cited PRS SE fret consistency and coil-split versatility extracted from tabular Amazon A+ grids.<br/>
-                      • <strong>Remediation:</strong> Deploy 4-column comparison table on Player II Amazon A+ content.
-                    </div>
-                  </div>
-
-                  <div class="action-card critical">
-                    <div class="action-head">
-                      <span>Query: "Best travel acoustic guitar for intermediate players"</span>
-                      <span class="tag-badge tag-danger">Fender Win: 11%</span>
-                    </div>
-                    <div class="action-details">
-                      • <strong>Engines Tracked:</strong> ChatGPT (Lost), Perplexity (Lost), Claude (Lost), Gemini (Lost).<br/>
-                      • <strong>AI Consensual Winner:</strong> Taylor GS Mini (58% of all citations).<br/>
-                      • <strong>Why Fender Lost:</strong> Taylor GS Mini has a single canonical listing with 1,200+ reviews; Fender Malibu/CP-60S listings are fragmented.<br/>
-                      • <strong>Remediation:</strong> Launch "Travel Acoustic Shootout" hub on Fender.com and consolidate Amazon acoustic ASINs.
-                    </div>
-                  </div>
-
-                  <div class="action-card" style="border-left-color:var(--warning-amber);">
-                    <div class="action-head">
-                      <span>Query: "Best desktop practice amp with bluetooth"</span>
-                      <span class="tag-badge tag-warning">Fender Win: 38%</span>
-                    </div>
-                    <div class="action-details">
-                      • <strong>Engines Tracked:</strong> ChatGPT (Won), Perplexity (Lost), Claude (Lost), Gemini (Lost).<br/>
-                      • <strong>AI Consensual Winner:</strong> Positive Grid Spark MINI / Boss Katana 50.<br/>
-                      • <strong>Why Fender Lost:</strong> Mustang Micro praised for form factor, but AI penalized lack of direct app editing compared to Spark.<br/>
-                      • <strong>Remediation:</strong> Publish Mustang Micro v2 feature comparison table on DTC web.
-                    </div>
-                  </div>
-
-                  <div class="action-card" style="border-left-color:var(--success-green);">
-                    <div class="action-head">
-                      <span>Query: "Fender Stratocaster vs PRS SE Custom 24"</span>
-                      <span class="tag-badge tag-success">Fender Win: 82%</span>
-                    </div>
-                    <div class="action-details">
-                      • <strong>Engines Tracked:</strong> ChatGPT (Won), Perplexity (Won), Claude (Won), Gemini (Won).<br/>
-                      • <strong>Outcome:</strong> Strong direct matchup. AI recommends Stratocaster for single-coil chime and neck comfort; PRS for modern rock humbuckers.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          } else if (tabIdx === 2) {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>What is "Fender DTC" & Where Do AI Models Learn?</span>
-                </div>
-                <div class="ceo-callout-body">
-                  <strong>Fender DTC (Direct-to-Consumer):</strong> Fender's own e-commerce store at <em>fender.com</em>. While it has high brand prestige, it currently only generates <strong>12% of total AI citations</strong> for guitar buying queries.
-                  <br/><br/>
-                  AI models draw <strong>55% of their opinions</strong> from third-party discussions (Reddit /r/Guitar, TalkBass) and retail listings (Amazon, Sweetwater). To win in AI search, Fender must turn fender.com into an authoritative comparison authority that feeds GPTBot directly!
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">AI Citation Ecosystem Breakdown</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Citation Channel</th><th>Citation Share</th><th>Current Fender Footprint</th><th>Action Plan</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Reddit & Enthusiast Forums</strong> (/r/Guitar, TalkBass)</td>
-                      <td><strong>31%</strong></td>
-                      <td><span class="tag-badge tag-warning">Moderate</span> Strong legacy lore, weak in $600-$900 value debates</td>
-                      <td>Launch verified community engineering engagement</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Amazon & Retail Product Listings</strong></td>
-                      <td><strong>24%</strong></td>
-                      <td><span class="tag-badge tag-danger">Diluted</span> 14 splinter ASINs fragmenting review scores</td>
-                      <td>Consolidate under Brand Registry variation trees</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Editorial & Media Reviews</strong> (Guitar World, Premier Guitar)</td>
-                      <td><strong>19%</strong></td>
-                      <td><span class="tag-badge tag-success">Strong</span> Frequent top placement in roundup reviews</td>
-                      <td>Syndicate official press specs into Google Merchant Feed</td>
-                    </tr>
-                    <tr>
-                      <td><strong>YouTube Video Transcripts</strong> (Andertons, Mary Spender)</td>
-                      <td><strong>14%</strong></td>
-                      <td><span class="tag-badge tag-success">Strong</span> Heavy creator coverage for new product launches</td>
-                      <td>Provide structured caption metadata to YouTube crawlers</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Brand DTC</strong> (fender.com)</td>
-                      <td><strong>12%</strong></td>
-                      <td><span class="tag-badge tag-warning">Under-Indexed</span> Schema valid, but lacks head-to-head comparison pages</td>
-                      <td>Publish DTC Comparison Hubs (Strat vs PRS / Acoustasonic vs Taylor)</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">
-                  <span>Detected AI Spec Hallucinations & Rogue Bundles</span>
-                  <span class="tag-badge tag-danger">Critical Remediation</span>
-                </div>
-                <p style="font-size:12px; color:var(--text-muted); line-height:1.45;">
-                  When official catalog pages lack tabular specifications in machine-readable JSON-LD, conversational LLMs attempt to scrape specs from unauthorized third-party bundle listings, resulting in severe technical hallucinations:
-                </p>
-
-                <div class="action-card critical" style="margin-top:8px;">
-                  <div class="action-head">1. The "Dual Humbucker" Acoustasonic Hallucination</div>
-                  <div class="action-details">
-                    • <strong>The Bug:</strong> ChatGPT and Perplexity frequently state that the Acoustasonic Player Telecaster features "dual humbuckers" for heavy distortion.<br/>
-                    • <strong>Root Cause:</strong> A 3P seller bundle on Amazon (<span class="asin-chip">B0C9Q8X11P</span>) erroneously stuffed "Humbucker pickup pack" into its product title and bullet points.<br/>
-                    • <strong>Commercial Harm:</strong> Buyers seeking clean acoustic-electric tones reject the guitar thinking it has metal pickups; return rates increase.<br/>
-                    • <strong>Remediation:</strong> Correct child ASIN metadata via Brand Registry and deploy Schema.org <code>pickupConfiguration: "Fender/Fishman Piezo + Tim Shaw Acoustic Engine"</code>.
-                  </div>
-                </div>
-
-                <div class="action-card critical" style="margin-top:8px;">
-                  <div class="action-head">2. The "12-Inch Fingerboard Radius" Player II Error</div>
-                  <div class="action-details">
-                    • <strong>The Bug:</strong> Claude 3.5 Sonnet occasionally informs users that the Player II Stratocaster has a flat 12-inch fingerboard radius.<br/>
-                    • <strong>Root Cause:</strong> 3P multi-pack listings combined Jackson JS22 specs (which have 12"-16" compound radiuses) on the same product page.<br/>
-                    • <strong>True Spec:</strong> <strong>9.5-inch Modern C</strong> with rolled edges.<br/>
-                    • <strong>Remediation:</strong> Inject explicit <code>fingerboardRadius: "9.5 in"</code> JSON-LD schema on all Player II product detail pages.
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-          return "";
-        }
-      },
-
-      specs: {
-        badge: "WATCH SPOKE · SPEC COVERAGE",
-        title: "Cross-Category Spec Matrix & Schema.org Health",
-        desc: "34% Schema.org structured completeness across 124 catalog pages. 14 of 18 primary product lines lack tabular comparison modules.",
-        tabs: ["Catalog Spec Readiness & Executive Guide", "Machine-Readable Schema.org Audit", "Amazon A+ Comparison Matrix Blueprint"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>Explain to CEO Joe · What is Schema.org & Why Does AI Need It?</span>
-                </div>
-                <div class="ceo-callout-body">
-                  When human beings look at <em>fender.com</em>, they read descriptive marketing paragraphs: <em>"Crafted for bold expression with timeless curves..."</em>
-                  <br/><br/>
-                  AI crawlers (GPTBot, ClaudeBot, PerplexityBot) cannot reliably extract technical dimensions from poetic marketing copy. <strong>Schema.org JSON-LD</strong> is a hidden, standardized machine-readable code block behind the page that states facts directly:
-                  <div style="background:var(--bg-surface); padding:8px; border-radius:6px; font-family:var(--font-mono); font-size:11px; margin-top:6px; border:1px solid var(--border-color);">
-                    "bodyWood": "Alder", "fingerboardRadius": "9.5 in", "nutWidth": "1.650 in", "frets": 22
-                  </div>
-                  Without this, AI engines guess—or scrape incorrect specs from unauthorized Amazon bundles!
-                </div>
-              </div>
-
-              <div class="metric-grid-2" style="margin-top:12px;">
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Catalog Schema Coverage</span>
-                  <div class="metric-card-val" style="color:var(--warning-amber);">34% <span style="font-size:12px; color:var(--text-subtle);">(124 SKUs)</span></div>
-                  <span class="metric-card-sub">Missing machine-readable attributes</span>
-                </div>
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Missing Amazon A+ Grids</span>
-                  <div class="metric-card-val" style="color:var(--danger-red);">78%</div>
-                  <span class="metric-card-sub">14 of 18 catalog product lines</span>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">Structured Spec Completeness by Division</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Division</th><th>Schema Markup</th><th>Tabular Grid</th><th>AEO Readiness</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td><strong>Electrics (Strat/Tele)</strong></td><td>68% Valid</td><td><span style="color:var(--danger-red);">Missing (10/14)</span></td><td><span class="tag-badge tag-warning">Partial</span></td></tr>
-                    <tr><td><strong>Acoustics & Hybrids</strong></td><td>42% Valid</td><td><span style="color:var(--danger-red);">Missing (8/8)</span></td><td><span class="tag-badge tag-danger">Poor</span></td></tr>
-                    <tr><td><strong>Bass Lines</strong></td><td>55% Valid</td><td><span style="color:var(--danger-red);">Missing (6/6)</span></td><td><span class="tag-badge tag-warning">Partial</span></td></tr>
-                    <tr><td><strong>Digital Amps & Audio</strong></td><td>75% Valid</td><td><span style="color:var(--warning-amber);">Partial (2/4)</span></td><td><span class="tag-badge tag-warning">Moderate</span></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">Missing Schema.org JSON-LD Technical Properties</div>
-                <p style="font-size:12px; color:var(--text-muted);">
-                  The following 6 technical attributes are currently missing from fender.com product templates, forcing AI engines to pull from third-party Amazon listings:
-                </p>
-
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
-                  <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">
-                    ❌ <code>fingerboardRadius</code> (Causes 12" radius bug)
-                  </div>
-                  <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">
-                    ❌ <code>pickupConfiguration</code> (Causes Acoustasonic bug)
-                  </div>
-                  <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">
-                    ❌ <code>nutWidth</code> (Critical for beginner search)
-                  </div>
-                  <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">
-                    ❌ <code>scaleLength</code> (Crucial for travel queries)
-                  </div>
-                  <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">
-                    ❌ <code>bodyWoodType</code> (Alder vs Basswood vs Poplar)
-                  </div>
-                  <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">
-                    ❌ <code>numberOfFrets</code> (21 vintage vs 22 modern)
-                  </div>
-                </div>
-
-                <div class="action-card" style="margin-top:12px; border-left-color:var(--accent-purple);">
-                  <div class="action-head">Ready-to-Deploy JSON-LD Code Blueprint</div>
-                  <pre style="background:#090d16; padding:10px; border-radius:6px; font-size:11px; color:#a5b4fc; overflow-x:auto; margin-top:6px; border:1px solid var(--border-color);"><code>{
-  "@context": "https://schema.org/",
-  "@type": "Product",
-  "name": "Fender Player II Stratocaster",
-  "image": "https://fender.com/img/player2-strat-sunburst.jpg",
-  "brand": { "@type": "Brand", "name": "Fender" },
-  "additionalProperty": [
-    { "@type": "PropertyValue", "name": "fingerboardRadius", "value": "9.5 in (241 mm)" },
-    { "@type": "PropertyValue", "name": "pickupConfiguration", "value": "SSS Player Series Alnico 5" },
-    { "@type": "PropertyValue", "name": "bodyWoodType", "value": "Alder" },
-    { "@type": "PropertyValue", "name": "nutWidth", "value": "1.650 in (42 mm)" }
-  ]
-}</code></pre>
-                </div>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>What is Amazon A+ Content & Why Does It Win AI Queries?</span>
-                </div>
-                <div class="ceo-callout-body">
-                  <strong>Amazon A+ Content:</strong> Enhanced visual branding modules on Amazon product pages (graphics, diagrams, and comparison charts).
-                  <br/><br/>
-                  When A+ comparison tables are present, Amazon's Rufus AI and external LLMs (ChatGPT, Claude) parse the table columns directly. This allows Fender to define its own tiering hierarchy rather than letting PRS or Taylor frame our products.
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">Recommended 4-Column A+ Matrix Structure</div>
-                <p style="font-size:12px; color:var(--text-muted); line-height:1.45;">
-                  Extract vendor specs directly rather than quoting competitor comparison charts. Standardizes the upgrade path across 14 catalog lines:
-                </p>
-
-                <table class="table-sm" style="margin-top:6px;">
-                  <thead>
-                    <tr><th>Specification</th><th>Squier Classic Vibe</th><th>Player II Series</th><th>American Performer</th><th>American Pro II</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td><strong>Price Point</strong></td><td>$459.99</td><td>$849.99</td><td>$1,399.99</td><td>$1,799.99</td></tr>
-                    <tr><td><strong>Body Wood</strong></td><td>Poplar / Nato</td><td>Alder / Chambered Ash</td><td>Alder</td><td>Select Alder / Roasted Pine</td></tr>
-                    <tr><td><strong>Pickups</strong></td><td>Fender-Designed Alnico</td><td>Player II Alnico 5</td><td>Yosemite Single-Coil</td><td>V-Mod II Single-Coil</td></tr>
-                    <tr><td><strong>Fretwork</strong></td><td>Narrow Tall</td><td>Medium Jumbo (Rolled Edges)</td><td>Jumbo</td><td>Narrow Tall (Hand-Rolled)</td></tr>
-                    <tr><td><strong>Country of Origin</strong></td><td>Indonesia</td><td>Ensenada, Mexico</td><td>Corona, California (USA)</td><td>Corona, California (USA)</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          }
-          return "";
-        }
-      },
-
-      competitors: {
-        badge: "BENCHMARK SPOKE · RADAR",
-        title: "Brand Competitive Radar & Category SOV",
-        desc: "Benchmarking Fender's AI visibility across 6 primary rivals in Electric, Acoustic, Bass, and Amp categories.",
-        tabs: ["Cross-Category SOV & Catalog Scope", "Direct Rival Battlecards", "Acoustic & Practice Amp Gaps"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>Clarifying Catalog Scope & Category Gaps</span>
-                </div>
-                <div class="ceo-callout-body">
-                  <strong>Where does Squier fit?</strong> Squier is Fender's 100% owned entry-level brand. In this canvas, Squier products (Affinity, Classic Vibe) are evaluated directly alongside Fender because they represent Fender's frontline defense against Yamaha and Ibanez in the high-volume under-$500 market.
-                  <br/><br/>
-                  <strong>What does "Gap to Leader" mean?</strong> The percentage difference between the top recommended brand in that category and Fender/Squier. In acoustics, Taylor holds a staggering 47-point lead over Fender in AI recommendations.
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">Share of Voice (SOV) in Conversational Engine Answers</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Category / Sub-Bracket</th><th>Leader Brand</th><th>Leader SOV</th><th>Fender SOV</th><th>Gap to Leader</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td><strong>Solid-Body Electrics ($700-$1k)</strong></td><td>PRS SE Series</td><td>34%</td><td>31%</td><td><span style="color:var(--warning-amber); font-weight:700;">-3%</span></td></tr>
-                    <tr><td><strong>Entry Electrics (Under $350)</strong></td><td>Yamaha Pacifica</td><td>48%</td><td>24% (Squier)</td><td><span style="color:var(--danger-red); font-weight:700;">-24%</span></td></tr>
-                    <tr><td><strong>Travel & Compact Acoustics</strong></td><td>Taylor (GS Mini)</td><td>58%</td><td>11%</td><td><span style="color:var(--danger-red); font-weight:700;">-47%</span></td></tr>
-                    <tr><td><strong>Entry Active Bass (Under $450)</strong></td><td>Ibanez (GSR/SR)</td><td>46%</td><td>28% (Squier)</td><td><span style="color:var(--danger-red); font-weight:700;">-18%</span></td></tr>
-                    <tr><td><strong>Practice Amps (Digital Modeling)</strong></td><td>Positive Grid / Boss</td><td>62%</td><td>26%</td><td><span style="color:var(--danger-red); font-weight:700;">-36%</span></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">Primary Rival AEO Strategies</div>
-                <div class="action-card" style="border-left-color:#f97316;">
-                  <div class="action-head">1. Taylor Guitars (Acoustic Dominance)</div>
-                  <div class="action-details">
-                    • <strong>Why They Win:</strong> Strict 100% MAP enforcement prevents price splintering. Taylor has a unified GS Mini listing with 1,200+ 5-star reviews on Amazon.<br/>
-                    • <strong>AI Footprint:</strong> When users ask for "best travel guitar", AI engines cite the GS Mini's ES-B electronics and compact scale.<br/>
-                    • <strong>Counter-Play:</strong> Launch Fender.com Acoustasonic vs GS Mini head-to-head comparison page highlighting amplified versatility.
-                  </div>
-                </div>
-
-                <div class="action-card" style="border-left-color:#6366f1; margin-top:8px;">
-                  <div class="action-head">2. PRS Guitars (SE Series Electrics)</div>
-                  <div class="action-details">
-                    • <strong>Why They Win:</strong> Heavy YouTube creator partnership push comparing SE fretwork consistency against Player I Stratocasters.<br/>
-                    • <strong>AI Footprint:</strong> AI engines quote PRS SE coil-splitting versatility as superior value.<br/>
-                    • <strong>Counter-Play:</strong> Highlight Player II rolled fretboard edges and Alnico 5 pickups in Amazon A+ tables to recapture the 3% gap.
-                  </div>
-                </div>
-
-                <div class="action-card" style="border-left-color:#06b6d4; margin-top:8px;">
-                  <div class="action-head">3. Yamaha (Entry-Level Pacifica)</div>
-                  <div class="action-details">
-                    • <strong>Why They Win:</strong> Universally recommended on Reddit /r/Guitar as the undisputed "best beginner guitar for the money."<br/>
-                    • <strong>AI Footprint:</strong> Scrapes forum threads praising Pacifica 112V pickup configuration (HSS).<br/>
-                    • <strong>Counter-Play:</strong> Seed verified community engagement on Squier Sonic and Classic Vibe build quality improvements.
-                  </div>
-                </div>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">Digital Amps & Practice Gear Gap</div>
-                <p style="font-size:12px; color:var(--text-muted); line-height:1.45;">
-                  Positive Grid Spark and Boss Katana capture 62% of all AI citations for home practice amps due to dense Reddit forum recommendations praising companion apps and Bluetooth features.
-                </p>
-
-                <div class="action-card" style="border-left-color:var(--accent-fender); margin-top:8px;">
-                  <div class="action-head">Fender Tone Master & Mustang Micro Playbook</div>
-                  <div class="action-details">
-                    Fender Mustang Micro headphone amp is loved by users (480 reviews on bundle B08K3V4M99 alone), but AI crawlers don't see its firmware updates or USB-C audio recording capabilities.
-                    <br/><br/>
-                    <strong>Tactical Action:</strong> Add structured technical feature bullets to Mustang Micro DTC pages detailing 12 amp models, 12 effects combinations, and low-latency Mac/PC USB interface recording.
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-          return "";
-        }
-      },
-
-      suggestions: {
-        badge: "OPPORTUNITY SPOKE · REVENUE LIFT",
-        title: "Portfolio Suggestion Engine & Enterprise ROI",
-        desc: "18 prioritized brand interventions ranked by revenue recovery and AI visibility score lift.",
-        tabs: ["Top 5 Urgent Fixes", "18-Action Priority Matrix", "Financial ROI: Pilot vs Enterprise Scale"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="metric-grid-2">
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Annual Revenue Recovery</span>
-                  <div class="metric-card-val" style="color:var(--success-green);">+$680K <span style="font-size:12px; color:var(--text-subtle);">Pilot</span></div>
-                  <span class="metric-card-sub">Buy Box + Direct AI conversions (14 ASINs)</span>
-                </div>
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Full Enterprise Opportunity</span>
-                  <div class="metric-card-val" style="color:var(--accent-purple);">+$28.4M</div>
-                  <span class="metric-card-sub">Annualized across 1,450+ FMIC SKUs</span>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">Top 5 Urgent Portfolio Interventions</div>
-                
-                <div class="action-card critical">
-                  <div class="action-head">1. Submit Brand Registry Ticket to Nest 14 Splinter Bundle ASINs</div>
-                  <div class="action-details">Work with Austin Bazaar and GearTree to nest authorized bundle offers as variations under verified parent ASINs across Strat, Tele, Bass, and Acoustasonic lines.</div>
-                  <div class="action-impact">Recovers 2,420 reviews & eliminates 3P Buy Box undercutting (+$380k/yr)</div>
-                </div>
-
-                <div class="action-card critical" style="margin-top:8px;">
-                  <div class="action-head">2. Issue Automated MAP Parity Guidance to 4 Key Partner Accounts</div>
-                  <div class="action-details">Standardize bundle pricing thresholds for GearDirect, Austin Bazaar, and GearTree to eliminate -$42 average price suppression across Amazon, Reverb, and Walmart.</div>
-                  <div class="action-impact">Restores Buy Box from 68% ➔ 95% on 14 hero listings</div>
-                </div>
-
-                <div class="action-card" style="margin-top:8px;">
-                  <div class="action-head">3. Deploy Tabular Spec Comparison Matrices on 14 Catalog Pages</div>
-                  <div class="action-details">Add standardized HTML spec tables across DTC and Amazon A+ content (nut width, radius, pickup type, tonewood).</div>
-                  <div class="action-impact">Feeds crawler answer engines; +14 pts AEO lift</div>
-                </div>
-
-                <div class="action-card" style="margin-top:8px;">
-                  <div class="action-head">4. Publish DTC Category Shootout Hubs (Strat vs PRS / Acoustasonic vs Taylor)</div>
-                  <div class="action-details">Create authoritative comparison pages on fender.com to directly feed AI engine crawlers with verified manufacturer data.</div>
-                  <div class="action-impact">Recaptures 22% head-to-head citation share</div>
-                </div>
-
-                <div class="action-card" style="margin-top:8px;">
-                  <div class="action-head">5. Launch Reddit /r/Guitar & Community Verification Initiative</div>
-                  <div class="action-details">Target authoritative community engagement on Reddit (31% of AI context) highlighting Player II fret improvements and Mustang Micro firmware updates.</div>
-                  <div class="action-impact">Direct lift in LLM sentiment and entry-level citations</div>
-                </div>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">18-Action Implementation Matrix</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>#</th><th>Action Item</th><th>Division</th><th>Est. Effort</th><th>Impact</th><th>Roadmap Phase</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>1</td><td>Amazon ASIN Variation Merger (14 SKUs)</td><td>Brand-wide</td><td>3 Days</td><td><span class="tag-badge tag-danger">Critical</span></td><td>Phase 1 (Days 1–30)</td></tr>
-                    <tr><td>2</td><td>3P MAP Enforcement & Account Harmonization</td><td>Brand-wide</td><td>1 Week</td><td><span class="tag-badge tag-danger">Critical</span></td><td>Phase 1 (Days 1–30)</td></tr>
-                    <tr><td>3</td><td>A+ Tabular Spec Modules (14 Lines)</td><td>Electrics/Bass</td><td>2 Weeks</td><td><span class="tag-badge tag-danger">Critical</span></td><td>Phase 2 (Days 31–60)</td></tr>
-                    <tr><td>4</td><td>DTC Head-to-Head Comparison Hubs</td><td>Acoustic/Electric</td><td>2 Weeks</td><td><span class="tag-badge tag-warning">High</span></td><td>Phase 2 (Days 31–60)</td></tr>
-                    <tr><td>5</td><td>Reddit Community Citation Campaign</td><td>Brand-wide</td><td>Ongoing</td><td><span class="tag-badge tag-warning">High</span></td><td>Phase 3 (Days 61–90)</td></tr>
-                    <tr><td>6</td><td>JSON-LD Schema Markup (6 Missing Fields)</td><td>DTC Web</td><td>1 Week</td><td><span class="tag-badge tag-warning">High</span></td><td>Phase 1 (Days 1–30)</td></tr>
-                    <tr><td>7</td><td>Acoustasonic vs Taylor GS Mini Repositioning</td><td>Acoustic</td><td>2 Weeks</td><td><span class="tag-badge tag-warning">High</span></td><td>Phase 2 (Days 31–60)</td></tr>
-                    <tr><td>8</td><td>Mustang Micro & Tone Master Digital PR</td><td>Amps</td><td>3 Weeks</td><td><span class="tag-badge tag-neutral">Medium</span></td><td>Phase 3 (Days 61–90)</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="ceo-callout" style="border-color:rgba(16, 185, 129, 0.4);">
-                <div class="ceo-callout-header" style="color:var(--success-text);">
-                  <span>Commercial Sizing · Sizing the Enterprise Value for Fender</span>
-                </div>
-                <div class="ceo-callout-body">
-                  For a global enterprise like Fender ($1B+ brand), a $680,000 revenue lift is an attractive test run, but does not tell the full story.
-                  <br/><br/>
-                  The <strong>$680,000 figure represents Phase 1 Quick-Wins across only 14 hero ASINs</strong>. When the same listing hygiene and AEO optimization are scaled across Fender's full multi-brand portfolio (Fender, Squier, Jackson, EVH, Gretsch), the addressable financial upside reaches <strong>$28.4M to $42.6M annually</strong>!
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">
-                  <span>Interactive Financial ROI Model</span>
-                  <div class="segmented-control" id="roi-mode-control">
-                    <button class="segmented-btn active" id="btn-roi-pilot" onclick="window.toggleRoiMode('pilot')">Phase 1 Pilot ($680K)</button>
-                    <button class="segmented-btn" id="btn-roi-enterprise" onclick="window.toggleRoiMode('enterprise')">Full Enterprise ($28.4M+)</button>
-                  </div>
-                </div>
-
-                <div id="roi-content-pilot">
-                  <div class="metric-grid-2" style="margin-top:8px;">
-                    <div class="metric-card-sm">
-                      <span class="metric-card-label">Phase 1 Quick-Win Lift</span>
-                      <div class="metric-card-val" style="color:var(--success-green);">$680,000 <span style="font-size:12px; color:var(--text-subtle);">/ yr</span></div>
-                      <span class="metric-card-sub">Evaluated across 14 Pilot ASINs</span>
-                    </div>
-                    <div class="metric-card-sm">
-                      <span class="metric-card-label">Service Fee Multiplier</span>
-                      <div class="metric-card-val" style="color:var(--accent-purple);">2.8x ROI</div>
-                      <span class="metric-card-sub">Immediate payback on pilot scope</span>
-                    </div>
-                  </div>
-                  <ul class="tour-card-list" style="font-size:12px; margin-top:10px;">
-                    <li>Amazon Buy Box Recapture (68% ➔ 95% on 14 ASINs): <strong>+$380,000 / yr</strong></li>
-                    <li>Conversational AI Assisted DTC Conversions: <strong>+$190,000 / yr</strong></li>
-                    <li>Reduced Return Rates via Precise Technical Schemas: <strong>+$65,000 / yr</strong></li>
-                    <li>Consolidated Review Synergy (Overall Pick Badges): <strong>+$45,000 / yr</strong></li>
-                  </ul>
-                </div>
-
-                <div id="roi-content-enterprise" style="display:none;">
-                  <div class="metric-grid-2" style="margin-top:8px;">
-                    <div class="metric-card-sm">
-                      <span class="metric-card-label">Full Enterprise Portfolio GMV Lift</span>
-                      <div class="metric-card-val" style="color:var(--success-green);">$28,400,000 <span style="font-size:12px; color:var(--text-subtle);">/ yr</span></div>
-                      <span class="metric-card-sub">Across 1,450+ Active SKUs</span>
-                    </div>
-                    <div class="metric-card-sm">
-                      <span class="metric-card-label">Enterprise ROI Multiple</span>
-                      <div class="metric-card-val" style="color:var(--accent-purple);">118x ROI</div>
-                      <span class="metric-card-sub">On $20K/mo ($240K/yr) Retainer</span>
-                    </div>
-                  </div>
-                  <ul class="tour-card-list" style="font-size:12px; margin-top:10px;">
-                    <li>Catalog-Wide Buy Box & Suppressed Listing Recapture: <strong>+$14,200,000 / yr</strong></li>
-                    <li>Generative AI Search Conversion Lift (Zero-Click & Chat Referral): <strong>+$9,600,000 / yr</strong></li>
-                    <li>Elimination of Return Costs from Spec Hallucinations: <strong>+$2,800,000 / yr</strong></li>
-                    <li>Cross-Marketplace MAP Governance (Amazon, Walmart, Reverb): <strong>+$1,800,000 / yr</strong></li>
-                  </ul>
-                </div>
-              </div>
-            `;
-          }
-          return "";
-        }
-      },
-
-      roadmap: {
-        badge: "STRATEGY SPOKE · 90 DAYS",
-        title: "Executive Portfolio Transformation Roadmap",
-        desc: "Phased 30-60-90 Day execution timeline to lift brand health from 41/100 to 88/100 and Buy Box to 95%.",
-        tabs: ["30-60-90 Day Phased Timeline", "Executive KPI Target Matrix", "Flexible Resourcing & Engagement Model"],
-        render: (tabIdx: number) => {
-          if (tabIdx === 0) {
-            return `
-              <div class="content-box">
-                <div class="content-box-title">30-60-90 Day Milestone Phasing</div>
-                
-                <div class="action-card critical">
-                  <div class="action-head">Phase 1: Days 1–30 (Retail Containment & ASIN Consolidation)</div>
-                  <div class="action-details">
-                    • Harmonize 14 splinter Amazon ASINs under Brand Registry parentage.<br/>
-                    • Standardize bundle MAP policies with Austin Bazaar and GearTree.<br/>
-                    • Inject missing Schema.org JSON-LD technical fields on fender.com.
-                  </div>
-                  <div class="action-impact">Milestone Target: Buy Box 68% ➔ 88% | Readiness Score 52% ➔ 68%</div>
-                </div>
-
-                <div class="action-card" style="margin-top:8px;">
-                  <div class="action-head">Phase 2: Days 31–60 (Content Depth & A+ Comparison Grids)</div>
-                  <div class="action-details">
-                    • Publish tabular comparison matrices across 14 top Amazon A+ catalog lines.<br/>
-                    • Launch DTC Shootout Hubs (Player II vs PRS SE, Acoustasonic vs Taylor).<br/>
-                    • Standardize technical specifications across Sweetwater & GC dealer feeds.
-                  </div>
-                  <div class="action-impact">Milestone Target: Buy Box ➔ 92% | Readiness Score ➔ 82%</div>
-                </div>
-
-                <div class="action-card" style="margin-top:8px; border-left-color:var(--success-green);">
-                  <div class="action-head">Phase 3: Days 61–90 (Authority Scaling & Community Citation)</div>
-                  <div class="action-details">
-                    • Launch verified Reddit /r/Guitar & forum citation grounding.<br/>
-                    • Monitor real-time AEO crawl simulator for prompt recovery.<br/>
-                    • Achieve full Buy Box retention (95%) and unlock Amazon Overall Pick badges.
-                  </div>
-                  <div class="action-impact">Milestone Target: Full Readiness 94% | +$680k Pilot / +$28.4M Enterprise</div>
-                </div>
-              </div>
-            `;
-          } else if (tabIdx === 1) {
-            return `
-              <div class="metric-grid-2">
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Controllable Readiness Target</span>
-                  <div class="metric-card-val" style="color:var(--accent-purple);">52% ➔ 94%</div>
-                  <span class="metric-card-sub">+42 pt net operational recovery</span>
-                </div>
-                <div class="metric-card-sm">
-                  <span class="metric-card-label">Buy Box Retention Target</span>
-                  <div class="metric-card-val" style="color:var(--success-green);">68% ➔ 95%</div>
-                  <span class="metric-card-sub">Eliminates 14 rogue ASIN leaks</span>
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:10px;">
-                <div class="content-box-title">Executive 30-60-90 Day KPI Target Matrix</div>
-                <table class="table-sm">
-                  <thead>
-                    <tr><th>Core Performance Indicator</th><th>Baseline</th><th>Day 30</th><th>Day 60</th><th>Day 90 Target</th><th>Status</th></tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>IntoFocus Controllable Readiness Score</strong></td>
-                      <td>52%</td>
-                      <td>68%</td>
-                      <td>82%</td>
-                      <td><span style="color:var(--accent-purple); font-weight:700;">94%</span></td>
-                      <td><span class="tag-badge tag-warning">Active Sprint</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Amazon Buy Box Retention</strong></td>
-                      <td>68%</td>
-                      <td>88%</td>
-                      <td>92%</td>
-                      <td><span style="color:var(--success-green); font-weight:700;">95%+</span></td>
-                      <td><span class="tag-badge tag-danger">Critical Fix</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Rogue 3P ASIN Splinters</strong></td>
-                      <td>14 Active</td>
-                      <td>5 Active</td>
-                      <td>2 Active</td>
-                      <td><span style="color:var(--success-green); font-weight:700;">0 Active</span></td>
-                      <td><span class="tag-badge tag-danger">Harmonizing</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>Schema.org Specification Sync</strong></td>
-                      <td>34%</td>
-                      <td>65%</td>
-                      <td>85%</td>
-                      <td><span style="color:var(--success-green); font-weight:700;">98% Sync</span></td>
-                      <td><span class="tag-badge tag-warning">In Dev</span></td>
-                    </tr>
-                    <tr>
-                      <td><strong>AI Model Citation Share (SOV)</strong></td>
-                      <td>32%</td>
-                      <td>48%</td>
-                      <td>64%</td>
-                      <td><span style="color:var(--accent-purple); font-weight:700;">76% Share</span></td>
-                      <td><span class="tag-badge tag-neutral">Scheduled</span></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            `;
-          } else {
-            return `
-              <div class="ceo-callout">
-                <div class="ceo-callout-header">
-                  <span>Flexible Resourcing & Engagement Model</span>
-                </div>
-                <div class="ceo-callout-body">
-                  IntoFocus adapts to Fender's internal capacity. Brands can either leverage our end-to-end managed service or have IntoFocus act as the specialized AI intelligence co-pilot for Fender's internal digital marketing team.
-                </div>
-              </div>
-
-              <div class="content-box" style="margin-top:12px;">
-                <div class="content-box-title">
-                  <span>Select Operating Model</span>
-                  <div class="segmented-control" id="resourcing-mode-control">
-                    <button class="segmented-btn active" id="btn-resourcing-managed" onclick="window.toggleResourcingMode('managed')">IntoFocus Turnkey Managed</button>
-                    <button class="segmented-btn" id="btn-resourcing-copilot" onclick="window.toggleResourcingMode('copilot')">Fender Co-Pilot Enablement</button>
-                  </div>
-                </div>
-
-                <div id="resourcing-content-managed">
-                  <div class="action-card" style="border-left-color:var(--accent-purple); margin-top:8px;">
-                    <div class="action-head">
-                      <span>Full Turnkey AEO Execution (IntoFocus Lead)</span>
-                      <span class="tag-badge tag-success">Turnkey Sprint</span>
-                    </div>
-                    <div class="action-details">
-                      • <strong>Amazon Brand Registry Management:</strong> IntoFocus prepares and submits all variation nesting cases and liaises with key accounts (Austin Bazaar, GearTree).<br/>
-                      • <strong>Schema & Technical Engineering:</strong> IntoFocus codes and tests JSON-LD schema files and delivers plug-and-play CMS assets for fender.com.<br/>
-                      • <strong>A+ Comparison Matrices:</strong> IntoFocus designs, writes, and uploads 4-column comparison tables across 14 lines.<br/>
-                      • <strong>Continuous Multi-LLM Auditing:</strong> Weekly automated benchmark scans tracking ChatGPT, Claude, Perplexity, and Gemini.
-                    </div>
-                  </div>
-                </div>
-
-                <div id="resourcing-content-copilot" style="display:none;">
-                  <div class="action-card" style="border-left-color:var(--accent-cyan); margin-top:8px;">
-                    <div class="action-head">
-                      <span>Fender In-House Co-Pilot (Advisory & Tooling)</span>
-                      <span class="tag-badge tag-neutral">Internal Delivery</span>
-                    </div>
-                    <div class="action-details">
-                      • <strong>Strategic Playbooks:</strong> IntoFocus provides weekly drift audit tickets, variation templates, and pre-written schema snippets.<br/>
-                      • <strong>Internal Execution:</strong> Fender's in-house e-commerce ops and web engineering teams execute the uploads and partner discussions.<br/>
-                      • <strong>Advisory & Verification:</strong> Bi-weekly executive steering sessions with IntoFocus AEO architects to verify crawler adoption.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-          return "";
-        }
-      }
+  hub: {
+    badge: "PORTFOLIO CORE \u00b7 MASTER COMMAND",
+    title: "FMIC Brand Portfolio Command & Executive Briefing",
+    desc: "Unified omnichannel intelligence across 124 monitored SKUs in 5 divisions: Electric (Strat/Tele), Acoustic/Hybrid (Acoustasonic), Bass (P-Bass/Jazz), Amps (Tone Master), and Squier. Master overview across all FMIC sub-brands.",
+    tabs: ["Executive Briefing & Buy Box 68% Clarity", "5 FMIC Brand Divisions Performance Matrix", "Enterprise Commercial Sizing ($680K vs $18M\u2013$45M)"],
+    render: spokeTabs(["\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 Executive Briefing</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    Fender is at a critical commercial inflection point: over <strong>40% of instrument discovery and pre-purchase research now occurs inside AI conversational engines</strong> (ChatGPT, Perplexity, Claude, Gemini). While Fender holds unmatched 70-year brand legacy, our flagship products lose head-to-head recommendations in the volume $600\u2013$1,200 bracket because competitors (PRS SE, Taylor, Yamaha) possess unified reviews and clean structured specifications that AI crawlers ingest as indisputable facts.\n    <br/><br/>\n    <strong>Buy Box 68% Metric Clarity:</strong> Fender only captures 68 out of every 100 sales on Amazon. The 32% loss is broken into two distinct categories:\n    <ul style=\"margin:6px 0 0 16px; padding:0;\">\n      <li><strong>18% Algorithmic Buy Box Suppression (No Winner):</strong> Amazon completely removes the 'Buy Now' button ('Available from these sellers') because pricing scrapers detected an undercut price on Walmart or Reverb. Customer conversion instantly plummets ~65%.</li>\n      <li><strong>14% Won by Authorized 3P Bundlers:</strong> Fender's top authorized partners (Austin Bazaar, GearTree) win the Buy Box with bundled packages undercutting standalone MAP.</li>\n    </ul>\n    <br/>\n    <strong>Fender's Commercial Selling Model Clarified:</strong>\n    <ul style=\"margin:4px 0 0 16px; padding:0;\">\n      <li><strong>1P Direct (Amazon Retail):</strong> Fender sells wholesale to Amazon (Vendor Central); Amazon owns and fulfills the inventory.</li>\n      <li><strong>Authorized 3P Distribution:</strong> Key power retailers (Austin Bazaar, Crazy Dave's, GearTree) hold authorized distribution agreements and Amazon Brand Registry access to sell curated bundles.</li>\n      <li><strong>Catalog Governance:</strong> We do NOT send Cease & Desists to Austin Bazaar. Instead, we nest their authorized bundles as variations under the official Fender Parent ASIN, pooling 2,420+ reviews and securing the Amazon 'Overall Pick' badge.</li>\n    </ul>\n  </div>\n</div>\n\n<div class=\"dual-index-grid\" style=\"margin-top:12px;\">\n  <div class=\"dual-index-card\">\n    <div style=\"display:flex; justify-content:space-between; align-items:center;\">\n      <span class=\"metric-card-label\">External AI Scan Index</span>\n      <span class=\"dual-index-badge tag-danger\">Volatile LLM Scan</span>\n    </div>\n    <div class=\"dual-index-val\" style=\"color:var(--danger-red);\">\n      61 <span style=\"font-size:14px; color:var(--text-subtle); font-weight:600;\">/ 100</span>\n    </div>\n    <span class=\"metric-card-sub\" style=\"color:var(--danger-text);\">\u26a0\ufe0f Highly Volatile External LLM Index</span>\n    <p style=\"font-size:11px; color:var(--text-subtle); margin-top:4px; line-height:1.35;\">\n      Reflects non-deterministic external scans across 100 benchmark prompts. Fluctuates with crawler updates, YouTube transcripts, and stochastic LLM sampling.\n    </p>\n  </div>\n\n  <div class=\"dual-index-card\" style=\"border-color:rgba(99, 102, 241, 0.4);\">\n    <div style=\"display:flex; justify-content:space-between; align-items:center;\">\n      <span class=\"metric-card-label\">IntoFocus Controllable Readiness Score</span>\n      <span class=\"dual-index-badge tag-success\">Deterministic Control</span>\n    </div>\n    <div class=\"dual-index-val\" style=\"color:var(--accent-purple);\">\n      42% <span style=\"font-size:14px; color:var(--success-green); font-weight:700;\">\u2794 Target: 84%</span>\n    </div>\n    <div class=\"readiness-progress-bar\">\n      <div class=\"readiness-progress-fill\" style=\"width: 42%;\"></div>\n    </div>\n    <p style=\"font-size:11px; color:var(--text-subtle); margin-top:6px; line-height:1.35;\">\n      Measures the 4 factors Fender 100% controls: Canonical Schemas (34%), Brand Registry (40%), MAP Parity (48%), Community Grounding (46%). Steadily increases as the 90-day sprint is executed.\n    </p>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">\n    <span>Master Portfolio Quick-Look (124 Monitored ASINs)</span>\n    <span class=\"tag-badge tag-neutral\">5 FMIC Sub-Brands</span>\n  </div>\n  <div class=\"metric-grid-2\">\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Buy Box Retention</span>\n      <div class=\"metric-card-val\" style=\"color:var(--danger-red);\">68%</div>\n      <span class=\"metric-card-sub\">68% 1P \u00b7 18% Suppressed \u00b7 14% 3P</span>\n    </div>\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Enterprise Potential</span>\n      <div class=\"metric-card-val\" style=\"color:var(--success-green);\">$18M \u2013 $45M</div>\n      <span class=\"metric-card-sub\">Annualized GMV Lift across FMIC ($28.4M Mid-Point)</span>\n    </div>\n  </div>\n</div>\n", "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">\n    <span>FMIC Multi-Brand Performance Matrix</span>\n    <span class=\"tag-badge tag-neutral\">5 Brand Divisions</span>\n  </div>\n  <p style=\"font-size:12px; color:var(--text-muted); margin-bottom:8px;\">\n    Unified health scorecard across all 5 FMIC sub-brand divisions, showing SKU volume, Buy Box retention, review splintering, and primary rival threats:\n  </p>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Brand / Division</th><th>Monitored SKUs</th><th>Buy Box</th><th>Splinter ASINs</th><th>Schema Sync</th><th>Primary Threat</th><th>Strategic Action</th></tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td><strong>Fender Mexico (Player II)</strong></td>\n        <td>46</td>\n        <td><span style=\"color:var(--danger-red); font-weight:700;\">64%</span></td>\n        <td>12 Bundles</td>\n        <td><span class=\"tag-badge tag-warning\">68%</span></td>\n        <td>PRS SE Series (-3% SOV)</td>\n        <td>Nest Austin Bazaar bundles under Parent ASINs</td>\n      </tr>\n      <tr>\n        <td><strong>Fender USA (American Pro/Perf)</strong></td>\n        <td>24</td>\n        <td><span style=\"color:var(--success-green); font-weight:700;\">82%</span></td>\n        <td>2 Bundles</td>\n        <td><span class=\"tag-badge tag-warning\">74%</span></td>\n        <td>Gibson USA (-8% SOV)</td>\n        <td>Deploy 4-tier comparison matrices on A+</td>\n      </tr>\n      <tr>\n        <td><strong>Acoustic & Hybrids (Acoustasonic)</strong></td>\n        <td>28</td>\n        <td><span style=\"color:var(--danger-red); font-weight:700;\">61%</span></td>\n        <td>6 Bundles</td>\n        <td><span class=\"tag-badge tag-danger\">42%</span></td>\n        <td>Taylor GS Mini (-47% SOV)</td>\n        <td>Fix dual-humbucker hallucination & bundle MAP</td>\n      </tr>\n      <tr>\n        <td><strong>Squier Entry Tier (Affinity/CV)</strong></td>\n        <td>14</td>\n        <td><span style=\"color:var(--warning-amber); font-weight:700;\">69%</span></td>\n        <td>4 Bundles</td>\n        <td><span class=\"tag-badge tag-warning\">48%</span></td>\n        <td>Yamaha Pacifica (-24% SOV)</td>\n        <td>Seed verified Reddit /r/Guitar quality threads</td>\n      </tr>\n      <tr>\n        <td><strong>Amps & Digital Audio (Tone Master)</strong></td>\n        <td>12</td>\n        <td><span style=\"color:var(--success-green); font-weight:700;\">81%</span></td>\n        <td>2 Bundles</td>\n        <td><span class=\"tag-badge tag-warning\">75%</span></td>\n        <td>Boss Katana / Spark (-36% SOV)</td>\n        <td>Highlight Mustang Micro USB recording schema</td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n", "\n<div class=\"ceo-callout\" style=\"border-color:rgba(16, 185, 129, 0.4);\">\n  <div class=\"ceo-callout-header\" style=\"color:var(--success-text);\">\n    <span>Commercial Sizing \u00b7 Reframing the $680K Pilot vs Enterprise Value</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    Fender is a $1B+ global enterprise. An annual lift of $680,000 is an attractive proof-of-concept, but does not justify a top-tier enterprise advisory retainer ($20,000/month = $240,000/year).\n    <br/><br/>\n    <strong>The Crucial Distinction:</strong>\n    <ul style=\"margin:4px 0 0 16px;\">\n      <li><strong>Phase 1 Quick-Win Lift ($680,000/yr):</strong> Evaluates a sample subset of only <strong>14 core guitar ASINs</strong> (Player Strat, Tele, Acoustasonic, Mustang Micro) resolving immediate Buy Box and review dilution.</li>\n      <li><strong>Full Enterprise Portfolio Scale ($18M \u2013 $45M GMV Impact):</strong> When listing architecture, MAP parity, and structured AEO schemas are deployed across Fender, Squier, Jackson, Gretsch, and EVH (1,450+ SKUs), the total enterprise upside is <strong>$18M to $45M annually</strong> ($28.4M mid-point).</li>\n    </ul>\n    <br/>\n    This delivers a staggering <strong>118x Enterprise ROI multiple</strong> on an annual $240,000 advisory retainer.\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Enterprise GMV Growth Drivers</div>\n  <div class=\"metric-grid-2\">\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Phase 1 (14 Pilot ASINs)</span>\n      <div class=\"metric-card-val\" style=\"color:var(--success-green);\">+$680K <span style=\"font-size:12px; color:var(--text-subtle);\">/ yr</span></div>\n      <span class=\"metric-card-sub\">Immediate Buy Box + 2,420 Review Recovery</span>\n    </div>\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Full Enterprise Scale</span>\n      <div class=\"metric-card-val\" style=\"color:var(--accent-purple);\">+$28.4M <span style=\"font-size:12px; color:var(--text-subtle);\">Mid-Point</span></div>\n      <span class=\"metric-card-sub\">$18M \u2013 $45M Range Across 1,450+ Active SKUs</span>\n    </div>\n  </div>\n</div>\n"]),
+  },
+  ecommerce: {
+    badge: "CRITICAL SPOKE \u00b7 RETAIL HEALTH",
+    title: "Full-Catalog E-Commerce, Buy Box & Brand Registry",
+    desc: "Buy Box retention is 68% across 124 monitored SKUs. 14 core ASINs suffer from algorithmic suppression (18%) or 3P bundle undercutting (14%) across Amazon, Reverb, and Walmart.",
+    tabs: ["14 Flagged ASINs & Price Leakage Explorer", "Catalog Consolidation & Brand Registry Governance", "MAP (Minimum Advertised Price) Multi-Channel Engine"],
+    render: spokeTabs(["\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 What Does \"Buy Box 68%\" Actually Mean?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    When a musician searches for a Fender guitar on Amazon and clicks <strong>\"Add to Cart\"</strong> or <strong>\"Buy Now\"</strong>, that transaction goes to whoever owns the <strong>Buy Box</strong> button.\n    <br/><br/>\n    At 68%, Fender direct and its verified channels only win 68 out of every 100 customer purchases. The other 32% are lost in two specific ways:\n    <ul style=\"margin:6px 0 0 16px; padding:0;\">\n      <li><strong>18% are Algorithmic Buy Box Suppressions (No Winner):</strong> Amazon's pricing scrapers detected that a 3P bundle or marketplace listing on Walmart or Reverb is selling below Amazon's price. In response, Amazon removes the 1-click buy button entirely, showing only 'Available from these sellers'. <em>Shopper conversion drops by ~65%!</em></li>\n      <li><strong>14% are Won by Authorized 3P Bundlers:</strong> Authorized partners like Austin Bazaar or GearTree pair the guitar with a cheap gig bag or cable and price the combo below standalone MAP, winning the Buy Box away from Fender.</li>\n    </ul>\n  </div>\n</div>\n\n<div class=\"metric-grid-2\" style=\"margin-top:12px;\">\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Buy Box Breakdown</span>\n    <div class=\"metric-card-val\" style=\"color:var(--danger-red);\">68% 1P</div>\n    <span class=\"metric-card-sub\">18% Suppressed \u00b7 14% Won by 3P Bundles</span>\n  </div>\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Splintered Reviews</span>\n    <div class=\"metric-card-val\" style=\"color:var(--warning-amber);\">3,485 Total</div>\n    <span class=\"metric-card-sub\">2,420+ on electrics/hybrids alone</span>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">\n    <span>Interactive 14 Flagged ASINs Drill-Down</span>\n    <span class=\"tag-badge tag-neutral\">Audited: Sep 22, 2026</span>\n    <span class=\"tag-badge tag-danger\">14 Urgent ASINs</span>\n  </div>\n  <p style=\"font-size:11.5px; color:var(--text-muted); margin-bottom:8px;\">\n    Real-time tracking of the 14 core guitar and amp ASINs experiencing MAP price undercutting, review dilution, and multi-channel scraping (Latest sync: Sep 22, 2026):\n  </p>\n  \n  <div style=\"overflow-x:auto;\">\n    <table class=\"table-sm\" id=\"asin-table\">\n      <thead>\n        <tr><th>Model / SKU</th><th>Child ASIN</th><th>Partner / Bundle Offer</th><th>MAP</th><th>Offer</th><th>Leakage</th><th>Reviews</th><th>Channels</th></tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td><strong>American Pro II Strat</strong></td>\n          <td><span class=\"asin-chip\">B08KGX4199</span></td>\n          <td>GearDirect Instrument Cable Kit</td>\n          <td>$1799.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$1719.99</td>\n          <td style=\"color:var(--danger-red);\">-$80.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">210</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>American Pro II Tele</strong></td>\n          <td><span class=\"asin-chip\">B08KGY8821</span></td>\n          <td>Austin Bazaar Tweed Strap Pack</td>\n          <td>$1799.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$1724.99</td>\n          <td style=\"color:var(--danger-red);\">-$75.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">165</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-rev\">REV</span></td>\n        </tr>\n        <tr>\n          <td><strong>Tone Master Deluxe Reverb</strong></td>\n          <td><span class=\"asin-chip\">B07X81ML33</span></td>\n          <td>Fitted Cover + Footswitch Pack</td>\n          <td>$1049.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$989.99</td>\n          <td style=\"color:var(--danger-red);\">-$60.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">95</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>Acoustasonic Player Tele</strong></td>\n          <td><span class=\"asin-chip\">B0C9Q8X11P</span></td>\n          <td>GearTree Starter Kit Bundle</td>\n          <td>$1199.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$1149.00</td>\n          <td style=\"color:var(--danger-red);\">-$50.99</td>\n          <td><strong style=\"color:var(--warning-amber);\">310</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-wmt\">WMT</span></td>\n        </tr>\n        <tr>\n          <td><strong>Player Jazz Bass</strong></td>\n          <td><span class=\"asin-chip\">B09KM22K77</span></td>\n          <td>GearDirect Express Bundle</td>\n          <td>$899.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$854.99</td>\n          <td style=\"color:var(--danger-red);\">-$45.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">140</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-rev\">REV</span></td>\n        </tr>\n        <tr>\n          <td><strong>Player II Stratocaster</strong></td>\n          <td><span class=\"asin-chip\">B0D8TFXHHT</span></td>\n          <td>Austin Bazaar Gig Bag &amp; Cable</td>\n          <td>$849.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$808.00</td>\n          <td style=\"color:var(--danger-red);\">-$41.99</td>\n          <td><strong style=\"color:var(--warning-amber);\">240</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-rev\">REV</span></td>\n        </tr>\n        <tr>\n          <td><strong>Player Precision Bass</strong></td>\n          <td><span class=\"asin-chip\">B09KM14J88</span></td>\n          <td>Austin Bazaar Deluxe Gig Bag</td>\n          <td>$869.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$829.00</td>\n          <td style=\"color:var(--danger-red);\">-$40.99</td>\n          <td><strong style=\"color:var(--warning-amber);\">195</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>Player II Telecaster</strong></td>\n          <td><span class=\"asin-chip\">B0D8TN41XS</span></td>\n          <td>Photo4Less Hard Case Bundle</td>\n          <td>$849.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$814.99</td>\n          <td style=\"color:var(--danger-red);\">-$35.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">180</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>Squier Classic Vibe '60s Strat</strong></td>\n          <td><span class=\"asin-chip\">B07N25DDK8</span></td>\n          <td>Austin Bazaar Stand &amp; Bag Pack</td>\n          <td>$459.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$429.99</td>\n          <td style=\"color:var(--danger-red);\">-$30.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">320</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>Squier Classic Vibe '50s Tele</strong></td>\n          <td><span class=\"asin-chip\">B07N24MM91</span></td>\n          <td>Photo4Less Clip-on Tuner Kit</td>\n          <td>$459.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$434.99</td>\n          <td style=\"color:var(--danger-red);\">-$25.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">290</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-wmt\">WMT</span></td>\n        </tr>\n        <tr>\n          <td><strong>Squier Affinity P-Bass</strong></td>\n          <td><span class=\"asin-chip\">B092BG24LL</span></td>\n          <td>GearTree Essentials Pack</td>\n          <td>$299.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$279.99</td>\n          <td style=\"color:var(--danger-red);\">-$20.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">175</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>Fender CD-60S Acoustic</strong></td>\n          <td><span class=\"asin-chip\">B071KNF2L4</span></td>\n          <td>Austin Bazaar Starter Kit</td>\n          <td>$229.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$209.99</td>\n          <td style=\"color:var(--danger-red);\">-$20.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">510</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-rev\">REV</span></td>\n        </tr>\n        <tr>\n          <td><strong>Fender FA-115 Acoustic Pack</strong></td>\n          <td><span class=\"asin-chip\">B07B8X8GZ8</span></td>\n          <td>GearDirect Spare Strings Kit</td>\n          <td>$199.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$184.99</td>\n          <td style=\"color:var(--danger-red);\">-$15.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">380</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span></td>\n        </tr>\n        <tr>\n          <td><strong>Mustang Micro Amp</strong></td>\n          <td><span class=\"asin-chip\">B08K3V4M99</span></td>\n          <td>Headphone + Cable Bundle</td>\n          <td>$119.99</td>\n          <td style=\"color:var(--danger-red); font-weight:700;\">$109.99</td>\n          <td style=\"color:var(--danger-red);\">-$10.00</td>\n          <td><strong style=\"color:var(--warning-amber);\">480</strong></td>\n          <td><span class=\"channel-tag channel-amz\">AMZ</span><span class=\"channel-tag channel-wmt\">WMT</span></td>\n        </tr>\n      </tbody>\n    </table>\n  </div>\n</div>\n", "\n<div class=\"ceo-callout\" style=\"border-color:rgba(16, 185, 129, 0.4);\">\n  <div class=\"ceo-callout-header\" style=\"color:var(--success-text);\">\n    <span>Brand Registry Governance \u00b7 Why We Do NOT Send Cease & Desists</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    Fender intentionally authorized key premier dealers\u2014specifically <strong>Austin Bazaar</strong>, <strong>Crazy Dave's Music</strong>, and <strong>GearTree</strong>\u2014under Amazon Brand Registry to create value-add accessory bundles.\n    <br/><br/>\n    Recommending legal takedowns, Cease & Desist letters, or brand blocks against Austin Bazaar (Fender's #1 third-party distribution partner) would be counterproductive, legally improper, and rejected by FMIC executive leadership.\n    <br/><br/>\n    <strong>The Real Strategic Issue: Catalog Architecture & Review Splintering</strong>\n    <ul style=\"margin:6px 0 0 16px; padding:0;\">\n      <li><strong>Total Review Dilution:</strong> When Austin Bazaar creates a standalone ASIN for a Player Stratocaster + Gig Bag, all 240 customer reviews stay trapped on their standalone page instead of pooling onto Fender's OEM listing.</li>\n      <li><strong>Forfeiting 'Amazon's Overall Pick' Badge:</strong> Amazon awards the highly lucrative 'Overall Pick' badge based on total review volume and velocity. Because Fender's reviews are fractured across 4\u20135 bundle ASINs, the badge goes directly to PRS SE Custom 24 or Yamaha Pacifica!</li>\n      <li><strong>Triggering AI Hallucinations:</strong> Third-party dealers write unverified bundle descriptions (e.g. 'dual humbucker Acoustasonic pack'). When web-crawling LLMs ingest these pages, they hallucinate incorrect specs to consumers!</li>\n    </ul>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">The Solution: Amazon Brand Registry Variation Nesting</div>\n  <div class=\"action-card\" style=\"border-left-color:var(--success-green);\">\n    <div class=\"action-head\">Nest Authorized Partner Bundles as Secondary Child Variations</div>\n    <div class=\"action-details\">\n      Using Fender's master Amazon Brand Registry account, we work collaboratively with Austin Bazaar and GearTree to submit variation update tickets. Their bundle ASINs are folded as 'With Bundle Accessories' options under the official Fender Parent ASIN.\n      <br/><br/>\n      <strong>Commercial Result:</strong> Austin Bazaar retains 100% of their bundle sales and buy box eligibility, but all 2,420+ reviews immediately pool onto the master listing. Fender instantly unlocks 'Amazon's Overall Pick' badge and eliminates 3P spec hallucinations!\n    </div>\n    <div class=\"action-impact\">\n      Zero partner friction \u00b7 Recovers 2,420+ reviews \u00b7 Lifts hero listing conversion by +18%\n    </div>\n  </div>\n</div>\n", "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 What is MAP & How Does Price Leakage Work?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    <strong>What is MAP?</strong> Minimum Advertised Price (MAP) is the lowest price a retail partner legally agrees to display publicly in their store or online listing. It protects brand prestige and guarantees healthy retail margins.\n    <br/><br/>\n    <strong>The Starter Kit Bundle Loophole:</strong>\n    Partners cannot sell a standalone Player II Stratocaster below MAP ($849.99). However, they bundle the guitar with a $15 gig bag and a $5 cable, and price the entire package at $808.00. Technically, they argue the guitar wasn't sold below MAP\u2014the accessories were 'discounted'.\n    <br/><br/>\n    <strong>The Cross-Marketplace Crawler Trap:</strong>\n    Automated pricing bots on <strong>Walmart Marketplace</strong> and <strong>Reverb</strong> crawl Amazon and instantly match or beat the $808 price. In response, Amazon's algorithm detects cheaper off-Amazon prices and <strong>suppresses Fender's Buy Box on Amazon entirely!</strong>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Multi-Marketplace Price Leakage Summary</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Marketplace Channel</th><th>Violations</th><th>Average Price Drift</th><th>Algorithmic Consequence</th></tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td><strong>Amazon.com</strong></td>\n        <td>14 ASINs</td>\n        <td>-$42.00</td>\n        <td><span class=\"tag-badge tag-danger\">Buy Box Suppression / 3P Split</span></td>\n      </tr>\n      <tr>\n        <td><strong>Walmart Marketplace</strong></td>\n        <td>8 Listings</td>\n        <td>-$38.00</td>\n        <td><span class=\"tag-badge tag-warning\">Automated Price Match Trigger</span></td>\n      </tr>\n      <tr>\n        <td><strong>Reverb (Brand New / Open Box)</strong></td>\n        <td>11 Listings</td>\n        <td>-$55.00</td>\n        <td><span class=\"tag-badge tag-danger\">MAP Floor Erosion &amp; Buy Box Lock</span></td>\n      </tr>\n      <tr>\n        <td><strong>Sweetwater Sound</strong></td>\n        <td>0 Violations</td>\n        <td>$0.00</td>\n        <td><span class=\"tag-badge tag-success\">Compliant 1P Authorized Partner</span></td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n"]),
+  },
+  aeo: {
+    badge: "CRITICAL SPOKE \u00b7 BRAND AEO",
+    title: "Brand AI Visibility, Citations & AI Simulations",
+    desc: "External Volatile AI Scan Index: 61/100 \u00b7 IntoFocus Controllable Readiness Score: 42% (Target: 84%). 100 conversational prompts tracked across ChatGPT, Perplexity, Claude, and Gemini.",
+    tabs: ["Dual-Index Scoring & Executive Callout", "100 AI Simulations Interactive Explorer", "AI Spec Hallucination Engine & Root Causes", "Citation Ecosystem & Fender DTC Opportunity"],
+    render: spokeTabs(["\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 Why AEO Determines Future Market Share</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    When guitarists ask ChatGPT or Perplexity, <em>\"What electric guitar should I buy under $1,000 for indie rock?\"</em>, the AI doesn't return a list of blue links. It generates a single synthesized recommendation naming 2 or 3 guitars.\n    <br/><br/>\n    If Fender's Player II isn't structured for machine ingestion, the LLM recommends PRS SE Custom 24 or Yamaha Pacifica instead. <strong>Zero-click conversational search is replacing Google SEO.</strong>\n  </div>\n</div>\n\n<div class=\"dual-index-grid\" style=\"margin-top:12px;\">\n  <div class=\"dual-index-card\">\n    <div style=\"display:flex; justify-content:space-between; align-items:center;\">\n      <span class=\"metric-card-label\">External AI Scan Index</span>\n      <span class=\"dual-index-badge tag-danger\">Volatile LLM Scan</span>\n    </div>\n    <div class=\"dual-index-val\" style=\"color:var(--danger-red);\">\n      61 <span style=\"font-size:14px; color:var(--text-subtle); font-weight:600;\">/ 100</span>\n    </div>\n    <span class=\"metric-card-sub\" style=\"color:var(--danger-text);\">\u26a0\ufe0f Highly Volatile External LLM Index</span>\n    <p style=\"font-size:11px; color:var(--text-subtle); margin-top:4px; line-height:1.35;\">\n      Reflects non-deterministic external scans across 100 benchmark prompts. Fluctuates erratically due to stochastic LLM sampling, search crawler updates, and competitor YouTube review uploads.\n    </p>\n  </div>\n\n  <div class=\"dual-index-card\" style=\"border-color:rgba(99, 102, 241, 0.4);\">\n    <div style=\"display:flex; justify-content:space-between; align-items:center;\">\n      <span class=\"metric-card-label\">IntoFocus Controllable Readiness Score</span>\n      <span class=\"dual-index-badge tag-success\">Deterministic Control</span>\n    </div>\n    <div class=\"dual-index-val\" style=\"color:var(--accent-purple);\">\n      42% <span style=\"font-size:14px; color:var(--success-green); font-weight:700;\">\u2794 Target: 84%</span>\n    </div>\n    <div class=\"readiness-progress-bar\">\n      <div class=\"readiness-progress-fill\" style=\"width: 42%;\"></div>\n    </div>\n    <p style=\"font-size:11px; color:var(--text-subtle); margin-top:6px; line-height:1.35;\">\n      Measures the 4 factors Fender 100% controls: Canonical Schemas (34%), Brand Registry (40%), MAP Parity (48%), Community Grounding (46%). Steadily increases as the 90-day sprint is executed.\n    </p>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Heritage vs Value Prompt Disparity</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Prompt Query Category</th><th>Fender Appearance</th><th>Primary Winner</th><th>Root Cause</th></tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td><strong>Heritage &amp; Icon Prompts</strong> (\"Classic rock guitars\", \"Stratocaster history\")</td>\n        <td><span style=\"color:var(--success-green); font-weight:700;\">84%</span></td>\n        <td>Fender</td>\n        <td>Unassailable 70-year brand legacy in training weights</td>\n      </tr>\n      <tr>\n        <td><strong>Value &amp; Spec Comparisons</strong> (\"Best guitar under $900\", \"Best fretwork\")</td>\n        <td><span style=\"color:var(--danger-red); font-weight:700;\">18%</span></td>\n        <td>PRS SE / Yamaha</td>\n        <td>Competitors provide clean tabular specs; Fender pages lack schema</td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n", "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">\n    <span>100 AI Simulations Interactive Explorer</span>\n    <span class=\"tag-badge tag-danger\">100 Simulations Run</span>\n  </div>\n  <p style=\"font-size:11.5px; color:var(--text-muted); line-height:1.4;\">\n    Granular simulation viewer tracking 100 conversational buying queries across ChatGPT-4o, Perplexity AI, Claude 3.5 Sonnet, and Google Gemini. Filter by category or outcome:\n  </p>\n\n  <div style=\"display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 12px;\">\n    <button class=\"segmented-btn active\" onclick=\"window.filterSimulations('all')\">All (100)</button>\n    <button class=\"segmented-btn\" onclick=\"window.filterSimulations('electrics')\">Electrics ($600-$1K)</button>\n    <button class=\"segmented-btn\" onclick=\"window.filterSimulations('acoustics')\">Acoustics &amp; Travel</button>\n    <button class=\"segmented-btn\" onclick=\"window.filterSimulations('beginner')\">Beginner (&lt;$400)</button>\n    <button class=\"segmented-btn\" onclick=\"window.filterSimulations('amps')\">Digital Amps</button>\n    <button class=\"segmented-btn\" onclick=\"window.filterSimulations('hallucinations')\">Hallucination Flags</button>\n  </div>\n\n  <div id=\"simulation-list\" style=\"display:flex; flex-direction:column; gap:8px;\">\n    <div class=\"action-card critical\" data-category=\"electrics\">\n      <div class=\"action-head\">\n        <span>1. Prompt: \"Best electric guitar under $900 for versatile tones\"</span>\n        <span class=\"tag-badge tag-danger\">Fender Win: 28%</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> ChatGPT (Lost), Perplexity (Lost), Claude (Won), Gemini (Lost).<br/>\n        \u2022 <strong>AI Consensual Winner:</strong> PRS SE Custom 24 / Yamaha Pacifica 611.<br/>\n        \u2022 <strong>Root Cause:</strong> AI models cited PRS SE coil-splitting versatility and fret consistency parsed from Amazon A+ tables.<br/>\n        \u2022 <strong>Remediation Patch:</strong> Deploy 4-column comparison table on Player II Amazon A+ detail page highlighting rolled fingerboard edges and Alnico 5 pickups.\n      </div>\n    </div>\n\n    <div class=\"action-card critical\" data-category=\"acoustics\">\n      <div class=\"action-head\">\n        <span>2. Prompt: \"Best travel acoustic guitar for intermediate players\"</span>\n        <span class=\"tag-badge tag-danger\">Fender Win: 11%</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> ChatGPT (Lost), Perplexity (Lost), Claude (Lost), Gemini (Lost).<br/>\n        \u2022 <strong>AI Consensual Winner:</strong> Taylor GS Mini (58% of all citations).<br/>\n        \u2022 <strong>Root Cause:</strong> Taylor GS Mini has a single canonical listing with 1,200+ unified reviews; Fender Malibu/CP-60S reviews are splintered across 6 bundle ASINs.<br/>\n        \u2022 <strong>Remediation Patch:</strong> Publish 'Travel Acoustic Shootout' hub on Fender.com and consolidate acoustic ASIN variations on Amazon.\n      </div>\n    </div>\n\n    <div class=\"action-card critical\" data-category=\"hallucinations\">\n      <div class=\"action-head\">\n        <span>3. Prompt: \"Fender Acoustasonic Player Telecaster pickup types and sounds\"</span>\n        <span class=\"tag-badge tag-danger\">Spec Bug Detected</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> ChatGPT (Hallucinated), Perplexity (Hallucinated), Claude (Accurate), Gemini (Hallucinated).<br/>\n        \u2022 <strong>Identified Hallucination:</strong> Models state the Acoustasonic features 'dual humbuckers' for heavy distortion.<br/>\n        \u2022 <strong>Root Cause:</strong> Scraped rogue 3P accessory bundle (<span class=\"asin-chip\">B0C9Q8X11P</span>) stuffed with 'Humbucker pickup pack'.<br/>\n        \u2022 <strong>Remediation Patch:</strong> Inject <code>pickupConfiguration: 'Fender/Fishman Piezo + Tim Shaw Acoustic Engine'</code> JSON-LD on fender.com.\n      </div>\n    </div>\n\n    <div class=\"action-card critical\" data-category=\"hallucinations\">\n      <div class=\"action-head\">\n        <span>4. Prompt: \"Fender Player II Stratocaster neck radius and fret size\"</span>\n        <span class=\"tag-badge tag-danger\">Spec Bug Detected</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> Claude (Hallucinated 12\"), Perplexity (Hallucinated 12\"), ChatGPT (Accurate), Gemini (Accurate).<br/>\n        \u2022 <strong>Identified Hallucination:</strong> Models state fingerboard radius is 12-inch compound from Jackson multi-pack listing.<br/>\n        \u2022 <strong>True Spec:</strong> 9.5-inch Modern C with hand-rolled fingerboard edges.<br/>\n        \u2022 <strong>Remediation Patch:</strong> Inject <code>fingerboardRadius: '9.5 in'</code> into Fender.com canonical schema.\n      </div>\n    </div>\n\n    <div class=\"action-card\" style=\"border-left-color:var(--warning-amber);\" data-category=\"amps\">\n      <div class=\"action-head\">\n        <span>5. Prompt: \"Best headphone guitar amp with bluetooth for quiet practice\"</span>\n        <span class=\"tag-badge tag-warning\">Fender Win: 38%</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> ChatGPT (Won), Perplexity (Lost), Claude (Lost), Gemini (Lost).<br/>\n        \u2022 <strong>AI Consensual Winner:</strong> Boss Katana:GO / Positive Grid Spark MINI.<br/>\n        \u2022 <strong>Root Cause:</strong> Mustang Micro praised for plug-and-play ergonomics, but AI penalized lack of app editing metadata.<br/>\n        \u2022 <strong>Remediation Patch:</strong> Highlight USB-C direct recording audio interface capabilities in structured schema.\n      </div>\n    </div>\n\n    <div class=\"action-card\" style=\"border-left-color:var(--warning-amber);\" data-category=\"beginner\">\n      <div class=\"action-head\">\n        <span>6. Prompt: \"Best beginner electric guitar under $350 for versatile practice\"</span>\n        <span class=\"tag-badge tag-warning\">Squier Win: 24%</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> ChatGPT (Lost), Perplexity (Lost), Claude (Won), Gemini (Lost).<br/>\n        \u2022 <strong>AI Consensual Winner:</strong> Yamaha Pacifica 112V (48% SOV).<br/>\n        \u2022 <strong>Root Cause:</strong> Reddit /r/Guitar unanimously recommends Pacifica 112V over Squier Affinity due to humbucker/single/single coil split.<br/>\n        \u2022 <strong>Remediation Patch:</strong> Seed verified Reddit reviews showcasing Squier Sonic and Classic Vibe build quality.\n      </div>\n    </div>\n\n    <div class=\"action-card\" style=\"border-left-color:var(--success-green);\" data-category=\"electrics\">\n      <div class=\"action-head\">\n        <span>7. Prompt: \"Fender Telecaster vs Stratocaster for beginner and intermediate\"</span>\n        <span class=\"tag-badge tag-success\">Fender Win: 88%</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Model Citations:</strong> ChatGPT (Won), Perplexity (Won), Claude (Won), Gemini (Won).<br/>\n        \u2022 <strong>Outcome:</strong> Flawless brand synthesis. Stratocaster praised for ergonomic contours and neck chime; Telecaster for tuning stability and bridge twang.\n      </div>\n    </div>\n  </div>\n</div>\n", "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">\n    <span>Detected AI Spec Hallucinations &amp; Rogue Bundles</span>\n    <span class=\"tag-badge tag-danger\">Critical Remediation</span>\n  </div>\n  <p style=\"font-size:12px; color:var(--text-muted); line-height:1.45;\">\n    When official fender.com pages omit structured technical specifications in machine-readable JSON-LD, conversational LLMs attempt to scrape specs from unauthorized third-party bundle listings, resulting in severe technical hallucinations:\n  </p>\n\n  <div class=\"action-card critical\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">1. The \"Dual Humbucker\" Acoustasonic Hallucination</div>\n    <div class=\"action-details\">\n      \u2022 <strong>The Bug:</strong> ChatGPT and Perplexity frequently state that the Acoustasonic Player Telecaster features 'dual humbuckers' for heavy distortion.<br/>\n      \u2022 <strong>Root Cause:</strong> A 3P bundle on Amazon (<span class=\"asin-chip\">B0C9Q8X11P</span>) stuffed 'Humbucker pickup pack' into its product bullets.<br/>\n      \u2022 <strong>Commercial Harm:</strong> Buyers seeking acoustic-electric versatility reject the guitar thinking it has metal pickups; return rates increase.<br/>\n      \u2022 <strong>Remediation Patch:</strong> Correct child ASIN metadata via Brand Registry and deploy Schema.org <code>pickupConfiguration: 'Fender/Fishman Piezo + Tim Shaw Acoustic Engine'</code>.\n    </div>\n  </div>\n\n  <div class=\"action-card critical\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">2. The \"12-Inch Fingerboard Radius\" Player II Error</div>\n    <div class=\"action-details\">\n      \u2022 <strong>The Bug:</strong> Claude 3.5 Sonnet occasionally informs users that the Player II Stratocaster has a flat 12-inch fingerboard radius.<br/>\n      \u2022 <strong>Root Cause:</strong> 3P multi-pack listings combined Jackson JS22 specs (which have 12\"-16\" compound radiuses) on the same product page.<br/>\n      \u2022 <strong>True Spec:</strong> <strong>9.5-inch Modern C</strong> with rolled edges.<br/>\n      \u2022 <strong>Remediation Patch:</strong> Inject explicit <code>fingerboardRadius: '9.5 in'</code> JSON-LD schema on all Player II product detail pages.\n    </div>\n  </div>\n</div>\n", "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 What is \"Fender DTC\" & Where Do AI Models Learn?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    <strong>Fender DTC (Direct-to-Consumer):</strong> Fender's own e-commerce store at <em>fender.com</em>. While it has high brand prestige, it currently only generates <strong>12% of total AI citations</strong> for guitar buying queries.\n    <br/><br/>\n    AI models draw <strong>55% of their opinions</strong> from third-party discussions (Reddit /r/Guitar, TalkBass) and retail listings (Amazon, Sweetwater). To win in AI search, Fender must turn fender.com into an authoritative comparison authority that feeds GPTBot directly!\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">AI Citation Ecosystem Breakdown</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Citation Channel</th><th>Citation Share</th><th>Current Fender Footprint</th><th>Action Plan</th></tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td><strong>Reddit &amp; Enthusiast Forums</strong> (/r/Guitar, TalkBass)</td>\n        <td><strong>31%</strong></td>\n        <td><span class=\"tag-badge tag-warning\">Moderate</span> Strong legacy lore, weak in $600-$900 value debates</td>\n        <td>Launch verified community engineering engagement</td>\n      </tr>\n      <tr>\n        <td><strong>Amazon &amp; Retail Product Listings</strong></td>\n        <td><strong>24%</strong></td>\n        <td><span class=\"tag-badge tag-danger\">Diluted</span> 14 splinter ASINs fragmenting review scores</td>\n        <td>Consolidate under Brand Registry variation trees</td>\n      </tr>\n      <tr>\n        <td><strong>Editorial &amp; Media Reviews</strong> (Guitar World, Premier Guitar)</td>\n        <td><strong>19%</strong></td>\n        <td><span class=\"tag-badge tag-success\">Strong</span> Frequent top placement in roundup reviews</td>\n        <td>Syndicate official press specs into Google Merchant Feed</td>\n      </tr>\n      <tr>\n        <td><strong>YouTube Video Transcripts</strong> (Andertons, Mary Spender)</td>\n        <td><strong>14%</strong></td>\n        <td><span class=\"tag-badge tag-success\">Strong</span> Heavy creator coverage for new product launches</td>\n        <td>Provide structured caption metadata to YouTube crawlers</td>\n      </tr>\n      <tr>\n        <td><strong>Brand DTC</strong> (fender.com)</td>\n        <td><strong>12%</strong></td>\n        <td><span class=\"tag-badge tag-warning\">Under-Indexed</span> Schema valid, but lacks head-to-head comparison pages</td>\n        <td>Publish DTC Comparison Hubs (Strat vs PRS / Acoustasonic vs Taylor)</td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n"]),
+  },
+  specs: {
+    badge: "WATCH SPOKE \u00b7 SPEC COVERAGE",
+    title: "Cross-Category Spec Matrix & Schema.org Health",
+    desc: "34% Schema.org completeness across 124 catalog pages. 14 of 18 key catalog lines lack structured Amazon A+ comparison grids.",
+    tabs: ["Catalog Spec Readiness & Executive Guide", "Machine-Readable Schema.org JSON-LD Audit", "Amazon A+ Comparison Matrix Blueprint"],
+    render: spokeTabs(["\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 What is Schema.org & Why Does AI Need It?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    When human beings look at <em>fender.com</em>, they read descriptive marketing copy: <em>\"Crafted for bold expression with timeless curves and ringing chime...\"</em>\n    <br/><br/>\n    AI crawlers (GPTBot, ClaudeBot, PerplexityBot) cannot reliably extract technical dimensions from poetic marketing copy. <strong>Schema.org JSON-LD</strong> is a standardized machine-readable code block embedded in the page that states facts directly:\n    <div style=\"background:var(--bg-surface); padding:8px; border-radius:6px; font-family:var(--font-mono); font-size:11px; margin-top:6px; border:1px solid var(--border-color);\">\n      \"bodyWood\": \"Alder\", \"fingerboardRadius\": \"9.5 in\", \"nutWidth\": \"1.650 in\", \"frets\": 22\n    </div>\n    Without this, AI engines guess\u2014or scrape incorrect specs from unauthorized Amazon bundles!\n  </div>\n</div>\n\n<div class=\"metric-grid-2\" style=\"margin-top:12px;\">\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Catalog Schema Coverage</span>\n    <div class=\"metric-card-val\" style=\"color:var(--warning-amber);\">34% <span style=\"font-size:12px; color:var(--text-subtle);\">(124 SKUs)</span></div>\n    <span class=\"metric-card-sub\">Missing machine-readable attributes</span>\n  </div>\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Missing Amazon A+ Grids</span>\n    <div class=\"metric-card-val\" style=\"color:var(--danger-red);\">78%</div>\n    <span class=\"metric-card-sub\">14 of 18 catalog product lines</span>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Structured Spec Completeness by Division</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Division</th><th>Schema Markup</th><th>Tabular Grid</th><th>AEO Readiness</th></tr>\n    </thead>\n    <tbody>\n      <tr><td><strong>Electrics (Strat/Tele)</strong></td><td>68% Valid</td><td><span style=\"color:var(--danger-red);\">Missing (10/14)</span></td><td><span class=\"tag-badge tag-warning\">Partial</span></td></tr>\n      <tr><td><strong>Acoustics &amp; Hybrids</strong></td><td>42% Valid</td><td><span style=\"color:var(--danger-red);\">Missing (8/8)</span></td><td><span class=\"tag-badge tag-danger\">Poor</span></td></tr>\n      <tr><td><strong>Bass Lines</strong></td><td>55% Valid</td><td><span style=\"color:var(--danger-red);\">Missing (6/6)</span></td><td><span class=\"tag-badge tag-warning\">Partial</span></td></tr>\n      <tr><td><strong>Digital Amps &amp; Audio</strong></td><td>75% Valid</td><td><span style=\"color:var(--warning-amber);\">Partial (2/4)</span></td><td><span class=\"tag-badge tag-warning\">Moderate</span></td></tr>\n    </tbody>\n  </table>\n</div>\n", "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">Missing Schema.org JSON-LD Technical Properties</div>\n  <p style=\"font-size:12px; color:var(--text-muted);\">\n    The following 6 technical attributes are currently missing from fender.com product detail pages, forcing AI engines to guess or pull from third-party Amazon listings:\n  </p>\n\n  <div style=\"display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;\">\n    <div style=\"background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);\">\n      \u274c <code>fingerboardRadius</code> (Causes 12\" radius bug)\n    </div>\n    <div style=\"background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);\">\n      \u274c <code>pickupConfiguration</code> (Causes Acoustasonic bug)\n    </div>\n    <div style=\"background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);\">\n      \u274c <code>nutWidth</code> (Critical for beginner search)\n    </div>\n    <div style=\"background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);\">\n      \u274c <code>scaleLength</code> (Crucial for travel queries)\n    </div>\n    <div style=\"background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);\">\n      \u274c <code>bodyWoodType</code> (Alder vs Basswood vs Poplar)\n    </div>\n    <div style=\"background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);\">\n      \u274c <code>numberOfFrets</code> (21 vintage vs 22 modern)\n    </div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:12px; border-left-color:var(--accent-purple);\">\n    <div class=\"action-head\">Ready-to-Deploy JSON-LD Code Blueprint</div>\n    <pre style=\"background:#090d16; padding:10px; border-radius:6px; font-size:11px; color:#a5b4fc; overflow-x:auto; margin-top:6px; border:1px solid var(--border-color);\"><code>{\n  \"@context\": \"https://schema.org/\",\n  \"@type\": \"Product\",\n  \"name\": \"Fender Player II Stratocaster\",\n  \"image\": \"https://fender.com/img/player2-strat-sunburst.jpg\",\n  \"brand\": { \"@type\": \"Brand\", \"name\": \"Fender\" },\n  \"additionalProperty\": [\n    { \"@type\": \"PropertyValue\", \"name\": \"fingerboardRadius\", \"value\": \"9.5 in (241 mm)\" },\n    { \"@type\": \"PropertyValue\", \"name\": \"pickupConfiguration\", \"value\": \"SSS Player Series Alnico 5\" },\n    { \"@type\": \"PropertyValue\", \"name\": \"bodyWoodType\", \"value\": \"Alder\" },\n    { \"@type\": \"PropertyValue\", \"name\": \"nutWidth\", \"value\": \"1.650 in (42 mm)\" },\n    { \"@type\": \"PropertyValue\", \"name\": \"scaleLength\", \"value\": \"25.5 in (648 mm)\" },\n    { \"@type\": \"PropertyValue\", \"name\": \"numberOfFrets\", \"value\": \"22 Medium Jumbo\" }\n  ]\n}</code></pre>\n  </div>\n</div>\n", "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Explanation \u00b7 What is Amazon A+ Content & Why Does It Win AI Queries?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    <strong>Amazon A+ Content:</strong> Enhanced visual branding modules on Amazon product pages (graphics, diagrams, and comparison charts).\n    <br/><br/>\n    When A+ comparison tables are present, Amazon Rufus and frontier LLMs (ChatGPT, Claude) parse the table columns directly. This allows Fender to define its own tiering hierarchy rather than letting PRS or Taylor frame our products.\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Recommended 4-Column A+ Matrix Structure</div>\n  <p style=\"font-size:12px; color:var(--text-muted); line-height:1.45;\">\n    Standardizes the upgrade path across 14 catalog lines, locking in authoritative manufacturer specs:\n  </p>\n\n  <table class=\"table-sm\" style=\"margin-top:6px;\">\n    <thead>\n      <tr><th>Specification</th><th>Squier Classic Vibe</th><th>Player II Series</th><th>American Performer</th><th>American Pro II</th></tr>\n    </thead>\n    <tbody>\n      <tr><td><strong>Price Point</strong></td><td>$459.99</td><td>$849.99</td><td>$1,399.99</td><td>$1,799.99</td></tr>\n      <tr><td><strong>Body Wood</strong></td><td>Poplar / Nato</td><td>Alder / Chambered Ash</td><td>Alder</td><td>Select Alder / Roasted Pine</td></tr>\n      <tr><td><strong>Pickups</strong></td><td>Fender-Designed Alnico</td><td>Player II Alnico 5</td><td>Yosemite Single-Coil</td><td>V-Mod II Single-Coil</td></tr>\n      <tr><td><strong>Fretwork</strong></td><td>Narrow Tall</td><td>Medium Jumbo (Rolled Edges)</td><td>Jumbo</td><td>Narrow Tall (Hand-Rolled)</td></tr>\n      <tr><td><strong>Country of Origin</strong></td><td>Indonesia</td><td>Ensenada, Mexico</td><td>Corona, California (USA)</td><td>Corona, California (USA)</td></tr>\n    </tbody>\n  </table>\n</div>\n"]),
+  },
+  competitors: {
+    badge: "BENCHMARK SPOKE \u00b7 RADAR",
+    title: "Brand Competitive Radar & Category SOV",
+    desc: "Benchmarking Fender's AI visibility against 6 primary rivals in Electric, Acoustic, Bass, and Amp categories.",
+    tabs: ["Head-to-Head Category Battlecards", "Rival Strategies & Tactical Counter-Measures", "Multi-Marketplace Channel Scope (Sweetwater, Reverb, Walmart)"],
+    render: spokeTabs(["\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Clarifying Catalog Scope & Category Gaps</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    <strong>Where does Squier fit?</strong> Squier is Fender's 100% owned entry-level brand. In this canvas, Squier products (Affinity, Classic Vibe) are evaluated directly alongside Fender because they represent Fender's frontline defense against Yamaha and Ibanez in the high-volume under-$500 market.\n    <br/><br/>\n    <strong>What does \"Gap to Leader\" mean?</strong> The percentage difference between the top recommended brand in that category and Fender/Squier. In acoustics, Taylor holds a 47-point lead over Fender in AI recommendations.\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Share of Voice (SOV) in Conversational Engine Answers</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Category / Sub-Bracket</th><th>Leader Brand</th><th>Leader SOV</th><th>Fender SOV</th><th>Gap to Leader</th></tr>\n    </thead>\n    <tbody>\n      <tr><td><strong>Solid-Body Electrics ($700-$1k)</strong></td><td>PRS SE Series</td><td>34%</td><td>31%</td><td><span style=\"color:var(--warning-amber); font-weight:700;\">-3%</span></td></tr>\n      <tr><td><strong>Entry Electrics (Under $350)</strong></td><td>Yamaha Pacifica</td><td>48%</td><td>24% (Squier)</td><td><span style=\"color:var(--danger-red); font-weight:700;\">-24%</span></td></tr>\n      <tr><td><strong>Travel &amp; Compact Acoustics</strong></td><td>Taylor (GS Mini)</td><td>58%</td><td>11%</td><td><span style=\"color:var(--danger-red); font-weight:700;\">-47%</span></td></tr>\n      <tr><td><strong>Entry Active Bass (Under $450)</strong></td><td>Ibanez (GSR/SR)</td><td>46%</td><td>28% (Squier)</td><td><span style=\"color:var(--danger-red); font-weight:700;\">-18%</span></td></tr>\n      <tr><td><strong>Practice Amps (Digital Modeling)</strong></td><td>Positive Grid / Boss</td><td>62%</td><td>26%</td><td><span style=\"color:var(--danger-red); font-weight:700;\">-36%</span></td></tr>\n    </tbody>\n  </table>\n</div>\n", "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">Primary Rival AEO Strategies &amp; Counter-Measures</div>\n  <div class=\"action-card\" style=\"border-left-color:#f97316;\">\n    <div class=\"action-head\">1. Taylor Guitars (Acoustic Dominance)</div>\n    <div class=\"action-details\">\n      \u2022 <strong>Why They Win:</strong> Strict 100% MAP enforcement prevents price splintering. Taylor has a unified GS Mini listing with 1,200+ 5-star reviews on Amazon.<br/>\n      \u2022 <strong>AI Footprint:</strong> When users ask for 'best travel guitar', AI engines cite the GS Mini's ES-B electronics and compact scale.<br/>\n      \u2022 <strong>Counter-Play:</strong> Launch Fender.com Acoustasonic vs GS Mini head-to-head comparison page highlighting amplified versatility.\n    </div>\n  </div>\n\n  <div class=\"action-card\" style=\"border-left-color:#6366f1; margin-top:8px;\">\n    <div class=\"action-head\">2. PRS Guitars (SE Series Electrics)</div>\n    <div class=\"action-details\">\n      \u2022 <strong>Why They Win:</strong> Heavy YouTube creator partnership push comparing SE fretwork consistency against Player I Stratocasters.<br/>\n      \u2022 <strong>AI Footprint:</strong> AI engines quote PRS SE coil-splitting versatility as superior value.<br/>\n      \u2022 <strong>Counter-Play:</strong> Highlight Player II rolled fretboard edges and Alnico 5 pickups in Amazon A+ tables to recapture the 3% gap.\n    </div>\n  </div>\n\n  <div class=\"action-card\" style=\"border-left-color:#06b6d4; margin-top:8px;\">\n    <div class=\"action-head\">3. Yamaha (Entry-Level Pacifica)</div>\n    <div class=\"action-details\">\n      \u2022 <strong>Why They Win:</strong> Universally recommended on Reddit /r/Guitar as the undisputed 'best beginner guitar for the money.'<br/>\n      \u2022 <strong>AI Footprint:</strong> Scrapes forum threads praising Pacifica 112V pickup configuration (HSS).<br/>\n      \u2022 <strong>Counter-Play:</strong> Seed verified community engagement on Squier Sonic and Classic Vibe build quality improvements.\n    </div>\n  </div>\n</div>\n", "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Multi-Marketplace Channel Scope (Beyond Amazon)</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    While Amazon dominates search indexation, musical instruments have distinct customer purchase journeys across specialized marketplaces: <strong>Sweetwater</strong>, <strong>Reverb</strong>, and <strong>Walmart</strong>.\n    <br/><br/>\n    Sweetwater maintains strict MAP compliance and provides rich editorial spec feeds that AI models scrape for verification. Conversely, open-box and mint-condition listings on Reverb frequently undercut new MAP by $50+, triggering Amazon's off-site price parity bots.\n  </div>\n</div>\n"]),
+  },
+  suggestions: {
+    badge: "OPPORTUNITY SPOKE \u00b7 REVENUE LIFT",
+    title: "Portfolio Suggestion Engine & Commercial ROI",
+    desc: "18 prioritized brand interventions ranked by revenue recovery and AI visibility score lift. Phase 1 Quick-Win ($680K) vs. Full Enterprise Scale ($18M\u2013$45M GMV).",
+    tabs: ["Top 5 Urgent Interventions", "18-Action Priority Matrix", "Interactive ROI Model (Pilot vs Enterprise)"],
+    render: spokeTabs(["\n<div class=\"metric-grid-2\">\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Phase 1 Quick-Win Lift</span>\n    <div class=\"metric-card-val\" style=\"color:var(--success-green);\">+$680K <span style=\"font-size:12px; color:var(--text-subtle);\">Pilot</span></div>\n    <span class=\"metric-card-sub\">Evaluated on 14 core hero ASINs</span>\n  </div>\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Full Enterprise Potential</span>\n    <div class=\"metric-card-val\" style=\"color:var(--accent-purple);\">$18M \u2013 $45M</div>\n    <span class=\"metric-card-sub\">Annualized GMV across 1,450+ FMIC SKUs</span>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Top 5 Urgent Portfolio Interventions</div>\n  \n  <div class=\"action-card critical\">\n    <div class=\"action-head\">1. Submit Brand Registry Ticket to Nest 14 Splinter Bundle ASINs</div>\n    <div class=\"action-details\">Work collaboratively with Austin Bazaar and GearTree to nest authorized bundle offers as variations under verified parent ASINs across Strat, Tele, Bass, and Acoustasonic lines.</div>\n    <div class=\"action-impact\">Recovers 2,420+ reviews &amp; eliminates 3P Buy Box undercutting (+$380k/yr)</div>\n  </div>\n\n  <div class=\"action-card critical\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">2. Standardize Bundle MAP Parity Guidance with Key Partners</div>\n    <div class=\"action-details\">Establish bundle floor pricing thresholds for Austin Bazaar and GearTree to eliminate -$42 average price suppression across Amazon, Reverb, and Walmart.</div>\n    <div class=\"action-impact\">Restores Buy Box from 68% \u2794 95% on 14 hero listings</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">3. Deploy Tabular Spec Comparison Matrices on 14 Catalog Pages</div>\n    <div class=\"action-details\">Add standardized HTML spec tables across DTC and Amazon A+ content (nut width, radius, pickup type, tonewood).</div>\n    <div class=\"action-impact\">Feeds crawler answer engines; +14 pts AEO lift</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">4. Publish DTC Category Shootout Hubs (Strat vs PRS / Acoustasonic vs Taylor)</div>\n    <div class=\"action-details\">Create authoritative comparison pages on fender.com to directly feed AI engine crawlers with verified manufacturer data.</div>\n    <div class=\"action-impact\">Recaptures 22% head-to-head citation share</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">5. Launch Reddit /r/Guitar Community Verification Initiative</div>\n    <div class=\"action-details\">Target authoritative community engagement on Reddit (31% of AI context) highlighting Player II fret improvements and Mustang Micro firmware updates.</div>\n    <div class=\"action-impact\">Direct lift in LLM sentiment and entry-level citations</div>\n  </div>\n</div>\n", "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">18-Action Implementation Matrix</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>#</th><th>Action Item</th><th>Division</th><th>Est. Effort</th><th>Impact</th><th>Roadmap Phase</th></tr>\n    </thead>\n    <tbody>\n      <tr><td>1</td><td>Amazon ASIN Variation Merger (14 SKUs)</td><td>Brand-wide</td><td>3 Days</td><td><span class=\"tag-badge tag-danger\">Critical</span></td><td>Phase 1 (Days 1\u201330)</td></tr>\n      <tr><td>2</td><td>3P MAP Enforcement &amp; Account Harmonization</td><td>Brand-wide</td><td>1 Week</td><td><span class=\"tag-badge tag-danger\">Critical</span></td><td>Phase 1 (Days 1\u201330)</td></tr>\n      <tr><td>3</td><td>A+ Tabular Spec Modules (14 Lines)</td><td>Electrics/Bass</td><td>2 Weeks</td><td><span class=\"tag-badge tag-danger\">Critical</span></td><td>Phase 2 (Days 31\u201360)</td></tr>\n      <tr><td>4</td><td>DTC Head-to-Head Comparison Hubs</td><td>Acoustic/Electric</td><td>2 Weeks</td><td><span class=\"tag-badge tag-warning\">High</span></td><td>Phase 2 (Days 31\u201360)</td></tr>\n      <tr><td>5</td><td>Reddit Community Citation Campaign</td><td>Brand-wide</td><td>Ongoing</td><td><span class=\"tag-badge tag-warning\">High</span></td><td>Phase 3 (Days 61\u201390)</td></tr>\n      <tr><td>6</td><td>JSON-LD Schema Markup (6 Missing Fields)</td><td>DTC Web</td><td>1 Week</td><td><span class=\"tag-badge tag-warning\">High</span></td><td>Phase 1 (Days 1\u201330)</td></tr>\n      <tr><td>7</td><td>Acoustasonic vs Taylor GS Mini Repositioning</td><td>Acoustic</td><td>2 Weeks</td><td><span class=\"tag-badge tag-warning\">High</span></td><td>Phase 2 (Days 31\u201360)</td></tr>\n      <tr><td>8</td><td>Mustang Micro &amp; Tone Master Digital PR</td><td>Amps</td><td>3 Weeks</td><td><span class=\"tag-badge tag-neutral\">Medium</span></td><td>Phase 3 (Days 61\u201390)</td></tr>\n    </tbody>\n  </table>\n</div>\n", "\n<div class=\"ceo-callout\" style=\"border-color:rgba(16, 185, 129, 0.4);\">\n  <div class=\"ceo-callout-header\" style=\"color:var(--success-text);\">\n    <span>Commercial Sizing \u00b7 Explaining the Enterprise Value to Fender</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    For a global enterprise like Fender ($1B+ brand), a $680,000 revenue lift is an attractive test run, but does not tell the full story.\n    <br/><br/>\n    The <strong>$680,000 figure represents Phase 1 Quick-Wins across only 14 hero ASINs</strong>. When the same listing hygiene and AEO optimization are scaled across Fender's full multi-brand portfolio (Fender, Squier, Jackson, EVH, Gretsch), the addressable financial upside reaches <strong>$18M to $45M annually</strong> ($28.4M mid-point)!\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">\n    <span>Interactive Financial ROI Model</span>\n    <div class=\"segmented-control\" id=\"roi-mode-control\">\n      <button class=\"segmented-btn active\" id=\"btn-roi-pilot\" onclick=\"window.toggleRoiMode('pilot')\">Phase 1 Quick-Win ($680K)</button>\n      <button class=\"segmented-btn\" id=\"btn-roi-enterprise\" onclick=\"window.toggleRoiMode('enterprise')\">Full Enterprise ($18M\u2013$45M)</button>\n    </div>\n  </div>\n\n  <div id=\"roi-content-pilot\">\n    <div class=\"metric-grid-2\" style=\"margin-top:8px;\">\n      <div class=\"metric-card-sm\">\n        <span class=\"metric-card-label\">Phase 1 Quick-Win Lift</span>\n        <div class=\"metric-card-val\" style=\"color:var(--success-green);\">$680,000 <span style=\"font-size:12px; color:var(--text-subtle);\">/ yr</span></div>\n        <span class=\"metric-card-sub\">Evaluated across 14 Pilot ASINs</span>\n      </div>\n      <div class=\"metric-card-sm\">\n        <span class=\"metric-card-label\">Service Fee Multiplier</span>\n        <div class=\"metric-card-val\" style=\"color:var(--accent-purple);\">2.8x ROI</div>\n        <span class=\"metric-card-sub\">Immediate payback on pilot scope</span>\n      </div>\n    </div>\n    <ul class=\"tour-card-list\" style=\"font-size:12px; margin-top:10px;\">\n      <li>Amazon Buy Box Recapture (68% \u2794 95% on 14 ASINs): <strong>+$380,000 / yr</strong></li>\n      <li>Conversational AI Assisted DTC Conversions: <strong>+$190,000 / yr</strong></li>\n      <li>Reduced Return Rates via Precise Technical Schemas: <strong>+$65,000 / yr</strong></li>\n      <li>Consolidated Review Synergy (Overall Pick Badges): <strong>+$45,000 / yr</strong></li>\n    </ul>\n  </div>\n\n  <div id=\"roi-content-enterprise\" style=\"display:none;\">\n    <div class=\"metric-grid-2\" style=\"margin-top:8px;\">\n      <div class=\"metric-card-sm\">\n        <span class=\"metric-card-label\">Full Enterprise Portfolio GMV Lift</span>\n        <div class=\"metric-card-val\" style=\"color:var(--success-green);\">$28,400,000 <span style=\"font-size:12px; color:var(--text-subtle);\">/ yr</span></div>\n        <span class=\"metric-card-sub\">$18M \u2013 $45M Range Across 1,450+ Active SKUs</span>\n      </div>\n      <div class=\"metric-card-sm\">\n        <span class=\"metric-card-label\">Enterprise ROI Multiple</span>\n        <div class=\"metric-card-val\" style=\"color:var(--accent-purple);\">118x ROI</div>\n        <span class=\"metric-card-sub\">On $20K/mo ($240K/yr) Retainer</span>\n      </div>\n    </div>\n    <ul class=\"tour-card-list\" style=\"font-size:12px; margin-top:10px;\">\n      <li>Catalog-Wide Buy Box &amp; Suppressed Listing Recapture: <strong>+$14,200,000 / yr</strong></li>\n      <li>Generative AI Search Conversion Lift (Zero-Click &amp; Chat Referral): <strong>+$9,600,000 / yr</strong></li>\n      <li>Elimination of Return Costs from Spec Hallucinations: <strong>+$2,800,000 / yr</strong></li>\n      <li>Cross-Marketplace MAP Governance (Amazon, Walmart, Reverb): <strong>+$1,800,000 / yr</strong></li>\n    </ul>\n  </div>\n</div>\n"]),
+  },
+  roadmap: {
+    badge: "STRATEGY SPOKE \u00b7 90 DAYS",
+    title: "Executive Portfolio Transformation Roadmap",
+    desc: "Phased 30-60-90 Day execution timeline to elevate Controllable Readiness Score from 42% to 84% and restore Buy Box to 95%.",
+    tabs: ["30-60-90 Day Milestone Phasing", "Executive KPI Target Matrix", "Flexible Resourcing & Operating Model"],
+    render: spokeTabs(["\n<div class=\"content-box\">\n  <div class=\"content-box-title\">30-60-90 Day Milestone Phasing</div>\n  \n  <div class=\"action-card critical\">\n    <div class=\"action-head\">Phase 1: Days 1\u201330 (Retail Containment &amp; ASIN Consolidation)</div>\n    <div class=\"action-details\">\n      \u2022 Harmonize 14 splinter Amazon ASINs under Brand Registry parentage.<br/>\n      \u2022 Standardize bundle MAP policies with Austin Bazaar and GearTree.<br/>\n      \u2022 Inject missing Schema.org JSON-LD technical fields on fender.com.\n    </div>\n    <div class=\"action-impact\">Milestone Target: Buy Box 68% \u2794 88% | Readiness Score 42% \u2794 62%</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">Phase 2: Days 31\u201360 (Content Depth &amp; A+ Comparison Grids)</div>\n    <div class=\"action-details\">\n      \u2022 Publish tabular comparison matrices across 14 top Amazon A+ catalog lines.<br/>\n      \u2022 Launch DTC Shootout Hubs (Player II vs PRS SE, Acoustasonic vs Taylor).<br/>\n      \u2022 Standardize technical specifications across Sweetwater &amp; GC dealer feeds.\n    </div>\n    <div class=\"action-impact\">Milestone Target: Buy Box \u2794 92% | Readiness Score \u2794 74%</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px; border-left-color:var(--success-green);\">\n    <div class=\"action-head\">Phase 3: Days 61\u201390 (Authority Scaling &amp; Community Citation)</div>\n    <div class=\"action-details\">\n      \u2022 Launch verified Reddit /r/Guitar &amp; forum citation grounding.<br/>\n      \u2022 Monitor real-time AEO crawl simulator for prompt recovery.<br/>\n      \u2022 Achieve full Buy Box retention (95%) and unlock Amazon Overall Pick badges.\n    </div>\n    <div class=\"action-impact\">Milestone Target: Full Readiness 84% | +$680k Pilot / +$28.4M Enterprise</div>\n  </div>\n</div>\n", "\n<div class=\"metric-grid-2\">\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Controllable Readiness Target</span>\n    <div class=\"metric-card-val\" style=\"color:var(--accent-purple);\">42% \u2794 84%</div>\n    <span class=\"metric-card-sub\">+42 pt net operational recovery</span>\n  </div>\n  <div class=\"metric-card-sm\">\n    <span class=\"metric-card-label\">Buy Box Retention Target</span>\n    <div class=\"metric-card-val\" style=\"color:var(--success-green);\">68% \u2794 95%</div>\n    <span class=\"metric-card-sub\">Eliminates 14 rogue ASIN leaks</span>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:10px;\">\n  <div class=\"content-box-title\">Executive 30-60-90 Day KPI Target Matrix</div>\n  <table class=\"table-sm\">\n    <thead>\n      <tr><th>Core Performance Indicator</th><th>Baseline</th><th>Day 30</th><th>Day 60</th><th>Day 90 Target</th><th>Status</th></tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td><strong>IntoFocus Controllable Readiness Score</strong></td>\n        <td>42%</td>\n        <td>62%</td>\n        <td>74%</td>\n        <td><span style=\"color:var(--accent-purple); font-weight:700;\">84%</span></td>\n        <td><span class=\"tag-badge tag-warning\">Active Sprint</span></td>\n      </tr>\n      <tr>\n        <td><strong>Amazon Buy Box Retention</strong></td>\n        <td>68%</td>\n        <td>88%</td>\n        <td>92%</td>\n        <td><span style=\"color:var(--success-green); font-weight:700;\">95%+</span></td>\n        <td><span class=\"tag-badge tag-danger\">Critical Fix</span></td>\n      </tr>\n      <tr>\n        <td><strong>Rogue 3P ASIN Splinters</strong></td>\n        <td>14 Active</td>\n        <td>5 Active</td>\n        <td>2 Active</td>\n        <td><span style=\"color:var(--success-green); font-weight:700;\">0 Active</span></td>\n        <td><span class=\"tag-badge tag-danger\">Harmonizing</span></td>\n      </tr>\n      <tr>\n        <td><strong>Schema.org Specification Sync</strong></td>\n        <td>34%</td>\n        <td>65%</td>\n        <td>85%</td>\n        <td><span style=\"color:var(--success-green); font-weight:700;\">98% Sync</span></td>\n        <td><span class=\"tag-badge tag-warning\">In Dev</span></td>\n      </tr>\n      <tr>\n        <td><strong>AI Model Citation Share (SOV)</strong></td>\n        <td>32%</td>\n        <td>48%</td>\n        <td>64%</td>\n        <td><span style=\"color:var(--accent-purple); font-weight:700;\">76% Share</span></td>\n        <td><span class=\"tag-badge tag-neutral\">Scheduled</span></td>\n      </tr>\n    </tbody>\n  </table>\n</div>\n", "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>Flexible Resourcing &amp; Engagement Model</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    IntoFocus adapts to Fender's internal capacity. Brands can either leverage our end-to-end managed service or have IntoFocus act as the specialized AI intelligence co-pilot for Fender's internal digital marketing and e-commerce operations teams\u2014without rigid pricing constraints.\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">\n    <span>Select Operating Model</span>\n    <div class=\"segmented-control\" id=\"resourcing-mode-control\">\n      <button class=\"segmented-btn active\" id=\"btn-resourcing-managed\" onclick=\"window.toggleResourcingMode('managed')\">IntoFocus Turnkey Managed</button>\n      <button class=\"segmented-btn\" id=\"btn-resourcing-copilot\" onclick=\"window.toggleResourcingMode('copilot')\">Fender In-House Co-Pilot</button>\n    </div>\n  </div>\n\n  <div id=\"resourcing-content-managed\">\n    <div class=\"action-card\" style=\"border-left-color:var(--accent-purple); margin-top:8px;\">\n      <div class=\"action-head\">\n        <span>Full Turnkey AEO Execution (IntoFocus Lead)</span>\n        <span class=\"tag-badge tag-success\">Turnkey Sprint</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Amazon Brand Registry Management:</strong> IntoFocus prepares and submits all variation nesting cases and liaises with key accounts (Austin Bazaar, GearTree).<br/>\n        \u2022 <strong>Schema &amp; Technical Engineering:</strong> IntoFocus codes and tests JSON-LD schema files and delivers plug-and-play CMS assets for fender.com.<br/>\n        \u2022 <strong>A+ Comparison Matrices:</strong> IntoFocus designs, writes, and uploads 4-column comparison tables across 14 lines.<br/>\n        \u2022 <strong>Continuous Multi-LLM Auditing:</strong> Weekly automated benchmark scans tracking ChatGPT, Claude, Perplexity, and Gemini.\n      </div>\n    </div>\n  </div>\n\n  <div id=\"resourcing-content-copilot\" style=\"display:none;\">\n    <div class=\"action-card\" style=\"border-left-color:var(--accent-cyan); margin-top:8px;\">\n      <div class=\"action-head\">\n        <span>Fender In-House Co-Pilot (Advisory &amp; Tooling)</span>\n        <span class=\"tag-badge tag-neutral\">Internal Delivery</span>\n      </div>\n      <div class=\"action-details\">\n        \u2022 <strong>Strategic Playbooks:</strong> IntoFocus provides weekly drift audit tickets, variation templates, and pre-written schema snippets.<br/>\n        \u2022 <strong>Internal Execution:</strong> Fender's in-house e-commerce ops and web engineering teams execute the uploads and partner discussions.<br/>\n        \u2022 <strong>Advisory &amp; Verification:</strong> Bi-weekly executive steering sessions with IntoFocus AEO architects to verify crawler adoption.\n      </div>\n    </div>\n  </div>\n</div>\n"]),
+  },
 } as Record<SpokeId, SpokeDefinition>;
 
 export type TourStep = {
-  nodeId: SpokeId | "hub";
+  nodeId: SpokeId;
   targetX: number;
   targetY: number;
   radius: number;
@@ -1226,109 +84,109 @@ export type TourStep = {
 };
 
 export const tourSteps = [
-      {
-        nodeId: "hub",
-        targetX: 800,
-        targetY: 500,
-        radius: 185,
-        title: "1. Brand Portfolio Diagnostic Hub",
-        subtitle: "FMIC Omnichannel Health & AI Citation Topology",
-        category: "BRAND CORE",
-        displays: [
-          "Aggregate Brand AI Health Index (41/100) across 124 monitored SKUs.",
-          "Cross-functional linkages connecting Retail Buy Box, AEO Citations, Specs, and Competitors.",
-          "Real-time alerts on 4 active divisional anomalies across Electric, Acoustic, Bass, and Amps."
-        ],
-        value: "Provides executive leadership with a single unified topology showing how Amazon listing hygiene and structured specs directly control Fender's brand visibility in generative AI search."
-      },
-      {
-        nodeId: "aeo",
-        targetX: 440,
-        targetY: 320,
-        radius: 125,
-        title: "2. Brand AEO & AI Visibility Engine",
-        subtitle: "100 Tracked Prompts Across 5 AI Engines",
-        category: "AEO ENGINE",
-        displays: [
-          "Brand citation distribution: Reddit (31%), Retail (24%), Editorial (19%), YouTube (14%), DTC (12%).",
-          "Prompt simulation engine testing 100 queries in ChatGPT, Perplexity, Claude, Gemini, and Copilot.",
-          "Division-by-division visibility scoring: Electrics (52), Bass (48), Squier (45), Amps (34), Acoustics (26)."
-        ],
-        value: "Pinpoints exactly where Fender is being omitted in AI recommendations and reveals which high-authority external sources (Reddit, retail catalogs) must be optimized."
-      },
-      {
-        nodeId: "ecommerce",
-        targetX: 1160,
-        targetY: 320,
-        radius: 125,
-        title: "3. Full-Catalog E-Commerce & Buy Box Integrity",
-        subtitle: "Amazon Buy Box, 3P MAP Drift & Brand Registry Harmonization",
-        category: "RETAIL HEALTH",
-        displays: [
-          "Catalog-wide Buy Box retention at 68% (18% suppressed due to off-Amazon pricing; 14% lost to 3P bundles).",
-          "14 flagged 3P bundle listings scattering 2,420+ authentic customer reviews.",
-          "MAP price undercutting on Amazon triggering automated price drops on Reverb and Walmart."
-        ],
-        value: "Directly protects brand profit margin and review velocity through Brand Registry variation nesting with key distribution partners (Austin Bazaar, GearTree) rather than adversarial legal action."
-      },
-      {
-        nodeId: "specs",
-        targetX: 440,
-        targetY: 680,
-        radius: 120,
-        title: "4. Cross-Category Spec Matrix & Schema Health",
-        subtitle: "Schema.org Machine-Readability & A+ Comparison Grids",
-        category: "SPEC READINESS",
-        displays: [
-          "34% Schema.org structured data completeness across the catalog.",
-          "6 missing Schema attributes (fingerboard radius, nut width, pickup configs) causing AI hallucination bugs.",
-          "A+ comparison matrix gap across 14 of 18 key catalog lines."
-        ],
-        value: "Ensures conversational search engines parse accurate, manufacturer-verified specifications instead of quoting competitor comparison charts or inaccurate 3P bundle copy."
-      },
-      {
-        nodeId: "competitors",
-        targetX: 1160,
-        targetY: 680,
-        radius: 120,
-        title: "5. Brand Competitive Radar & Threat Analysis",
-        subtitle: "Cross-Division Share of Voice (SOV) Benchmarks",
-        category: "COMPETITORS",
-        displays: [
-          "Share of Voice gap vs. 6 primary rivals across Electrics, Acoustics, Bass, and Digital Amps.",
-          "Taylor Guitars dominance (58% SOV) in travel/acoustic queries.",
-          "Boss Katana & Spark MINI control (62% SOV) in digital practice amp recommendations."
-        ],
-        value: "Arms brand marketing and product teams with competitive intelligence to defend search territory, reposition product copy, and exploit competitor weaknesses."
-      },
-      {
-        nodeId: "suggestions",
-        targetX: 800,
-        targetY: 820,
-        radius: 115,
-        title: "6. Portfolio Suggestion Engine (+$680k Pilot / +$28.4M Enterprise)",
-        subtitle: "18 High-Impact Fixes Ranked by Effort & ROI",
-        category: "OPPORTUNITY",
-        displays: [
-          "18 prioritized interventions ranked by estimated revenue lift and visibility points gained.",
-          "Top 5 immediate actions: Brand Registry nesting, MAP harmonization, A+ spec tables, Shootout hubs, Reddit outreach.",
-          "Commercial sizing: +$680K Pilot lift across 14 ASINs ➔ +$28.4M - $42.6M Enterprise GMV scale across FMIC."
-        ],
-        value: "Eliminates guesswork by delivering a prioritized, mathematically ranked action plan with measurable financial ROI across all 5 FMIC divisions."
-      },
-      {
-        nodeId: "roadmap",
-        targetX: 800,
-        targetY: 180,
-        radius: 110,
-        title: "7. Executive 90-Day Portfolio Transformation Roadmap",
-        subtitle: "30-60-90 Day Milestone Execution Timeline",
-        category: "ROADMAP",
-        displays: [
-          "Phased execution timeline designed to elevate controllable readiness from 52% to 94% within 90 days.",
-          "Phase 1: Retail Containment (Days 1–30) ➔ Phase 2: Content Depth (Days 31–60) ➔ Phase 3: Authority Scaling (Days 61–90).",
-          "Flexible resourcing: Choose between IntoFocus Turnkey Managed Sprint vs. Fender Internal Co-Pilot Enablement."
-        ],
-        value: "Provides a structured executive roadmap for cross-functional teams to align on milestones and deliverables without rigid cost constraints."
-      }
+  {
+    "nodeId": "hub",
+    "targetX": 800,
+    "targetY": 500,
+    "radius": 185,
+    "title": "1. Master Brand Portfolio Command Core",
+    "subtitle": "FMIC Omnichannel Intelligence & Multi-Division Health",
+    "category": "BRAND CORE",
+    "displays": [
+      "Aggregate Brand AEO Scan Index (61/100) vs. IntoFocus Controllable Readiness Score (42% \u2794 84% Target).",
+      "5 FMIC Sub-Brand Division Health: Fender USA, Mexico/Player II, Squier, Jackson/Gretsch, and Amps/Audio.",
+      "Clear Buy Box breakdown: 68% Fender 1P owned, 18% Algorithmic Suppression, 14% Lost to 3P Bundles."
+    ],
+    "value": "Provides executive leadership with an interactive portfolio command center, linking e-commerce listing hygiene directly to AI search engine recommendations and enterprise revenue."
+  },
+  {
+    "nodeId": "ecommerce",
+    "targetX": 1160,
+    "targetY": 320,
+    "radius": 125,
+    "title": "2. E-Commerce, Buy Box & Brand Registry Governance",
+    "subtitle": "Amazon Buy Box, 14-ASIN Leakage Explorer & Partner Harmonization",
+    "category": "RETAIL HEALTH",
+    "displays": [
+      "Buy Box 68% clarity: 18% suppressed due to off-Amazon scrapers (Walmart/Reverb); 14% lost to partner bundles.",
+      "Interactive 14-ASIN table tracking MAP price leakage, partner bundles (Austin Bazaar, GearTree), and channels.",
+      "Catalog Consolidation blueprint: Nesting partner bundles under official Parent ASINs to pool 2,420+ reviews and secure 'Overall Pick' badges."
+    ],
+    "value": "Replaces adversarial 'Cease & Desist' threats with collaborative Brand Registry variation nesting that protects top partners (Austin Bazaar) while restoring the Buy Box to 95%."
+  },
+  {
+    "nodeId": "aeo",
+    "targetX": 440,
+    "targetY": 320,
+    "radius": 125,
+    "title": "3. Brand AEO Engine & 100 AI Simulations",
+    "subtitle": "Dual-Index Intelligence & Granular Query Inspector",
+    "category": "AEO ENGINE",
+    "displays": [
+      "Dual-Index clarity: External Volatile Scan (61/100) vs. Deterministic IntoFocus Controllable Readiness Score (42% \u2794 84%).",
+      "Granular 100 AI Simulation Inspector with exact prompt logs, model citations (ChatGPT, Claude, Perplexity, Gemini), and outcomes.",
+      "Detected Hallucination Engine: Acoustasonic 'dual-humbucker' bug and Player II '12-inch radius' bug with exact schema fixes."
+    ],
+    "value": "Reveals exactly why AI models omit Fender in conversational recommendations and gives technical teams the exact JSON-LD schema patches needed to correct hallucinations."
+  },
+  {
+    "nodeId": "specs",
+    "targetX": 440,
+    "targetY": 680,
+    "radius": 120,
+    "title": "4. Technical Spec Architecture & Schema.org Health",
+    "subtitle": "Machine-Readable Data & Amazon A+ Comparison Tables",
+    "category": "SPEC READINESS",
+    "displays": [
+      "Explanation: Schema.org is 'how AI engines read guitar specs as indisputable facts' instead of poetic marketing copy.",
+      "Audit of 6 missing technical schema fields (nutWidth, fingerboardRadius, pickupConfiguration, bodyWoodType, scaleLength, numberOfFrets).",
+      "Amazon A+ Content 4-column comparison tables across 14 product lines to control tiering from Squier up to American Pro."
+    ],
+    "value": "Transforms fender.com into an authoritative source for AI crawlers, eliminating crawler spec confusion and reducing e-commerce product returns."
+  },
+  {
+    "nodeId": "competitors",
+    "targetX": 1160,
+    "targetY": 680,
+    "radius": 120,
+    "title": "5. Brand Competitive Radar & Category Share of Voice",
+    "subtitle": "Head-to-Head Battlecards & Competitor Playbooks",
+    "category": "COMPETITORS",
+    "displays": [
+      "Head-to-head share of voice: Player II vs. PRS SE (-3% gap), Acoustasonic vs. Taylor GS Mini (-47% gap), Squier vs. Yamaha Pacifica (-24% gap).",
+      "Competitor strategy teardowns: Why Taylor wins with unified reviews, PRS with YouTube blitz, Yamaha with Reddit lore, Boss Katana with app ecosystems.",
+      "Multi-marketplace competitive monitoring across Amazon, Sweetwater, Reverb, and Walmart."
+    ],
+    "value": "Arms FMIC brand marketing and product teams with actionable battlecards to counter competitor advantages and recapture high-intent pre-purchase shoppers."
+  },
+  {
+    "nodeId": "suggestions",
+    "targetX": 800,
+    "targetY": 180,
+    "radius": 115,
+    "title": "6. Portfolio Suggestion Engine & Commercial ROI",
+    "subtitle": "18 Prioritized Fixes: Phase 1 Lift vs. Enterprise Potential",
+    "category": "OPPORTUNITY",
+    "displays": [
+      "18 mathematically prioritized interventions ranked by revenue recovery and visibility points gained.",
+      "Interactive ROI Toggle: Phase 1 Quick-Win Lift ($680K on 14 ASINs) vs. Full Enterprise Portfolio Potential ($18M\u2013$45M GMV across 1,450+ SKUs).",
+      "Enterprise ROI Multiple: 118x annual return on a $20K/month ($240K/year) enterprise advisory retainer."
+    ],
+    "value": "Justifies enterprise retainer investment for a $1B+ brand by proving that listing consolidation and AEO optimization unlock up to $45M in omnichannel GMV lift."
+  },
+  {
+    "nodeId": "roadmap",
+    "targetX": 800,
+    "targetY": 500,
+    "radius": 110,
+    "title": "7. Executive 90-Day Roadmap & Flexible Resourcing",
+    "subtitle": "Phased 30-60-90 Day Execution & Squad Engagement",
+    "category": "ROADMAP",
+    "displays": [
+      "Phased 30-60-90 Day Sprint to lift Controllable Readiness Score from 42% to 84% and Buy Box to 95%.",
+      "Executive KPI Matrix tracking milestones for Buy Box, rogue ASINs, schema coverage, and AI model citations.",
+      "Flexible Resourcing Toggle: 'IntoFocus Turnkey Managed Sprint' vs. 'Fender Internal Co-Pilot Enablement' without rigid squad pricing."
+    ],
+    "value": "Provides an adaptable enterprise execution framework that aligns with Fender's internal digital engineering workflows while holding teams accountable to clear 90-day targets."
+  }
 ] as TourStep[];

@@ -19,6 +19,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           tourCategory={ctx.tourCategory}
           onFocusNode={ctx.focusNode}
           onResetView={ctx.resetView}
+          overviewNonce={ctx.overviewNonce}
           onShowTooltip={ctx.showTooltip}
           onHideTooltip={ctx.hideTooltip}
         />
