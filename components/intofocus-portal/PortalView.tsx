@@ -3,6 +3,7 @@
 "use client";
 
 import { Fragment } from "react";
+import Image from "next/image";
 import { css } from "@/lib/intofocus-portal/css";
 import { HoverButton } from "@/components/intofocus-portal/HoverButton";
 import type { PortalVals } from "@/lib/intofocus-portal/types";
@@ -75,11 +76,15 @@ export function PortalView({ v }: Props) {
     
       <div style={css("width:236px;flex:0 0 236px;background:#ffffff;border-right:1px solid #e8e8ec;display:flex;flex-direction:column;height:1024px;position:sticky;top:0")}>
         <div style={css("padding:22px 20px 16px 20px;display:flex;flex-direction:column;gap:16px")}>
-          <div style={css("display:flex;align-items:center;gap:9px")}>
-            <div style={css("width:20px;height:20px;border-radius:5px;background:#16161a;display:flex;align-items:center;justify-content:center")}>
-              <div style={css("width:7px;height:7px;border-radius:50%;background:#ffffff")}></div>
-            </div>
-            <div style={css("font-size:14px;font-weight:600;letter-spacing:-0.01em")}>IntoFocus</div>
+          <div style={css("width:100%")}>
+            <Image
+              src="/logo-primary-horizontal.png"
+              alt="IntoFocus AI"
+              width={300}
+              height={91}
+              priority
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
           </div>
           <div style={css("border:1px solid #e8e8ec;border-radius:7px;padding:8px 10px;display:flex;flex-direction:column;gap:1px;background:#fafafb")}>
             <div style={css("font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:#8e8e99;font-weight:600")}>Client</div>
