@@ -36,7 +36,7 @@ export function useCanvasCamera({
       window.clearTimeout(cameraTimerRef.current);
       cameraTimerRef.current = window.setTimeout(() => {
         svg.classList.remove("camera-animating");
-      }, 360);
+      }, 600);
     }
     applyTransform();
   }, [applyTransform, svgRef]);

@@ -431,12 +431,12 @@ export const sdkCanvasSpec = defineCanvas({
             <DataTable
               headers={["Field", "Role", "Required"]}
               rows={[
-                ["brand", "Name, subtitle, logo, badge", <TagBadge tone="danger">Yes</TagBadge>],
-                ["filters", "Header dropdown → spoke or overview", <TagBadge>Optional</TagBadge>],
-                ["tickers", "Live metric chips that focus a spoke", <TagBadge>Optional</TagBadge>],
-                ["search.matchers", "Keyword → spoke routing", <TagBadge>Optional</TagBadge>],
-                ["legend", "HUD status key", <TagBadge>Optional</TagBadge>],
-                ["headerActions", "Extra header links/buttons", <TagBadge>Optional</TagBadge>],
+                ["brand", "Name, subtitle, logo, badge", <TagBadge key="brand" tone="danger">Yes</TagBadge>],
+                ["filters", "Header dropdown → spoke or overview", <TagBadge key="filters">Optional</TagBadge>],
+                ["tickers", "Live metric chips that focus a spoke", <TagBadge key="tickers">Optional</TagBadge>],
+                ["search.matchers", "Keyword → spoke routing", <TagBadge key="search.matchers">Optional</TagBadge>],
+                ["legend", "HUD status key", <TagBadge key="legend">Optional</TagBadge>],
+                ["headerActions", "Extra header links/buttons", <TagBadge key="headerActions">Optional</TagBadge>],
               ]}
             />
           </ContentBox>
@@ -481,7 +481,7 @@ export const sdkCanvasSpec = defineCanvas({
                   "Opens a drilldown and frames that target",
                 ],
                 [
-                  <strong key="hub">variant: "hub"</strong>,
+                  <strong key="hub">{'variant: "hub"'}</strong>,
                   "Pulsing core. Omit spokeId to reset the camera on click",
                 ],
               ]}

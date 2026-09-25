@@ -31,3 +31,42 @@ You can filter the map by division, search for a line, node, or ASIN and land on
 **Brand Fixes.** Eighteen interventions ranked by effort and revenue. The ROI tab switches between the 14-ASIN pilot and a full FMIC catalog model.
 
 **Roadmap.** A 30-60-90 day plan to raise readiness and Buy Box, plus a resourcing toggle between an IntoFocus-managed sprint and an internal co-pilot model.
+
+## Command center
+
+The panel opens on **What do I need to worry about?** — a ranked queue of the highest-value moves, each with a plain-language reason, the commercial consequence, an owner toggle (IntoFocus AI / client team / done), and a link into the spoke tab holding the evidence. The header's **Priorities** button returns to it from anywhere.
+
+Panel content is written for an operator, not an engineer: jargon is marked with a dotted underline and explains itself on hover (see `components/v3/glossary.ts`), and every **Explanation** block can be hidden once read.
+
+Per-viewer state — owners, starred prompts, hidden explanations — currently lives in `localStorage`. `lib/canvas-sdk/local-store.ts` is the single read/write seam to replace when this moves to per-user Supabase rows.
+
+## Authoring panel content
+
+Spoke panels are authored as HTML strings in `components/v3/spoke-data.ts` and injected into the drilldown. They are wired by delegation in `lib/canvas-sdk/panel-interactions.ts` rather than by inline `onclick` handlers, so a missing handler is impossible rather than a silent runtime error. Supported attributes:
+
+| Attribute | Effect |
+| --- | --- |
+| `data-ifai-open="<spokeId>"` + optional `data-ifai-tab="<tab substring>"` | Turns the element into a drill-down into another spoke and tab |
+| `data-ifai-filter="<value>"` inside `data-ifai-filter-group="<listId>"` | Segmented filter over list children matching `data-category`; `all` and `starred` are built in |
+| `data-ifai-star="<stable id>"` | Adds a star toggle and remembers the row in this viewer's watchlist |
+
+`.ceo-callout` blocks get their Hide/Show toggle automatically — no markup needed.
+
+## Tests
+
+End-to-end coverage lives in `e2e/`, run with Playwright against the dev server:
+
+```bash
+npm run test:e2e          # headless
+npm run test:e2e:ui       # interactive runner
+npm run test:e2e:report   # last HTML report
+```
+
+The suite drives the Chrome installed on the machine, so a fresh clone needs no browser download. Without Chrome (CI, Linux):
+
+```bash
+npx playwright install --with-deps chromium
+E2E_BROWSER=chromium npm run test:e2e
+```
+
+`E2E_BASE_URL` points the suite at an already-running server and skips spawning one. Specs are grouped by the behaviour they protect: `guided-tour`, `command-center`, `panel-layout` (including header fit and light-theme contrast), and `panel-interactions` (filters, watchlist, collapsible explanations, drill-downs, glossary). Every test also asserts the page logged no errors.

@@ -1,5 +1,6 @@
 export { CanvasGraph } from "@/lib/canvas-sdk/CanvasGraph";
 export { CanvasShell } from "@/lib/canvas-sdk/CanvasShell";
+export { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
 export {
   CenteredStack,
   ConnLine,
@@ -29,8 +30,12 @@ export type {
   CanvasRenderContext,
   CanvasSpec,
   CanvasTicker,
+  CommandCenterSpec,
   EdgeKind,
   NodeStatus,
+  PriorityItem,
+  PriorityOwner,
+  PrioritySeverity,
   SearchMatcher,
   SpokeContent,
   TourStep,

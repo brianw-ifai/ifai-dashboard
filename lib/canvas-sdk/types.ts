@@ -56,6 +56,10 @@ export type SpokeContent = {
   title: string;
   desc: string;
   tabs: string[];
+  /** Short name for the breadcrumb and the "Next" footer. */
+  navLabel?: string;
+  /** Next spoke in left-to-right map order. The panel footer links here. */
+  next?: string;
   render: (tabIdx: number) => ReactNode | string;
 };
 
@@ -69,6 +73,37 @@ export type TourStep = {
   category: string;
   displays: string[];
   value: string;
+};
+
+export type PriorityOwner = "intofocus" | "client" | "unassigned";
+export type PrioritySeverity = "critical" | "high" | "moderate";
+
+export type PriorityItem = {
+  id: string;
+  /** Plain-language headline. Keep it short enough to scan in one pass. */
+  title: string;
+  /** Why this sits at the top of the queue today. */
+  why: string;
+  /** Commercial consequence, shown as the item footer. */
+  impact?: string;
+  severity: PrioritySeverity;
+  /** Deep-links into the drilldown when set. */
+  spokeId?: string;
+  subTab?: string;
+  defaultOwner?: PriorityOwner;
+};
+
+export type CommandCenterSpec = {
+  badge?: string;
+  title: string;
+  desc: string;
+  /** AI-written standing summary shown above the queue. */
+  summary?: string;
+  items: PriorityItem[];
+  /** Open the command center instead of a spoke on first paint. */
+  openByDefault?: boolean;
+  /** localStorage key for owner/done state. Placeholder until Supabase per-user state lands. */
+  storageKey?: string;
 };
 
 export type CanvasTicker = {
@@ -114,6 +149,12 @@ export type CanvasSpec = {
   viewBox?: { w: number; h: number };
   focusScale?: number;
   drilldownWidth?: number;
+  /** Width when the panel is expanded. Falls back to 68% of the viewport, capped at 1180px. */
+  drilldownExpandedWidth?: number;
+  /** Priority queue shown above the spokes. Omit to keep the panel spoke-only. */
+  commandCenter?: CommandCenterSpec;
+  /** Jargon -> plain-language definition, shown on hover in the panel copy. */
+  glossary?: Record<string, string>;
   filters?: CanvasFilter[];
   tickers?: CanvasTicker[];
   search?: {
@@ -148,6 +189,7 @@ export type CanvasRenderContext = {
   focusNode: (spokeId: string, subTab?: string) => void;
   resetView: () => void;
   overviewNonce: number;
+  focusedSpokeId: string | null;
   showTooltip: (
     evt: MouseEvent,
     title: string,

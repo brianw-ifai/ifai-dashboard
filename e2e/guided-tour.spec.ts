@@ -1,0 +1,151 @@
+import { expect, test } from "./fixtures";
+
+/* Regression cover for the tour losing its place. Reported on the 2026-09-17
+   walkthrough: "that brought me out of the Guided Tour, but I was not done...
+   it looks like I need to start over." */
+test.describe("guided tour", () => {
+  test("opening a deep dive suspends the tour instead of ending it", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.startTour();
+    await canvas.nextTourStep();
+    await canvas.nextTourStep();
+    const step = await canvas.tourStep.innerText();
+    expect(step).toContain("STEP 3");
+
+    await page.locator(".tour-drilldown-link-btn").click();
+
+    await expect(page.locator(".tour-overlay-container.active")).toHaveCount(0);
+    await expect(canvas.resumeChip).toBeVisible();
+    await expect(canvas.resumeChip).toContainText("3/7");
+
+    await canvas.resumeChip.click();
+    await expect(canvas.tourCard).toBeVisible();
+    await expect(canvas.tourStep).toHaveText(step);
+  });
+
+  test("closing the panel resumes the tour", async ({ canvas, page }) => {
+    await canvas.startTour();
+    await canvas.nextTourStep();
+    const step = await canvas.tourStep.innerText();
+
+    await page.locator(".tour-drilldown-link-btn").click();
+    await expect(canvas.resumeChip).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(canvas.tourCard).toBeVisible();
+    await expect(canvas.tourStep).toHaveText(step);
+  });
+
+  test("abandoning the tour leaves a resume offer in the header", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.startTour();
+    await canvas.nextTourStep();
+    await canvas.nextTourStep();
+    const step = await canvas.tourStep.innerText();
+
+    await page.keyboard.press("Escape");
+    await expect(canvas.tourCard).toBeHidden();
+    await expect(canvas.tourButton).toContainText("Resume Tour");
+
+    await canvas.tourButton.click();
+    await expect(canvas.tourStep).toHaveText(step);
+  });
+
+  test("finishing the tour clears the resume offer", async ({ canvas }) => {
+    await canvas.startTour();
+    const total = await canvas.page.locator(".tour-dot").count();
+    for (let i = 0; i < total; i += 1) await canvas.nextTourStep();
+
+    await expect(canvas.tourCard).toBeHidden();
+    await expect(canvas.tourButton).toContainText("Guided Tour");
+    await expect(canvas.tourButton).not.toContainText("Resume");
+  });
+
+  test("the deep-dive button warns that the tour pauses", async ({ canvas, page }) => {
+    await canvas.startTour();
+    await expect(page.locator(".tour-drilldown-hint")).toContainText("come back");
+  });
+});
+
+/* The dimmer used to be a flat sheet over everything, so the bubble each step
+   was describing got dimmed along with the rest of the map. */
+test.describe("tour spotlight", () => {
+  /** Reads the hole the shell writes onto the overlay each frame. */
+  async function spotlight(page: import("@playwright/test").Page) {
+    return page.locator(".tour-overlay-container").evaluate((el) => {
+      const style = (el as HTMLElement).style;
+      return {
+        x: parseFloat(style.getPropertyValue("--tour-hole-x")),
+        y: parseFloat(style.getPropertyValue("--tour-hole-y")),
+        r: parseFloat(style.getPropertyValue("--tour-hole-r")),
+      };
+    });
+  }
+
+  test("lights the node the current step is about", async ({ canvas, page }) => {
+    await canvas.startTour();
+    await expect
+      .poll(async () => (await spotlight(page)).r)
+      .toBeGreaterThan(0);
+
+    const ring = page.locator("#tour-spotlight-ring");
+    const box = (await ring.boundingBox())!;
+    const hole = await spotlight(page);
+
+    // The hole is centred on the spotlighted node, not on the viewport.
+    expect(Math.abs(hole.x - (box.x + box.width / 2))).toBeLessThan(8);
+    expect(Math.abs(hole.y - (box.y + box.height / 2))).toBeLessThan(8);
+    expect(hole.r).toBeGreaterThan(box.width / 2);
+
+    // ...and the dimmer actually consumes it, rather than staying a flat sheet.
+    const dim = await page
+      .locator(".tour-dimmer-backdrop")
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(dim).toContain("radial-gradient");
+    // Computed style serialises `transparent` as a zero-alpha rgba.
+    expect(dim).toContain("rgba(0, 0, 0, 0)");
+    expect(dim).toContain(`${Math.round(hole.r)}px`);
+  });
+
+  test("the lit area never sits under the tour card", async ({ canvas, page }) => {
+    await canvas.startTour();
+    const total = await page.locator(".tour-dot").count();
+
+    for (let step = 0; step < total; step += 1) {
+      await expect.poll(async () => (await spotlight(page)).r).toBeGreaterThan(0);
+      const hole = await spotlight(page);
+      const card = (await page.locator(".tour-modal-card").boundingBox())!;
+      expect(hole.x - hole.r, `step ${step + 1} overlaps the tour card`).toBeGreaterThan(
+        card.x + card.width,
+      );
+      if (step < total - 1) {
+        await canvas.nextTourStep();
+        await page.waitForTimeout(900); // let the camera settle on the next node
+      }
+    }
+  });
+
+  test("the panel gets out of the way for the duration", async ({ canvas, page }) => {
+    await expect(page.locator(".ifai-canvas.panel-open")).toHaveCount(1);
+
+    await canvas.startTour();
+    await expect(page.locator(".ifai-canvas.tour-running")).toHaveCount(1);
+    await expect(page.locator(".ifai-canvas.panel-open")).toHaveCount(0);
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".ifai-canvas.tour-running")).toHaveCount(0);
+    await expect(page.locator(".ifai-canvas.panel-open")).toHaveCount(1);
+  });
+
+  test("the hole is cleared when the tour ends", async ({ canvas, page }) => {
+    await canvas.startTour();
+    await expect.poll(async () => (await spotlight(page)).r).toBeGreaterThan(0);
+
+    await page.keyboard.press("Escape");
+    await expect.poll(async () => (await spotlight(page)).r).toBeNaN();
+  });
+});

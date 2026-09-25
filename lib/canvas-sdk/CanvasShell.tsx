@@ -2,6 +2,8 @@
 
 import "@/lib/canvas-sdk/canvas-sdk.css";
 import "@/lib/canvas-sdk/iom-theme.css";
+import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
+import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
 import type {
   CanvasRenderContext,
   CanvasSpec,
@@ -9,10 +11,14 @@ import type {
 } from "@/lib/canvas-sdk/types";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import {
+  ChevronLeft,
   Compass,
   ExternalLink,
   Layers,
   Layout,
+  ListChecks,
+  Maximize2,
+  Minimize2,
   Minus,
   Moon,
   Plus,
@@ -26,6 +32,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -35,6 +42,14 @@ import {
 
 const DEFAULT_DRILLDOWN_WIDTH = 620;
 const DEFAULT_FOCUS_SCALE = 1.55;
+const EXPANDED_WIDTH_CAP = 1180;
+const EXPANDED_WIDTH_RATIO = 0.68;
+/** Never squeeze the graph rail below this. */
+const MIN_GRAPH_RAIL = 260;
+/** Footprint of .tour-modal-card (left + width + gutter), so the spotlight clears it. */
+const TOUR_CARD_ZONE = 36 + 440 + 24;
+/** Below this much clear space the offset would push the node off-screen. */
+const TOUR_CARD_MIN_ROOM = 240;
 
 type TooltipState = {
   title: string;
@@ -57,9 +72,10 @@ function tickerIcon(kind?: TickerIcon) {
 }
 
 export function CanvasShell({ spec, children }: Props) {
-  const drilldownWidth = spec.drilldownWidth ?? DEFAULT_DRILLDOWN_WIDTH;
+  const baseDrilldownWidth = spec.drilldownWidth ?? DEFAULT_DRILLDOWN_WIDTH;
   const focusScale = spec.focusScale ?? DEFAULT_FOCUS_SCALE;
-  const tourSteps = spec.tour ?? [];
+  const tourSteps = useMemo(() => spec.tour ?? [], [spec.tour]);
+  const commandCenter = spec.commandCenter;
   const legend = spec.legend ?? [
     { status: "danger" as const, label: "Critical" },
     { status: "warning" as const, label: "At Risk" },
@@ -71,8 +87,11 @@ export function CanvasShell({ spec, children }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const drilldownBodyRef = useRef<HTMLDivElement>(null);
   const tourActiveRef = useRef(false);
+  const tourSuspendedRef = useRef(false);
   const activeSpokeRef = useRef<string | null>(null);
   const tourStepRef = useRef(0);
+  const panelViewRef = useRef<"spoke" | "command">("spoke");
+  const tourOverlayRef = useRef<HTMLDivElement>(null);
 
   const { pan, transform, applyTransform, framePoint, frameOverview, zoomBy } =
     useCanvasCamera({
@@ -91,11 +110,56 @@ export function CanvasShell({ spec, children }: Props) {
   const [activeTab, setActiveTab] = useState(0);
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  /** Set when the tour is parked behind an open drilldown rather than ended. */
+  const [tourSuspended, setTourSuspended] = useState(false);
+  /** Step the user abandoned the tour on, so the header can offer a resume. */
+  const [tourProgress, setTourProgress] = useState<number | null>(null);
+  const [panelExpanded, setPanelExpanded] = useState(true);
+  const [panelView, setPanelView] = useState<"spoke" | "command">(
+    commandCenter?.openByDefault ? "command" : "spoke",
+  );
+  const [windowWidth, setWindowWidth] = useState(0);
 
-  activeSpokeRef.current = activeSpoke;
-  tourStepRef.current = tourStep;
+  /* These refs exist so the document-level pointer/key listeners can read the
+     latest values without being re-registered on every change. They are written
+     after commit, which is before any user event can read them. */
+  useEffect(() => {
+    activeSpokeRef.current = activeSpoke;
+    tourStepRef.current = tourStep;
+    tourSuspendedRef.current = tourSuspended;
+    panelViewRef.current = panelView;
+  }, [activeSpoke, panelView, tourStep, tourSuspended]);
+
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Single source of truth for the panel width: CSS and the camera offset both read it.
+  const drilldownWidth = (() => {
+    if (!panelExpanded || windowWidth === 0) return baseDrilldownWidth;
+    const target =
+      spec.drilldownExpandedWidth ??
+      Math.round(Math.min(EXPANDED_WIDTH_CAP, windowWidth * EXPANDED_WIDTH_RATIO));
+    return Math.max(baseDrilldownWidth, Math.min(target, windowWidth - MIN_GRAPH_RAIL));
+  })();
 
   const closeDrilldown = useCallback(() => {
+    // A suspended tour resumes on close in every appearance, including iom
+    // where the panel itself stays pinned open.
+    if (tourSuspendedRef.current) {
+      setTourSuspended(false);
+      return;
+    }
+    // Leaving the command center falls back to the spoke view (iom keeps a
+    // spoke pinned, so the panel stays populated rather than going blank).
+    if (panelViewRef.current === "command") {
+      setPanelView("spoke");
+      if (!activeSpokeRef.current) frameOverview();
+      return;
+    }
     if (iom) return;
     setActiveSpoke(null);
     if (!tourActiveRef.current) frameOverview();
@@ -113,6 +177,7 @@ export function CanvasShell({ spec, children }: Props) {
       const spoke = spec.spokes[spokeId];
       if (!spoke) return;
       setActiveSpoke(spokeId);
+      setPanelView("spoke");
       if (subTab) {
         const found = spoke.tabs.findIndex((tab) =>
           tab.toLowerCase().includes(subTab.toLowerCase()),
@@ -122,46 +187,122 @@ export function CanvasShell({ spec, children }: Props) {
         setActiveTab(0);
       }
       setTooltipVisible(false);
+      if (spokeId === "hub") {
+        setOverviewNonce((nonce) => nonce + 1);
+        frameOverview();
+        return;
+      }
       const key = subTab ? `${spokeId}:${subTab}` : spokeId;
       const pos = spec.focusTargets[key] ?? spec.focusTargets[spokeId];
       if (pos) framePoint(pos.x, pos.y, focusScale, iom ? 0 : drilldownWidth);
     },
-    [drilldownWidth, focusScale, framePoint, iom, spec.focusTargets, spec.spokes],
+    [drilldownWidth, focusScale, frameOverview, framePoint, iom, spec.focusTargets, spec.spokes],
   );
 
-  const closeTour = useCallback(() => {
-    tourActiveRef.current = false;
-    setTourActive(false);
-    resetCanvasView();
-  }, [resetCanvasView]);
+  /** `completed` clears the resume affordance; abandoning keeps the step. */
+  const closeTour = useCallback(
+    (completed = false) => {
+      tourActiveRef.current = false;
+      tourSuspendedRef.current = false;
+      setTourActive(false);
+      setTourSuspended(false);
+      setTourProgress(completed ? null : tourStepRef.current);
+      resetCanvasView();
+    },
+    [resetCanvasView],
+  );
 
   const smoothPanToNode = useCallback(
     (targetX: number, targetY: number) => {
-      framePoint(targetX, targetY, 1.12);
+      // The tour card sits bottom-left, so bias the framing right of it when
+      // there is room; a negative inset shifts the centre point rightwards.
+      const width = viewportRef.current?.clientWidth ?? 0;
+      const clearOfCard = width > TOUR_CARD_ZONE + TOUR_CARD_MIN_ROOM ? -TOUR_CARD_ZONE : 0;
+      framePoint(targetX, targetY, 1.12, clearOfCard);
     },
     [framePoint],
   );
 
-  const startTour = useCallback(() => {
-    if (!tourSteps.length) return;
-    tourActiveRef.current = true;
-    setTourActive(true);
-    setTourStep(0);
-    setTooltipVisible(false);
-    closeDrilldown();
-    const step = tourSteps[0];
-    smoothPanToNode(step.targetX, step.targetY);
-  }, [closeDrilldown, smoothPanToNode, tourSteps]);
+  const enterTour = useCallback(
+    (stepIdx: number) => {
+      if (!tourSteps.length) return;
+      const safeStep = Math.min(Math.max(stepIdx, 0), tourSteps.length - 1);
+      tourActiveRef.current = true;
+      tourSuspendedRef.current = false;
+      setTourActive(true);
+      setTourSuspended(false);
+      setTourStep(safeStep);
+      setTourProgress(null);
+      setTooltipVisible(false);
+      if (!iom) setActiveSpoke(null);
+      const step = tourSteps[safeStep];
+      smoothPanToNode(step.targetX, step.targetY);
+    },
+    [iom, smoothPanToNode, tourSteps],
+  );
+
+  const startTour = useCallback(() => enterTour(0), [enterTour]);
+  const resumeTour = useCallback(
+    () => enterTour(tourProgress ?? 0),
+    [enterTour, tourProgress],
+  );
+
+  /** Park the tour behind the drilldown instead of destroying it. */
+  const suspendTour = useCallback(() => {
+    tourSuspendedRef.current = true;
+    setTourSuspended(true);
+  }, []);
 
   useEffect(() => {
-    if (!tourActive) return;
+    if (!tourActive || tourSuspended) return;
     const step = tourSteps[tourStep];
     if (step) smoothPanToNode(step.targetX, step.targetY);
-  }, [tourActive, tourStep, smoothPanToNode, tourSteps]);
+  }, [tourActive, tourSuspended, tourStep, smoothPanToNode, tourSteps]);
+
+  /* Cut a hole in the dimmer over the node the step is describing, so the
+     bubble stays lit instead of being dimmed with everything else. The ring is
+     inside the panned/zoomed SVG and the camera eases over ~0.75s, so we track
+     its rendered box per frame rather than deriving it from camera state —
+     otherwise the hole would jump ahead of the bubble it is following. */
+  useEffect(() => {
+    const overlay = tourOverlayRef.current;
+    const root = rootRef.current;
+    if (!overlay || !root || !tourActive || tourSuspended) return;
+
+    let frame = 0;
+    const track = () => {
+      const ring = svgRef.current?.querySelector("#tour-spotlight-ring");
+      if (ring) {
+        const box = ring.getBoundingClientRect();
+        const host = root.getBoundingClientRect();
+        const radius = box.width / 2;
+        if (radius > 0) {
+          overlay.style.setProperty(
+            "--tour-hole-x",
+            `${box.left + box.width / 2 - host.left}px`,
+          );
+          overlay.style.setProperty(
+            "--tour-hole-y",
+            `${box.top + box.height / 2 - host.top}px`,
+          );
+          overlay.style.setProperty("--tour-hole-r", `${Math.round(radius * 1.5)}px`);
+        }
+      }
+      frame = requestAnimationFrame(track);
+    };
+    track();
+
+    return () => {
+      cancelAnimationFrame(frame);
+      overlay.style.removeProperty("--tour-hole-x");
+      overlay.style.removeProperty("--tour-hole-y");
+      overlay.style.removeProperty("--tour-hole-r");
+    };
+  }, [svgRef, tourActive, tourStep, tourSuspended]);
 
   const showTooltip = useCallback(
     (evt: ReactMouseEvent, title: string, desc: string, hasMoreInfo = true) => {
-      if (tourActiveRef.current) return;
+      if (tourActiveRef.current && !tourSuspendedRef.current) return;
       setTooltip({ title, desc, x: evt.clientX, y: evt.clientY, hasMoreInfo });
       setTooltipVisible(true);
     },
@@ -174,7 +315,16 @@ export function CanvasShell({ spec, children }: Props) {
 
   useEffect(() => {
     if (drilldownBodyRef.current) drilldownBodyRef.current.scrollTop = 0;
-  }, [activeTab, activeSpoke]);
+  }, [activeTab, activeSpoke, panelView]);
+
+  // Wires the authored panel HTML: deep links, filters, stars, collapsible explainers.
+  usePanelInteractions({
+    bodyRef: drilldownBodyRef,
+    onOpen: focusNode,
+    storageKey: `${commandCenter?.storageKey ?? "ifai"}:panel`,
+    scope: `${activeSpoke ?? "none"}:${activeTab}:${panelView}`,
+    glossary: spec.glossary,
+  });
 
   useEffect(() => {
     const root = rootRef.current;
@@ -193,6 +343,22 @@ export function CanvasShell({ spec, children }: Props) {
   }, []);
 
   useEffect(() => {
+    if (!iom) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const onPointerMove = (event: PointerEvent) => {
+      const box = viewport.getBoundingClientRect();
+      if (!box.width || !box.height) return;
+      const x = ((event.clientX - box.left) / box.width) * 100;
+      const y = ((event.clientY - box.top) / box.height) * 100;
+      viewport.style.setProperty("--pointer-x", `${x}%`);
+      viewport.style.setProperty("--pointer-y", `${y}%`);
+    };
+    viewport.addEventListener("pointermove", onPointerMove);
+    return () => viewport.removeEventListener("pointermove", onPointerMove);
+  }, [iom]);
+
+  useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
 
@@ -204,6 +370,10 @@ export function CanvasShell({ spec, children }: Props) {
         target.closest(".panel-toggle") ||
         target.closest(".strategy-roadmap-btn")
       ) {
+        return;
+      }
+      if (tourSuspendedRef.current) {
+        closeDrilldown();
         return;
       }
       if (activeSpokeRef.current && spec.appearance !== "iom") {
@@ -252,7 +422,9 @@ export function CanvasShell({ spec, children }: Props) {
   }, [applyTransform, closeDrilldown, pan, spec.appearance]);
 
   useEffect(() => {
-    if (!activeSpoke || spec.appearance === "iom") return;
+    // Also runs while a tour is suspended so a click outside resumes it,
+    // including in iom where the panel itself never closes.
+    if (!tourSuspended && (!activeSpoke || spec.appearance === "iom")) return;
 
     function onPointerDown(e: PointerEvent) {
       const target = e.target;
@@ -266,19 +438,21 @@ export function CanvasShell({ spec, children }: Props) {
 
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [activeSpoke, closeDrilldown, spec.appearance]);
+  }, [activeSpoke, closeDrilldown, spec.appearance, tourSuspended]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        if (tourActiveRef.current) closeTour();
+        // While suspended, Escape backs out of the panel and lands on the tour again.
+        if (tourSuspendedRef.current) closeDrilldown();
+        else if (tourActiveRef.current) closeTour();
         else closeDrilldown();
-      } else if (tourActiveRef.current) {
+      } else if (tourActiveRef.current && !tourSuspendedRef.current) {
         if (e.key === "ArrowRight") {
           if (tourStepRef.current < tourSteps.length - 1) {
             setTourStep(tourStepRef.current + 1);
           } else {
-            closeTour();
+            closeTour(true);
           }
         } else if (e.key === "ArrowLeft") {
           setTourStep((step) => Math.max(step - 1, 0));
@@ -307,12 +481,12 @@ export function CanvasShell({ spec, children }: Props) {
   }
 
   function nextTourStep() {
-    if (tourStepRef.current < tourSteps.length - 1) setTourStep(tourStepRef.current + 1);
-    else closeTour();
+    if (tourStep < tourSteps.length - 1) setTourStep(tourStep + 1);
+    else closeTour(true);
   }
 
   function prevTourStep() {
-    if (tourStepRef.current > 0) setTourStep(tourStepRef.current - 1);
+    if (tourStep > 0) setTourStep(tourStep - 1);
   }
 
   function openDrilldownFromTour() {
@@ -321,15 +495,28 @@ export function CanvasShell({ spec, children }: Props) {
       closeTour();
       return;
     }
-    const targetNode = step.nodeId;
-    closeTour();
-    focusNode(targetNode);
+    // Suspend rather than close: the step is held so closing the panel returns here.
+    suspendTour();
+    focusNode(step.nodeId);
+  }
+
+  function openCommandCenter() {
+    if (!commandCenter) return;
+    // Leaving for the queue ends the tour but keeps the step, so the header
+    // still offers a resume rather than forcing a restart.
+    if (tourActiveRef.current) closeTour();
+    setPanelView("command");
+    setPanelExpanded(true);
   }
 
   const spoke = activeSpoke ? spec.spokes[activeSpoke] : null;
   const currentTour = tourSteps[tourStep];
   const spokeBody = spoke ? spoke.render(activeTab) : null;
   const showThemeToggle = spec.showThemeToggle !== false;
+  const showingCommand = panelView === "command" && Boolean(commandCenter);
+  const panelOpen = showingCommand || Boolean(spoke);
+  const tourOverlayVisible = tourActive && !tourSuspended;
+  const canResumeTour = !tourActive && tourProgress !== null && tourProgress > 0;
 
   const ctx: CanvasRenderContext = {
     svgRef,
@@ -342,10 +529,14 @@ export function CanvasShell({ spec, children }: Props) {
     focusNode,
     resetView: resetCanvasView,
     overviewNonce,
+    focusedSpokeId: activeSpoke,
     showTooltip,
     hideTooltip,
   };
 
+  // `ctx` carries svgRef so the child can attach it to its own <svg>. The rule
+  // cannot tell a forwarded ref from a read, and nothing reads .current here.
+  // eslint-disable-next-line react-hooks/refs
   const viewport = typeof children === "function" ? children(ctx) : children;
   const legendColor: Record<(typeof legend)[number]["status"], string> = {
     danger: "var(--danger-red)",
@@ -356,7 +547,7 @@ export function CanvasShell({ spec, children }: Props) {
   return (
     <div
       ref={rootRef}
-      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${spoke ? " panel-open" : ""}`}
+      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${panelOpen && !tourOverlayVisible ? " panel-open" : ""}${panelExpanded && !tourOverlayVisible ? " panel-expanded" : ""}${tourOverlayVisible ? " tour-running" : ""}`}
       style={{ "--drilldown-width": `${drilldownWidth}px` } as CSSProperties}
     >
       <div className="canvas-layout">
@@ -431,10 +622,31 @@ export function CanvasShell({ spec, children }: Props) {
               </div>
             ) : null}
 
+            {commandCenter ? (
+              <button
+                className={`hdr-btn${showingCommand ? " hdr-btn-active" : ""}`}
+                onClick={openCommandCenter}
+                title="What do I need to worry about?"
+              >
+                <ListChecks size={12} />
+                <span>Priorities</span>
+                {commandCenter.items.length ? (
+                  <span className="hdr-btn-count">{commandCenter.items.length}</span>
+                ) : null}
+              </button>
+            ) : null}
+
             {tourSteps.length ? (
-              <button className="hdr-btn hdr-btn-primary" onClick={startTour}>
+              <button
+                className="hdr-btn hdr-btn-primary"
+                onClick={canResumeTour ? resumeTour : startTour}
+              >
                 <Compass size={12} />
-                <span>Guided Tour</span>
+                <span>
+                  {canResumeTour
+                    ? `Resume Tour · ${(tourProgress ?? 0) + 1}/${tourSteps.length}`
+                    : "Guided Tour"}
+                </span>
               </button>
             ) : null}
 
@@ -473,6 +685,7 @@ export function CanvasShell({ spec, children }: Props) {
         </header>
 
         <div className="viewport-container" id="viewport" ref={viewportRef}>
+          {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
           {iom && spec.spokes.roadmap ? (
             <button
               type="button"
@@ -531,33 +744,98 @@ export function CanvasShell({ spec, children }: Props) {
           ) : null}
         </div>
 
-        <aside className={`drilldown-panel${spoke ? " open" : ""}`}>
+        <aside className={`drilldown-panel${panelOpen && !tourOverlayVisible ? " open" : ""}`}>
           <div className="drilldown-header">
             <div className="drilldown-title-wrap">
-              <span className="drilldown-badge">{spoke?.badge ?? "SPOKE"}</span>
-              <h2 className="drilldown-title">{spoke?.title ?? ""}</h2>
-              <p className="drilldown-desc">{spoke?.desc ?? ""}</p>
+              {commandCenter && !showingCommand ? (
+                <button className="drilldown-back-btn" onClick={openCommandCenter}>
+                  <ChevronLeft size={12} />
+                  Priorities
+                </button>
+              ) : null}
+              <span className="drilldown-badge">
+                {showingCommand
+                  ? (commandCenter?.badge ?? "COMMAND CENTER")
+                  : (spoke?.badge ?? "SPOKE")}
+              </span>
+              <h2 className="drilldown-title">
+                {showingCommand ? commandCenter?.title : (spoke?.title ?? "")}
+              </h2>
+              <p className="drilldown-desc">
+                {showingCommand ? commandCenter?.desc : (spoke?.desc ?? "")}
+              </p>
             </div>
-            {iom ? null : (
-              <button className="drilldown-close-btn" onClick={closeDrilldown} title="Close panel">
-                <X size={18} />
-              </button>
-            )}
-          </div>
 
-          <div className="drilldown-tabs">
-            {spoke?.tabs.map((tabName, idx) => (
+            <div className="drilldown-header-actions">
+              {tourSuspended ? (
+                <button
+                  className="drilldown-resume-btn"
+                  onClick={closeDrilldown}
+                  title="Back to the guided tour"
+                >
+                  <Compass size={13} />
+                  Resume tour · {tourStep + 1}/{tourSteps.length}
+                </button>
+              ) : null}
               <button
-                key={tabName}
-                className={`drilldown-tab-btn${idx === activeTab ? " active" : ""}`}
-                onClick={() => setActiveTab(idx)}
+                className="drilldown-expand-btn"
+                onClick={() => setPanelExpanded((value) => !value)}
+                title={panelExpanded ? "Collapse panel" : "Expand panel"}
+                aria-pressed={panelExpanded}
               >
-                {tabName}
+                {panelExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
-            ))}
+              {iom ? null : (
+                <button
+                  className="drilldown-close-btn"
+                  onClick={closeDrilldown}
+                  title="Close panel"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {typeof spokeBody === "string" ? (
+          {showingCommand || !spoke ? null : (
+            <>
+              <nav className="drilldown-crumb" aria-label="Location">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (commandCenter) openCommandCenter();
+                    else resetCanvasView();
+                    frameOverview();
+                  }}
+                >
+                  Map
+                </button>
+                <span aria-hidden="true">›</span>
+                <span>{spoke.navLabel ?? spoke.title}</span>
+                <span aria-hidden="true">›</span>
+                <span className="drilldown-crumb-here">{spoke.tabs[activeTab]}</span>
+              </nav>
+              <div className="drilldown-tabs" role="tablist">
+                {spoke.tabs.map((tabName, idx) => (
+                  <button
+                    key={tabName}
+                    role="tab"
+                    aria-selected={idx === activeTab}
+                    className={`drilldown-tab-btn${idx === activeTab ? " active" : ""}`}
+                    onClick={() => setActiveTab(idx)}
+                  >
+                    {tabName}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {showingCommand && commandCenter ? (
+            <div ref={drilldownBodyRef} className="drilldown-body">
+              <CommandCenter spec={commandCenter} onOpenItem={focusNode} />
+            </div>
+          ) : typeof spokeBody === "string" ? (
             <div
               ref={drilldownBodyRef}
               className="drilldown-body"
@@ -568,10 +846,23 @@ export function CanvasShell({ spec, children }: Props) {
               {spokeBody}
             </div>
           )}
+
+          {!showingCommand && spoke?.next && spec.spokes[spoke.next] ? (
+            <button
+              type="button"
+              className="panel-next"
+              onClick={() => focusNode(spoke.next as string)}
+            >
+              Next: {spec.spokes[spoke.next]?.navLabel ?? spec.spokes[spoke.next]?.title} →
+            </button>
+          ) : null}
         </aside>
 
-        <div className={`tour-overlay-container${tourActive ? " active" : ""}`}>
-          <div className="tour-dimmer-backdrop" onClick={closeTour} />
+        <div
+          ref={tourOverlayRef}
+          className={`tour-overlay-container${tourOverlayVisible ? " active" : ""}`}
+        >
+          <div className="tour-dimmer-backdrop" onClick={() => closeTour()} />
 
           {currentTour ? (
             <div
@@ -587,7 +878,11 @@ export function CanvasShell({ spec, children }: Props) {
                   </span>
                   <span className="tour-category-badge">{currentTour.category}</span>
                 </div>
-                <button className="tour-close-btn" onClick={closeTour} title="Close Tour (ESC)">
+                <button
+                  className="tour-close-btn"
+                  onClick={() => closeTour()}
+                  title="Close Tour (ESC)"
+                >
                   <X size={15} />
                 </button>
               </div>
@@ -610,7 +905,7 @@ export function CanvasShell({ spec, children }: Props) {
                 <div className="tour-info-card">
                   <div className="tour-card-header">
                     <Layout size={13} color="var(--accent-purple)" />
-                    <span>What This Spoke Displays</span>
+                    <span>What&apos;s Inside</span>
                   </div>
                   <ul className="tour-card-list">
                     {currentTour.displays.map((text) => (
@@ -632,6 +927,7 @@ export function CanvasShell({ spec, children }: Props) {
                 <button className="tour-drilldown-link-btn" onClick={openDrilldownFromTour}>
                   <ExternalLink size={12} />
                   <span>Explore Full Deep-Dive Panel →</span>
+                  <em className="tour-drilldown-hint">Tour pauses here — you&apos;ll come back</em>
                 </button>
               </div>
 

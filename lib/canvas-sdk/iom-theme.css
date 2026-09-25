@@ -152,13 +152,33 @@
   right: var(--drilldown-width);
 }
 
+/* The guided tour runs over the full map. Snapping rather than easing keeps
+   viewport.clientWidth honest for the camera maths on the very first step. */
+.ifai-canvas.theme-iom.tour-running .viewport-container {
+  right: 0;
+  transition: none;
+}
+
 .ifai-canvas.theme-iom .viewport-container {
+  --pointer-x: 58%;
+  --pointer-y: 42%;
   background-color: #071321;
   background-image: none;
+  transition: right 0.22s ease;
+}
+
+.ifai-canvas.theme-iom .canvas-pointer-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(0, 240, 255, 0.28), transparent 20%),
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(99, 102, 241, 0.16), transparent 38%);
 }
 
 .ifai-canvas.theme-iom svg.canvas-svg.camera-animating {
-  transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.55s cubic-bezier(0.45, 0.05, 0.55, 0.95);
 }
 
 .ifai-canvas.theme-iom .orbit-ring {
@@ -169,14 +189,43 @@
 }
 
 .ifai-canvas.theme-iom .satellite-group {
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
-  transition: opacity 0.4s ease;
+}
+
+.ifai-canvas.theme-iom .satellite-group .graph-node,
+.ifai-canvas.theme-iom .satellite-group .conn-line {
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.ifai-canvas.theme-iom .satellite-group .node-inner {
+  transform: scale(0.62);
 }
 
 .ifai-canvas.theme-iom .satellite-group.visible {
-  opacity: 1;
   pointer-events: auto;
+}
+
+.ifai-canvas.theme-iom .satellite-group.visible .graph-node,
+.ifai-canvas.theme-iom .satellite-group.visible .conn-line {
+  opacity: 1;
+}
+
+.ifai-canvas.theme-iom .satellite-group.visible .node-inner {
+  transform: scale(1);
+}
+
+.ifai-canvas.theme-iom .satellite-group.visible .conn-line {
+  stroke: #818cf8;
+  stroke-dasharray: 8 5;
+  animation: spoke-dash 1.2s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.65));
+}
+
+@keyframes spoke-dash {
+  from { stroke-dashoffset: 26; }
+  to { stroke-dashoffset: 0; }
 }
 
 .ifai-canvas.theme-iom .conn-line {
@@ -192,6 +241,12 @@
   stroke-width: 1.8;
   opacity: 0.34;
   animation: iomLineGlow 3.6s ease-in-out infinite;
+}
+
+.ifai-canvas.theme-iom .satellite-group:not(.visible) .conn-line.critical,
+.ifai-canvas.theme-iom .satellite-group:not(.visible) .conn-line.warning {
+  opacity: 0;
+  animation: none;
 }
 
 .ifai-canvas.theme-iom .conn-line.warning {
@@ -220,7 +275,16 @@
 
 .ifai-canvas.theme-iom .graph-node {
   filter: none;
-  transition: none;
+  transition: opacity 0.4s ease;
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected {
+  opacity: 1;
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-inner,
+.ifai-canvas.theme-iom .graph-node.node-selected:hover .node-inner {
+  transform: scale(1.08);
 }
 
 .ifai-canvas.theme-iom .graph-node:hover {
@@ -239,13 +303,14 @@
 }
 
 .ifai-canvas.theme-iom .node-halo {
-  fill: none;
-  stroke-width: 6;
-  opacity: 0;
+  fill: url(#luxHubAura);
+  stroke: none;
+  opacity: 0.72;
   pointer-events: none;
+  filter: url(#auraBlur);
   transform-box: fill-box;
   transform-origin: center;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  animation: aura-breathe 4s ease-in-out infinite;
 }
 
 .ifai-canvas.theme-iom .node-halo.status-danger { stroke: #fb7185; }
@@ -257,18 +322,18 @@
 
 .ifai-canvas.theme-iom .graph-node:hover .node-halo,
 .ifai-canvas.theme-iom .graph-node:focus-visible .node-halo {
-  opacity: 0.38;
-  transform: scale(1.05);
+  opacity: 1;
+  transform: scale(1.18);
 }
 
 .ifai-canvas.theme-iom .node-circle,
 .ifai-canvas.theme-iom .node-circle.status-danger,
 .ifai-canvas.theme-iom .node-circle.status-warning,
 .ifai-canvas.theme-iom .node-circle.status-success {
-  fill: rgba(8, 22, 40, 0.88);
-  stroke-width: 1.6px;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
-  transition: fill 0.4s ease, stroke-width 0.4s ease, filter 0.4s ease;
+  fill: url(#spokeBody);
+  stroke-width: 1.8px;
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.45));
+  transition: fill 0.4s ease, stroke 0.35s ease, stroke-width 0.35s ease, filter 0.35s ease;
 }
 
 .ifai-canvas.theme-iom .node-circle.status-danger { stroke: #fb7185; }
@@ -317,8 +382,18 @@
   fill: #ffffff;
 }
 
+.ifai-canvas.theme-iom .node-icon-plate {
+  fill: rgba(99, 102, 241, 0.28);
+  stroke: rgba(129, 140, 248, 0.7);
+  stroke-width: 1;
+}
+
 .ifai-canvas.theme-iom .spoke-primary .node-glyph-wrap {
-  color: #7dd3fc;
+  color: #67e8f9;
+}
+
+.ifai-canvas.theme-iom .node-glyph {
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.85));
 }
 
 .ifai-canvas.theme-iom .spoke-primary .node-face-stat,
@@ -426,20 +501,137 @@
 }
 
 .ifai-canvas.theme-iom .hub-halo-pulse {
-  fill: #2eb7ff;
+  fill: url(#luxHubAura);
   stroke: none;
-  opacity: 0.12;
-  filter: none;
+  opacity: 0.8;
+  filter: url(#auraBlur);
   transform-box: fill-box;
   transform-origin: center;
-  animation: iomHubBreathe 4s ease-in-out infinite;
+  animation: aura-breathe 4s ease-in-out infinite;
 }
 
 .ifai-canvas.theme-iom .node-circle.hub-core {
-  fill: rgba(8, 24, 42, 0.92);
-  stroke: #2eb7ff;
-  stroke-width: 2px;
-  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
+  fill: url(#hubBody);
+  stroke: #00f0ff;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 22px rgba(0, 240, 255, 0.45)) drop-shadow(0 16px 22px rgba(0, 0, 0, 0.5));
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-circle {
+  stroke: #00f0ff;
+  stroke-width: 2.8px;
+  filter: drop-shadow(0 0 18px rgba(0, 240, 255, 0.8));
+}
+
+.ifai-canvas.theme-iom .graph-node.node-selected .node-halo,
+.ifai-canvas.theme-iom .graph-node.node-selected .hub-halo-pulse {
+  opacity: 1;
+  animation: aura-click-burst 0.55s cubic-bezier(0.45, 0.05, 0.55, 0.95) both;
+}
+
+.ifai-canvas.theme-iom .conn-line.conn-hot {
+  stroke: #00f0ff;
+  stroke-width: 3.2px;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px #00f0ff);
+}
+
+.ifai-canvas.theme-iom .node-outer-ring {
+  stroke: rgba(0, 240, 255, 0.28);
+  stroke-width: 1.25;
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom .ring-mote {
+  fill: #7dd3fc;
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mote-twinkle 2.4s ease-in-out infinite;
+}
+
+.ifai-canvas.theme-iom .quest-flame {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: flame-flicker 0.38s ease-in-out infinite;
+}
+
+.ifai-canvas.theme-iom .flame-core {
+  fill: #fb7185;
+  stroke: none;
+  filter: drop-shadow(0 0 6px #f43f5e);
+}
+
+.ifai-canvas.theme-iom .flame-ember {
+  fill: #ffe4e6;
+  animation: ember-rise 0.7s ease-out infinite;
+}
+
+.ifai-canvas.theme-iom .flame-ember-b {
+  animation-delay: 0.28s;
+}
+
+.ifai-canvas.theme-iom .quest-pill {
+  fill: rgba(70, 8, 22, 0.94);
+  stroke: #f43f5e;
+  stroke-width: 1;
+}
+
+.ifai-canvas.theme-iom .quest-pill-text {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.ifai-canvas.theme-iom .node-shockwave,
+.ifai-canvas.theme-iom .node-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom .node-shockwave {
+  animation: shock-ring 0.62s ease-out forwards;
+}
+
+.ifai-canvas.theme-iom .node-spark {
+  animation: spark-fly 0.72s ease-out forwards;
+}
+
+@keyframes aura-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+
+@keyframes aura-click-burst {
+  0% { opacity: 0.8; transform: scale(1.05); }
+  42% { opacity: 1; transform: scale(1.85); }
+  100% { opacity: 1; transform: scale(1.28); }
+}
+
+@keyframes shock-ring {
+  to { transform: scale(2.6); opacity: 0; }
+}
+
+@keyframes spark-fly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.25); opacity: 0; }
+}
+
+@keyframes mote-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1, 1) rotate(-4deg); }
+  50% { transform: scale(0.82, 1.16) rotate(4deg); }
+}
+
+@keyframes ember-rise {
+  0% { transform: translate(0, 0); opacity: 0.95; }
+  100% { transform: translate(0, -10px); opacity: 0; }
 }
 
 .ifai-canvas.theme-iom .graph-hub:hover .node-circle.hub-core,
@@ -449,8 +641,8 @@
 }
 
 @keyframes iomHubBreathe {
-  0%, 100% { opacity: 0.07; transform: scale(0.97); }
-  50% { opacity: 0.2; transform: scale(1.035); }
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.08); }
 }
 
 .ifai-canvas.theme-iom .correlation-badge {
@@ -485,11 +677,12 @@
 }
 
 .ifai-canvas.theme-iom .drilldown-tab-btn.active {
-  color: #38bdf8;
+  color: #fff;
+  background: #0284c7;
 }
 
 .ifai-canvas.theme-iom .drilldown-tab-btn.active::after {
-  background: #2eb7ff;
+  content: none;
 }
 
 .ifai-canvas.theme-iom .canvas-hud-legend,
@@ -519,11 +712,22 @@
   --map-bg: #e7f1fa;
   --map-node-bg: rgba(255, 255, 255, 0.94);
   --border-color: rgba(14, 48, 84, 0.12);
+  /* Status text stayed on the dark-theme values while the surfaces flipped to
+     white, leaving every badge and callout washed out. Darken them to match. */
+  --danger-text: #b91c1c;
+  --success-text: #047857;
+  --warning-text: #b45309;
 }
 
 .ifai-canvas.theme-iom.light-theme .viewport-container {
   background-color: #e7f1fa;
   background-image: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .canvas-pointer-wash {
+  background:
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(14, 116, 144, 0.18), transparent 20%),
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(67, 118, 154, 0.12), transparent 36%);
 }
 
 .ifai-canvas.theme-iom.light-theme .node-circle,

@@ -96,6 +96,10 @@ function GraphNode({
   onGroupEnter,
   onGroupLeave,
   onSelect,
+  emphasis,
+  selected,
+  dimmed,
+  enterDelay,
 }: {
   node: CanvasNode;
   centered: boolean;
@@ -106,6 +110,10 @@ function GraphNode({
   onGroupEnter?: () => void;
   onGroupLeave?: () => void;
   onSelect?: () => void;
+  emphasis?: boolean;
+  selected?: boolean;
+  dimmed?: boolean;
+  enterDelay?: number;
 }) {
   const Node = node.variant === "hub" ? GraphHub : GraphBubble;
   return (
@@ -121,12 +129,14 @@ function GraphNode({
       meta={node.meta}
       centered={centered}
       logoSrc={node.logoSrc}
+      emphasis={emphasis}
+      selected={selected}
+      dimmed={dimmed}
+      enterDelay={enterDelay}
       onClick={() => {
-        if (node.variant === "hub" && centered) {
-          onResetView();
-          return;
-        }
         onSelect?.();
+        // The center node is the portfolio overview. A click always reopens it,
+        // including when the camera is already framed on the hub.
         if (node.spokeId) onFocusNode(node.spokeId, node.subTab);
         else onResetView();
       }}
@@ -159,6 +169,7 @@ type Props = {
   onFocusNode: (spokeId: string, subTab?: string) => void;
   onResetView: () => void;
   overviewNonce: number;
+  focusedSpokeId?: string | null;
   onShowTooltip: (evt: MouseEvent, title: string, desc: string, hasMoreInfo?: boolean) => void;
   onHideTooltip: () => void;
 };
@@ -175,6 +186,7 @@ export function CanvasGraph({
   onFocusNode,
   onResetView,
   overviewNonce,
+  focusedSpokeId = null,
   onShowTooltip,
   onHideTooltip,
 }: Props) {
@@ -186,39 +198,61 @@ export function CanvasGraph({
     [revealSatellites, spec],
   );
   const satelliteIds = new Set(clusters?.groups.flatMap((group) => group.nodes.map((node) => node.id)) ?? []);
-  const [openParentId, setOpenParentId] = useState<string | null>(null);
-  const [pinnedParentId, setPinnedParentId] = useState<string | null>(null);
+  /* Which satellite cluster is showing. The camera reset bumps `overviewNonce`,
+     and stamping that onto the state lets a reset collapse the clusters by
+     derivation — no reset effect, and a hide timer that fires afterwards is
+     already a no-op because the derived value is null. */
+  const [reveal, setReveal] = useState<{
+    nonce: number;
+    open: string | null;
+    pinned: string | null;
+  }>({ nonce: overviewNonce, open: null, pinned: null });
   const hideTimer = useRef(0);
+
+  const current = reveal.nonce === overviewNonce ? reveal : null;
+  const openParentId = current?.open ?? null;
+  const pinnedParentId = current?.pinned ?? null;
 
   useEffect(() => () => window.clearTimeout(hideTimer.current), []);
 
-  useEffect(() => {
-    window.clearTimeout(hideTimer.current);
-    setOpenParentId(null);
-    setPinnedParentId(null);
-  }, [overviewNonce]);
-
   const revealGroup = (parentId: string) => {
     window.clearTimeout(hideTimer.current);
-    setOpenParentId(parentId);
+    setReveal({ nonce: overviewNonce, open: parentId, pinned: pinnedParentId });
   };
 
   const holdGroup = () => {
     window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(() => setOpenParentId(null), 1000);
+    hideTimer.current = window.setTimeout(
+      () => setReveal((prev) => ({ ...prev, open: null })),
+      1000,
+    );
   };
 
   const pinGroup = (parentId: string) => {
     window.clearTimeout(hideTimer.current);
-    setPinnedParentId(parentId);
-    setOpenParentId(parentId);
+    setReveal({ nonce: overviewNonce, open: parentId, pinned: parentId });
   };
 
-  const renderNode = (node: CanvasNode, parentId?: string) => (
+  const emphasis = spec.appearance === "iom";
+  const focusedNode = focusedSpokeId
+    ? (spec.nodes ?? []).find((node) => node.spokeId === focusedSpokeId && MAIN_BUBBLES.has(node.id)) ?? null
+    : null;
+
+  const touchesFocus = (edge: CanvasEdge) =>
+    Boolean(
+      focusedNode &&
+        ((edge.x1 === focusedNode.x && edge.y1 === focusedNode.y) ||
+          (edge.x2 === focusedNode.x && edge.y2 === focusedNode.y)),
+    );
+
+  const renderNode = (node: CanvasNode, parentId?: string, delayMs = 0) => (
     <GraphNode
       key={node.id}
       node={node}
-      centered={spec.appearance === "iom"}
+      centered={emphasis}
+      emphasis={emphasis}
+      selected={Boolean(focusedNode && node.id === focusedNode.id)}
+      enterDelay={delayMs}
       onFocusNode={onFocusNode}
       onResetView={onResetView}
       onShowTooltip={onShowTooltip}
@@ -314,10 +348,28 @@ export function CanvasGraph({
         <filter id="nodeShadow" x="-60%" y="-60%" width="220%" height="240%">
           <feDropShadow dx="0" dy="8" stdDeviation="10" floodColor="#0b1220" floodOpacity="0.4" />
         </filter>
+        <filter id="auraBlur" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="10" />
+        </filter>
+        <radialGradient id="hubBody" cx="35%" cy="30%" r="75%">
+          <stop offset="0%" stopColor="#28375f" />
+          <stop offset="52%" stopColor="#17213d" />
+          <stop offset="100%" stopColor="#0d1222" />
+        </radialGradient>
+        <radialGradient id="spokeBody" cx="35%" cy="30%" r="75%">
+          <stop offset="0%" stopColor="#222d4a" />
+          <stop offset="55%" stopColor="#151c31" />
+          <stop offset="100%" stopColor="#0e1322" />
+        </radialGradient>
+        <radialGradient id="luxHubAura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.55" />
+          <stop offset="55%" stopColor="#6366f1" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
       {(clusters ? clusters.trunk : (spec.edges ?? [])).map((edge, idx) => (
-        <ConnLine key={`edge-${idx}`} {...edge} />
+        <ConnLine key={`edge-${idx}`} {...edge} hot={touchesFocus(edge)} />
       ))}
 
       {clusters?.groups.map((group) => (
@@ -326,9 +378,9 @@ export function CanvasGraph({
           className={`satellite-group${openParentId === group.parent.id || pinnedParentId === group.parent.id ? " visible" : ""}`}
         >
           {group.edges.map((edge, idx) => (
-            <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} />
+            <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} hot={touchesFocus(edge)} />
           ))}
-          {group.nodes.map((node) => renderNode(node, group.parent.id))}
+          {group.nodes.map((node, idx) => renderNode(node, group.parent.id, idx * 40))}
         </g>
       ))}
 

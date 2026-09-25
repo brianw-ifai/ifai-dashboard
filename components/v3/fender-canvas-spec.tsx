@@ -1,3 +1,5 @@
+import { fenderCommandCenter } from "@/components/v3/command-center-data";
+import { fenderGlossary } from "@/components/v3/glossary";
 import { spokeData, tourSteps } from "@/components/v3/spoke-data";
 import { defineCanvas } from "@/lib/canvas-sdk";
 
@@ -9,11 +11,11 @@ const FOCUS_TARGETS = {
   "aeo:hallucinations": { x: 260, y: 480 },
   "ecommerce": { x: 1160, y: 320 },
   "ecommerce:14-asin": { x: 1360, y: 200 },
-  "ecommerce:governance": { x: 1420, y: 360 },
+  "ecommerce:catalog": { x: 1420, y: 360 },
   "ecommerce:map": { x: 1340, y: 480 },
   "specs": { x: 440, y: 680 },
   "specs:schema": { x: 230, y: 720 },
-  "specs:matrix": { x: 320, y: 870 },
+  "specs:a+": { x: 320, y: 870 },
   "competitors": { x: 1160, y: 680 },
   "competitors:taylor": { x: 1370, y: 720 },
   "competitors:amps": { x: 1280, y: 870 },
@@ -22,9 +24,11 @@ const FOCUS_TARGETS = {
 
 export const fenderCanvasSpec = defineCanvas({
   appearance: "iom",
+  commandCenter: fenderCommandCenter,
+  glossary: fenderGlossary,
   brand: {
     name: "Fender Brand Intelligence Canvas v3",
-    subtitle: "FMIC Omnichannel Intelligence · 124 Monitored ASINs Across 5 Brand Divisions",
+    subtitle: "124 Monitored ASINs Across 5 FMIC Divisions",
     logoSrc: "/icon.png",
     badge: "Enterprise Command",
   },
@@ -171,7 +175,7 @@ export const fenderCanvasSpec = defineCanvas({
       stats: ["14 Bundles", "2,420+ Reviews"],
       meta: "Austin Bazaar / GearTree",
       spokeId: "ecommerce",
-      subTab: "governance",
+      subTab: "catalog",
       tooltip: {"title": "Splintered Bundle ASINs", "desc": "Key partners Austin Bazaar & GearTree hold Brand Registry bundle rights. Splintering reviews forfeits Amazon's Overall Pick badge."},
     },
     {
@@ -198,7 +202,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "Nut · Radius · Pickups",
       spokeId: "specs",
       subTab: "schema",
-      tooltip: {"title": "Schema.org Structured Data", "desc": "How AI engines read your guitar specs as indisputable facts. 6 attributes missing from fender.com templates."},
+      tooltip: {"title": "Schema.org Structured Data", "desc": "How AI engines read your guitar specs as hard facts. 6 attributes missing from fender.com templates."},
     },
     {
       id: "sat-tables",
@@ -210,7 +214,7 @@ export const fenderCanvasSpec = defineCanvas({
       stats: ["78% Gap", "14 Lines"],
       meta: "Amazon Comparison Grids",
       spokeId: "specs",
-      subTab: "matrix",
+      subTab: "a+",
       tooltip: {"title": "Amazon A+ Comparison Tables", "desc": "Amazon Rufus and LLMs parse tabular comparison columns to understand model tiering across Squier to American Pro."},
     },
     {
@@ -250,7 +254,7 @@ export const fenderCanvasSpec = defineCanvas({
       stats: ["61 Scan", "42% Read"],
       meta: "Target: 84% · 100 Sims",
       spokeId: "aeo",
-      tooltip: {"title": "Brand AEO Engine & Simulations", "desc": "External Volatile Scan: 61/100 · IntoFocus Controllable Readiness: 42% (Target 84%). Click to inspect 100 simulations."},
+      tooltip: {"title": "Brand AEO Engine & Simulations", "desc": "AI Scan Index: 61/100 · Controllable Readiness: 42% (Target 84%). Click to inspect 100 simulations."},
     },
     {
       id: "spoke-retail",
@@ -263,7 +267,7 @@ export const fenderCanvasSpec = defineCanvas({
       stats: ["68% BuyBox", "14 Flagged"],
       meta: "18% Suppr · 14% 3P Split",
       spokeId: "ecommerce",
-      tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box 68% (18% Algorithmic Suppression, 14% 3P Bundles). Brand Registry consolidation with Austin Bazaar & GearTree."},
+      tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box 68% (18% hidden by Amazon, 14% partner bundles). Brand Registry consolidation with Austin Bazaar & GearTree."},
     },
     {
       id: "spoke-specs",

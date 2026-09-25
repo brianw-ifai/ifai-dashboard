@@ -177,6 +177,8 @@
       display: flex;
       align-items: center;
       gap: 14px;
+      flex: 0 1 auto;
+      min-width: 0;
     }
 
     .brand-logo-icon {
@@ -191,6 +193,7 @@
     .brand-title-group {
       display: flex;
       flex-direction: column;
+      min-width: 0;
     }
 
     .brand-name {
@@ -201,6 +204,8 @@
       align-items: center;
       gap: 6px;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .brand-name .tag-badge {
@@ -213,6 +218,8 @@
       color: var(--text-muted);
       font-weight: 500;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .pill-divider {
@@ -227,6 +234,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
       padding: 4px 10px;
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -238,6 +246,8 @@
     }
 
     .filter-selector select {
+      max-width: 22ch;
+      text-overflow: ellipsis;
       background: transparent;
       border: none;
       color: inherit;
@@ -253,6 +263,10 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
     }
 
     .ticker-item {
@@ -312,11 +326,14 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex: 0 0 auto;
     }
 
     .search-input-wrapper {
       position: relative;
       width: 200px;
+      flex-shrink: 1;
+      min-width: 108px;
     }
 
     .search-input {
@@ -694,7 +711,7 @@
       flex-direction: column;
       box-shadow: var(--shadow-soft);
       transform: translateX(100%);
-      transition: transform 0.18s ease;
+      transition: transform 0.18s ease, width 0.22s ease;
     }
 
     .drilldown-panel.open {
@@ -766,11 +783,12 @@
 
     .drilldown-tabs {
       display: flex;
+      flex-wrap: wrap;
       padding: 0 24px;
       background: var(--bg-card);
       border-bottom: 1px solid var(--border-color);
-      gap: 16px;
-      overflow-x: auto;
+      column-gap: 16px;
+      row-gap: 0;
     }
 
     .drilldown-tab-btn {
@@ -791,27 +809,77 @@
     }
 
     .drilldown-tab-btn.active {
-      color: var(--accent-purple);
+      color: #fff;
+      background: var(--accent-purple);
+      border-radius: 999px;
+      padding: 6px 12px;
+      margin: 6px 0;
     }
 
     .drilldown-tab-btn.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--accent-purple);
-      border-radius: 2px;
+      content: none;
+    }
+
+    .drilldown-crumb {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 24px 0;
+      background: var(--bg-card);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .drilldown-crumb button {
+      border: none;
+      background: transparent;
+      padding: 0;
+      color: var(--accent-purple);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .drilldown-crumb button:hover {
+      text-decoration: underline;
+    }
+
+    .drilldown-crumb-here {
+      color: var(--text-main);
+      font-weight: 800;
     }
 
     .drilldown-body {
       flex: 1;
+      overflow-x: hidden;
       overflow-y: auto;
       padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 20px;
+    }
+
+    .panel-next {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      margin: 0;
+      padding: 12px 24px;
+      border: none;
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--accent-purple);
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .panel-next:hover {
+      background: var(--bg-surface-hover);
     }
 
     /* Content components inside panel */
@@ -861,6 +929,33 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      min-width: 0;
+    }
+
+    /* Same severity language as the command center, on the panel blocks
+       people see once the explanation is collapsed. */
+    .ceo-callout.critical,
+    .content-box.critical,
+    .ifai-canvas.theme-iom .ceo-callout.critical,
+    .ifai-canvas.theme-iom .content-box.critical {
+      border-left: 3px solid var(--danger-red);
+      background: var(--danger-bg);
+    }
+
+    .ceo-callout.warning,
+    .content-box.warning,
+    .ifai-canvas.theme-iom .ceo-callout.warning,
+    .ifai-canvas.theme-iom .content-box.warning {
+      border-left: 3px solid var(--warning-amber);
+      background: var(--warning-bg);
+    }
+
+    .ceo-callout.ok,
+    .content-box.ok,
+    .ifai-canvas.theme-iom .ceo-callout.ok,
+    .ifai-canvas.theme-iom .content-box.ok {
+      border-left: 3px solid var(--success-green);
+      background: var(--success-bg);
     }
 
     .content-box-title {
@@ -892,6 +987,7 @@
       padding: 9px 10px;
       border-bottom: 1px solid var(--border-color);
       color: var(--text-muted);
+      overflow-wrap: anywhere;
     }
 
     .table-sm tr:last-child td {
@@ -985,8 +1081,10 @@
       font-weight: 700;
       color: var(--text-main);
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px 10px;
     }
 
     .action-details {
@@ -1026,8 +1124,24 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(7, 13, 24, 0.72);
       pointer-events: auto;
+      /* A soft hole over the node this step is about. The vars are written per
+         frame by the shell while the tour runs; with the fallback radius of 0
+         the gradient collapses to its last stop, i.e. the plain flat dim. */
+      background: radial-gradient(
+        circle var(--tour-hole-r, 0px) at var(--tour-hole-x, 50%) var(--tour-hole-y, 50%),
+        transparent 0,
+        transparent 62%,
+        rgba(7, 13, 24, 0.55) 84%,
+        rgba(7, 13, 24, 0.72) 100%
+      );
+      transition: background 0.12s linear;
+    }
+
+    /* The spotlighted node sits in clear air now, so let its ring read brighter. */
+    .tour-overlay-container.active ~ * #tour-spotlight-ring,
+    #tour-spotlight-ring {
+      stroke-width: 3;
     }
 
     .tour-modal-card {
@@ -1488,3 +1602,611 @@
       }
     }
   
+    /* ---------------------------------------------------------------
+       Panel chrome: expand toggle, tour resume, command-center return
+       --------------------------------------------------------------- */
+
+    .drilldown-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .drilldown-expand-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .drilldown-expand-btn:hover {
+      background: var(--bg-surface-hover);
+      color: var(--accent-purple);
+    }
+
+    .drilldown-resume-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--accent-purple);
+      background: var(--accent-purple);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .drilldown-resume-btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .drilldown-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-bottom: 2px;
+      padding: 2px 8px 2px 4px;
+      width: fit-content;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .drilldown-back-btn:hover {
+      color: var(--accent-purple);
+      border-color: var(--border-dark);
+    }
+
+    .hdr-btn-active {
+      background: var(--bg-surface-hover);
+      border-color: var(--accent-purple);
+      color: var(--accent-purple);
+    }
+
+    .hdr-btn-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--danger-red);
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 800;
+    }
+
+    .tour-drilldown-hint {
+      display: block;
+      width: 100%;
+      margin-top: 2px;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 600;
+      color: var(--text-subtle);
+    }
+
+    .tour-drilldown-link-btn {
+      flex-wrap: wrap;
+    }
+
+    .tour-drilldown-link-btn:hover .tour-drilldown-hint {
+      color: #ffffffcc;
+    }
+
+    /* Wide panel: let authored two-up grids breathe into quadrants. */
+    .ifai-canvas.panel-expanded .metric-grid-2,
+    .ifai-canvas.panel-expanded .dual-index-grid {
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    }
+
+    .ifai-canvas.panel-expanded .drilldown-body {
+      padding: 24px 28px;
+    }
+
+    /* ---------------------------------------------------------------
+       Command center — the "what do I need to worry about" queue
+       --------------------------------------------------------------- */
+
+    .command-center {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .cc-summary {
+      background: linear-gradient(135deg, #4f46e51f, #38bdf814);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
+
+    .cc-summary-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-purple);
+      margin-bottom: 6px;
+    }
+
+    .cc-summary-body {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-main);
+    }
+
+    .cc-quadrants {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .cc-quadrant {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cc-quadrant-critical {
+      border-color: var(--danger-border);
+      background: var(--danger-bg);
+    }
+
+    .cc-quadrant-val {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+    }
+
+    .cc-quadrant-critical .cc-quadrant-val {
+      color: var(--danger-red);
+    }
+
+    .cc-quadrant-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .cc-list-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .cc-list-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-subtle);
+    }
+
+    .cc-empty {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      padding: 16px;
+      text-align: center;
+      border: 1px dashed var(--border-color);
+      border-radius: 14px;
+    }
+
+    .cc-item {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cc-sev-critical { border-left-color: var(--danger-red); }
+    .cc-sev-high { border-left-color: var(--warning-amber); }
+    .cc-sev-moderate { border-left-color: var(--accent-purple); }
+
+    .cc-item-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .cc-rank {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+    }
+
+    .cc-item-title-wrap {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .cc-item-title {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+    }
+
+    .cc-sev-badge {
+      padding: 1px 7px;
+      border-radius: var(--radius-button);
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .cc-sev-badge-critical {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      border: 1px solid var(--danger-border);
+    }
+
+    .cc-sev-badge-high {
+      background: var(--warning-bg);
+      color: var(--warning-text);
+      border: 1px solid var(--warning-border);
+    }
+
+    .cc-sev-badge-moderate {
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .cc-why {
+      background: var(--bg-surface);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .cc-why-label {
+      display: block;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-subtle);
+      margin-bottom: 4px;
+    }
+
+    .cc-why p {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    .cc-impact {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--success-text);
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      border-radius: 10px;
+      padding: 7px 10px;
+    }
+
+    .cc-item-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .cc-owner-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .cc-owner-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 9px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .cc-owner-btn:hover {
+      color: var(--text-main);
+      border-color: var(--border-dark);
+    }
+
+    .cc-owner-btn.active {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: #fff;
+    }
+
+    .cc-done-btn:hover {
+      background: var(--success-bg);
+      border-color: var(--success-border);
+      color: var(--success-text);
+    }
+
+    .cc-open-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-dark);
+      background: var(--bg-surface);
+      color: var(--accent-purple);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .cc-open-btn:hover {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: #fff;
+    }
+
+    .cc-cleared {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+
+    .cc-cleared summary {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .cc-cleared-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0 0;
+      font-size: 12px;
+      color: var(--text-subtle);
+    }
+
+    .cc-undo-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .cc-undo-btn:hover {
+      color: var(--accent-purple);
+      border-color: var(--border-dark);
+    }
+
+    /* ---------------------------------------------------------------
+       Authored-panel interactions: collapsible explainers, stars,
+       filter chips, row-level drill-downs
+       --------------------------------------------------------------- */
+
+    .ceo-callout-header {
+      justify-content: space-between;
+    }
+
+    .ceo-callout-toggle {
+      flex-shrink: 0;
+      margin-left: auto;
+      padding: 2px 8px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      opacity: 0.75;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+    }
+
+    .ceo-callout-toggle:hover {
+      opacity: 1;
+      border-color: currentColor;
+    }
+
+    /* Collapsed explainers keep their header as a one-line reminder. */
+    .ceo-callout.collapsed {
+      gap: 0;
+    }
+
+    .ceo-callout.collapsed .ceo-callout-body,
+    .ceo-callout.collapsed .ceo-callout-footer {
+      display: none;
+    }
+
+    .ifai-star-btn {
+      flex-shrink: 0;
+      margin-left: 8px;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-subtle);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .ifai-star-btn:hover {
+      color: var(--warning-amber);
+      background: var(--bg-surface-hover);
+      border-color: var(--border-color);
+    }
+
+    .ifai-star-btn.active {
+      color: var(--warning-amber);
+    }
+
+    .action-card.starred {
+      border-left-color: var(--warning-amber);
+      box-shadow: inset 2px 0 0 var(--warning-amber);
+    }
+
+    .ifai-star-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .ifai-filter-empty {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 18px 12px;
+      border: 1px dashed var(--border-color);
+      border-radius: 12px;
+      margin-top: 8px;
+    }
+
+    /* Rows and cards that lead somewhere say so. */
+    .ifai-open-hint {
+      flex-shrink: 0;
+      margin-left: auto;
+      padding: 2px 8px;
+      border-radius: var(--radius-button);
+      border: 1px solid var(--border-dark);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--accent-purple);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .ifai-open-hint:hover {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: #fff;
+    }
+
+    tr.ifai-row-link {
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    tr.ifai-row-link:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    tr.ifai-row-link td:first-child {
+      position: relative;
+    }
+
+    tr.ifai-row-link:hover td:first-child::after {
+      content: '→';
+      margin-left: 6px;
+      color: var(--accent-purple);
+      font-weight: 800;
+    }
+
+    /* Glossary terms marked in the panel copy. */
+    .ifai-term {
+      border-bottom: 1px dotted currentColor;
+      cursor: help;
+      text-decoration: none;
+    }
+
+    .ifai-term:hover,
+    .ifai-term:focus-visible {
+      color: var(--accent-purple);
+      border-bottom-style: solid;
+      outline: none;
+    }
+
+    /* Light theme repaints every callout; keep the severity tint on top of that. */
+    .ifai-canvas.light-theme .ceo-callout.critical,
+    .ifai-canvas.light-theme .content-box.critical {
+      border-left: 3px solid var(--danger-red);
+      background: var(--danger-bg);
+    }
+
+    .ifai-canvas.light-theme .ceo-callout.warning,
+    .ifai-canvas.light-theme .content-box.warning {
+      border-left: 3px solid var(--warning-amber);
+      background: var(--warning-bg);
+    }
+
+    .ifai-canvas.light-theme .ceo-callout.ok,
+    .ifai-canvas.light-theme .content-box.ok {
+      border-left: 3px solid var(--success-green);
+      background: var(--success-bg);
+    }

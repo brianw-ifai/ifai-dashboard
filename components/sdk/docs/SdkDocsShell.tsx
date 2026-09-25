@@ -78,6 +78,16 @@ export function SdkDocsShell({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(toc[0]?.id ?? "");
 
+  /* Navigating to another docs page clears the filter and re-anchors the TOC.
+     Adjusting during render rather than in an effect keeps the new page from
+     painting one frame with the previous page's search and active heading. */
+  const [renderedPath, setRenderedPath] = useState(pathname);
+  if (renderedPath !== pathname) {
+    setRenderedPath(pathname);
+    setQuery("");
+    setActive(toc[0]?.id ?? "");
+  }
+
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return DOCS_NAV;
@@ -90,14 +100,17 @@ export function SdkDocsShell({ children }: { children: ReactNode }) {
     }).filter((group) => group.items.length > 0);
   }, [query]);
 
+  /* A deep link carries the target heading in the URL hash, which only exists
+     in the browser — so honouring it stays an effect, and it runs after the
+     render-phase reset above has already cleared the previous page's state. */
   useEffect(() => {
-    setQuery("");
     const hash = window.location.hash.replace(/^#/, "");
-    setActive(hash || toc[0]?.id || "");
-    if (hash) {
-      document.getElementById(hash)?.scrollIntoView({ block: "start" });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset when the docs page changes
+    if (!hash) return;
+    // Syncing from an external system (the URL hash), which the server never
+    // sees — reading it during render would mismatch hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActive(hash);
+    document.getElementById(hash)?.scrollIntoView({ block: "start" });
   }, [pathname]);
 
   useEffect(() => {
