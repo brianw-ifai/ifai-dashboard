@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { fenderCanvasSpec } from "@/components/v3/fender-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 
@@ -28,7 +28,7 @@ function togglePair(
   hide.style.display = "none";
 }
 
-export function FenderBrandCanvas() {
+export function FenderBrandCanvas({ account }: { account?: ReactNode }) {
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
       if (mode === "enterprise") {
@@ -61,5 +61,6 @@ export function FenderBrandCanvas() {
     };
   }, []);
 
-  return <IntelligenceCanvas spec={fenderCanvasSpec} />;
+  const spec = account ? { ...fenderCanvasSpec, headerSlot: account } : fenderCanvasSpec;
+  return <IntelligenceCanvas spec={spec} />;
 }

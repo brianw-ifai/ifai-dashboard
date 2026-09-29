@@ -21,7 +21,7 @@ export function GuidesContent() {
           </p>
           <ul className="sdk-docs-ul">
             <li>
-              Live example: <a href="/v3">/v3 Fender canvas</a>
+              Live example: <a href="/">Fender canvas</a>
             </li>
             <li>
               SDK map: <Link href="/sdk">Canvas view</Link>

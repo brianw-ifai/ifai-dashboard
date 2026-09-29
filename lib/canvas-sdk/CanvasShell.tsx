@@ -131,10 +131,24 @@ export function CanvasShell({ spec, children }: Props) {
   }, [activeSpoke, panelView, tourStep, tourSuspended]);
 
   useEffect(() => {
-    const onResize = () => setWindowWidth(window.innerWidth);
+    let timer = 0;
+    const onResize = () => {
+      // Width eases on the expand toggle. A window resize should track the
+      // viewport immediately, so the transition is suppressed until it settles.
+      rootRef.current?.classList.add("is-resizing");
+      setWindowWidth(window.innerWidth);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        rootRef.current?.classList.remove("is-resizing");
+      }, 150);
+    };
     onResize();
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
+      rootRef.current?.classList.remove("is-resizing");
+    };
   }, []);
 
   // Single source of truth for the panel width: CSS and the camera offset both read it.

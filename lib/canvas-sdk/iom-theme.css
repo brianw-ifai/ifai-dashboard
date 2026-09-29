@@ -164,7 +164,7 @@
   --pointer-y: 42%;
   background-color: #071321;
   background-image: none;
-  transition: right 0.22s ease;
+  transition: right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 
 .ifai-canvas.theme-iom .canvas-pointer-wash {
@@ -662,7 +662,9 @@
   background: rgba(8, 22, 40, 0.96);
   border-left: 1px solid rgba(46, 183, 255, 0.28);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
-  transition: transform 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 0.9, 0.24, 1),
+    width 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 
 .ifai-canvas.theme-iom .drilldown-header,
@@ -783,4 +785,12 @@
 .ifai-canvas.theme-iom.light-theme .hud-btn-group {
   background: rgba(255, 255, 255, 0.94);
   color: #0b1f33;
+}
+
+/* Resize rewrites --drilldown-width continuously. Those updates snap; the
+   expand toggle is the change that eases. */
+.ifai-canvas.is-resizing .drilldown-panel,
+.ifai-canvas.is-resizing .viewport-container,
+.ifai-canvas.is-resizing .canvas-hud-controls {
+  transition: none;
 }

@@ -5,7 +5,7 @@ export class Canvas {
   constructor(readonly page: Page) {}
 
   async open() {
-    await this.page.goto("/v3");
+    await this.page.goto("/");
     await expect(this.panel).toBeVisible();
   }
 

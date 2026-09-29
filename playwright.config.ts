@@ -43,6 +43,7 @@ export default defineConfig({
         command: `npm run dev -- --port ${PORT}`,
         url: BASE_URL,
         reuseExistingServer: !process.env.CI,
+        env: { E2E_AUTH_BYPASS: "1" },
         timeout: 120_000,
         stdout: "ignore",
         stderr: "pipe",

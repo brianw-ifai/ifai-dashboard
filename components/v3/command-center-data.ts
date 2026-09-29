@@ -4,7 +4,7 @@ import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 export const fenderCommandCenter: CommandCenterSpec = {
   badge: "COMMAND CENTER · TODAY",
   title: "What do I need to worry about?",
-  desc: "The highest-value moves across the 124 monitored SKUs, ranked by what they cost you while they sit open.",
+  desc: "The highest-value moves across the 3,148 monitored electric SKUs, ranked by what they cost you while they sit open.",
   summary:
     "Amazon is hiding your buy button on roughly a third of your listings, and AI shopping assistants are reading the wrong specs off bundle pages you do not control. Both trace back to the same root cause: your catalog is split across listings you have not consolidated. Fix the catalog and the other six items get easier.",
   openByDefault: true,
@@ -43,7 +43,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "schema-coverage",
       title: "Two-thirds of your catalog is invisible to AI crawlers",
-      why: "Only 34% of your 124 SKUs publish machine-readable specs. For the rest, an AI engine asked 'which guitar has a 9.5 inch radius' has nothing authoritative to read from fender.com and falls back to guessing or to a reseller's page.",
+      why: "Only 34% of your monitored SKUs publish machine-readable specs. For the rest, an AI engine asked 'which guitar has a 9.5 inch radius' has nothing authoritative to read from fender.com and falls back to guessing or to a reseller's page.",
       impact: "This is the groundwork that makes the spec-hallucination fixes stick permanently.",
       severity: "high",
       spokeId: "specs",

@@ -130,6 +130,11 @@
   margin: 0;
   padding: 0;
 }
+@property --drilldown-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 620px;
+}
 .ifai-canvas {
   --drilldown-width: 620px;
   width: 100%;
@@ -634,7 +639,7 @@ svg.canvas-svg.camera-animating {
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: right 0.18s ease;
+  transition: right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 .ifai-canvas.panel-open .canvas-hud-controls {
   right: calc(var(--drilldown-width) + 24px);
@@ -702,7 +707,9 @@ svg.canvas-svg.camera-animating {
   flex-direction: column;
   box-shadow: var(--shadow-soft);
   transform: translateX(100%);
-  transition: transform 0.18s ease, width 0.22s ease;
+  transition:
+    transform 0.18s ease,
+    width 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 .drilldown-panel.open {
   transform: translateX(0);
@@ -2200,7 +2207,7 @@ tr.ifai-row-link:hover td:first-child::after {
   --pointer-y: 42%;
   background-color: #071321;
   background-image: none;
-  transition: right 0.22s ease;
+  transition: right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 .ifai-canvas.theme-iom .canvas-pointer-wash {
   position: absolute;
@@ -2717,7 +2724,9 @@ tr.ifai-row-link:hover td:first-child::after {
   background: rgba(8, 22, 40, 0.96);
   border-left: 1px solid rgba(46, 183, 255, 0.28);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
-  transition: transform 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 0.9, 0.24, 1),
+    width 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
 }
 .ifai-canvas.theme-iom .drilldown-header,
 .ifai-canvas.theme-iom .drilldown-tabs {
@@ -2828,6 +2837,11 @@ tr.ifai-row-link:hover td:first-child::after {
 .ifai-canvas.theme-iom.light-theme .hud-btn-group {
   background: rgba(255, 255, 255, 0.94);
   color: #0b1f33;
+}
+.ifai-canvas.is-resizing .drilldown-panel,
+.ifai-canvas.is-resizing .viewport-container,
+.ifai-canvas.is-resizing .canvas-hud-controls {
+  transition: none;
 }
 
   </style>
@@ -25305,7 +25319,7 @@ tr.ifai-row-link:hover td:first-child::after {
       title: "Cross-Category Spec Matrix & Schema.org Health",
       desc: "34% Schema.org completeness across 124 catalog pages. 14 of 18 key catalog lines lack structured Amazon A+ comparison grids.",
       tabs: ["Readiness", "Schema", "A+"],
-      navLabel: "Spec Readiness",
+      navLabel: "AI Readiness",
       next: "suggestions",
       render: spokeTabs(['\n<div class="ceo-callout warning">\n  <div class="ceo-callout-header">\n    <span>Explanation \xB7 What is Schema.org & Why Does AI Need It?</span>\n  </div>\n  <div class="ceo-callout-body">\n    When human beings look at <em>fender.com</em>, they read descriptive marketing copy: <em>"Crafted for bold expression with timeless curves and ringing chime..."</em>\n    <br/><br/>\n    AI crawlers (GPTBot, ClaudeBot, PerplexityBot) cannot reliably extract technical dimensions from poetic marketing copy. <strong>Schema.org JSON-LD</strong> is a standardized machine-readable code block embedded in the page that states facts directly:\n    <div style="background:var(--bg-surface); padding:8px; border-radius:6px; font-family:var(--font-mono); font-size:11px; margin-top:6px; border:1px solid var(--border-color);">\n      "bodyWood": "Alder", "fingerboardRadius": "9.5 in", "nutWidth": "1.650 in", "frets": 22\n    </div>\n    Without this, AI engines guess\u2014or scrape incorrect specs from unauthorized Amazon bundles!\n  </div>\n</div>\n\n<div class="metric-grid-2" style="margin-top:12px;">\n  <div class="metric-card-sm">\n    <span class="metric-card-label">Catalog Schema Coverage</span>\n    <div class="metric-card-val" style="color:var(--warning-amber);">34% <span style="font-size:12px; color:var(--text-subtle);">(124 SKUs)</span></div>\n    <span class="metric-card-sub">Missing machine-readable attributes</span>\n  </div>\n  <div class="metric-card-sm">\n    <span class="metric-card-label">Missing Amazon A+ Grids</span>\n    <div class="metric-card-val" style="color:var(--danger-red);">78%</div>\n    <span class="metric-card-sub">14 of 18 catalog product lines</span>\n  </div>\n</div>\n\n<div class="content-box warning" style="margin-top:12px;">\n  <div class="content-box-title">Structured Spec Completeness by Division</div>\n  <table class="table-sm">\n    <thead>\n      <tr><th>Division</th><th>Schema Markup</th><th>Tabular Grid</th><th>AEO Readiness</th></tr>\n    </thead>\n    <tbody>\n      <tr class="ifai-row-link" data-ifai-open="specs" data-ifai-tab="Schema"><td><strong>Electrics (Strat/Tele)</strong></td><td>68% Valid</td><td><span style="color:var(--danger-red);">Missing (10/14)</span></td><td><span class="tag-badge tag-warning">Partial</span></td></tr>\n      <tr class="ifai-row-link" data-ifai-open="specs" data-ifai-tab="Schema"><td><strong>Acoustics &amp; Hybrids</strong></td><td>42% Valid</td><td><span style="color:var(--danger-red);">Missing (8/8)</span></td><td><span class="tag-badge tag-danger">Poor</span></td></tr>\n      <tr class="ifai-row-link" data-ifai-open="specs" data-ifai-tab="Schema"><td><strong>Bass Lines</strong></td><td>55% Valid</td><td><span style="color:var(--danger-red);">Missing (6/6)</span></td><td><span class="tag-badge tag-warning">Partial</span></td></tr>\n      <tr class="ifai-row-link" data-ifai-open="specs" data-ifai-tab="Schema"><td><strong>Digital Amps &amp; Audio</strong></td><td>75% Valid</td><td><span style="color:var(--warning-amber);">Partial (2/4)</span></td><td><span class="tag-badge tag-warning">Moderate</span></td></tr>\n    </tbody>\n  </table>\n</div>\n', '\n<div class="content-box critical">\n  <div class="content-box-title">Missing Schema.org JSON-LD Technical Properties</div>\n  <p style="font-size:12px; color:var(--text-muted);">\n    The following 6 technical attributes are currently missing from fender.com product detail pages, forcing AI engines to guess or pull from third-party Amazon listings:\n  </p>\n\n  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">\n    <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">\n      \u274C <code>fingerboardRadius</code> (Causes 12" radius bug)\n    </div>\n    <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">\n      \u274C <code>pickupConfiguration</code> (Causes Acoustasonic bug)\n    </div>\n    <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">\n      \u274C <code>nutWidth</code> (Critical for beginner search)\n    </div>\n    <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">\n      \u274C <code>scaleLength</code> (Crucial for travel queries)\n    </div>\n    <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">\n      \u274C <code>bodyWoodType</code> (Alder vs Basswood vs Poplar)\n    </div>\n    <div style="background:var(--bg-surface); padding:8px 10px; border-radius:6px; font-size:11.5px; border:1px solid var(--border-color);">\n      \u274C <code>numberOfFrets</code> (21 vintage vs 22 modern)\n    </div>\n  </div>\n\n  <div class="action-card" style="margin-top:12px; border-left-color:var(--accent-purple);">\n    <div class="action-head">Ready-to-Deploy JSON-LD Code Blueprint</div>\n    <pre style="background:#090d16; padding:10px; border-radius:6px; font-size:11px; color:#a5b4fc; overflow-x:auto; margin-top:6px; border:1px solid var(--border-color);"><code>{\n  "@context": "https://schema.org/",\n  "@type": "Product",\n  "name": "Fender Player II Stratocaster",\n  "image": "https://fender.com/img/player2-strat-sunburst.jpg",\n  "brand": { "@type": "Brand", "name": "Fender" },\n  "additionalProperty": [\n    { "@type": "PropertyValue", "name": "fingerboardRadius", "value": "9.5 in (241 mm)" },\n    { "@type": "PropertyValue", "name": "pickupConfiguration", "value": "SSS Player Series Alnico 5" },\n    { "@type": "PropertyValue", "name": "bodyWoodType", "value": "Alder" },\n    { "@type": "PropertyValue", "name": "nutWidth", "value": "1.650 in (42 mm)" },\n    { "@type": "PropertyValue", "name": "scaleLength", "value": "25.5 in (648 mm)" },\n    { "@type": "PropertyValue", "name": "numberOfFrets", "value": "22 Medium Jumbo" }\n  ]\n}</code></pre>\n  </div>\n</div>\n', '\n<div class="ceo-callout warning">\n  <div class="ceo-callout-header">\n    <span>Explanation \xB7 What is Amazon A+ Content & Why Does It Win AI Queries?</span>\n  </div>\n  <div class="ceo-callout-body">\n    <strong>Amazon A+ Content:</strong> Enhanced visual branding modules on Amazon product pages (graphics, diagrams, and comparison charts).\n    <br/><br/>\n    When A+ comparison tables are present, Amazon Rufus and frontier LLMs (ChatGPT, Claude) parse the table columns directly. This allows Fender to define its own tiering hierarchy rather than letting PRS or Taylor frame our products.\n  </div>\n</div>\n\n<div class="content-box warning" style="margin-top:12px;">\n  <div class="content-box-title">Recommended 4-Column A+ Matrix Structure</div>\n  <p style="font-size:12px; color:var(--text-muted); line-height:1.45;">\n    Standardizes the upgrade path across 14 catalog lines, locking in authoritative manufacturer specs:\n  </p>\n\n  <table class="table-sm" style="margin-top:6px;">\n    <thead>\n      <tr><th>Specification</th><th>Squier Classic Vibe</th><th>Player II Series</th><th>American Performer</th><th>American Pro II</th></tr>\n    </thead>\n    <tbody>\n      <tr><td><strong>Price Point</strong></td><td>$459.99</td><td>$849.99</td><td>$1,399.99</td><td>$1,799.99</td></tr>\n      <tr><td><strong>Body Wood</strong></td><td>Poplar / Nato</td><td>Alder / Chambered Ash</td><td>Alder</td><td>Select Alder / Roasted Pine</td></tr>\n      <tr><td><strong>Pickups</strong></td><td>Fender-Designed Alnico</td><td>Player II Alnico 5</td><td>Yosemite Single-Coil</td><td>V-Mod II Single-Coil</td></tr>\n      <tr><td><strong>Fretwork</strong></td><td>Narrow Tall</td><td>Medium Jumbo (Rolled Edges)</td><td>Jumbo</td><td>Narrow Tall (Hand-Rolled)</td></tr>\n      <tr><td><strong>Country of Origin</strong></td><td>Indonesia</td><td>Ensenada, Mexico</td><td>Corona, California (USA)</td><td>Corona, California (USA)</td></tr>\n    </tbody>\n  </table>\n</div>\n'])
     },
@@ -25567,9 +25581,9 @@ tr.ifai-row-link:hover td:first-child::after {
       "targetX": 440,
       "targetY": 680,
       "radius": 120,
-      "title": "Product Spec Readiness",
+      "title": "AI Readiness",
       "subtitle": "Can AI and Amazon read your specs correctly?",
-      "category": "SPEC READINESS",
+      "category": "AI READINESS",
       "displays": [
         "6 spec fields missing from fender.com product pages",
         "Product lines missing Amazon comparison tables (14 of 18)",
@@ -27605,10 +27619,22 @@ tr.ifai-row-link:hover td:first-child::after {
       panelViewRef.current = panelView;
     }, [activeSpoke, panelView, tourStep, tourSuspended]);
     (0, import_react9.useEffect)(() => {
-      const onResize = () => setWindowWidth(window.innerWidth);
+      let timer = 0;
+      const onResize = () => {
+        rootRef.current?.classList.add("is-resizing");
+        setWindowWidth(window.innerWidth);
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          rootRef.current?.classList.remove("is-resizing");
+        }, 150);
+      };
       onResize();
       window.addEventListener("resize", onResize);
-      return () => window.removeEventListener("resize", onResize);
+      return () => {
+        window.clearTimeout(timer);
+        window.removeEventListener("resize", onResize);
+        rootRef.current?.classList.remove("is-resizing");
+      };
     }, []);
     const drilldownWidth = (() => {
       if (!panelExpanded || windowWidth === 0) return baseDrilldownWidth;
@@ -28611,12 +28637,12 @@ tr.ifai-row-link:hover td:first-child::after {
         y: 680,
         r: 78,
         status: "warning",
-        title: "Spec Readiness",
+        title: "AI Readiness",
         titleSize: 13.5,
         stats: ["34% Schema", "14 Gaps"],
         meta: "Schema & A+ Grids",
         spokeId: "specs",
-        tooltip: { "title": "Catalog Spec Readiness", "desc": "34% Schema.org completeness. 14 of 18 key catalog lines lack structured comparison grids." }
+        tooltip: { "title": "AI Readiness", "desc": "34% Schema.org completeness. 14 of 18 key catalog lines lack structured comparison grids." }
       },
       {
         id: "spoke-competitors",

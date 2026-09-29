@@ -11,9 +11,9 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "IntoFocus v3",
-  description: "IntoFocus AI v3",
+  description: "Fender brand intelligence canvas",
 };
 
-export default function V3Layout({ children }: LayoutProps<"/v3">) {
+export default function CanvasLayout({ children }: LayoutProps<"/">) {
   return <div className={`h-dvh ${playfair.variable}`}>{children}</div>;
 }

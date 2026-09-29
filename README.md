@@ -1,6 +1,6 @@
 # IntoFocus v3
 
-The v3 dashboard is a Fender brand-intelligence canvas at `/v3`. It shows how Fender Musical Instruments Corporation (FMIC) is discovered and recommended in AI search, and how catalog, retail, and spec problems on the open web change that outcome.
+The v3 dashboard is a Fender brand-intelligence canvas at `/`. It shows how Fender Musical Instruments Corporation (FMIC) is discovered and recommended in AI search, and how catalog, retail, and spec problems on the open web change that outcome.
 
 The view covers 124 monitored ASINs across five divisions: solid-body electrics, acoustic and hybrid, bass, digital amps and audio, and Squier. It is built as an executive briefing for portfolio health, not a live operations console.
 

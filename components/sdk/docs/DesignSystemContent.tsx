@@ -105,7 +105,7 @@ export function DesignSystemContent() {
       <p className="sdk-docs-lede">
         Every creative element the SDK uses to display data — fonts, tokens, bubbles, pills, edges,
         topology, KPI cards, tables, and chrome — rendered from the same primitives as{" "}
-        <a href="/v3">/v3</a>. There are no bar, line, or pie chart components; quantitative data
+        <a href="/">the home canvas</a>. There are no bar, line, or pie chart components; quantitative data
         lives in the graph, metric cards, tables, and progress bars below.
       </p>
 
@@ -357,7 +357,7 @@ export function DesignSystemContent() {
             </button>
             <button className="hdr-btn">
               <ExternalLink size={12} />
-              <span>Open /v3</span>
+              <span>Open home</span>
             </button>
           </div>
           <p className="design-caption">Node stat pills are SVG — see the bubble row above. Correlation badges live on edges in Graphs.</p>

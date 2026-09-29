@@ -463,8 +463,8 @@ function RingMotes({ radius }: { radius: number }) {
         <circle
           key={index}
           className="ring-mote"
-          cx={mote.x}
-          cy={mote.y}
+          cx={mote.x.toFixed(2)}
+          cy={mote.y.toFixed(2)}
           r={mote.size}
           style={{ animationDelay: `${mote.delay}s` }}
         />
@@ -510,7 +510,7 @@ function SelectionBurst({ radius }: { radius: number }) {
           className="node-spark"
           r="3.2"
           fill={spark.color}
-          style={{ ["--dx" as string]: `${spark.dx}px`, ["--dy" as string]: `${spark.dy}px`, animationDelay: `${spark.delay}ms` }}
+          style={{ ["--dx" as string]: `${spark.dx.toFixed(2)}px`, ["--dy" as string]: `${spark.dy.toFixed(2)}px`, animationDelay: `${spark.delay}ms` }}
         />
       ))}
     </g>

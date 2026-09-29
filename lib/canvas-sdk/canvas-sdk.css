@@ -111,6 +111,14 @@
       padding: 0;
     }
 
+    /* Typed so width and offsets ease when the variable changes. An
+       unregistered custom property snaps between lengths. */
+    @property --drilldown-width {
+      syntax: "<length>";
+      inherits: true;
+      initial-value: 620px;
+    }
+
     .ifai-canvas {
       --drilldown-width: 620px;
       width: 100%;
@@ -637,7 +645,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: right 0.18s ease;
+      transition: right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
     }
 
     .ifai-canvas.panel-open .canvas-hud-controls {
@@ -711,7 +719,9 @@
       flex-direction: column;
       box-shadow: var(--shadow-soft);
       transform: translateX(100%);
-      transition: transform 0.18s ease, width 0.22s ease;
+      transition:
+        transform 0.18s ease,
+        width 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
     }
 
     .drilldown-panel.open {
