@@ -61,7 +61,7 @@ test.describe("panel layout", () => {
   });
 
   test("panel content never scrolls sideways", async ({ canvas, page }) => {
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
     const tabs = await page.locator(".drilldown-tab-btn").count();
     for (let i = 0; i < tabs; i += 1) {
       await page.locator(".drilldown-tab-btn").nth(i).click();

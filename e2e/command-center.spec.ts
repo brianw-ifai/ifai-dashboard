@@ -24,7 +24,7 @@ test.describe("command center", () => {
     await expect(quadrants.nth(1)).toContainText("7");
     await expect(quadrants.nth(0)).toContainText("3"); // critical
 
-    await canvas.priority("Amazon is hiding your buy button").locator(".cc-done-btn").click();
+    await canvas.priority("7.4% of active Amazon offers").locator(".cc-done-btn").click();
     await expect(canvas.priorities).toHaveCount(6);
     await expect(quadrants.nth(1)).toContainText("6");
     await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
@@ -40,7 +40,7 @@ test.describe("command center", () => {
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
-    const item = canvas.priority("Amazon is hiding your buy button");
+    const item = canvas.priority("7.4% of active Amazon offers");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -48,7 +48,7 @@ test.describe("command center", () => {
 
     await canvas.reload();
     await expect(
-      canvas.priority("Amazon is hiding your buy button").locator(".cc-owner-btn.active"),
+      canvas.priority("7.4% of active Amazon offers").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -60,13 +60,13 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["Amazon is hiding your buy button", "Flagged ASINs"],
+    ["7.4% of active Amazon offers", "Flagged ASINs"],
     ["customer reviews are stranded", "Catalog"],
     ["AI assistants are quoting specs", "Hallucination"],
-    ["invisible to AI crawlers", "Schema"],
+    ["machine-readable specs", "Schema"],
     ["Discounted bundles are dragging", "MAP"],
     ["head-to-head recommendations", "Battlecards"],
-    ["no comparison table", "A+"],
+    ["A+ comparison matrix", "A+"],
   ] as const;
 
   for (const [title, tab] of routes) {
@@ -77,7 +77,7 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
     await canvas.backToPriorities();
     await expect(canvas.priorities).toHaveCount(7);
   });

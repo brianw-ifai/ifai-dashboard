@@ -9,12 +9,12 @@ test.describe("simulation filters", () => {
     await expect(canvas.simulations).toHaveCount(7);
 
     await canvas.filterChip("Hallucination Flags").click();
-    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(2);
+    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(1);
 
     await canvas.filterChip("Electrics").click();
-    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(2);
+    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(1);
 
-    await canvas.filterChip("All (100)").click();
+    await canvas.filterChip("All (102)").click();
     await expect(canvas.simulations.filter({ visible: true })).toHaveCount(7);
   });
 
@@ -30,8 +30,8 @@ test.describe("simulation filters", () => {
 
   test("the active chip tracks the selection", async ({ canvas }) => {
     await canvas.openSimulations();
-    await canvas.filterChip("Digital Amps").click();
-    await expect(canvas.page.locator(".segmented-btn.active")).toHaveText(/Digital Amps/);
+    await canvas.filterChip("Amps (12)").click();
+    await expect(canvas.page.locator(".segmented-btn.active")).toHaveText(/Amps \(12\)/);
   });
 });
 
@@ -72,7 +72,7 @@ test.describe("prompt watchlist", () => {
 
 test.describe("collapsible explanations", () => {
   test("an explanation can be hidden and stays hidden", async ({ canvas, page }) => {
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
 
     const toggle = page.locator(".ceo-callout-toggle").first();
     const body = page.locator(".ceo-callout-body").first();
@@ -84,7 +84,7 @@ test.describe("collapsible explanations", () => {
     await expect(page.locator(".ceo-callout-header").first()).toBeVisible();
 
     await canvas.reload();
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
     await expect(page.locator(".ceo-callout-body").first()).toBeHidden();
 
     await page.locator(".ceo-callout-toggle").first().click();
@@ -101,27 +101,31 @@ test.describe("drill-downs", () => {
     await expect(canvas.activeTab).toContainText("Catalog");
   });
 
-  test("division rows open the schema audit", async ({ canvas, page }) => {
-    await canvas.openPriority("invisible to AI crawlers");
+  test("the spec sample states the live schema result", async ({ canvas, page }) => {
+    await canvas.openPriority("machine-readable specs");
     await canvas.openTab("Readiness");
-    await expect(page.locator("tr.ifai-row-link")).toHaveCount(4);
-
-    await page.locator("tr.ifai-row-link").first().click();
-    await expect(canvas.activeTab).toContainText("Schema");
+    await expect(page.locator(".drilldown-desc")).toContainText("29.2%");
+    await expect(page.locator(".drilldown-body")).toContainText("additionalProperty");
   });
 
-  test("competitive rows name the Fender contender and link to the evidence", async ({
+  test("competitive rows name the live leader and link to the evidence", async ({
     canvas,
     page,
   }) => {
     await canvas.openPriority("head-to-head recommendations");
 
     const headers = await page.locator(".table-sm th").allInnerTexts();
-    expect(headers.some((h) => /fender contender/i.test(h))).toBe(true);
+    expect(headers.some((h) => /leader brand/i.test(h))).toBe(true);
+    expect(headers.some((h) => /fender sov/i.test(h))).toBe(true);
 
-    const contenders = await page.locator("tr.ifai-row-link td:nth-child(3)").allInnerTexts();
-    expect(contenders).toHaveLength(5);
-    for (const name of contenders) expect(name.trim().length).toBeGreaterThan(3);
+    const leaders = await page.locator("tr.ifai-row-link td:nth-child(2)").allInnerTexts();
+    expect(leaders.map((name) => name.trim())).toEqual([
+      "PRS",
+      "Yamaha",
+      "Fender/Squier",
+      "Yamaha",
+      "Fender/Squier",
+    ]);
 
     await page.locator("tr.ifai-row-link").first().click();
     await expect(canvas.activeTab).toContainText("Simulations");
@@ -130,7 +134,7 @@ test.describe("drill-downs", () => {
 
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);
@@ -152,7 +156,7 @@ test.describe("glossary", () => {
   });
 
   test("marking does not corrupt the surrounding copy", async ({ canvas, page }) => {
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
@@ -160,7 +164,7 @@ test.describe("glossary", () => {
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
-    await canvas.openPriority("Amazon is hiding your buy button");
+    await canvas.openPriority("7.4% of active Amazon offers");
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");
