@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { fenderCanvasSpec } from "@/components/v3/fender-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 
@@ -28,7 +28,23 @@ function togglePair(
   hide.style.display = "none";
 }
 
-export function FenderBrandCanvas({ account }: { account?: ReactNode }) {
+function viewerStorageScope(viewerId?: string) {
+  if (!viewerId) return "anonymous";
+  let hash = 2166136261;
+  for (const character of viewerId.trim().toLowerCase()) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+export function FenderBrandCanvas({
+  account,
+  viewerId,
+}: {
+  account?: ReactNode;
+  viewerId?: string;
+}) {
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
       if (mode === "enterprise") {
@@ -61,6 +77,19 @@ export function FenderBrandCanvas({ account }: { account?: ReactNode }) {
     };
   }, []);
 
-  const spec = account ? { ...fenderCanvasSpec, headerSlot: account } : fenderCanvasSpec;
+  const spec = useMemo(() => {
+    const metricWidgets = fenderCanvasSpec.metricWidgets
+      ? {
+          ...fenderCanvasSpec.metricWidgets,
+          storageKey: `${fenderCanvasSpec.metricWidgets.storageKey}:${viewerStorageScope(viewerId)}`,
+        }
+      : undefined;
+    return {
+      ...fenderCanvasSpec,
+      ...(account ? { headerSlot: account } : {}),
+      ...(metricWidgets ? { metricWidgets } : {}),
+    };
+  }, [account, viewerId]);
+
   return <IntelligenceCanvas spec={spec} />;
 }

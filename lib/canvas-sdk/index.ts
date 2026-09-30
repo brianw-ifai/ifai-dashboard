@@ -25,6 +25,8 @@ export type {
   CanvasFilter,
   CanvasHeaderAction,
   CanvasLegendItem,
+  CanvasMetric,
+  CanvasMetricWidgets,
   CanvasNode,
   CanvasPath,
   CanvasRenderContext,
