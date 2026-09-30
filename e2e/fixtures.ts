@@ -6,13 +6,21 @@ export class Canvas {
 
   async open() {
     await this.page.goto("/");
+    await expect(this.page.locator(".ifai-canvas")).toBeVisible();
+    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
+  }
+
+  /** Opens a spoke from the map column layout (panel starts hidden on IOM). */
+  async openSpokeFromMap(titleFragment: string) {
+    await this.page.locator(".graph-node").filter({ hasText: titleFragment }).click();
+    await expect(this.page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(this.panel).toBeVisible();
   }
 
   /** Reload and wait for the panel back, for "does this survive a refresh" checks. */
   async reload() {
     await this.page.reload();
-    await expect(this.panel).toBeVisible();
+    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
   }
 
   get panel() {
@@ -32,7 +40,13 @@ export class Canvas {
     return this.priorities.filter({ hasText: titleFragment });
   }
 
+  async openCommandCenter() {
+    await this.page.locator(".hdr-btn", { hasText: "Priorities" }).click();
+    await expect(this.commandCenter).toBeVisible();
+  }
+
   async openPriority(titleFragment: string) {
+    await this.openCommandCenter();
     await this.priority(titleFragment).locator(".cc-open-btn").click();
     await expect(this.page.locator(".drilldown-back-btn")).toBeVisible();
   }

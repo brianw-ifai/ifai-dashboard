@@ -94,7 +94,7 @@ test.describe("collapsible explanations", () => {
 
 test.describe("drill-downs", () => {
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
-    await page.locator(".strategy-roadmap-btn").click();
+    await canvas.openSpokeFromMap("Strategy Roadmap");
     await expect(page.locator(".ifai-open-hint")).toHaveCount(3);
 
     await page.locator(".ifai-open-hint").first().click();

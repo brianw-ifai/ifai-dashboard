@@ -21,11 +21,64 @@ function headerArcPath(radius: number, fontSize: number, title: string, inset?: 
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r.toFixed(2)} ${r.toFixed(2)} 0 0 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
 }
 
-function pillSize(label: string, fontSize: number) {
-  return {
-    width: Math.max(fontSize * 2.6, label.length * fontSize * 0.56 + fontSize * 1.4),
-    height: fontSize + 9,
-  };
+function textWidth(text: string, fontSize: number) {
+  return text.length * fontSize * 0.56;
+}
+
+function wrapText(label: string, maxWidth: number, fontSize: number): string[] {
+  const words = label.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+
+  const lines: string[] = [];
+  let line = words[0];
+  for (let i = 1; i < words.length; i += 1) {
+    const candidate = `${line} ${words[i]}`;
+    if (textWidth(candidate, fontSize) <= maxWidth) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = words[i];
+    }
+  }
+  lines.push(line);
+
+  const broken: string[] = [];
+  for (const chunk of lines) {
+    if (textWidth(chunk, fontSize) <= maxWidth) {
+      broken.push(chunk);
+      continue;
+    }
+    let part = "";
+    for (const ch of chunk) {
+      const next = part + ch;
+      if (textWidth(next, fontSize) > maxWidth && part) {
+        broken.push(part);
+        part = ch;
+      } else {
+        part = next;
+      }
+    }
+    if (part) broken.push(part);
+  }
+  return broken;
+}
+
+function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
+  const padX = fontSize * 0.7;
+  const capped =
+    maxWidth !== undefined ? Math.max(fontSize * 2.4, maxWidth) : undefined;
+  const innerMax =
+    capped !== undefined ? Math.max(fontSize * 1.6, capped - padX * 2) : undefined;
+  const lines =
+    innerMax !== undefined ? wrapText(label, innerMax, fontSize) : [label];
+  const contentWidth = Math.max(
+    fontSize * 2.6,
+    ...lines.map((entry) => textWidth(entry, fontSize) + padX * 2),
+  );
+  const width = capped !== undefined ? Math.min(capped, contentWidth) : contentWidth;
+  const lineH = fontSize + 3;
+  const height = Math.max(fontSize + 9, lines.length * lineH + 6);
+  return { width, height, lines, lineH };
 }
 
 export function CurvedHeader({
@@ -61,15 +114,18 @@ function StatPill({
   y,
   fontSize,
   status,
+  maxWidth,
 }: {
   label: string;
   y: number;
   fontSize: number;
   status?: NodeStatus;
+  maxWidth?: number;
 }) {
-  const { width, height } = pillSize(label, fontSize);
+  const { width, height, lines, lineH } = pillMetrics(label, fontSize, maxWidth);
   const statusClass =
     status && status !== "neutral" ? ` status-${status}` : "";
+  const textStartY = -((lines.length - 1) * lineH) / 2 + fontSize * 0.35;
   return (
     <g className="node-stat" transform={`translate(0, ${y})`}>
       <rect
@@ -78,12 +134,41 @@ function StatPill({
         y={-height / 2}
         width={width}
         height={height}
-        rx={height / 2}
+        rx={Math.min(height / 2, 999)}
       />
-      <text className="node-stat-text" y={fontSize * 0.35} textAnchor="middle" fontSize={fontSize}>
-        {label}
+      <text className="node-stat-text" textAnchor="middle" fontSize={fontSize}>
+        {lines.map((entry, index) => (
+          <tspan key={`${entry}-${index}`} x={0} dy={index === 0 ? textStartY : lineH}>
+            {entry}
+          </tspan>
+        ))}
       </text>
     </g>
+  );
+}
+
+function MetaBlock({
+  meta,
+  fontSize,
+  y,
+  maxWidth,
+}: {
+  meta: string;
+  fontSize: number;
+  y: number;
+  maxWidth: number;
+}) {
+  const lines = wrapText(meta, maxWidth, fontSize);
+  const lineH = fontSize + 2;
+  const startY = y - ((lines.length - 1) * lineH) / 2;
+  return (
+    <text className="node-meta" textAnchor="middle" fontSize={fontSize}>
+      {lines.map((entry, index) => (
+        <tspan key={`${entry}-${index}`} x={0} dy={index === 0 ? startY : lineH}>
+          {entry}
+        </tspan>
+      ))}
+    </text>
   );
 }
 
@@ -93,44 +178,57 @@ export function CenteredStack({
   meta,
   pillSize: fontSize,
   status,
+  maxWidth,
+  layout = "center",
+  flowStartY = 0,
 }: {
   radius: number;
   stats: string[];
   meta?: string;
   pillSize: number;
   status?: NodeStatus;
+  maxWidth?: number;
+  layout?: "center" | "flow";
+  flowStartY?: number;
 }) {
+  const pillMax = maxWidth ?? Math.max(radius * 2 - 14, fontSize * 4);
   const metaSize = fontSize * 0.82;
-  const pillH = fontSize + 9;
-  const metaH = meta ? metaSize + 2 : 0;
-  const gap = radius < 62 ? 4 : 6;
-  const rows = stats.length + (meta ? 1 : 0);
-  const stackH = stats.length * pillH + metaH + Math.max(0, rows - 1) * gap;
-  const nudge = radius < 62 ? 3 : 2;
-  const firstY = -stackH / 2 + pillH / 2 + nudge;
-  const step = pillH + gap;
-  // Row offsets are derived from the index rather than accumulated, so nothing
-  // is reassigned after render.
-  const metaY = firstY + stats.length * step;
+  const metaMax = pillMax;
+  const gap = radius < 62 ? 4 : 5;
 
-  const pills = stats.map((label, index) => (
-    <StatPill
-      key={label}
-      label={label}
-      y={firstY + index * step}
-      fontSize={fontSize}
-      status={status}
-    />
-  ));
+  const pillMetricsList = stats.map((label) => pillMetrics(label, fontSize, pillMax));
+  const metaLines = meta ? wrapText(meta, metaMax, metaSize) : [];
+  const metaBlockH = metaLines.length ? metaLines.length * (metaSize + 2) + 2 : 0;
+
+  const stackH =
+    pillMetricsList.reduce((sum, pill) => sum + pill.height, 0) +
+    Math.max(0, pillMetricsList.length - 1) * gap +
+    (meta ? gap + metaBlockH : 0);
+
+  let cursorY =
+    layout === "flow" ? flowStartY : -stackH / 2 + (pillMetricsList[0]?.height ?? fontSize + 9) / 2 + 2;
+
+  const pills = pillMetricsList.map((pill, index) => {
+    const y = cursorY + pill.height / 2;
+    cursorY += pill.height + gap;
+    return (
+      <StatPill
+        key={`${stats[index]}-${index}`}
+        label={stats[index]}
+        y={y}
+        fontSize={fontSize}
+        status={status}
+        maxWidth={pillMax}
+      />
+    );
+  });
+
+  const metaY = meta ? cursorY + metaBlockH / 2 : 0;
 
   return (
     <>
       {pills}
-      {meta ? (
-        <text className="node-meta" y={metaY - pillH / 2 + metaH / 2} textAnchor="middle" fontSize={metaSize}>
-          {meta}
-        </text>
-      ) : null}
+      {meta ? <MetaBlock meta={meta} fontSize={metaSize} y={metaY} maxWidth={metaMax} /> : null}
     </>
   );
 }
@@ -143,6 +241,7 @@ const PRIMARY_SPOKES = new Set([
   "spoke-competitors",
   "spoke-specs",
   "spoke-fixes",
+  "spoke-roadmap",
 ]);
 
 /** Flip on to restore the flame and red alert pill above critical bubbles. */
@@ -211,7 +310,8 @@ function titleLines(title: string) {
 
 function CenteredFace({
   title,
-  stat,
+  stats,
+  meta,
   status,
   icon,
   radius,
@@ -219,9 +319,11 @@ function CenteredFace({
   prominent,
   logoSrc,
   plate,
+  titleSize: titleSizeOverride,
 }: {
   title: string;
-  stat?: string;
+  stats: string[];
+  meta?: string;
   status: NodeStatus;
   icon?: BubbleIcon;
   radius: number;
@@ -229,13 +331,14 @@ function CenteredFace({
   prominent?: boolean;
   logoSrc?: string;
   plate?: boolean;
+  titleSize?: number;
 }) {
-  const statusClass = status !== "neutral" ? ` status-${status}` : "";
   if (hub) {
     const lines = titleLines(title);
     const titleY = logoSrc ? 6 : -16;
     const titleStep = logoSrc ? 26 : 28;
     const titleSize = logoSrc ? 20 : 22;
+    const stackStartY = titleY + lines.length * titleStep + (meta || stats.length ? 8 : 0);
     return (
       <g className="node-face">
         {logoSrc ? (
@@ -260,16 +363,30 @@ function CenteredFace({
             {line}
           </text>
         ))}
+        {stats.length || meta ? (
+          <CenteredStack
+            radius={radius}
+            stats={stats}
+            meta={meta}
+            pillSize={10}
+            status={status}
+            maxWidth={radius * 2 - 18}
+            layout="flow"
+            flowStartY={stackStartY}
+          />
+        ) : null}
       </g>
     );
   }
 
   const lines = titleLines(title);
-  const titleSize = prominent ? 20 : radius >= 74 ? 12 : 11;
-  const lineH = titleSize + 4;
-  const iconY = icon ? -radius * (prominent ? 0.46 : 0.38) : 0;
-  const titleStart = icon ? (prominent ? 2 : -radius * 0.05) : -lineH * (lines.length / 2);
-  const statY = titleStart + lines.length * lineH + 11;
+  const titleSize =
+    titleSizeOverride ?? (prominent ? 13 : radius >= 74 ? 11.5 : 10.5);
+  const lineH = titleSize + 3;
+  const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
+  const titleStart = icon ? (prominent ? 4 : -radius * 0.02) : -lineH * (lines.length / 2);
+  const pillFont = prominent ? 9.5 : radius >= 55 ? 9 : 8.5;
+  const stackStartY = titleStart + lines.length * lineH + (stats.length || meta ? 5 : 0);
 
   return (
     <g className="node-face">
@@ -290,15 +407,17 @@ function CenteredFace({
           {line}
         </text>
       ))}
-      {stat ? (
-        <text
-          className={`node-face-stat${statusClass}`}
-          y={statY}
-          textAnchor="middle"
-          fontSize={radius >= 70 ? 12 : 11}
-        >
-          {stat}
-        </text>
+      {stats.length || meta ? (
+        <CenteredStack
+          radius={radius}
+          stats={stats}
+          meta={meta}
+          pillSize={pillFont}
+          status={status}
+          maxWidth={radius * 2 - 14}
+          layout="flow"
+          flowStartY={stackStartY}
+        />
       ) : null}
     </g>
   );
@@ -309,6 +428,8 @@ type BubbleProps = {
   x: number;
   y: number;
   r: number;
+  /** When set, face/icon layout uses this radius and scales up to `r` (column rail). */
+  contentRadius?: number;
   status: NodeStatus;
   title: string;
   titleSize?: number;
@@ -330,6 +451,7 @@ export function GraphBubble({
   x,
   y,
   r,
+  contentRadius,
   status,
   title,
   titleSize,
@@ -344,14 +466,36 @@ export function GraphBubble({
   onMouseEnter,
   onMouseLeave,
 }: BubbleProps) {
-  const headerSize = titleSize ?? (r >= 70 ? 14.5 : r >= 50 ? 13 : 12);
-  const statSize = r >= 70 ? 12 : 10.5;
+  const faceR = contentRadius ?? r;
+  const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
+  const headerSize = titleSize ?? (faceR >= 70 ? 14.5 : faceR >= 50 ? 13 : 12);
+  const statSize = faceR >= 70 ? 12 : 10.5;
   const statusClass = status !== "neutral" ? ` status-${status}` : "";
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
+
+  const face = centered ? (
+    <CenteredFace
+      title={title}
+      stats={stats}
+      meta={meta}
+      status={status}
+      icon={SPOKE_ICONS[id]}
+      radius={faceR}
+      prominent={PRIMARY_SPOKES.has(id)}
+      plate={centered && Boolean(SPOKE_ICONS[id])}
+      titleSize={titleSize}
+    />
+  ) : (
+    <>
+      <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} />
+      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statSize} status={status} />
+    </>
+  );
 
   return (
     <g
       className={`graph-node${PRIMARY_SPOKES.has(id) ? " spoke-primary" : ""}${stateClass}`}
+      data-graph-node-id={id}
       transform={`translate(${x}, ${y})`}
       style={enterDelay ? { transitionDelay: `${enterDelay}ms` } : undefined}
       onClick={onClick}
@@ -366,22 +510,7 @@ export function GraphBubble({
       {selected && emphasis ? <SelectionBurst radius={r} /> : null}
       <g className="node-inner">
         <circle r={r} className={`node-circle${statusClass}`} filter="url(#nodeShadow)" />
-        {centered ? (
-          <CenteredFace
-            title={title}
-            stat={stats[0]}
-            status={status}
-            icon={SPOKE_ICONS[id]}
-            radius={r}
-            prominent={PRIMARY_SPOKES.has(id)}
-            plate={emphasis && Boolean(SPOKE_ICONS[id])}
-          />
-        ) : (
-          <>
-            <CurvedHeader id={id} radius={r} title={title} fontSize={headerSize} />
-            <CenteredStack radius={r} stats={stats} meta={meta} pillSize={statSize} />
-          </>
-        )}
+        {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
     </g>
   );
@@ -392,6 +521,7 @@ export function GraphHub({
   x,
   y,
   r,
+  contentRadius,
   status,
   title,
   titleSize,
@@ -406,14 +536,34 @@ export function GraphHub({
   onMouseEnter,
   onMouseLeave,
 }: BubbleProps) {
+  const faceR = contentRadius ?? r;
+  const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
   const pulseR = r * (140 / 98);
   const midR = r * (118 / 98);
   const headerSize = titleSize ?? 15;
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
 
+  const face = centered ? (
+    <CenteredFace
+      title={title}
+      stats={stats}
+      meta={meta}
+      status={status}
+      radius={faceR}
+      hub
+      logoSrc={logoSrc}
+    />
+  ) : (
+    <>
+      <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
+      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={12} status={status} />
+    </>
+  );
+
   return (
     <g
       className={`graph-node graph-hub${stateClass}`}
+      data-graph-node-id={id}
       transform={`translate(${x}, ${y})`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -432,14 +582,7 @@ export function GraphHub({
           strokeWidth="3"
         />
         <circle r={r} className="node-circle hub-core" />
-        {centered ? (
-          <CenteredFace title={title} stat={stats[0]} status={status} radius={r} hub logoSrc={logoSrc} />
-        ) : (
-          <>
-            <CurvedHeader id={id} radius={r} title={title} fontSize={headerSize} className="node-title hub-title" />
-            <CenteredStack radius={r} stats={stats} meta={meta} pillSize={12} status={status} />
-          </>
-        )}
+        {faceScale === 1 ? face : <g transform={`scale(${faceScale})`}>{face}</g>}
       </g>
     </g>
   );

@@ -1,9 +1,10 @@
 import { expect, test } from "./fixtures";
 
-/* The "what do I need to worry about" queue: open on arrival, assignable,
+/* The "what do I need to worry about" queue: opens from Priorities, assignable,
    and every row a route into the detail behind it. */
 test.describe("command center", () => {
-  test("opens on arrival without clicking a bubble", async ({ canvas }) => {
+  test("opens from the priorities control", async ({ canvas, page }) => {
+    await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toBeVisible();
     await expect(canvas.priorities).toHaveCount(7);
     await expect(canvas.page.locator(".drilldown-title")).toContainText(
@@ -12,6 +13,7 @@ test.describe("command center", () => {
   });
 
   test("every priority explains why it is top of the list", async ({ canvas }) => {
+    await canvas.openCommandCenter();
     const whys = canvas.page.locator(".cc-why p");
     await expect(whys).toHaveCount(7);
     for (const text of await whys.allInnerTexts()) {
@@ -20,6 +22,7 @@ test.describe("command center", () => {
   });
 
   test("counts reflect the queue", async ({ canvas, page }) => {
+    await canvas.openCommandCenter();
     const quadrants = page.locator(".cc-quadrant");
     await expect(quadrants.nth(1)).toContainText("7");
     await expect(quadrants.nth(0)).toContainText("3"); // critical
@@ -31,6 +34,7 @@ test.describe("command center", () => {
   });
 
   test("a cleared item can be reopened", async ({ canvas, page }) => {
+    await canvas.openCommandCenter();
     await canvas.priorities.first().locator(".cc-done-btn").click();
     await expect(canvas.priorities).toHaveCount(6);
 
@@ -40,6 +44,7 @@ test.describe("command center", () => {
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
+    await canvas.openCommandCenter();
     const item = canvas.priority("7.4% of active Amazon offers");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
@@ -47,12 +52,14 @@ test.describe("command center", () => {
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("Client team");
 
     await canvas.reload();
+    await canvas.openCommandCenter();
     await expect(
       canvas.priority("7.4% of active Amazon offers").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
   test("clicking the active owner clears the assignment", async ({ canvas }) => {
+    await canvas.openCommandCenter();
     const item = canvas.priorities.first();
     await item.locator(".cc-owner-btn", { hasText: "IntoFocus AI" }).click();
     await expect(item.locator(".cc-owner-btn.active")).toHaveCount(0);

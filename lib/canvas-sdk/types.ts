@@ -190,6 +190,7 @@ export type CanvasRenderContext = {
   resetView: () => void;
   overviewNonce: number;
   focusedSpokeId: string | null;
+  columnLayout: boolean;
   showTooltip: (
     evt: MouseEvent,
     title: string,

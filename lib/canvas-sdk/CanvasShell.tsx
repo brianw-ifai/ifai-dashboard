@@ -9,9 +9,11 @@ import type {
   CanvasSpec,
   TickerIcon,
 } from "@/lib/canvas-sdk/types";
+import { IOM_GRAPH_RAIL_PX } from "@/lib/canvas-sdk/column-layout";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import {
   ChevronLeft,
+  ChevronsRight,
   Compass,
   ExternalLink,
   Layers,
@@ -51,6 +53,8 @@ const TOUR_CARD_ZONE = 36 + 440 + 24;
 /** Below this much clear space the offset would push the node off-screen. */
 const TOUR_CARD_MIN_ROOM = 240;
 
+type PanelLayout = "wide" | "narrow" | "hidden";
+
 type TooltipState = {
   title: string;
   desc: string;
@@ -83,6 +87,7 @@ export function CanvasShell({ spec, children }: Props) {
   ];
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const drilldownBodyRef = useRef<HTMLDivElement>(null);
@@ -92,6 +97,7 @@ export function CanvasShell({ spec, children }: Props) {
   const tourStepRef = useRef(0);
   const panelViewRef = useRef<"spoke" | "command">("spoke");
   const tourOverlayRef = useRef<HTMLDivElement>(null);
+  const columnLayoutRef = useRef(false);
 
   const { pan, transform, applyTransform, framePoint, frameOverview, zoomBy } =
     useCanvasCamera({
@@ -101,12 +107,14 @@ export function CanvasShell({ spec, children }: Props) {
     });
 
   const iom = spec.appearance === "iom";
+  const roadmapOnGraph = useMemo(
+    () => Boolean(spec.nodes?.some((node) => node.spokeId === "roadmap")),
+    [spec.nodes],
+  );
   const [lightTheme, setLightTheme] = useState(!iom);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
-  const [activeSpoke, setActiveSpoke] = useState<string | null>(
-    iom && spec.spokes.roadmap ? "roadmap" : null,
-  );
+  const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
@@ -114,9 +122,10 @@ export function CanvasShell({ spec, children }: Props) {
   const [tourSuspended, setTourSuspended] = useState(false);
   /** Step the user abandoned the tour on, so the header can offer a resume. */
   const [tourProgress, setTourProgress] = useState<number | null>(null);
-  const [panelExpanded, setPanelExpanded] = useState(true);
+  const [panelLayout, setPanelLayout] = useState<PanelLayout>(iom ? "hidden" : "wide");
+  const panelLayoutBeforeHide = useRef<Exclude<PanelLayout, "hidden">>("wide");
   const [panelView, setPanelView] = useState<"spoke" | "command">(
-    commandCenter?.openByDefault ? "command" : "spoke",
+    !iom && commandCenter?.openByDefault ? "command" : "spoke",
   );
   const [windowWidth, setWindowWidth] = useState(0);
 
@@ -151,14 +160,100 @@ export function CanvasShell({ spec, children }: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    const header = headerRef.current;
+    const root = rootRef.current;
+    if (!header || !root) return;
+
+    const syncHeaderHeight = () => {
+      root.style.setProperty("--canvas-header-height", `${header.offsetHeight}px`);
+    };
+
+    syncHeaderHeight();
+    const observer = new ResizeObserver(syncHeaderHeight);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
   // Single source of truth for the panel width: CSS and the camera offset both read it.
+  const tourOverlayVisibleForLayout = tourActive && !tourSuspended;
+  const panelOpenForLayout =
+    (panelView === "command" && Boolean(commandCenter)) ||
+    Boolean(activeSpoke && spec.spokes[activeSpoke]);
+  const columnLayout =
+    iom &&
+    panelOpenForLayout &&
+    panelLayout !== "hidden" &&
+    !tourOverlayVisibleForLayout;
+  columnLayoutRef.current = columnLayout;
+
+  useEffect(() => {
+    if (!columnLayout) return;
+    pan.current.isPanning = false;
+    frameOverview();
+  }, [columnLayout, frameOverview, pan]);
+
+  const [columnScrollFade, setColumnScrollFade] = useState({ top: false, bottom: false });
+
+  const syncColumnScrollFade = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+    if (maxScroll <= 2) {
+      setColumnScrollFade({ top: false, bottom: false });
+      return;
+    }
+    setColumnScrollFade({
+      top: viewport.scrollTop > 2,
+      bottom: viewport.scrollTop < maxScroll - 2,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!columnLayout) {
+      setColumnScrollFade({ top: false, bottom: false });
+      return;
+    }
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    syncColumnScrollFade();
+    viewport.addEventListener("scroll", syncColumnScrollFade, { passive: true });
+    const resizeObserver = new ResizeObserver(syncColumnScrollFade);
+    resizeObserver.observe(viewport);
+    const list = viewport.querySelector(".column-bubble-list");
+    if (list) resizeObserver.observe(list);
+
+    return () => {
+      viewport.removeEventListener("scroll", syncColumnScrollFade);
+      resizeObserver.disconnect();
+    };
+  }, [columnLayout, syncColumnScrollFade, activeSpoke]);
+
   const drilldownWidth = (() => {
-    if (!panelExpanded || windowWidth === 0) return baseDrilldownWidth;
+    if (panelLayout === "hidden") return 0;
+    if (columnLayout && windowWidth > 0) {
+      return Math.max(baseDrilldownWidth, windowWidth - IOM_GRAPH_RAIL_PX);
+    }
+    if (!iom && (panelLayout === "narrow" || windowWidth === 0)) return baseDrilldownWidth;
+    if (iom && windowWidth === 0) return baseDrilldownWidth;
     const target =
       spec.drilldownExpandedWidth ??
       Math.round(Math.min(EXPANDED_WIDTH_CAP, windowWidth * EXPANDED_WIDTH_RATIO));
     return Math.max(baseDrilldownWidth, Math.min(target, windowWidth - MIN_GRAPH_RAIL));
   })();
+
+  const hidePanel = useCallback(() => {
+    if (panelLayout !== "hidden") {
+      panelLayoutBeforeHide.current = panelLayout === "wide" ? "wide" : "narrow";
+    }
+    setPanelLayout("hidden");
+    frameOverview();
+  }, [frameOverview, panelLayout]);
+
+  const showPanel = useCallback(() => {
+    setPanelLayout(panelLayoutBeforeHide.current);
+  }, []);
 
   const closeDrilldown = useCallback(() => {
     // A suspended tour resumes on close in every appearance, including iom
@@ -192,6 +287,9 @@ export function CanvasShell({ spec, children }: Props) {
       if (!spoke) return;
       setActiveSpoke(spokeId);
       setPanelView("spoke");
+      if (iom && panelLayout === "hidden") {
+        setPanelLayout(panelLayoutBeforeHide.current);
+      }
       if (subTab) {
         const found = spoke.tabs.findIndex((tab) =>
           tab.toLowerCase().includes(subTab.toLowerCase()),
@@ -201,6 +299,11 @@ export function CanvasShell({ spec, children }: Props) {
         setActiveTab(0);
       }
       setTooltipVisible(false);
+      if (iom) {
+        if (spokeId === "hub") setOverviewNonce((nonce) => nonce + 1);
+        frameOverview();
+        return;
+      }
       if (spokeId === "hub") {
         setOverviewNonce((nonce) => nonce + 1);
         frameOverview();
@@ -208,9 +311,18 @@ export function CanvasShell({ spec, children }: Props) {
       }
       const key = subTab ? `${spokeId}:${subTab}` : spokeId;
       const pos = spec.focusTargets[key] ?? spec.focusTargets[spokeId];
-      if (pos) framePoint(pos.x, pos.y, focusScale, iom ? 0 : drilldownWidth);
+      if (pos) framePoint(pos.x, pos.y, focusScale, drilldownWidth);
     },
-    [drilldownWidth, focusScale, frameOverview, framePoint, iom, spec.focusTargets, spec.spokes],
+    [
+      drilldownWidth,
+      focusScale,
+      frameOverview,
+      framePoint,
+      iom,
+      panelLayout,
+      spec.focusTargets,
+      spec.spokes,
+    ],
   );
 
   /** `completed` clears the resume affordance; abandoning keeps the step. */
@@ -377,11 +489,13 @@ export function CanvasShell({ spec, children }: Props) {
     if (!viewport) return;
 
     function onMouseDown(e: MouseEvent) {
+      if (columnLayoutRef.current) return;
       const target = e.target as Element;
       if (
         target.closest(".graph-node") ||
         target.closest(".hud-btn-group") ||
         target.closest(".panel-toggle") ||
+        target.closest(".drilldown-hide-btn") ||
         target.closest(".strategy-roadmap-btn")
       ) {
         return;
@@ -411,6 +525,7 @@ export function CanvasShell({ spec, children }: Props) {
     }
 
     function onWheel(e: WheelEvent) {
+      if (columnLayoutRef.current) return;
       e.preventDefault();
       const xs = (e.clientX - pan.current.x) / pan.current.scale;
       const ys = (e.clientY - pan.current.y) / pan.current.scale;
@@ -520,7 +635,7 @@ export function CanvasShell({ spec, children }: Props) {
     // still offers a resume rather than forcing a restart.
     if (tourActiveRef.current) closeTour();
     setPanelView("command");
-    setPanelExpanded(true);
+    setPanelLayout("wide");
   }
 
   const spoke = activeSpoke ? spec.spokes[activeSpoke] : null;
@@ -544,6 +659,7 @@ export function CanvasShell({ spec, children }: Props) {
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
+    columnLayout,
     showTooltip,
     hideTooltip,
   };
@@ -561,11 +677,11 @@ export function CanvasShell({ spec, children }: Props) {
   return (
     <div
       ref={rootRef}
-      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${panelOpen && !tourOverlayVisible ? " panel-open" : ""}${panelExpanded && !tourOverlayVisible ? " panel-expanded" : ""}${tourOverlayVisible ? " tour-running" : ""}`}
+      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${columnLayout ? " column-layout" : ""}${panelOpen && panelLayout !== "hidden" && !tourOverlayVisible ? " panel-open" : ""}${(columnLayout || (panelLayout === "wide" && !tourOverlayVisible)) ? " panel-expanded" : ""}${panelLayout === "hidden" && !tourOverlayVisible ? " panel-hidden" : ""}${tourOverlayVisible ? " tour-running" : ""}`}
       style={{ "--drilldown-width": `${drilldownWidth}px` } as CSSProperties}
     >
       <div className="canvas-layout">
-        <header className="top-header">
+        <header className="top-header" ref={headerRef}>
           <div className="brand-section">
             <img
               src={spec.brand.logoSrc ?? "/icon.png"}
@@ -700,7 +816,7 @@ export function CanvasShell({ spec, children }: Props) {
 
         <div className="viewport-container" id="viewport" ref={viewportRef}>
           {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
-          {iom && spec.spokes.roadmap ? (
+          {iom && spec.spokes.roadmap && !roadmapOnGraph ? (
             <button
               type="button"
               className={`strategy-roadmap-btn${activeSpoke === "roadmap" ? " active" : ""}`}
@@ -713,6 +829,15 @@ export function CanvasShell({ spec, children }: Props) {
           {viewport}
         </div>
 
+        {columnLayout ? (
+          <div className="column-scroll-edges" aria-hidden="true">
+            <div className={`column-scroll-edge column-scroll-edge-top${columnScrollFade.top ? " visible" : ""}`} />
+            <div
+              className={`column-scroll-edge column-scroll-edge-bottom${columnScrollFade.bottom ? " visible" : ""}`}
+            />
+          </div>
+        ) : null}
+
         <div className="canvas-hud-legend">
           {legend.map((item) => (
             <div key={item.label} className="legend-item">
@@ -722,19 +847,21 @@ export function CanvasShell({ spec, children }: Props) {
           ))}
         </div>
 
-        <div className="canvas-hud-controls">
-          <div className="hud-btn-group">
-            <button className="hud-btn" onClick={() => zoomBy(1.2)} title="Zoom In (+)">
-              <Plus size={16} />
-            </button>
-            <button className="hud-btn" onClick={() => zoomBy(1 / 1.2)} title="Zoom Out (-)">
-              <Minus size={16} />
-            </button>
-            <button className="hud-btn" onClick={resetCanvasView} title="Center & Overview">
-              <Compass size={16} />
-            </button>
+        {!columnLayout ? (
+          <div className="canvas-hud-controls">
+            <div className="hud-btn-group">
+              <button className="hud-btn" onClick={() => zoomBy(1.2)} title="Zoom In (+)">
+                <Plus size={16} />
+              </button>
+              <button className="hud-btn" onClick={() => zoomBy(1 / 1.2)} title="Zoom Out (-)">
+                <Minus size={16} />
+              </button>
+              <button className="hud-btn" onClick={resetCanvasView} title="Center & Overview">
+                <Compass size={16} />
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div
           className={`node-tooltip${tooltipVisible ? " visible" : ""}`}
@@ -757,6 +884,18 @@ export function CanvasShell({ spec, children }: Props) {
             </div>
           ) : null}
         </div>
+
+        {panelOpen && panelLayout === "hidden" && !tourOverlayVisible ? (
+          <button
+            type="button"
+            className="drilldown-panel-toggle panel-toggle"
+            onClick={showPanel}
+            title="Show sidebar"
+            aria-label="Show sidebar"
+          >
+            <ChevronLeft size={18} strokeWidth={2} />
+          </button>
+        ) : null}
 
         <aside className={`drilldown-panel${panelOpen && !tourOverlayVisible ? " open" : ""}`}>
           <div className="drilldown-header">
@@ -791,13 +930,25 @@ export function CanvasShell({ spec, children }: Props) {
                   Resume tour · {tourStep + 1}/{tourSteps.length}
                 </button>
               ) : null}
+              {iom ? null : (
+                <button
+                  className="drilldown-expand-btn"
+                  onClick={() =>
+                    setPanelLayout((value) => (value === "wide" ? "narrow" : "wide"))
+                  }
+                  title={panelLayout === "wide" ? "Use narrow sidebar" : "Use wide sidebar"}
+                  aria-pressed={panelLayout === "wide"}
+                >
+                  {panelLayout === "wide" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </button>
+              )}
               <button
-                className="drilldown-expand-btn"
-                onClick={() => setPanelExpanded((value) => !value)}
-                title={panelExpanded ? "Collapse panel" : "Expand panel"}
-                aria-pressed={panelExpanded}
+                className="drilldown-hide-btn"
+                onClick={hidePanel}
+                title={iom ? "Show full map" : "Hide sidebar"}
+                aria-label={iom ? "Show full map" : "Hide sidebar"}
               >
-                {panelExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                <ChevronsRight size={16} />
               </button>
               {iom ? null : (
                 <button
@@ -861,15 +1012,6 @@ export function CanvasShell({ spec, children }: Props) {
             </div>
           )}
 
-          {!showingCommand && spoke?.next && spec.spokes[spoke.next] ? (
-            <button
-              type="button"
-              className="panel-next"
-              onClick={() => focusNode(spoke.next as string)}
-            >
-              Next: {spec.spokes[spoke.next]?.navLabel ?? spec.spokes[spoke.next]?.title} →
-            </button>
-          ) : null}
         </aside>
 
         <div

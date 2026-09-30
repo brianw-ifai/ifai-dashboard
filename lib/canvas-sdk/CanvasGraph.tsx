@@ -7,12 +7,14 @@ import {
   GraphHub,
   TourSpotlight,
 } from "@/lib/canvas-sdk/GraphPrimitives";
+import { buildColumnLayout, isColumnNode } from "@/lib/canvas-sdk/column-layout";
 import type { CanvasEdge, CanvasNode, CanvasSpec } from "@/lib/canvas-sdk/types";
 
 const MAIN_BUBBLES = new Set([
   "hub",
   "spoke-aeo",
   "spoke-fixes",
+  "spoke-roadmap",
   "spoke-retail",
   "spoke-competitors",
   "spoke-specs",
@@ -100,8 +102,10 @@ function GraphNode({
   selected,
   dimmed,
   enterDelay,
+  contentRadius,
 }: {
   node: CanvasNode;
+  contentRadius?: number;
   centered: boolean;
   onFocusNode: (spokeId: string, subTab?: string) => void;
   onResetView: () => void;
@@ -122,11 +126,11 @@ function GraphNode({
       x={node.x}
       y={node.y}
       r={node.r}
+      contentRadius={contentRadius}
       status={node.status}
       title={node.title}
       titleSize={node.titleSize}
       stats={node.stats}
-      meta={node.meta}
       centered={centered}
       logoSrc={node.logoSrc}
       emphasis={emphasis}
@@ -170,6 +174,7 @@ type Props = {
   onResetView: () => void;
   overviewNonce: number;
   focusedSpokeId?: string | null;
+  columnLayout?: boolean;
   onShowTooltip: (evt: MouseEvent, title: string, desc: string, hasMoreInfo?: boolean) => void;
   onHideTooltip: () => void;
 };
@@ -187,11 +192,17 @@ export function CanvasGraph({
   onResetView,
   overviewNonce,
   focusedSpokeId = null,
+  columnLayout = false,
   onShowTooltip,
   onHideTooltip,
 }: Props) {
-  const viewBox = spec.viewBox ?? { w: 1600, h: 1000 };
-  const viewBoxAttr = `0 0 ${viewBox.w} ${viewBox.h}`;
+  const mapViewBox = spec.viewBox ?? { w: 1600, h: 1000 };
+  const columnPlan = useMemo(
+    () => (columnLayout ? buildColumnLayout(spec.nodes ?? []) : null),
+    [columnLayout, spec.nodes],
+  );
+  const activeViewBox = columnPlan?.viewBox ?? mapViewBox;
+  const viewBoxAttr = `0 0 ${activeViewBox.w} ${activeViewBox.h}`;
   const revealSatellites = spec.appearance === "iom";
   const clusters = useMemo(
     () => (revealSatellites ? satelliteClusters(spec) : null),
@@ -245,12 +256,35 @@ export function CanvasGraph({
           (edge.x2 === focusedNode.x && edge.y2 === focusedNode.y)),
     );
 
-  const renderNode = (node: CanvasNode, parentId?: string, delayMs = 0) => (
+  const nodePosition = (node: CanvasNode) => {
+    const slot = columnPlan?.positions.get(node.id);
+    return slot ?? { x: node.x, y: node.y };
+  };
+
+  useEffect(() => {
+    if (!columnLayout || !focusedSpokeId || !svgRef.current) return;
+    const match =
+      (spec.nodes ?? []).find(
+        (node) => node.spokeId === focusedSpokeId && isColumnNode(node),
+      ) ?? null;
+    if (!match) return;
+    const target = svgRef.current.querySelector(`[data-graph-node-id="${match.id}"]`);
+    if (!(target instanceof Element)) return;
+    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [columnLayout, focusedSpokeId, spec.nodes, svgRef]);
+
+  const renderNode = (node: CanvasNode, parentId?: string, delayMs = 0) => {
+    const { x, y } = nodePosition(node);
+    const inColumn = Boolean(columnPlan && isColumnNode(node));
+    const r = inColumn ? columnPlan!.bubbleR : node.r;
+    const contentRadius = inColumn ? node.r : undefined;
+    return (
     <GraphNode
       key={node.id}
-      node={node}
+      node={{ ...node, x, y, r }}
+      contentRadius={contentRadius}
       centered={emphasis}
-      emphasis={emphasis}
+      emphasis={emphasis && !columnLayout}
       selected={Boolean(focusedNode && node.id === focusedNode.id)}
       enterDelay={delayMs}
       onFocusNode={onFocusNode}
@@ -261,62 +295,19 @@ export function CanvasGraph({
       onGroupLeave={parentId ? holdGroup : undefined}
       onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
     />
-  );
+    );
+  };
 
-  return (
-    <>
-      {spec.appearance === "iom" ? (
-        <svg
-          className="canvas-stage"
-          viewBox={viewBoxAttr}
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
-          <defs>
-            <radialGradient id="iomStageCore" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#143458" stopOpacity="0.62" />
-              <stop offset="72%" stopColor="#143458" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageBlue" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-              <stop offset="60%" stopColor="#2563eb" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageLilac" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.12" />
-              <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageCoreLight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
-              <stop offset="72%" stopColor="#2563eb" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageBlueLight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.18" />
-              <stop offset="60%" stopColor="#38bdf8" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageLilacLight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.16" />
-              <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
-            </radialGradient>
-            <clipPath id="iomWatermarkClip">
-              <rect
-                x={(spec.nodes?.find((node) => node.variant === "hub")?.x ?? 800) - 400}
-                y={(spec.nodes?.find((node) => node.variant === "hub")?.y ?? 500) - 300}
-                width={800}
-                height={580}
-              />
-            </clipPath>
-          </defs>
-          <GraphStage spec={spec} />
-        </svg>
-      ) : null}
+  const columnPreserve = columnLayout ? "xMidYMin meet" : "xMidYMid meet";
+  const graphSvg = (
     <svg
       ref={svgRef}
-      className="canvas-svg"
+      className={`canvas-svg${columnLayout ? " column-scroll-svg" : ""}`}
       viewBox={viewBoxAttr}
-      preserveAspectRatio="xMidYMid meet"
-      style={{ transform }}
+      preserveAspectRatio={columnPreserve}
+      style={columnLayout ? undefined : { transform }}
     >
-      {spec.appearance === "iom"
+      {spec.appearance === "iom" && !columnLayout
         ? [250, 390, 530].map((radius) => {
             const hub = spec.nodes?.find((node) => node.variant === "hub");
             return (
@@ -368,21 +359,25 @@ export function CanvasGraph({
         </radialGradient>
       </defs>
 
-      {(clusters ? clusters.trunk : (spec.edges ?? [])).map((edge, idx) => (
-        <ConnLine key={`edge-${idx}`} {...edge} hot={touchesFocus(edge)} />
-      ))}
+      {!columnLayout
+        ? (clusters ? clusters.trunk : (spec.edges ?? [])).map((edge, idx) => (
+            <ConnLine key={`edge-${idx}`} {...edge} hot={touchesFocus(edge)} />
+          ))
+        : null}
 
-      {clusters?.groups.map((group) => (
-        <g
-          key={`satellites-${group.parent.id}`}
-          className={`satellite-group${openParentId === group.parent.id || pinnedParentId === group.parent.id ? " visible" : ""}`}
-        >
-          {group.edges.map((edge, idx) => (
-            <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} hot={touchesFocus(edge)} />
-          ))}
-          {group.nodes.map((node, idx) => renderNode(node, group.parent.id, idx * 40))}
-        </g>
-      ))}
+      {!columnLayout && clusters
+        ? clusters.groups.map((group) => (
+            <g
+              key={`satellites-${group.parent.id}`}
+              className={`satellite-group${openParentId === group.parent.id || pinnedParentId === group.parent.id ? " visible" : ""}`}
+            >
+              {group.edges.map((edge, idx) => (
+                <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} hot={touchesFocus(edge)} />
+              ))}
+              {group.nodes.map((node, idx) => renderNode(node, group.parent.id, idx * 40))}
+            </g>
+          ))
+        : null}
 
       {(spec.paths ?? []).map((path, idx) => (
         <path
@@ -397,7 +392,12 @@ export function CanvasGraph({
       ))}
 
       {(spec.nodes ?? [])
-        .filter((node) => node.variant !== "hub" && !satelliteIds.has(node.id))
+        .filter(
+          (node) =>
+            node.variant !== "hub" &&
+            !satelliteIds.has(node.id) &&
+            (!columnLayout || isColumnNode(node)),
+        )
         .map((node) => renderNode(node, clusters?.groups.some((group) => group.parent.id === node.id) ? node.id : undefined))}
 
       {(spec.badges ?? []).map((badge, idx) => (
@@ -427,14 +427,65 @@ export function CanvasGraph({
         .filter((node) => node.variant === "hub")
         .map((node) => renderNode(node))}
 
-      <TourSpotlight
-        active={tourActive}
-        x={tourX}
-        y={tourY}
-        radius={tourRadius}
-        category={tourCategory}
-      />
+      {!columnLayout ? (
+        <TourSpotlight
+          active={tourActive}
+          x={tourX}
+          y={tourY}
+          radius={tourRadius}
+          category={tourCategory}
+        />
+      ) : null}
     </svg>
+  );
+
+  return (
+    <>
+      {spec.appearance === "iom" && !columnLayout ? (
+        <svg
+          className="canvas-stage"
+          viewBox={viewBoxAttr}
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
+          <defs>
+            <radialGradient id="iomStageCore" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#143458" stopOpacity="0.62" />
+              <stop offset="72%" stopColor="#143458" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="iomStageBlue" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
+              <stop offset="60%" stopColor="#2563eb" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="iomStageLilac" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.12" />
+              <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="iomStageCoreLight" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
+              <stop offset="72%" stopColor="#2563eb" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="iomStageBlueLight" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.18" />
+              <stop offset="60%" stopColor="#38bdf8" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="iomStageLilacLight" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.16" />
+              <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
+            </radialGradient>
+            <clipPath id="iomWatermarkClip">
+              <rect
+                x={(spec.nodes?.find((node) => node.variant === "hub")?.x ?? 800) - 400}
+                y={(spec.nodes?.find((node) => node.variant === "hub")?.y ?? 500) - 300}
+                width={800}
+                height={580}
+              />
+            </clipPath>
+          </defs>
+          <GraphStage spec={spec} />
+        </svg>
+      ) : null}
+      {columnLayout ? <div className="column-bubble-list">{graphSvg}</div> : graphSvg}
     </>
   );
 }

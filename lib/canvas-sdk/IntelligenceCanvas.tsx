@@ -21,6 +21,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           onResetView={ctx.resetView}
           overviewNonce={ctx.overviewNonce}
           focusedSpokeId={ctx.focusedSpokeId}
+          columnLayout={ctx.columnLayout}
           onShowTooltip={ctx.showTooltip}
           onHideTooltip={ctx.hideTooltip}
         />
