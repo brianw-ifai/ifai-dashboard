@@ -3,6 +3,7 @@
 import "@/lib/canvas-sdk/canvas-sdk.css";
 import "@/lib/canvas-sdk/iom-theme.css";
 import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
+import { MetricWidgets } from "@/lib/canvas-sdk/MetricWidgets";
 import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
 import type {
   CanvasRenderContext,
@@ -446,6 +447,7 @@ export function CanvasShell({ spec, children }: Props) {
       if (target.closest(".drilldown-panel")) return;
       if (target.closest(".graph-node")) return;
       if (target.closest(".top-header")) return;
+      if (target.closest(".canvas-metric-widgets")) return;
       if (target.closest(".tour-overlay-container")) return;
       closeDrilldown();
     }
@@ -712,6 +714,14 @@ export function CanvasShell({ spec, children }: Props) {
           ) : null}
           {viewport}
         </div>
+
+        {spec.metricWidgets ? (
+          <MetricWidgets
+            config={spec.metricWidgets}
+            spokes={spec.spokes}
+            onOpenMetric={focusNode}
+          />
+        ) : null}
 
         <div className="canvas-hud-legend">
           {legend.map((item) => (

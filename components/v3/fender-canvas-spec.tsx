@@ -1,4 +1,5 @@
 import { fenderCommandCenter } from "@/components/v3/command-center-data";
+import { FENDER_METRICS, fenderWidgetMetrics } from "@/components/v3/fender-metrics";
 import { fenderGlossary } from "@/components/v3/glossary";
 import { spokeData, tourSteps } from "@/components/v3/spoke-data";
 import { defineCanvas } from "@/lib/canvas-sdk";
@@ -26,6 +27,15 @@ export const fenderCanvasSpec = defineCanvas({
   appearance: "iom",
   commandCenter: fenderCommandCenter,
   glossary: fenderGlossary,
+  metricWidgets: {
+    metrics: fenderWidgetMetrics,
+    defaults: [
+      FENDER_METRICS.flaggedAsins.id,
+      FENDER_METRICS.confirmedHallucinations.id,
+      FENDER_METRICS.phaseOneLift.id,
+    ],
+    storageKey: "ifai:fender:metric-widgets:v2",
+  },
   brand: {
     name: "Fender Brand Intelligence Canvas v3",
     subtitle:
@@ -50,7 +60,8 @@ export const fenderCanvasSpec = defineCanvas({
       subTab: "flagged",
       label: (
         <>
-          Buy Box (Active Offers): <strong>7.4% 1P</strong> (74 of 993 active)
+          Buy Box (Active Offers): <strong>{FENDER_METRICS.buyBoxRetention.value} 1P</strong>{" "}
+          (74 of 993 active)
         </>
       ),
     },
@@ -62,7 +73,8 @@ export const fenderCanvasSpec = defineCanvas({
       subTab: "dual-index",
       label: (
         <>
-          AI Win Rate: <strong>73.3%</strong> · Weakest: <strong>Beginner 33.3%</strong>
+          AI Win Rate: <strong>{FENDER_METRICS.overallAiWinRate.value}</strong> · Weakest:{" "}
+          <strong>Beginner {FENDER_METRICS.beginnerAiWinRate.value}</strong>
         </>
       ),
     },
@@ -74,7 +86,8 @@ export const fenderCanvasSpec = defineCanvas({
       subTab: "roi",
       label: (
         <>
-          Lift: <strong>+$680K Phase 1</strong> (+$38M to $62M Enterprise)
+          Lift: <strong>{FENDER_METRICS.phaseOneLift.value} Phase 1</strong> (
+          {FENDER_METRICS.enterprisePotential.value} Enterprise)
         </>
       ),
     },
@@ -156,7 +169,7 @@ export const fenderCanvasSpec = defineCanvas({
       r: 52,
       status: "warning",
       title: "AI DRIFT",
-      stats: ["2 Confirmed Hallucinations", "Mustang Micro Tubes"],
+      stats: [`${FENDER_METRICS.confirmedHallucinations.value} Confirmed Hallucinations`, "Mustang Micro Tubes"],
       meta: "of 6 hallucination-risk answers received",
       spokeId: "aeo",
       subTab: "hallucination",
@@ -169,7 +182,7 @@ export const fenderCanvasSpec = defineCanvas({
       r: 54,
       status: "danger",
       title: "BUY BOX",
-      stats: ["7.4% 1P", "92.6% Unk"],
+      stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "92.6% Unk"],
       meta: "993 Active Offers",
       spokeId: "ecommerce",
       subTab: "flagged",
@@ -182,7 +195,10 @@ export const fenderCanvasSpec = defineCanvas({
       r: 54,
       status: "warning",
       title: "ASIN SPLIT",
-      stats: ["14 Bundles", "2,420+ Reviews"],
+      stats: [
+        `${FENDER_METRICS.flaggedAsins.value} Bundles`,
+        `${FENDER_METRICS.strandedReviews.value} Reviews`,
+      ],
       meta: "Austin Bazaar / GearTree",
       spokeId: "ecommerce",
       subTab: "catalog",
@@ -195,7 +211,10 @@ export const fenderCanvasSpec = defineCanvas({
       r: 52,
       status: "danger",
       title: "MAP LEAKAGE",
-      stats: ["-$39.21 Avg", "14 ASINs"],
+      stats: [
+        "-$39.21 Avg",
+        `${FENDER_METRICS.flaggedAsins.value} ASINs`,
+      ],
       meta: "Amazon · Reverb · Walmart",
       spokeId: "ecommerce",
       subTab: "map",
@@ -259,10 +278,10 @@ export const fenderCanvasSpec = defineCanvas({
       y: 320,
       r: 86,
       status: "danger",
-      title: "BRAND AEO",
+      title: spokeData.aeo.navLabel.toUpperCase(),
       titleSize: 14.5,
-      stats: ["73.3% Win", "102 Sims"],
-      meta: "Weakest: Beginner 33.3%",
+      stats: [`${FENDER_METRICS.overallAiWinRate.value} Win`, "102 Sims"],
+      meta: `Weakest: Beginner ${FENDER_METRICS.beginnerAiWinRate.value}`,
       spokeId: "aeo",
       tooltip: {"title": "Brand AEO Engine & Simulations (Live Data)", "desc": "Real AI win rate: 73.3% of 75 resolved simulations (55 Fender/Squier wins, 27 timeouts excluded). Weakest category is Beginner Electric Guitars at 33.3%. Click to inspect all 102 simulations. Prior 62 Scan/42% Readiness figures were unvalidated placeholders and have been retired."},
     },
@@ -272,9 +291,9 @@ export const fenderCanvasSpec = defineCanvas({
       y: 320,
       r: 86,
       status: "danger",
-      title: "PORTFOLIO RETAIL",
+      title: spokeData.ecommerce.navLabel.toUpperCase(),
       titleSize: 13.5,
-      stats: ["7.4% 1P", "993 Active"],
+      stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "993 Active"],
       meta: "92.6% Unharvested · 993 Sample",
       spokeId: "ecommerce",
       tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box 7.4% 1P of 993 active offers (2,437 unharvested / no active offer). Brand Registry consolidation with Austin Bazaar & GearTree across the Monitored ASIN Sample."},
@@ -285,9 +304,12 @@ export const fenderCanvasSpec = defineCanvas({
       y: 680,
       r: 78,
       status: "warning",
-      title: "SPEC READINESS",
+      title: spokeData.specs.navLabel.toUpperCase(),
       titleSize: 13.5,
-      stats: ["29% Found", "0% Specs"],
+      stats: [
+        `${FENDER_METRICS.fenderFindability.value} Found`,
+        `${FENDER_METRICS.machineReadableSpecs.value} Specs`,
+      ],
       meta: "Live Sample: 62 of 993",
       spokeId: "specs",
       tooltip: {"title": "Catalog Spec Readiness (Live Sample, Growing Hourly)", "desc": "Live batch check of 72 of ~993 active-offer SKUs so far. fender.com product page found via site search only 29.2% of the time (21 of 72); of those found, 0% have any Schema.org additionalProperty spec fields. Amazon-side structured fields average 91.7% complete. This bubble was previously an unsourced 34% completeness claim with no backing data; it is now computed by the fender_spec_readiness_audit wrench and refreshed hourly."},
@@ -298,7 +320,7 @@ export const fenderCanvasSpec = defineCanvas({
       y: 680,
       r: 78,
       status: "danger",
-      title: "COMPETITIVE RADAR",
+      title: spokeData.competitors.navLabel.toUpperCase(),
       titleSize: 13,
       stats: ["Yamaha 66.7%", "5 Rivals (Live)"],
       meta: "Beginner Category Gap",
@@ -311,9 +333,12 @@ export const fenderCanvasSpec = defineCanvas({
       y: 180,
       r: 74,
       status: "success",
-      title: "BRAND FIXES",
+      title: spokeData.suggestions.navLabel.toUpperCase(),
       titleSize: 14,
-      stats: ["18 Fixes", "+$680K"],
+      stats: [
+        `${FENDER_METRICS.prioritizedFixes.value} Fixes`,
+        FENDER_METRICS.phaseOneLift.value,
+      ],
       meta: "Pilot ➔ $38M to $62M Ent.",
       spokeId: "suggestions",
       tooltip: {"title": "Portfolio Suggestion Engine", "desc": "18 high-impact brand interventions: Phase 1 Quick-Win ($680K) vs Full Enterprise Portfolio Potential ($38M to $62M GMV)."},

@@ -115,6 +115,26 @@ export type CanvasTicker = {
   icon?: TickerIcon;
 };
 
+export type CanvasMetric = {
+  id: string;
+  /** The owning spoke. Its current nav label is also the widget category label. */
+  spokeId: string;
+  label: string;
+  value: string;
+  detail: string;
+  tone?: NodeStatus;
+  subTab?: string;
+  provenance?: "live" | "estimate";
+};
+
+export type CanvasMetricWidgets = {
+  metrics: CanvasMetric[];
+  /** Exactly three slots are rendered. A null entry starts as an empty add slot. */
+  defaults: [string | null, string | null, string | null];
+  /** localStorage key. The host can append a viewer scope for per-user persistence. */
+  storageKey: string;
+};
+
 export type CanvasFilter = {
   value: string;
   label: string;
@@ -157,6 +177,8 @@ export type CanvasSpec = {
   glossary?: Record<string, string>;
   filters?: CanvasFilter[];
   tickers?: CanvasTicker[];
+  /** Configurable top-left decision signals. Category names resolve from `spokes`. */
+  metricWidgets?: CanvasMetricWidgets;
   search?: {
     placeholder?: string;
     matchers?: SearchMatcher[];
