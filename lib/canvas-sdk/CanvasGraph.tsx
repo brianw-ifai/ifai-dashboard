@@ -153,6 +153,14 @@ function GraphNode({
           node.tooltip.hasMoreInfo ?? Boolean(node.spokeId),
         );
       }}
+      onMouseMove={(evt) => {
+        onShowTooltip(
+          evt,
+          node.tooltip.title,
+          node.tooltip.desc,
+          node.tooltip.hasMoreInfo ?? Boolean(node.spokeId),
+        );
+      }}
       onMouseLeave={() => {
         onGroupLeave?.();
         onHideTooltip();

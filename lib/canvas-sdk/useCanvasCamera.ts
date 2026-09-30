@@ -77,10 +77,22 @@ export function useCanvasCamera({
 
   const zoomBy = useCallback(
     (factor: number) => {
-      pan.current.scale = Math.min(Math.max(pan.current.scale * factor, 0.45), 3.0);
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+
+      const cx = viewport.clientWidth / 2;
+      const cy = viewport.clientHeight / 2;
+      const prevScale = pan.current.scale;
+      const nextScale = Math.min(Math.max(prevScale * factor, 0.45), 3.0);
+      const contentX = (cx - pan.current.x) / prevScale;
+      const contentY = (cy - pan.current.y) / prevScale;
+
+      pan.current.scale = nextScale;
+      pan.current.x = cx - contentX * nextScale;
+      pan.current.y = cy - contentY * nextScale;
       applyTransform();
     },
-    [applyTransform],
+    [applyTransform, viewportRef],
   );
 
   useEffect(() => {

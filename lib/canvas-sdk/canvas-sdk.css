@@ -158,14 +158,22 @@
       overflow: clip;
     }
 
-    /* Top Floating Glass Header */
+    .canvas-body {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: clip;
+    }
+
+    /* Header floats above the map inside .canvas-body (see theme-iom for transparent chrome). */
     .top-header {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
+      width: 100%;
       min-height: var(--canvas-header-height);
-      z-index: 40;
+      z-index: 55;
       background: var(--bg-glass);
       border-bottom: 1px solid var(--border-color);
       display: grid;
@@ -177,7 +185,28 @@
       gap: 8px 16px;
       padding: 10px 24px;
       overflow: visible;
+      pointer-events: none;
       transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .top-header > * {
+      pointer-events: auto;
+    }
+
+    .ifai-canvas:not(.theme-iom) .top-header {
+      position: relative;
+      pointer-events: auto;
+    }
+
+    .ifai-canvas:not(.theme-iom) .canvas-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ifai-canvas:not(.theme-iom) .viewport-container {
+      position: relative;
+      flex: 1;
+      min-height: 0;
     }
 
     .top-header .brand-section {
@@ -193,7 +222,7 @@
       justify-self: end;
     }
 
-    .ifai-canvas.light-theme .top-header {
+    .ifai-canvas.light-theme:not(.theme-iom) .top-header {
       background: var(--color-white);
       box-shadow: 0 1px 2px #0f172a0a, 0 8px 16px #0f172a0f;
     }
@@ -446,10 +475,11 @@
     /* Main SVG Canvas Viewport */
     .viewport-container {
       position: absolute;
-      top: var(--canvas-header-height);
+      top: 0;
       bottom: 0;
       left: 0;
       right: 0;
+      z-index: 1;
       cursor: grab;
       user-select: none;
       background-color: var(--map-bg);
@@ -625,7 +655,7 @@
     /* Configurable decision-signal cards (top left), adapted from Lux telemetry. */
     .canvas-metric-widgets {
       position: absolute;
-      top: 80px;
+      top: calc(var(--canvas-header-height, 64px) + 14px);
       left: 18px;
       z-index: 46;
       display: flex;
@@ -634,11 +664,32 @@
       width: 218px;
     }
 
+    /* Sub-bubbles live in the viewport SVG; metric widgets sit above the map by
+       default. While a satellite cluster is open, lift the map and only hit-test
+       nodes so left-side orbits stay visible at any viewport size. */
+    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container {
+      z-index: 48;
+      pointer-events: none;
+    }
+
+    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container .canvas-svg {
+      pointer-events: none;
+    }
+
+    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container .graph-node,
+    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .viewport-container .strategy-roadmap-btn {
+      pointer-events: auto;
+    }
+
+    .ifai-canvas:not(.column-layout):has(.satellite-group.visible) .canvas-metric-widgets {
+      z-index: 44;
+    }
+
     .canvas-metric-widget {
       position: relative;
       width: 218px;
-      height: 104px;
-      flex: 0 0 104px;
+      min-height: 104px;
+      flex: 0 0 auto;
       overflow: visible;
       border: 1px solid var(--border-dark);
       border-radius: 12px;
@@ -683,7 +734,7 @@
     .metric-widget-body,
     .metric-widget-empty {
       width: 100%;
-      height: 100%;
+      min-height: 104px;
       border: 0;
       border-radius: 12px;
       background: transparent;
@@ -695,7 +746,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 2px;
       padding: 12px 42px 11px 15px;
       text-align: left;
@@ -728,6 +779,7 @@
       font-size: 9.5px;
       font-weight: 700;
       line-height: 1.14;
+      white-space: normal;
     }
 
     .metric-widget-value {
@@ -748,7 +800,8 @@
       color: var(--text-subtle);
       font-size: 8.5px;
       font-weight: 600;
-      line-height: 1.16;
+      line-height: 1.25;
+      white-space: normal;
     }
 
     .metric-widget-provenance {
@@ -1028,6 +1081,15 @@
       transform: translate(-50%, -120%) scale(1);
     }
 
+    .node-tooltip.node-tooltip-column {
+      max-width: 240px;
+      transform: translate(0, -50%) scale(0.96);
+    }
+
+    .node-tooltip.node-tooltip-column.visible {
+      transform: translate(0, -50%) scale(1);
+    }
+
     /* Slide-over Drilldown Panel */
     .drilldown-panel {
       position: absolute;
@@ -1036,6 +1098,7 @@
       bottom: 0;
       width: var(--drilldown-width);
       background: var(--bg-surface);
+      border-top: 1px solid var(--border-color);
       border-left: 1px solid var(--border-color);
       z-index: 45;
       display: flex;
@@ -1908,15 +1971,19 @@
 
     @media (max-height: 760px) {
       .canvas-metric-widgets {
-        top: 74px;
+        top: calc(var(--canvas-header-height, 64px) + 10px);
         width: 190px;
         gap: 7px;
       }
 
       .canvas-metric-widget {
         width: 190px;
-        height: 82px;
-        flex-basis: 82px;
+        min-height: 82px;
+      }
+
+      .metric-widget-body,
+      .metric-widget-empty {
+        min-height: 82px;
       }
 
       .metric-widget-body {
@@ -1994,22 +2061,27 @@
     }
 
     .drilldown-hide-btn {
-      width: 28px;
       height: 28px;
+      padding: 0 10px 0 8px;
       border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-surface);
-      color: var(--text-muted);
-      display: flex;
+      border: 1px solid rgba(251, 113, 133, 0.65);
+      background: rgba(251, 113, 133, 0.18);
+      color: #fb7185;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
     .drilldown-hide-btn:hover {
-      background: var(--bg-surface-hover);
-      color: var(--accent-purple);
+      background: rgba(251, 113, 133, 0.32);
+      border-color: #fb7185;
+      color: #fecdd3;
     }
 
     .drilldown-panel-toggle {
@@ -2112,6 +2184,12 @@
       color: #fff;
       font-size: 9.5px;
       font-weight: 800;
+    }
+
+    .hdr-btn:hover .hdr-btn-count,
+    .hdr-btn.hdr-btn-active .hdr-btn-count {
+      background: transparent;
+      color: var(--danger-red);
     }
 
     .tour-drilldown-hint {

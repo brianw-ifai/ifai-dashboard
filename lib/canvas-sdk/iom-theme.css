@@ -39,46 +39,70 @@
   --shadow-soft: 0 22px 48px rgba(0, 0, 0, 0.55);
 }
 
-.ifai-canvas.theme-iom .top-header {
-  min-height: var(--canvas-header-height);
-  background: #ffffff;
-  border-bottom: 1px solid #d7e3ef;
-  color: #0b1f33;
-  box-shadow: none;
+.ifai-canvas.theme-iom .canvas-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  --pointer-x: 58%;
+  --pointer-y: 42%;
+  background-color: #071321;
 }
 
-.ifai-canvas.theme-iom .brand-name,
-.ifai-canvas.theme-iom .filter-selector,
-.ifai-canvas.theme-iom .filter-selector select,
-.ifai-canvas.theme-iom .hdr-btn {
-  color: #0b1f33;
+.ifai-canvas.theme-iom .top-header {
+  min-height: var(--canvas-header-height);
+  background: none;
+  background-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  color: var(--text-main);
+  box-shadow: none;
+  pointer-events: auto;
+}
+
+.ifai-canvas.theme-iom .brand-name {
+  font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-main);
 }
 
 .ifai-canvas.theme-iom .brand-sub {
-  color: #64748b;
+  color: var(--text-muted);
+}
+
+.ifai-canvas.theme-iom .filter-selector,
+.ifai-canvas.theme-iom .filter-selector select,
+.ifai-canvas.theme-iom .hdr-btn {
+  color: var(--text-main);
 }
 
 .ifai-canvas.theme-iom .pill-divider {
-  background: #d7e3ef;
+  background: var(--border-color);
 }
 
 .ifai-canvas.theme-iom .filter-selector,
 .ifai-canvas.theme-iom .search-input,
 .ifai-canvas.theme-iom .hdr-btn {
-  background: #ffffff;
-  border: 1px solid #c5d6e8;
+  background: rgba(6, 16, 30, 0.78);
+  border: 1px solid rgba(46, 183, 255, 0.18);
   border-radius: 999px;
   box-shadow: none;
+  backdrop-filter: blur(10px);
 }
 
 .ifai-canvas.theme-iom .search-input {
-  color: #0b1f33;
+  color: var(--text-main);
+}
+
+.ifai-canvas.theme-iom .search-input::placeholder {
+  color: var(--text-subtle);
 }
 
 .ifai-canvas.theme-iom .search-input:focus,
 .ifai-canvas.theme-iom:not(.light-theme) .search-input:focus {
-  border-color: rgba(46, 183, 255, 0.7);
-  outline-color: rgba(46, 183, 255, 0.45);
+  border-color: rgba(46, 183, 255, 0.55);
+  outline-color: rgba(46, 183, 255, 0.35);
 }
 
 .ifai-canvas.theme-iom .hdr-btn {
@@ -86,40 +110,44 @@
 }
 
 .ifai-canvas.theme-iom .hdr-btn:hover {
-  background: rgba(46, 183, 255, 0.12);
+  background: rgba(17, 40, 64, 0.98);
   border-color: rgba(46, 183, 255, 0.45);
-  color: #0b1f33;
+  color: #f8fafc;
   transform: translateY(-1px);
 }
 
+.ifai-canvas.theme-iom .hdr-btn:hover .hdr-btn-count,
+.ifai-canvas.theme-iom .hdr-btn.hdr-btn-active .hdr-btn-count {
+  background: transparent;
+  color: var(--danger-red);
+}
+
+.ifai-canvas.theme-iom .hdr-btn-active {
+  background: rgba(14, 116, 144, 0.35);
+  border-color: rgba(125, 211, 252, 0.55);
+  color: #f0f9ff;
+}
+
 .ifai-canvas.theme-iom .hdr-btn-primary {
-  background: #0b1f33;
-  border-color: #0b1f33;
+  background: #0284c7;
+  border-color: rgba(125, 211, 252, 0.45);
   color: #f0f9ff;
 }
 
 .ifai-canvas.theme-iom .hdr-btn-primary:hover {
-  background: #12304d;
-  border-color: #12304d;
+  background: #0369a1;
+  border-color: #7dd3fc;
   color: #f0f9ff;
 }
 
-.ifai-canvas.theme-iom .ticker-badge-danger {
-  background: #fff1f2;
-  border-color: #fecdd3;
-  color: #be123c;
+.ifai-canvas.theme-iom .header-ticker .ticker-item:not([class*="ticker-badge-"]) {
+  background: rgba(6, 16, 30, 0.72);
+  border-color: rgba(46, 183, 255, 0.16);
+  color: var(--text-main);
 }
 
-.ifai-canvas.theme-iom .ticker-badge-warning {
-  background: #fffbeb;
-  border-color: #fde68a;
-  color: #b45309;
-}
-
-.ifai-canvas.theme-iom .ticker-badge-success {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #047857;
+.ifai-canvas.theme-iom .brand-logo-icon {
+  filter: drop-shadow(0 0 10px rgba(46, 183, 255, 0.35));
 }
 
 .ifai-canvas.theme-iom .stage-washes-light {
@@ -148,9 +176,6 @@
   z-index: 1;
 }
 
-.ifai-canvas.theme-iom.panel-open .viewport-container {
-  right: var(--drilldown-width);
-}
 
 .ifai-canvas.theme-iom.panel-hidden .drilldown-panel-toggle {
   background: rgba(7, 19, 33, 0.92);
@@ -171,11 +196,21 @@
 }
 
 .ifai-canvas.theme-iom .viewport-container {
-  --pointer-x: 58%;
-  --pointer-y: 42%;
-  background-color: #071321;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  background-color: transparent;
   background-image: none;
-  transition: right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
+  transition:
+    right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1),
+    top 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+
+.ifai-canvas.theme-iom.panel-open:not(.panel-hidden) .viewport-container {
+  right: var(--drilldown-width);
 }
 
 .ifai-canvas.theme-iom.column-layout .canvas-svg .graph-node {
@@ -191,12 +226,17 @@
 }
 
 .ifai-canvas.theme-iom.column-layout .viewport-container {
-  --pointer-x: 18%;
+  top: var(--canvas-header-height);
   overflow-x: hidden;
   overflow-y: auto;
-  cursor: default;
+  cursor: pointer;
   overscroll-behavior: contain;
   scrollbar-width: none;
+}
+
+.ifai-canvas.theme-iom.column-layout .viewport-container .graph-node,
+.ifai-canvas.theme-iom.column-layout .viewport-container .strategy-roadmap-btn {
+  cursor: pointer;
 }
 
 .ifai-canvas.theme-iom.column-layout .viewport-container::-webkit-scrollbar {
@@ -207,6 +247,48 @@
 
 .ifai-canvas.theme-iom.column-layout .canvas-hud-legend {
   display: none;
+}
+
+.ifai-canvas.theme-iom .canvas-metric-widgets {
+  transition:
+    opacity 0.42s cubic-bezier(0.22, 0.9, 0.24, 1),
+    transform 0.42s cubic-bezier(0.22, 0.9, 0.24, 1),
+    visibility 0.42s;
+}
+
+.ifai-canvas.theme-iom .canvas-metric-widget {
+  transition:
+    opacity 0.38s cubic-bezier(0.22, 0.9, 0.24, 1),
+    transform 0.38s cubic-bezier(0.22, 0.9, 0.24, 1),
+    visibility 0.38s,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  transition-delay: 0ms;
+}
+
+.ifai-canvas.theme-iom.column-layout .canvas-metric-widgets {
+  opacity: 0;
+  transform: translateX(-14px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.ifai-canvas.theme-iom.column-layout .canvas-metric-widget {
+  opacity: 0;
+  transform: translateX(-10px);
+  visibility: hidden;
+}
+
+.ifai-canvas.theme-iom.column-layout .canvas-metric-widget:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.ifai-canvas.theme-iom.column-layout .canvas-metric-widget:nth-child(2) {
+  transition-delay: 55ms;
+}
+
+.ifai-canvas.theme-iom.column-layout .canvas-metric-widget:nth-child(3) {
+  transition-delay: 110ms;
 }
 
 .ifai-canvas.theme-iom.column-layout .viewport-container:active {
@@ -266,11 +348,15 @@
 .ifai-canvas.theme-iom .canvas-pointer-wash {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
   background:
     radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(0, 240, 255, 0.28), transparent 20%),
     radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgba(99, 102, 241, 0.16), transparent 38%);
+}
+
+.ifai-canvas.theme-iom .top-header {
+  z-index: 55;
 }
 
 .ifai-canvas.theme-iom svg.canvas-svg.camera-animating {
@@ -501,7 +587,7 @@
 
 .ifai-canvas.theme-iom .strategy-roadmap-btn {
   position: absolute;
-  top: 16px;
+  top: 12px;
   right: 16px;
   z-index: 3;
   margin: 0;
@@ -756,6 +842,7 @@
 
 .ifai-canvas.theme-iom .drilldown-panel {
   background: rgba(8, 22, 40, 0.96);
+  border-top: 1px solid rgba(46, 183, 255, 0.28);
   border-left: 1px solid rgba(46, 183, 255, 0.28);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
   transition:
@@ -817,8 +904,50 @@
   --warning-text: #b45309;
 }
 
-.ifai-canvas.theme-iom.light-theme .viewport-container {
+.ifai-canvas.theme-iom.light-theme .top-header {
+  background: none;
+  background-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+  color: var(--text-main);
+  box-shadow: none;
+}
+
+.ifai-canvas.theme-iom.light-theme .brand-name {
+  color: var(--text-main);
+}
+
+.ifai-canvas.theme-iom.light-theme .filter-selector,
+.ifai-canvas.theme-iom.light-theme .search-input,
+.ifai-canvas.theme-iom.light-theme .hdr-btn {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: var(--border-color);
+  color: var(--text-main);
+}
+
+.ifai-canvas.theme-iom.light-theme .hdr-btn:hover {
+  background: #f4fbff;
+  border-color: rgba(37, 99, 235, 0.28);
+  color: var(--text-main);
+}
+
+.ifai-canvas.theme-iom.light-theme .hdr-btn-primary {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #fff;
+}
+
+.ifai-canvas.theme-iom.light-theme .brand-logo-icon {
+  filter: drop-shadow(0 8px 14px rgba(11, 31, 51, 0.12));
+}
+
+.ifai-canvas.theme-iom.light-theme .canvas-body {
   background-color: #e7f1fa;
+}
+
+.ifai-canvas.theme-iom.light-theme .viewport-container {
+  background-color: transparent;
   background-image: none;
 }
 

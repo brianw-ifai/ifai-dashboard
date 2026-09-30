@@ -44,14 +44,6 @@ export const fenderCanvasSpec = defineCanvas({
     logoSrc: "/icon.png",
     badge: "Enterprise Command",
   },
-  filters: [
-    { value: "all", label: "Entire FMIC Electric Catalog (3,430 SKUs)", target: "overview" },
-    { value: "electrics", label: "Electric Division (Player II, Strat, Tele)", target: "ecommerce" },
-    { value: "acoustics", label: "Acoustic & Hybrids (Acoustasonic, Paramount)", target: "competitors" },
-    { value: "bass", label: "Bass Division (Precision, Jazz Bass)", target: "specs" },
-    { value: "amps", label: "Amps & Digital Audio (Tone Master, Mustang Micro)", target: "aeo" },
-    { value: "squier", label: "Squier Entry Tier (Affinity, Classic Vibe)", target: "ecommerce" },
-  ],
   tickers: [
     {
       id: "buybox",
@@ -93,18 +85,6 @@ export const fenderCanvasSpec = defineCanvas({
       ),
     },
   ],
-  search: {
-    placeholder: "Search model, ASIN, simulation prompt, partner...",
-    matchers: [
-      { keywords: ["buy box", "asin", "austin bazaar", "geartree", "amazon", "walmart", "reverb", "map", "leakage", "b0d8", "b0c9"], spokeId: "ecommerce" },
-      { keywords: ["aeo", "prompt", "citation", "simulation", "hallucination", "readiness", "humbucker", "radius"], spokeId: "aeo" },
-      { keywords: ["spec", "schema", "json-ld", "a+", "matrix", "table", "wood", "frets"], spokeId: "specs" },
-      { keywords: ["competitor", "taylor", "prs", "boss", "katana", "yamaha", "pacifica", "gs mini", "spark"], spokeId: "competitors" },
-      { keywords: ["roi", "enterprise", "pilot", "lift", "$680k", "$38m", "$50m", "$62m", "$28.4m", "sprint", "retainer"], spokeId: "suggestions" },
-      { keywords: ["roadmap", "timeline", "90", "milestone", "resourcing", "managed", "copilot"], spokeId: "roadmap" },
-      { keywords: ["hub", "portfolio", "command", "ceo", "fmic", "executive"], spokeId: "hub" },
-    ],
-  },
   legend: [
     { status: "danger", label: "Critical / Buy Box Suppression" },
     { status: "warning", label: "At Risk / Review Splintering" },

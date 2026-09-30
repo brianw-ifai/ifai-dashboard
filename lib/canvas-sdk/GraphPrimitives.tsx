@@ -443,6 +443,7 @@ type BubbleProps = {
   enterDelay?: number;
   onClick: () => void;
   onMouseEnter: (evt: MouseEvent) => void;
+  onMouseMove?: (evt: MouseEvent) => void;
   onMouseLeave: () => void;
 };
 
@@ -464,6 +465,7 @@ export function GraphBubble({
   enterDelay = 0,
   onClick,
   onMouseEnter,
+  onMouseMove,
   onMouseLeave,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
@@ -500,6 +502,7 @@ export function GraphBubble({
       style={enterDelay ? { transitionDelay: `${enterDelay}ms` } : undefined}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
+      onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >
       <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
@@ -534,6 +537,7 @@ export function GraphHub({
   dimmed = false,
   onClick,
   onMouseEnter,
+  onMouseMove,
   onMouseLeave,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
@@ -567,6 +571,7 @@ export function GraphHub({
       transform={`translate(${x}, ${y})`}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
+      onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
     >
       <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />

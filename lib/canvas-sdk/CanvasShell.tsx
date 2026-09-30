@@ -14,7 +14,6 @@ import { IOM_GRAPH_RAIL_PX } from "@/lib/canvas-sdk/column-layout";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import {
   ChevronLeft,
-  ChevronsRight,
   Compass,
   ExternalLink,
   Layers,
@@ -62,6 +61,7 @@ type TooltipState = {
   x: number;
   y: number;
   hasMoreInfo: boolean;
+  anchor: "cursor" | "column-right";
 };
 
 type Props = {
@@ -88,6 +88,7 @@ export function CanvasShell({ spec, children }: Props) {
   ];
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const canvasBodyRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -251,6 +252,40 @@ export function CanvasShell({ spec, children }: Props) {
     setPanelLayout("hidden");
     frameOverview();
   }, [frameOverview, panelLayout]);
+
+  const columnRailScrollGuardRef = useRef({ tracking: false, moved: false, startY: 0 });
+
+  const onColumnRailPointerDown = useCallback((event: React.PointerEvent) => {
+    if (!columnLayoutRef.current) return;
+    columnRailScrollGuardRef.current = {
+      tracking: true,
+      moved: false,
+      startY: event.clientY,
+    };
+  }, []);
+
+  const onColumnRailPointerMove = useCallback((event: React.PointerEvent) => {
+    const guard = columnRailScrollGuardRef.current;
+    if (!guard.tracking) return;
+    if (Math.abs(event.clientY - guard.startY) > 6) guard.moved = true;
+  }, []);
+
+  const onColumnRailPointerUp = useCallback(() => {
+    columnRailScrollGuardRef.current.tracking = false;
+  }, []);
+
+  const onColumnRailBackgroundClick = useCallback(
+    (event: ReactMouseEvent) => {
+      if (!columnLayoutRef.current) return;
+      if (columnRailScrollGuardRef.current.moved) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".graph-node")) return;
+      if (target.closest(".strategy-roadmap-btn")) return;
+      hidePanel();
+    },
+    [hidePanel],
+  );
 
   const showPanel = useCallback(() => {
     setPanelLayout(panelLayoutBeforeHide.current);
@@ -430,7 +465,33 @@ export function CanvasShell({ spec, children }: Props) {
   const showTooltip = useCallback(
     (evt: ReactMouseEvent, title: string, desc: string, hasMoreInfo = true) => {
       if (tourActiveRef.current && !tourSuspendedRef.current) return;
-      setTooltip({ title, desc, x: evt.clientX, y: evt.clientY, hasMoreInfo });
+      const host = canvasBodyRef.current;
+      if (!host) return;
+      const hostRect = host.getBoundingClientRect();
+
+      if (columnLayoutRef.current) {
+        const target = evt.currentTarget;
+        if (!(target instanceof Element)) return;
+        const node = target.closest(".graph-node") ?? target;
+        const nodeRect = node.getBoundingClientRect();
+        setTooltip({
+          title,
+          desc,
+          hasMoreInfo,
+          x: nodeRect.right - hostRect.left + 14,
+          y: nodeRect.top - hostRect.top + nodeRect.height / 2,
+          anchor: "column-right",
+        });
+      } else {
+        setTooltip({
+          title,
+          desc,
+          hasMoreInfo,
+          x: evt.clientX - hostRect.left,
+          y: evt.clientY - hostRect.top,
+          anchor: "cursor",
+        });
+      }
       setTooltipVisible(true);
     },
     [],
@@ -471,18 +532,18 @@ export function CanvasShell({ spec, children }: Props) {
 
   useEffect(() => {
     if (!iom) return;
-    const viewport = viewportRef.current;
-    if (!viewport) return;
+    const body = canvasBodyRef.current;
+    if (!body) return;
     const onPointerMove = (event: PointerEvent) => {
-      const box = viewport.getBoundingClientRect();
+      const box = body.getBoundingClientRect();
       if (!box.width || !box.height) return;
       const x = ((event.clientX - box.left) / box.width) * 100;
       const y = ((event.clientY - box.top) / box.height) * 100;
-      viewport.style.setProperty("--pointer-x", `${x}%`);
-      viewport.style.setProperty("--pointer-y", `${y}%`);
+      body.style.setProperty("--pointer-x", `${x}%`);
+      body.style.setProperty("--pointer-y", `${y}%`);
     };
-    viewport.addEventListener("pointermove", onPointerMove);
-    return () => viewport.removeEventListener("pointermove", onPointerMove);
+    body.addEventListener("pointermove", onPointerMove);
+    return () => body.removeEventListener("pointermove", onPointerMove);
   }, [iom]);
 
   useEffect(() => {
@@ -683,6 +744,8 @@ export function CanvasShell({ spec, children }: Props) {
       style={{ "--drilldown-width": `${drilldownWidth}px` } as CSSProperties}
     >
       <div className="canvas-layout">
+        <div className="canvas-body" ref={canvasBodyRef}>
+        {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
         <header className="top-header" ref={headerRef}>
           <div className="brand-section">
             <img
@@ -816,8 +879,16 @@ export function CanvasShell({ spec, children }: Props) {
           </div>
         </header>
 
-        <div className="viewport-container" id="viewport" ref={viewportRef}>
-          {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
+        <div
+          className="viewport-container"
+          id="viewport"
+          ref={viewportRef}
+          onClick={columnLayout ? onColumnRailBackgroundClick : undefined}
+          onPointerDown={columnLayout ? onColumnRailPointerDown : undefined}
+          onPointerMove={columnLayout ? onColumnRailPointerMove : undefined}
+          onPointerUp={columnLayout ? onColumnRailPointerUp : undefined}
+          onPointerCancel={columnLayout ? onColumnRailPointerUp : undefined}
+        >
           {iom && spec.spokes.roadmap && !roadmapOnGraph ? (
             <button
               type="button"
@@ -874,7 +945,7 @@ export function CanvasShell({ spec, children }: Props) {
         ) : null}
 
         <div
-          className={`node-tooltip${tooltipVisible ? " visible" : ""}`}
+          className={`node-tooltip${tooltip?.anchor === "column-right" ? " node-tooltip-column" : ""}${tooltipVisible ? " visible" : ""}`}
           style={{ left: tooltip?.x ?? 0, top: tooltip?.y ?? 0 }}
         >
           <div style={{ fontWeight: 700, marginBottom: 2 }}>{tooltip?.title ?? "Title"}</div>
@@ -958,7 +1029,8 @@ export function CanvasShell({ spec, children }: Props) {
                 title={iom ? "Show full map" : "Hide sidebar"}
                 aria-label={iom ? "Show full map" : "Hide sidebar"}
               >
-                <ChevronsRight size={16} />
+                <X size={15} strokeWidth={3} aria-hidden="true" />
+                <span>Close</span>
               </button>
               {iom ? null : (
                 <button
@@ -1122,6 +1194,7 @@ export function CanvasShell({ spec, children }: Props) {
               </div>
             </div>
           ) : null}
+        </div>
         </div>
       </div>
     </div>
