@@ -45,30 +45,32 @@ export function useDefinitionTooltips({
       return term instanceof Element ? term : null;
     };
 
-    const onPointerOver = (event: PointerEvent) => {
+    const onPointerOver = (event: Event) => {
       if (isBlocked()) return;
       const term = termFromEvent(event);
       if (term) onShow(term);
     };
 
-    const onPointerOut = (event: PointerEvent) => {
+    const onPointerOut = (event: Event) => {
       const term = termFromEvent(event);
       if (!term) return;
-      const related = event.relatedTarget;
+      const related =
+        event instanceof MouseEvent ? event.relatedTarget : null;
       if (related instanceof Node && term.contains(related)) return;
       onHide();
     };
 
-    const onFocusIn = (event: FocusEvent) => {
+    const onFocusIn = (event: Event) => {
       if (isBlocked()) return;
       const term = termFromEvent(event);
       if (term) onShow(term);
     };
 
-    const onFocusOut = (event: FocusEvent) => {
+    const onFocusOut = (event: Event) => {
       const term = termFromEvent(event);
       if (!term) return;
-      const related = event.relatedTarget;
+      const related =
+        event instanceof FocusEvent ? event.relatedTarget : null;
       if (related instanceof Node && term.contains(related)) return;
       onHide();
     };
