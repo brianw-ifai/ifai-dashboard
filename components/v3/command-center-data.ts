@@ -23,7 +23,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "review-splintering",
       title: "2,420 customer reviews are stranded on the wrong pages",
-      why: "Every time a partner lists a Strat bundled with a gig bag, they create a separate product page — and the reviews customers leave there never reach your main listing. Amazon hands its 'Overall Pick' badge to whoever has the most reviews, so that badge is currently going to PRS and Yamaha instead of you.",
+      why: "Every time a partner lists a Strat bundled with a gig bag, they create a separate product page, and the reviews customers leave there never reach your main listing. Amazon hands its 'Overall Pick' badge to whoever has the most reviews, so that badge is currently going to PRS and Yamaha instead of you.",
       impact: "Nesting partner bundles under your parent listings pools the reviews back without costing partners a single sale.",
       severity: "critical",
       spokeId: "ecommerce",
@@ -33,7 +33,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "ai-spec-hallucination",
       title: "AI assistants are quoting specs you never published",
-      why: "ChatGPT, Claude and Perplexity cannot read specs out of marketing copy, so they scrape whatever a third-party bundle page claims. That is where the wrong fingerboard radius and the phantom Acoustasonic pickup configuration are coming from — and shoppers are being told those are your specs.",
+      why: "ChatGPT, Claude, and Perplexity can't read specs out of marketing copy, so they scrape whatever a third-party bundle page claims. That is where the wrong fingerboard radius and the phantom Acoustasonic pickup configuration come from, and shoppers are being told those are your specs.",
       impact: "Every corrected spec removes a reason for an AI engine to recommend a competitor instead.",
       severity: "critical",
       spokeId: "aeo",
@@ -43,7 +43,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "schema-coverage",
       title: "Sampled fender.com pages publish no machine-readable specs",
-      why: "A live sample found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields — including fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count — so an AI engine has nothing authoritative to read.",
+      why: "A live sample found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields such as fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count, so an AI engine has nothing authoritative to read.",
       impact: "This is the groundwork that makes the spec-hallucination fixes stick permanently.",
       severity: "high",
       spokeId: "specs",
@@ -73,7 +73,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "aplus-tables",
       title: "14 catalog lines still need an A+ comparison matrix",
-      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. On the live sample, Amazon product fields are already 93.3% complete — fender.com structured specs are the gap.",
+      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. On the live sample, Amazon product fields are already 93.3% complete; fender.com structured specs are the gap.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

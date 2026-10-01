@@ -98,7 +98,7 @@ export class Canvas {
     return this.page.locator(".segmented-btn", { hasText: label });
   }
 
-  /** Brand AEO -> the 100-prompt explorer, where stars and filters live. */
+  /** AI Search Visibility -> the 100-prompt explorer, where stars and filters live. */
   async openSimulations() {
     await this.openPriority("AI assistants are quoting specs");
     await this.openTab("Simulations");

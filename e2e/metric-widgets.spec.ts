@@ -18,10 +18,10 @@ test.describe("configurable metric widgets", () => {
     await expect(picker.locator(".metric-widget-group h3")).toContainText([
       "Overview",
       "Portfolio Retail",
-      "Brand AEO",
+      "AI Search Visibility",
       "AI Readiness",
       "Competitive Radar",
-      "Brand Fixes",
+      "Action Items",
       "90-Day Roadmap",
     ]);
   });

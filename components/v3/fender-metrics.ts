@@ -123,7 +123,7 @@ export const FENDER_METRICS = {
     value: "29.2%",
     detail: "21 of 72 live sample pages found",
     tone: "danger",
-    subTab: "Catalog Spec Readiness",
+    subTab: "Catalog Readiness",
     provenance: "live",
   },
   machineReadableSpecs: {
@@ -169,7 +169,7 @@ export const FENDER_METRICS = {
   prioritizedFixes: {
     id: "prioritized-fixes",
     spokeId: "suggestions",
-    label: "Prioritized Brand Fixes",
+    label: "Prioritized Action Items",
     value: "18",
     detail: "Ranked by recovery and visibility impact",
     tone: "warning",

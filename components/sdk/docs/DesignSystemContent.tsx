@@ -334,7 +334,7 @@ export function DesignSystemContent() {
             </div>
             <div className="ticker-item ticker-badge-warning">
               <Sparkles size={12} />
-              <span>AEO 41</span>
+              <span>AI Search Visibility 41</span>
             </div>
             <div className="ticker-item ticker-badge-success">
               <TrendingUp size={12} />
@@ -426,7 +426,7 @@ export function DesignSystemContent() {
                 y={150}
                 r={78}
                 status="danger"
-                title="AEO"
+                title="AI Search Visibility"
                 stats={["41", "crit"]}
                 onClick={noop}
                 onMouseEnter={noop}
@@ -506,9 +506,9 @@ export function DesignSystemContent() {
         >
           <MetricGrid>
             <MetricCard label="Buy Box" value="68%" tone="danger" sub="Target 95%" />
-            <MetricCard label="AEO index" value="41" tone="warning" sub="−11 pts / 30d" />
+            <MetricCard label="AI Search Visibility" value="41" tone="warning" sub="−11 pts / 30d" />
             <MetricCard label="Schema" value="88%" tone="success" sub="Catalog coverage" />
-            <MetricCard label="Fixes queued" value="18" tone="accent" sub="This sprint" />
+            <MetricCard label="Action Items" value="18" tone="accent" sub="Queued this sprint" />
           </MetricGrid>
 
           <ContentBox
@@ -543,7 +543,7 @@ export function DesignSystemContent() {
             />
             <p className="kpi-target">Target: 95% buy-box integrity by Q4</p>
             <div className="cadence-note">
-              <strong>Cadence</strong> — refresh weekly from the citation crawl. Escalate when a
+              <strong>Cadence:</strong> refresh weekly from the citation crawl. Escalate when a
               heritage prompt drops below 70%.
             </div>
             <p className="workstream-meta">

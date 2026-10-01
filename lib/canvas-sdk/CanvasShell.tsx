@@ -1370,7 +1370,7 @@ export function CanvasShell({ spec, children }: Props) {
                 <button className="tour-drilldown-link-btn" onClick={openDrilldownFromTour}>
                   <ExternalLink size={12} />
                   <span>Explore Full Deep-Dive Panel →</span>
-                  <em className="tour-drilldown-hint">Tour pauses here — you&apos;ll come back</em>
+                  <em className="tour-drilldown-hint">Tour pauses here. You&apos;ll come back to it.</em>
                 </button>
               </div>
 

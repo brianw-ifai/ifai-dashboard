@@ -37,7 +37,7 @@ test.describe("panel layout", () => {
   });
 
   test("keeps the IOM drill-down in column + full-width panel mode", async ({ canvas, page }) => {
-    await canvas.openSpokeFromMap("Brand AEO");
+    await canvas.openSpokeFromMap("AI Search Visibility");
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(page.locator(".drilldown-expand-btn")).toHaveCount(0);
   });
