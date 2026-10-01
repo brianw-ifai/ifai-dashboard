@@ -140,8 +140,9 @@ test.describe("glossary", () => {
     expect(await terms.count()).toBeGreaterThan(0);
 
     for (const term of await terms.all()) {
-      const definition = await term.getAttribute("title");
+      const definition = await term.getAttribute("data-ifai-tooltip-desc");
       expect(definition?.length ?? 0).toBeGreaterThan(20);
+      await expect(term).not.toHaveAttribute("title");
     }
     await expect(terms.filter({ hasText: "Buy Box" }).first()).toBeVisible();
   });

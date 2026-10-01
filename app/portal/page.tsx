@@ -1,12 +1,13 @@
 import { AccountMenu } from "@/components/auth/AccountMenu";
 import { IntoFocusPortal } from "@/components/intofocus-portal/IntoFocusPortal";
-import { getUserEmail } from "@/lib/supabase/server";
+import { commandSessionToUserMenu, getCommandSession } from "@/lib/command/session";
 
 export default async function PortalPage() {
-  const email = await getUserEmail();
+  const session = await getCommandSession();
+  const userMenu = session ? commandSessionToUserMenu(session) : undefined;
   return (
     <>
-      {email ? <AccountMenu email={email} variant="portal" /> : null}
+      {userMenu ? <AccountMenu {...userMenu} variant="portal" /> : null}
       <IntoFocusPortal />
     </>
   );

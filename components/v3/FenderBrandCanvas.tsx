@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo } from "react";
 import { fenderCanvasSpec } from "@/components/v3/fender-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
+import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 
 declare global {
   interface Window {
@@ -39,10 +40,10 @@ function viewerStorageScope(viewerId?: string) {
 }
 
 export function FenderBrandCanvas({
-  account,
+  userMenu,
   viewerId,
 }: {
-  account?: ReactNode;
+  userMenu?: CanvasUserMenu;
   viewerId?: string;
 }) {
   useEffect(() => {
@@ -86,10 +87,10 @@ export function FenderBrandCanvas({
       : undefined;
     return {
       ...fenderCanvasSpec,
-      ...(account ? { headerSlot: account } : {}),
+      ...(userMenu ? { userMenu, userEmail: userMenu.email } : {}),
       ...(metricWidgets ? { metricWidgets } : {}),
     };
-  }, [account, viewerId]);
+  }, [userMenu, viewerId]);
 
   return <IntelligenceCanvas spec={spec} />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { applyDefinitionTooltipAttrs } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useLocalStore } from "@/lib/canvas-sdk/local-store";
 import { useCallback, useEffect, useMemo, type RefObject } from "react";
 
@@ -287,11 +288,8 @@ function annotateGlossary(root: HTMLElement, glossary: Record<string, string>) {
     after.splitText(hit.length);
     const matched = after.nodeValue ?? hit.term;
     const mark = root.ownerDocument.createElement("span");
-    mark.className = "ifai-term";
-    mark.tabIndex = 0;
     mark.textContent = matched;
-    mark.title = glossary[hit.term];
-    mark.setAttribute("aria-label", `${hit.term}: ${glossary[hit.term]}`);
+    applyDefinitionTooltipAttrs(mark, hit.term, glossary[hit.term]);
     after.replaceWith(mark);
   }
 }

@@ -1,13 +1,7 @@
 /* IntoFocus Canvas SDK — chrome, graph, drilldown, and tour.
    Root class: .ifai-canvas (extracted from the /v3 brand canvas). */
 
-    @font-face {
-      font-family: Inter;
-      font-style: normal;
-      font-weight: 100 900;
-      font-display: swap;
-      src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
-    }
+    /* Inter @font-face and --font-sans / --font-mono tokens live in app/globals.css */
 
     .ifai-canvas {
       --color-midnight: #0b1220;
@@ -67,6 +61,21 @@
       --correlation-badge-bg: #1e1124;
       --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      /* Shared metric typography (sidebar widgets + drilldown cards) */
+      --metric-overline-size: 8px;
+      --metric-overline-weight: 800;
+      --metric-overline-tracking: 0.12em;
+      --metric-label-size: 9.5px;
+      --metric-label-weight: 700;
+      --metric-value-size: 23px;
+      --metric-value-weight: 800;
+      --metric-value-tracking: -0.045em;
+      --metric-detail-size: 8.5px;
+      --metric-detail-weight: 600;
+      --metric-provenance-size: 7px;
+      --metric-provenance-weight: 800;
+      --metric-provenance-tracking: 0.09em;
     }
 
     .ifai-canvas.light-theme {
@@ -235,6 +244,32 @@
       min-width: 0;
     }
 
+    .brand-home-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      max-width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: opacity 0.18s ease;
+    }
+
+    .brand-home-btn:hover {
+      opacity: 0.88;
+    }
+
+    .brand-home-btn:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 3px;
+    }
+
     .brand-logo-icon {
       width: 36px;
       height: 36px;
@@ -316,6 +351,7 @@
     .header-ticker {
       display: flex;
       align-items: flex-start;
+      justify-content: center;
       flex-wrap: wrap;
       gap: 8px;
       width: 100%;
@@ -470,6 +506,220 @@
     .hdr-btn-primary:hover {
       background: #4338ca;
       border-color: #4338ca;
+    }
+
+    .hdr-btn-priorities {
+      --priorities-pulse-duration: 2.8s;
+      --priorities-ember-duration: 3.4s;
+      position: relative;
+      z-index: 0;
+      overflow: visible;
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+      animation: priorities-fire-pulse var(--priorities-pulse-duration) ease-in-out infinite;
+      box-shadow:
+        0 0 0 1px rgba(251, 113, 133, 0.12),
+        0 0 16px rgba(244, 63, 94, 0.28),
+        0 4px 16px rgba(251, 113, 133, 0.22);
+    }
+
+    .hdr-btn-priorities::before {
+      content: "";
+      position: absolute;
+      inset: -6px -8px;
+      z-index: -1;
+      border-radius: 999px;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse 70% 115% at 50% 92%,
+        rgba(255, 228, 230, 0.65) 0%,
+        rgba(251, 113, 133, 0.55) 16%,
+        rgba(244, 63, 94, 0.32) 40%,
+        transparent 72%
+      );
+      filter: blur(3.5px);
+      transform-origin: center bottom;
+      animation: priorities-flame-flicker var(--priorities-pulse-duration) ease-in-out infinite;
+    }
+
+    .hdr-btn-priorities:hover {
+      background: rgba(251, 113, 133, 0.24);
+      border-color: var(--danger-red);
+      color: #fff;
+    }
+
+    .hdr-btn-priorities.hdr-btn-active {
+      background: rgba(251, 113, 133, 0.32);
+      border-color: var(--danger-red);
+      color: #fff;
+      box-shadow:
+        0 0 0 1px rgba(251, 113, 133, 0.35),
+        0 0 24px rgba(244, 63, 94, 0.45),
+        0 0 20px rgba(251, 113, 133, 0.28);
+    }
+
+    .hdr-btn-priorities .hdr-btn-count {
+      position: relative;
+      z-index: 1;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: 10px;
+      background: #fff;
+      color: var(--danger-red);
+      animation: priorities-count-embers var(--priorities-ember-duration) ease-out infinite;
+      box-shadow:
+        0 0 0 1px rgba(251, 113, 133, 0.55),
+        0 0 10px rgba(244, 63, 94, 0.45),
+        0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    @keyframes priorities-flame-flicker {
+      0%, 100% { transform: scale(1, 1) rotate(-4deg); opacity: 0.82; }
+      50% { transform: scale(0.84, 1.14) rotate(4deg); opacity: 1; }
+    }
+
+    @keyframes priorities-fire-pulse {
+      0%, 100% {
+        filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.35));
+      }
+      50% {
+        filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.55));
+      }
+    }
+
+    @keyframes priorities-count-embers {
+      0%, 70% {
+        box-shadow:
+          0 0 0 1px rgba(251, 113, 133, 0.55),
+          0 0 10px rgba(244, 63, 94, 0.45),
+          0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+      85% {
+        box-shadow:
+          0 0 0 1px rgba(251, 113, 133, 0.75),
+          0 0 16px rgba(244, 63, 94, 0.65),
+          0 0 22px rgba(255, 228, 230, 0.35),
+          0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+      100% {
+        box-shadow:
+          0 0 0 1px rgba(251, 113, 133, 0.55),
+          0 0 10px rgba(244, 63, 94, 0.45),
+          0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hdr-btn-priorities,
+      .hdr-btn-priorities::before,
+      .hdr-btn-priorities .hdr-btn-count {
+        animation: none;
+      }
+
+      .hdr-btn-priorities {
+        filter: drop-shadow(0 0 6px rgba(244, 63, 94, 0.4));
+      }
+    }
+
+    .hdr-btn-priorities:hover .hdr-btn-count,
+    .hdr-btn-priorities.hdr-btn-active .hdr-btn-count {
+      background: #fff;
+      color: var(--danger-red);
+    }
+
+    .ifai-canvas.light-theme .hdr-btn-priorities {
+      color: #9f1239;
+    }
+
+    .ifai-canvas.light-theme .hdr-btn-priorities:hover,
+    .ifai-canvas.light-theme .hdr-btn-priorities.hdr-btn-active {
+      color: #fff;
+    }
+
+    .user-menu {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .user-menu-trigger {
+      max-width: min(220px, 42vw);
+      gap: 6px;
+    }
+
+    .user-menu-trigger-label {
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .user-menu-chevron {
+      opacity: 0.72;
+      transition: transform 0.18s ease;
+    }
+
+    .user-menu-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .user-menu-panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 220px;
+      max-width: min(320px, 92vw);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border-dark);
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-soft);
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .user-menu-email {
+      padding: 8px 10px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1.35;
+      word-break: break-all;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 2px;
+    }
+
+    .user-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-main);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .user-menu-item:hover {
+      background: var(--bg-surface-hover);
+    }
+
+    .user-menu-item-danger {
+      color: var(--danger-text);
+    }
+
+    .ifai-canvas.light-theme .user-menu-item-danger {
+      color: var(--danger-red);
     }
 
     /* Main SVG Canvas Viewport */
@@ -764,9 +1014,9 @@
       max-width: 154px;
       overflow: hidden;
       color: var(--accent-cyan);
-      font-size: 8px;
-      font-weight: 800;
-      letter-spacing: 0.12em;
+      font-size: var(--metric-overline-size);
+      font-weight: var(--metric-overline-weight);
+      letter-spacing: var(--metric-overline-tracking);
       line-height: 1.1;
       text-overflow: ellipsis;
       text-transform: uppercase;
@@ -776,48 +1026,72 @@
     .metric-widget-label {
       max-width: 158px;
       color: var(--text-muted);
-      font-size: 9.5px;
-      font-weight: 700;
+      font-size: var(--metric-label-size);
+      font-weight: var(--metric-label-weight);
       line-height: 1.14;
       white-space: normal;
     }
 
-    .metric-widget-value {
+    .metric-widget-value,
+    .metric-card-val {
       color: var(--text-main);
       font-family: var(--font-mono);
-      font-size: 23px;
-      font-weight: 800;
-      letter-spacing: -0.045em;
+      font-size: var(--metric-value-size);
+      font-weight: var(--metric-value-weight);
+      letter-spacing: var(--metric-value-tracking);
       line-height: 1.05;
     }
 
-    .metric-widget-value.tone-danger { color: var(--danger-text); }
-    .metric-widget-value.tone-warning { color: var(--warning-text); }
-    .metric-widget-value.tone-success { color: var(--success-text); }
+    .metric-widget-value.tone-danger,
+    .metric-card-val.tone-danger { color: var(--danger-text); }
+
+    .metric-widget-value.tone-warning,
+    .metric-card-val.tone-warning { color: var(--warning-text); }
+
+    .metric-widget-value.tone-success,
+    .metric-card-val.tone-success { color: var(--success-text); }
+
+    .metric-widget-value.tone-accent,
+    .metric-card-val.tone-accent { color: var(--accent-cyan); }
+
+    .metric-widget-detail,
+    .metric-card-sub {
+      color: var(--text-subtle);
+      font-size: var(--metric-detail-size);
+      font-weight: var(--metric-detail-weight);
+      line-height: 1.25;
+    }
 
     .metric-widget-detail {
       max-width: 164px;
-      color: var(--text-subtle);
-      font-size: 8.5px;
-      font-weight: 600;
-      line-height: 1.25;
       white-space: normal;
     }
 
-    .metric-widget-provenance {
+    .metric-widget-provenance,
+    .metric-card-provenance {
+      display: inline-block;
       margin-top: 1px;
       padding: 1px 6px;
       border: 1px solid var(--border-color);
       border-radius: 999px;
       color: var(--text-muted);
-      font-size: 7px;
-      font-weight: 800;
-      letter-spacing: 0.09em;
+      font-family: var(--font-sans);
+      font-size: var(--metric-provenance-size);
+      font-weight: var(--metric-provenance-weight);
+      letter-spacing: var(--metric-provenance-tracking);
       line-height: 1.35;
       text-transform: uppercase;
+      vertical-align: middle;
     }
 
-    .metric-widget-provenance.is-estimate {
+    .metric-card-val .metric-card-provenance {
+      margin-top: 0;
+      margin-left: 6px;
+      font-size: var(--metric-provenance-size);
+    }
+
+    .metric-widget-provenance.is-estimate,
+    .metric-card-provenance.is-estimate {
       border-color: var(--warning-border);
       color: var(--warning-text);
     }
@@ -977,6 +1251,22 @@
       border: 1px dashed var(--border-color);
     }
 
+    /* Guided tour entry (bottom left); hides on click while the tour runs. */
+    .tour-launcher {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      z-index: 44;
+      padding: 8px 14px;
+      min-height: 36px;
+      font-size: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .ifai-canvas:has(.tour-launcher) .canvas-hud-legend {
+      bottom: calc(24px + 36px + 10px);
+    }
+
     /* Canvas HUD Legend (Bottom Left) */
     .canvas-hud-legend {
       position: absolute;
@@ -1071,14 +1361,14 @@
       max-width: 250px;
       opacity: 0;
       visibility: hidden;
-      transform: translate(-50%, -108%) scale(0.96);
+      transform: translate(-50%, calc(-100% - 6px)) scale(0.96);
       transition: opacity 0.22s ease, transform 0.22s ease, visibility 0.22s ease;
     }
 
     .node-tooltip.visible {
       opacity: 1;
       visibility: visible;
-      transform: translate(-50%, -120%) scale(1);
+      transform: translate(-50%, calc(-100% - 8px)) scale(1);
     }
 
     .node-tooltip.node-tooltip-column {
@@ -1088,6 +1378,18 @@
 
     .node-tooltip.node-tooltip-column.visible {
       transform: translate(0, -50%) scale(1);
+    }
+
+    /* Glossary / definition marks (.ifai-term) — fixed so portaled modals work. */
+    .node-tooltip.node-tooltip-definition {
+      position: fixed;
+      z-index: 100010;
+      max-width: 280px;
+      transform: translate(-50%, calc(-100% - 10px)) scale(0.96);
+    }
+
+    .node-tooltip.node-tooltip-definition.visible {
+      transform: translate(-50%, calc(-100% - 14px)) scale(1);
     }
 
     /* Slide-over Drilldown Panel */
@@ -1278,25 +1580,23 @@
     }
 
     .metric-card-label {
-      font-size: 11px;
-      font-weight: 600;
+      font-size: var(--metric-label-size);
+      font-weight: var(--metric-label-weight);
       color: var(--text-muted);
+      line-height: 1.14;
       text-transform: uppercase;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.08em;
     }
 
     .metric-card-val {
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text-main);
       display: flex;
+      flex-wrap: wrap;
       align-items: baseline;
       gap: 4px;
     }
 
     .metric-card-sub {
-      font-size: 11.5px;
-      color: var(--text-subtle);
+      white-space: normal;
     }
 
     .content-box {
@@ -2001,7 +2301,8 @@
         font-size: 8.5px;
       }
 
-      .metric-widget-value {
+      .metric-widget-value,
+      .metric-card-val {
         font-size: 18px;
       }
 
@@ -2676,7 +2977,7 @@
     /* Glossary terms marked in the panel copy. */
     .ifai-term {
       border-bottom: 1px dotted currentColor;
-      cursor: help;
+      cursor: pointer;
       text-decoration: none;
     }
 

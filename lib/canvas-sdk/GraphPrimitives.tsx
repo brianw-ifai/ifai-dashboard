@@ -3,6 +3,9 @@
 import type { MouseEvent } from "react";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
+/** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
+const IOM_STAT_PILL_FONT = 10;
+
 function polar(radius: number, deg: number) {
   const angle = (deg * Math.PI) / 180;
   return { x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
@@ -233,7 +236,7 @@ export function CenteredStack({
   );
 }
 
-type BubbleIcon = "sparkles" | "bag" | "radar" | "clipboard" | "wrench";
+type BubbleIcon = "sparkles" | "bag" | "radar" | "clipboard" | "wrench" | "route";
 
 const PRIMARY_SPOKES = new Set([
   "spoke-aeo",
@@ -253,6 +256,7 @@ const SPOKE_ICONS: Record<string, BubbleIcon> = {
   "spoke-competitors": "radar",
   "spoke-specs": "clipboard",
   "spoke-fixes": "wrench",
+  "spoke-roadmap": "route",
 };
 
 function BubbleGlyph({ icon }: { icon: BubbleIcon }) {
@@ -297,6 +301,15 @@ function BubbleGlyph({ icon }: { icon: BubbleIcon }) {
       {icon === "wrench" ? (
         <path d="M14.7 6.3a4.5 4.5 0 0 0-6.2 6.2L4 17a2 2 0 1 0 3 3l4.5-4.5a4.5 4.5 0 0 0 6.2-6.2L15 12l-3-3z" />
       ) : null}
+      {icon === "route" ? (
+        <>
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1" />
+          <path d="M4 22v-7" />
+          <path d="M9 22v-4" />
+          <path d="M15 22v-2" />
+          <path d="M20 22V9" />
+        </>
+      ) : null}
     </svg>
   );
 }
@@ -320,6 +333,7 @@ function CenteredFace({
   logoSrc,
   plate,
   titleSize: titleSizeOverride,
+  statPillSize,
 }: {
   title: string;
   stats: string[];
@@ -332,7 +346,10 @@ function CenteredFace({
   logoSrc?: string;
   plate?: boolean;
   titleSize?: number;
+  statPillSize?: number;
 }) {
+  const pillFont = statPillSize ?? IOM_STAT_PILL_FONT;
+
   if (hub) {
     const lines = titleLines(title);
     const titleY = logoSrc ? 6 : -16;
@@ -368,7 +385,7 @@ function CenteredFace({
             radius={radius}
             stats={stats}
             meta={meta}
-            pillSize={10}
+            pillSize={pillFont}
             status={status}
             maxWidth={radius * 2 - 18}
             layout="flow"
@@ -385,7 +402,6 @@ function CenteredFace({
   const lineH = titleSize + 3;
   const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
   const titleStart = icon ? (prominent ? 4 : -radius * 0.02) : -lineH * (lines.length / 2);
-  const pillFont = prominent ? 9.5 : radius >= 55 ? 9 : 8.5;
   const stackStartY = titleStart + lines.length * lineH + (stats.length || meta ? 5 : 0);
 
   return (
@@ -471,7 +487,7 @@ export function GraphBubble({
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
   const headerSize = titleSize ?? (faceR >= 70 ? 14.5 : faceR >= 50 ? 13 : 12);
-  const statSize = faceR >= 70 ? 12 : 10.5;
+  const statPillFont = IOM_STAT_PILL_FONT / faceScale;
   const statusClass = status !== "neutral" ? ` status-${status}` : "";
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
 
@@ -486,11 +502,12 @@ export function GraphBubble({
       prominent={PRIMARY_SPOKES.has(id)}
       plate={centered && Boolean(SPOKE_ICONS[id])}
       titleSize={titleSize}
+      statPillSize={statPillFont}
     />
   ) : (
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} />
-      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statSize} status={status} />
+      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
     </>
   );
 
@@ -542,6 +559,7 @@ export function GraphHub({
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
+  const statPillFont = IOM_STAT_PILL_FONT / faceScale;
   const pulseR = r * (140 / 98);
   const midR = r * (118 / 98);
   const headerSize = titleSize ?? 15;
@@ -556,11 +574,12 @@ export function GraphHub({
       radius={faceR}
       hub
       logoSrc={logoSrc}
+      statPillSize={statPillFont}
     />
   ) : (
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
-      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={12} status={status} />
+      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
     </>
   );
 

@@ -1,0 +1,33 @@
+---
+description: Use canvas node-tooltip for definitions; never native title tooltips on dotted-underline terms
+globs: "**/*.{tsx,ts,html,css}"
+alwaysApply: true
+---
+
+# Custom tooltips (no native `title` for definitions)
+
+Dotted-underline jargon and definitions must use the same **`.node-tooltip`** chrome as map bubbles — not the browser’s default `title` tooltip.
+
+## Marking copy
+
+- Use **`applyDefinitionTooltipAttrs`** from `@/lib/canvas-sdk/useDefinitionTooltips` (or equivalent markup):
+  - Class: **`ifai-term`**
+  - **`data-ifai-tooltip-title`** — term label (usually the visible word)
+  - **`data-ifai-tooltip-desc`** — plain-language definition
+  - **`tabIndex={0}`** and **`aria-label`** for keyboard/accessibility
+- **Do not** set **`title`** on definition marks. Native tooltips fight the custom cursor and look inconsistent.
+
+## Runtime
+
+- **`useDefinitionTooltips`** (wired in `CanvasShell`) shows/hides the shared tooltip on hover and focus for `[data-ifai-tooltip-desc]`.
+- Panel glossary injection lives in **`annotateGlossary`** (`panel-interactions.ts`).
+
+## Other `title` usage
+
+- **`title` on icon-only controls** (zoom, close, theme toggle) is OK for supplementary hints when there is no dotted underline.
+- If you add a **new** dotted-underline + definition pattern anywhere (sidebar HTML, modals, React components), use the data attributes above — never `title` alone.
+
+## Visual
+
+- Style terms with **`.ifai-term`** (`border-bottom: 1px dotted` in `canvas-sdk.css`).
+- Definition tooltips use **`.node-tooltip-definition`** (fixed position, high z-index for modals).

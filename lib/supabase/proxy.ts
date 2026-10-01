@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { safeNextPath } from "@/lib/auth/paths";
 
 function isProtected(pathname: string) {
-  return pathname === "/" || pathname.startsWith("/portal") || pathname.startsWith("/v3");
+  return pathname.startsWith("/portal") || pathname.startsWith("/settings");
 }
 
 function isAuthScreen(pathname: string) {
@@ -58,9 +58,9 @@ export async function updateSession(request: NextRequest) {
 
   if (!signedIn && isProtected(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/";
     url.search = "";
-    if (pathname !== "/") url.searchParams.set("next", pathname);
+    url.searchParams.set("next", pathname);
     return withSession(NextResponse.redirect(url), supabaseResponse);
   }
 

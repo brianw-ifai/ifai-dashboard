@@ -6,7 +6,7 @@ export const IOM_COLUMN_BUBBLE_DIAMETER_PX = 200;
 /** Viewport width (px) reserved for the bubble column when the panel is open. */
 export const IOM_GRAPH_RAIL_PX = 240;
 
-/** SVG viewBox width for column mode — paired with rail width for 200px bubbles. */
+/** SVG viewBox width for column mode (same as rail width for horizontal scaling). */
 export const IOM_COLUMN_VIEW_WIDTH = 240;
 
 const COLUMN_NODE_ORDER = [
@@ -32,7 +32,8 @@ export function columnBubbleRadiusViewBox(
 
 export type ColumnLayoutPlan = {
   positions: Map<string, { x: number; y: number }>;
-  viewBox: { w: number; h: number };
+  /** Includes negative x/y padding so hub halos are not clipped by the SVG viewport. */
+  viewBox: { x: number; y: number; w: number; h: number };
   bubbleR: number;
 };
 
@@ -56,7 +57,7 @@ export function buildColumnLayout(
   const viewW = IOM_COLUMN_VIEW_WIDTH;
   const centerX = viewW / 2;
   const gap = 22;
-  const paddingY = 36;
+  const paddingY = 52;
   let bubbleR = columnBubbleRadiusViewBox(viewW, railPx);
 
   const positions = new Map<string, { x: number; y: number }>();
@@ -68,10 +69,46 @@ export function buildColumnLayout(
   }
 
   const viewH = Math.max(720, yTop + paddingY);
+  const glowPadTop = Math.ceil(bubbleR * 0.85);
+  const glowPadX = Math.ceil(bubbleR * 0.45);
 
   return {
     positions,
-    viewBox: { w: viewW, h: viewH },
+    viewBox: {
+      x: -glowPadX,
+      y: -glowPadTop,
+      w: viewW + glowPadX * 2,
+      h: viewH + glowPadTop,
+    },
     bubbleR,
   };
+}
+
+/**
+ * Vertically center a column bubble in the scroll rail. Uses the SVG CTM so
+ * preserveAspectRatio / responsive scaling match what is on screen.
+ */
+export function scrollColumnLayoutToCenter(
+  viewport: HTMLElement,
+  svg: SVGSVGElement,
+  nodeCenterYViewBox: number,
+  behavior: ScrollBehavior = "smooth",
+) {
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return;
+
+  const pt = svg.createSVGPoint();
+  pt.x = svg.viewBox.baseVal.width / 2;
+  pt.y = nodeCenterYViewBox;
+  const screen = pt.matrixTransform(ctm);
+
+  const viewportRect = viewport.getBoundingClientRect();
+  const nodeOffsetInContent = screen.y - viewportRect.top + viewport.scrollTop;
+  const maxScroll = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+  const targetTop = Math.min(
+    maxScroll,
+    Math.max(0, nodeOffsetInContent - viewport.clientHeight / 2),
+  );
+
+  viewport.scrollTo({ top: targetTop, behavior });
 }

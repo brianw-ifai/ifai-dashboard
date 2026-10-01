@@ -1,0 +1,40 @@
+---
+description: Keep React components and TSX modules at or under 400 lines
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Component size limit (400 lines)
+
+React components and other `.tsx` modules in this repo must stay **at or under 400 lines** (including imports, types, and exports).
+
+## When adding or editing TSX
+
+- Before growing a file past ~350 lines, extract subcomponents, hooks, or pure helpers into colocated files.
+- Prefer `ComponentName/` folders with `index.tsx`, `SubPart.tsx`, and `useComponentName.ts` over one monolithic file.
+- Spec/data-heavy TSX (e.g. canvas specs) should split layout from data constants or move static config to `.ts` files.
+
+## How to split
+
+```tsx
+// ❌ BAD — 800-line CanvasShell.tsx with camera, graph, and toolbar inline
+
+// ✅ GOOD — CanvasShell.tsx orchestrates; hooks and presentational pieces live beside it
+// CanvasShell.tsx (~200 lines)
+// useCanvasCamera.ts
+// CanvasToolbar.tsx
+```
+
+## Check violations locally
+
+From the repo root:
+
+```bash
+find . \( -path ./node_modules -o -path ./.next \) -prune -o -name '*.tsx' -print |
+  while read -r f; do
+    n=$(wc -l < "$f" | tr -d ' ')
+    [ "$n" -gt 400 ] && printf '%s %s\n' "$n" "$f"
+  done | sort -rn
+```
+
+Treat any file over 400 lines as tech debt: refactor when touching that area, or split as part of the current task if the change would push the file further over the limit.

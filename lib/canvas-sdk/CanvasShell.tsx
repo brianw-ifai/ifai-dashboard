@@ -2,6 +2,7 @@
 
 import "@/lib/canvas-sdk/canvas-sdk.css";
 import "@/lib/canvas-sdk/iom-theme.css";
+import { UserMenuDropdown } from "@/components/auth/UserMenuDropdown";
 import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
 import { MetricWidgets } from "@/lib/canvas-sdk/MetricWidgets";
 import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
@@ -10,7 +11,15 @@ import type {
   CanvasSpec,
   TickerIcon,
 } from "@/lib/canvas-sdk/types";
+import { SHOW_HEADER_TICKERS } from "@/lib/canvas-sdk/canvas-chrome-flags";
 import { IOM_GRAPH_RAIL_PX } from "@/lib/canvas-sdk/column-layout";
+import {
+  IOM_MAP_EXIT_BASE_MS,
+  IOM_RAIL_MOTION_BASE_MS,
+  iomMotionMs,
+} from "@/lib/canvas-sdk/iom-motion";
+import { IomCursor } from "@/lib/canvas-sdk/IomCursor";
+import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import {
   ChevronLeft,
@@ -61,7 +70,7 @@ type TooltipState = {
   x: number;
   y: number;
   hasMoreInfo: boolean;
-  anchor: "cursor" | "column-right";
+  anchor: "cursor" | "column-right" | "definition";
 };
 
 type Props = {
@@ -101,14 +110,22 @@ export function CanvasShell({ spec, children }: Props) {
   const tourOverlayRef = useRef<HTMLDivElement>(null);
   const columnLayoutRef = useRef(false);
 
-  const { pan, transform, applyTransform, framePoint, frameOverview, zoomBy } =
-    useCanvasCamera({
-      viewBox: spec.viewBox,
-      viewportRef,
-      svgRef,
-    });
-
   const iom = spec.appearance === "iom";
+  const {
+    pan,
+    transform,
+    applyTransform,
+    framePoint,
+    frameOverview,
+    frameOverviewInstant,
+    zoomBy,
+  } = useCanvasCamera({
+    viewBox: spec.viewBox,
+    viewportRef,
+    svgRef,
+    // V3 / IOM theme: 1.1s camera transition in iom-theme.css (+ buffer), scaled by IOM_MOTION_SCALE
+    cameraAnimationMs: iom ? iomMotionMs(1200) : undefined,
+  });
   const roadmapOnGraph = useMemo(
     () => Boolean(spec.nodes?.some((node) => node.spokeId === "roadmap")),
     [spec.nodes],
@@ -122,8 +139,10 @@ export function CanvasShell({ spec, children }: Props) {
   const [tourStep, setTourStep] = useState(0);
   /** Set when the tour is parked behind an open drilldown rather than ended. */
   const [tourSuspended, setTourSuspended] = useState(false);
-  /** Step the user abandoned the tour on, so the header can offer a resume. */
+  /** Step the user abandoned the tour on, so the launcher can offer a resume. */
   const [tourProgress, setTourProgress] = useState<number | null>(null);
+  /** Bottom-left launcher hides after click until the tour closes again. */
+  const [tourLauncherDismissed, setTourLauncherDismissed] = useState(false);
   const [panelLayout, setPanelLayout] = useState<PanelLayout>(iom ? "hidden" : "wide");
   const panelLayoutBeforeHide = useRef<Exclude<PanelLayout, "hidden">>("wide");
   const [panelView, setPanelView] = useState<"spoke" | "command">(
@@ -187,32 +206,85 @@ export function CanvasShell({ spec, children }: Props) {
     panelOpenForLayout &&
     panelLayout !== "hidden" &&
     !tourOverlayVisibleForLayout;
-  columnLayoutRef.current = columnLayout;
+
+  const [iomMapExiting, setIomMapExiting] = useState(false);
+  const [iomMapEntering, setIomMapEntering] = useState(false);
+  const [iomRailExiting, setIomRailExiting] = useState(false);
+  const [iomPanelClosing, setIomPanelClosing] = useState(false);
+  const iomColumnPanelRef = useRef(false);
+  const iomTransitionLockRef = useRef(false);
+  const iomCloseTimersRef = useRef({ rail: 0, map: 0 });
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(iomCloseTimersRef.current.rail);
+      window.clearTimeout(iomCloseTimersRef.current.map);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!iom) return;
+    const panelOpened = columnLayout && !iomColumnPanelRef.current;
+    iomColumnPanelRef.current = columnLayout;
+
+    if (panelOpened && !iomTransitionLockRef.current) {
+      setIomMapExiting(true);
+      const timer = window.setTimeout(
+        () => setIomMapExiting(false),
+        iomMotionMs(IOM_MAP_EXIT_BASE_MS),
+      );
+      return () => window.clearTimeout(timer);
+    }
+    if (!columnLayout) {
+      setIomMapExiting(false);
+    }
+  }, [columnLayout, iom]);
+
+  const graphColumnLayout =
+    (columnLayout && !iomMapExiting && !iomMapEntering && !iomRailExiting) ||
+    iomRailExiting;
+
+  const columnRailInteractive =
+    graphColumnLayout && !iomRailExiting && !iomMapEntering && !iomMapExiting;
+  columnLayoutRef.current = columnRailInteractive;
 
   useEffect(() => {
     if (!columnLayout) return;
     pan.current.isPanning = false;
-    frameOverview();
-  }, [columnLayout, frameOverview, pan]);
+  }, [columnLayout, pan]);
+
+  useEffect(() => {
+    if (!columnLayout || iomMapExiting || iomMapEntering || iomRailExiting) return;
+    frameOverviewInstant();
+  }, [columnLayout, frameOverviewInstant, iomMapEntering, iomMapExiting, iomRailExiting]);
+
+  useEffect(() => {
+    if (graphColumnLayout && !columnLayoutWasActiveRef.current && activeSpoke) {
+      setColumnScrollKey((key) => key + 1);
+    }
+    columnLayoutWasActiveRef.current = graphColumnLayout;
+  }, [activeSpoke, graphColumnLayout]);
 
   const [columnScrollFade, setColumnScrollFade] = useState({ top: false, bottom: false });
+  const [columnScrollKey, setColumnScrollKey] = useState(0);
+  const columnLayoutWasActiveRef = useRef(false);
 
   const syncColumnScrollFade = useCallback(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const maxScroll = viewport.scrollHeight - viewport.clientHeight;
     if (maxScroll <= 2) {
-      setColumnScrollFade({ top: false, bottom: false });
+      setColumnScrollFade({ top: true, bottom: false });
       return;
     }
     setColumnScrollFade({
-      top: viewport.scrollTop > 2,
+      top: true,
       bottom: viewport.scrollTop < maxScroll - 2,
     });
   }, []);
 
   useEffect(() => {
-    if (!columnLayout) {
+    if (!graphColumnLayout) {
       setColumnScrollFade({ top: false, bottom: false });
       return;
     }
@@ -230,11 +302,11 @@ export function CanvasShell({ spec, children }: Props) {
       viewport.removeEventListener("scroll", syncColumnScrollFade);
       resizeObserver.disconnect();
     };
-  }, [columnLayout, syncColumnScrollFade, activeSpoke]);
+  }, [graphColumnLayout, syncColumnScrollFade, activeSpoke]);
 
   const drilldownWidth = (() => {
     if (panelLayout === "hidden") return 0;
-    if (columnLayout && windowWidth > 0) {
+    if (graphColumnLayout && windowWidth > 0) {
       return Math.max(baseDrilldownWidth, windowWidth - IOM_GRAPH_RAIL_PX);
     }
     if (!iom && (panelLayout === "narrow" || windowWidth === 0)) return baseDrilldownWidth;
@@ -249,9 +321,46 @@ export function CanvasShell({ spec, children }: Props) {
     if (panelLayout !== "hidden") {
       panelLayoutBeforeHide.current = panelLayout === "wide" ? "wide" : "narrow";
     }
-    setPanelLayout("hidden");
-    frameOverview();
-  }, [frameOverview, panelLayout]);
+
+    const animateClose =
+      iom &&
+      columnLayoutRef.current &&
+      !iomTransitionLockRef.current &&
+      !iomMapExiting;
+
+    if (!animateClose) {
+      window.clearTimeout(iomCloseTimersRef.current.rail);
+      window.clearTimeout(iomCloseTimersRef.current.map);
+      setIomRailExiting(false);
+      setIomMapEntering(false);
+      setIomPanelClosing(false);
+      iomTransitionLockRef.current = false;
+      if (iom) setActiveSpoke(null);
+      setPanelLayout("hidden");
+      setOverviewNonce((nonce) => nonce + 1);
+      frameOverview();
+      return;
+    }
+
+    iomTransitionLockRef.current = true;
+    setIomRailExiting(true);
+
+    iomCloseTimersRef.current.rail = window.setTimeout(() => {
+      setIomRailExiting(false);
+      setIomPanelClosing(true);
+      setIomMapEntering(true);
+
+      iomCloseTimersRef.current.map = window.setTimeout(() => {
+        setIomMapEntering(false);
+        setIomPanelClosing(false);
+        setActiveSpoke(null);
+        setPanelLayout("hidden");
+        setOverviewNonce((nonce) => nonce + 1);
+        frameOverview();
+        iomTransitionLockRef.current = false;
+      }, iomMotionMs(IOM_MAP_EXIT_BASE_MS));
+    }, iomMotionMs(IOM_RAIL_MOTION_BASE_MS));
+  }, [frameOverview, iom, iomMapExiting, panelLayout]);
 
   const columnRailScrollGuardRef = useRef({ tracking: false, moved: false, startY: 0 });
 
@@ -317,6 +426,21 @@ export function CanvasShell({ spec, children }: Props) {
     frameOverview();
   }, [frameOverview, iom]);
 
+  /** Same as the sidebar Close on IOM (hide panel + overview); closes drilldown elsewhere. */
+  const resetMainView = useCallback(() => {
+    if (tourSuspendedRef.current) {
+      setTourSuspended(false);
+      return;
+    }
+    if (panelViewRef.current === "command") {
+      setPanelView("spoke");
+      if (!activeSpokeRef.current) frameOverview();
+    }
+    if (iom) hidePanel();
+    else closeDrilldown();
+    if (!tourActiveRef.current && tourSteps.length) setTourLauncherDismissed(false);
+  }, [closeDrilldown, frameOverview, hidePanel, iom, tourSteps.length]);
+
   const focusNode = useCallback(
     (spokeId: string, subTab?: string) => {
       const spoke = spec.spokes[spokeId];
@@ -335,9 +459,9 @@ export function CanvasShell({ spec, children }: Props) {
         setActiveTab(0);
       }
       setTooltipVisible(false);
+      if (tourSteps.length) setTourLauncherDismissed(true);
       if (iom) {
         if (spokeId === "hub") setOverviewNonce((nonce) => nonce + 1);
-        frameOverview();
         return;
       }
       if (spokeId === "hub") {
@@ -358,6 +482,7 @@ export function CanvasShell({ spec, children }: Props) {
       panelLayout,
       spec.focusTargets,
       spec.spokes,
+      tourSteps.length,
     ],
   );
 
@@ -369,6 +494,7 @@ export function CanvasShell({ spec, children }: Props) {
       setTourActive(false);
       setTourSuspended(false);
       setTourProgress(completed ? null : tourStepRef.current);
+      setTourLauncherDismissed(false);
       resetCanvasView();
     },
     [resetCanvasView],
@@ -483,12 +609,13 @@ export function CanvasShell({ spec, children }: Props) {
           anchor: "column-right",
         });
       } else {
+        // Nudge toward the pointer; CSS lifts the box by its height + a small gap.
         setTooltip({
           title,
           desc,
           hasMoreInfo,
-          x: evt.clientX - hostRect.left,
-          y: evt.clientY - hostRect.top,
+          x: evt.clientX - hostRect.left + 10,
+          y: evt.clientY - hostRect.top + 10,
           anchor: "cursor",
         });
       }
@@ -500,6 +627,38 @@ export function CanvasShell({ spec, children }: Props) {
   const hideTooltip = useCallback(() => {
     setTooltipVisible(false);
   }, []);
+
+  const showDefinitionTooltip = useCallback((target: Element) => {
+    if (tourActiveRef.current && !tourSuspendedRef.current) return;
+    const title =
+      target.getAttribute("data-ifai-tooltip-title")?.trim() ||
+      target.textContent?.trim() ||
+      "";
+    const desc = target.getAttribute("data-ifai-tooltip-desc")?.trim() ?? "";
+    if (!desc) return;
+    const rect = target.getBoundingClientRect();
+    setTooltip({
+      title,
+      desc,
+      hasMoreInfo: false,
+      x: rect.left + rect.width / 2,
+      y: rect.top,
+      anchor: "definition",
+    });
+    setTooltipVisible(true);
+  }, []);
+
+  const definitionTooltipsBlocked = useCallback(
+    () => tourActiveRef.current && !tourSuspendedRef.current,
+    [],
+  );
+
+  useDefinitionTooltips({
+    enabled: true,
+    isBlocked: definitionTooltipsBlocked,
+    onShow: showDefinitionTooltip,
+    onHide: hideTooltip,
+  });
 
   useEffect(() => {
     if (drilldownBodyRef.current) drilldownBodyRef.current.scrollTop = 0;
@@ -694,7 +853,7 @@ export function CanvasShell({ spec, children }: Props) {
 
   function openCommandCenter() {
     if (!commandCenter) return;
-    // Leaving for the queue ends the tour but keeps the step, so the header
+    // Leaving for the queue ends the tour but keeps the step, so the launcher
     // still offers a resume rather than forcing a restart.
     if (tourActiveRef.current) closeTour();
     setPanelView("command");
@@ -709,9 +868,18 @@ export function CanvasShell({ spec, children }: Props) {
   const panelOpen = showingCommand || Boolean(spoke);
   const tourOverlayVisible = tourActive && !tourSuspended;
   const canResumeTour = !tourActive && tourProgress !== null && tourProgress > 0;
+  const showTourLauncher =
+    tourSteps.length > 0 && !tourActive && !tourLauncherDismissed;
+
+  const openTourFromLauncher = useCallback(() => {
+    setTourLauncherDismissed(true);
+    if (canResumeTour) resumeTour();
+    else startTour();
+  }, [canResumeTour, resumeTour, startTour]);
 
   const ctx: CanvasRenderContext = {
     svgRef,
+    viewportRef,
     transform,
     tourActive,
     tourX: currentTour?.targetX ?? 800,
@@ -722,7 +890,11 @@ export function CanvasShell({ spec, children }: Props) {
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
-    columnLayout,
+    columnScrollKey,
+    columnLayout: graphColumnLayout,
+    mapExiting: iomMapExiting,
+    mapEntering: iomMapEntering,
+    columnRailExiting: iomRailExiting,
     showTooltip,
     hideTooltip,
   };
@@ -740,30 +912,46 @@ export function CanvasShell({ spec, children }: Props) {
   return (
     <div
       ref={rootRef}
-      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${columnLayout ? " column-layout" : ""}${panelOpen && panelLayout !== "hidden" && !tourOverlayVisible ? " panel-open" : ""}${(columnLayout || (panelLayout === "wide" && !tourOverlayVisible)) ? " panel-expanded" : ""}${panelLayout === "hidden" && !tourOverlayVisible ? " panel-hidden" : ""}${tourOverlayVisible ? " tour-running" : ""}`}
-      style={{ "--drilldown-width": `${drilldownWidth}px` } as CSSProperties}
+      className={`ifai-canvas${iom ? " theme-iom" : ""}${lightTheme ? " light-theme" : ""}${graphColumnLayout ? " column-layout" : ""}${iomMapExiting ? " iom-map-exiting" : ""}${iomMapEntering ? " iom-map-entering" : ""}${iomPanelClosing ? " iom-panel-closing" : ""}${panelOpen && panelLayout !== "hidden" && !tourOverlayVisible ? " panel-open" : ""}${(columnLayout || (panelLayout === "wide" && !tourOverlayVisible)) ? " panel-expanded" : ""}${panelLayout === "hidden" && !tourOverlayVisible ? " panel-hidden" : ""}${tourOverlayVisible ? " tour-running" : ""}`}
+      style={
+        {
+          "--drilldown-width": `${drilldownWidth}px`,
+          ...(iom ? { "--iom-graph-rail-width": `${IOM_GRAPH_RAIL_PX}px` } : {}),
+        } as CSSProperties
+      }
     >
       <div className="canvas-layout">
         <div className="canvas-body" ref={canvasBodyRef}>
         {iom ? <div className="canvas-pointer-wash" aria-hidden="true" /> : null}
         <header className="top-header" ref={headerRef}>
           <div className="brand-section">
-            <img
-              src={spec.brand.logoSrc ?? "/icon.png"}
-              alt={spec.brand.name}
-              className="brand-logo-icon"
-            />
-            <div className="brand-title-group">
-              <div className="brand-name">
-                {spec.brand.name}
-                {spec.brand.badge ? (
-                  <span className="tag-badge tag-danger" style={{ fontSize: "9.5px" }}>
-                    {spec.brand.badge}
-                  </span>
+            <button
+              type="button"
+              className="brand-home-btn"
+              onClick={resetMainView}
+              title="Back to map overview"
+              aria-label="Back to map overview"
+            >
+              <img
+                src={spec.brand.logoSrc ?? "/icon.png"}
+                alt=""
+                className="brand-logo-icon"
+                aria-hidden
+              />
+              <div className="brand-title-group">
+                <div className="brand-name">
+                  {spec.brand.name}
+                  {spec.brand.badge ? (
+                    <span className="tag-badge tag-danger" style={{ fontSize: "9.5px" }}>
+                      {spec.brand.badge}
+                    </span>
+                  ) : null}
+                </div>
+                {spec.brand.subtitle ? (
+                  <div className="brand-sub">{spec.brand.subtitle}</div>
                 ) : null}
               </div>
-              <div className="brand-sub">{spec.brand.subtitle}</div>
-            </div>
+            </button>
 
             {spec.filters?.length ? (
               <>
@@ -785,7 +973,7 @@ export function CanvasShell({ spec, children }: Props) {
             ) : null}
           </div>
 
-          {spec.tickers?.length ? (
+          {SHOW_HEADER_TICKERS && spec.tickers?.length ? (
             <div className="header-ticker">
               {spec.tickers.map((item) => (
                 <div
@@ -819,7 +1007,7 @@ export function CanvasShell({ spec, children }: Props) {
 
             {commandCenter ? (
               <button
-                className={`hdr-btn${showingCommand ? " hdr-btn-active" : ""}`}
+                className={`hdr-btn hdr-btn-priorities${showingCommand ? " hdr-btn-active" : ""}`}
                 onClick={openCommandCenter}
                 title="What do I need to worry about?"
               >
@@ -828,20 +1016,6 @@ export function CanvasShell({ spec, children }: Props) {
                 {commandCenter.items.length ? (
                   <span className="hdr-btn-count">{commandCenter.items.length}</span>
                 ) : null}
-              </button>
-            ) : null}
-
-            {tourSteps.length ? (
-              <button
-                className="hdr-btn hdr-btn-primary"
-                onClick={canResumeTour ? resumeTour : startTour}
-              >
-                <Compass size={12} />
-                <span>
-                  {canResumeTour
-                    ? `Resume Tour · ${(tourProgress ?? 0) + 1}/${tourSteps.length}`
-                    : "Guided Tour"}
-                </span>
               </button>
             ) : null}
 
@@ -867,7 +1041,21 @@ export function CanvasShell({ spec, children }: Props) {
               );
             })}
 
-            {showThemeToggle ? (
+            {spec.userMenu ?? spec.userEmail ? (
+              <UserMenuDropdown
+                email={spec.userMenu?.email ?? spec.userEmail!}
+                displayName={spec.userMenu?.displayName}
+                avatarUrl={spec.userMenu?.avatarUrl}
+                organizationName={spec.userMenu?.organizationName}
+                roleLabel={spec.userMenu?.roleLabel}
+                organizations={spec.userMenu?.organizations}
+                activeOrganizationId={spec.userMenu?.activeOrganizationId}
+                variant="canvas"
+                lightTheme={lightTheme}
+                showThemeToggle={showThemeToggle}
+                onThemeToggle={() => setLightTheme((value) => !value)}
+              />
+            ) : showThemeToggle ? (
               <button
                 className="hdr-btn"
                 onClick={() => setLightTheme((value) => !value)}
@@ -883,11 +1071,11 @@ export function CanvasShell({ spec, children }: Props) {
           className="viewport-container"
           id="viewport"
           ref={viewportRef}
-          onClick={columnLayout ? onColumnRailBackgroundClick : undefined}
-          onPointerDown={columnLayout ? onColumnRailPointerDown : undefined}
-          onPointerMove={columnLayout ? onColumnRailPointerMove : undefined}
-          onPointerUp={columnLayout ? onColumnRailPointerUp : undefined}
-          onPointerCancel={columnLayout ? onColumnRailPointerUp : undefined}
+          onClick={columnRailInteractive ? onColumnRailBackgroundClick : undefined}
+          onPointerDown={columnRailInteractive ? onColumnRailPointerDown : undefined}
+          onPointerMove={columnRailInteractive ? onColumnRailPointerMove : undefined}
+          onPointerUp={columnRailInteractive ? onColumnRailPointerUp : undefined}
+          onPointerCancel={columnRailInteractive ? onColumnRailPointerUp : undefined}
         >
           {iom && spec.spokes.roadmap && !roadmapOnGraph ? (
             <button
@@ -902,7 +1090,7 @@ export function CanvasShell({ spec, children }: Props) {
           {viewport}
         </div>
 
-        {columnLayout ? (
+        {graphColumnLayout ? (
           <div className="column-scroll-edges" aria-hidden="true">
             <div className={`column-scroll-edge column-scroll-edge-top${columnScrollFade.top ? " visible" : ""}`} />
             <div
@@ -919,14 +1107,31 @@ export function CanvasShell({ spec, children }: Props) {
           />
         ) : null}
 
-        <div className="canvas-hud-legend">
-          {legend.map((item) => (
-            <div key={item.label} className="legend-item">
-              <span className="legend-dot" style={{ borderColor: legendColor[item.status] }} />
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
+        {showTourLauncher ? (
+          <button
+            type="button"
+            className="tour-launcher hdr-btn hdr-btn-primary"
+            onClick={openTourFromLauncher}
+          >
+            <Compass size={14} />
+            <span>
+              {canResumeTour
+                ? `Resume tour · ${(tourProgress ?? 0) + 1}/${tourSteps.length}`
+                : "Guided tour"}
+            </span>
+          </button>
+        ) : null}
+
+        {spec.showLegend !== false ? (
+          <div className="canvas-hud-legend">
+            {legend.map((item) => (
+              <div key={item.label} className="legend-item">
+                <span className="legend-dot" style={{ borderColor: legendColor[item.status] }} />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {!columnLayout ? (
           <div className="canvas-hud-controls">
@@ -945,7 +1150,7 @@ export function CanvasShell({ spec, children }: Props) {
         ) : null}
 
         <div
-          className={`node-tooltip${tooltip?.anchor === "column-right" ? " node-tooltip-column" : ""}${tooltipVisible ? " visible" : ""}`}
+          className={`node-tooltip${tooltip?.anchor === "column-right" ? " node-tooltip-column" : ""}${tooltip?.anchor === "definition" ? " node-tooltip-definition" : ""}${tooltipVisible ? " visible" : ""}`}
           style={{ left: tooltip?.x ?? 0, top: tooltip?.y ?? 0 }}
         >
           <div style={{ fontWeight: 700, marginBottom: 2 }}>{tooltip?.title ?? "Title"}</div>
@@ -1197,6 +1402,7 @@ export function CanvasShell({ spec, children }: Props) {
         </div>
         </div>
       </div>
+      {iom ? <IomCursor rootRef={rootRef} enabled /> : null}
     </div>
   );
 }

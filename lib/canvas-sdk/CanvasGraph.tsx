@@ -7,7 +7,12 @@ import {
   GraphHub,
   TourSpotlight,
 } from "@/lib/canvas-sdk/GraphPrimitives";
-import { buildColumnLayout, isColumnNode } from "@/lib/canvas-sdk/column-layout";
+import {
+  buildColumnLayout,
+  isColumnNode,
+  scrollColumnLayoutToCenter,
+} from "@/lib/canvas-sdk/column-layout";
+import { iomMotionMs } from "@/lib/canvas-sdk/iom-motion";
 import type { CanvasEdge, CanvasNode, CanvasSpec } from "@/lib/canvas-sdk/types";
 
 const MAIN_BUBBLES = new Set([
@@ -172,6 +177,7 @@ function GraphNode({
 type Props = {
   spec: CanvasSpec;
   svgRef: RefObject<SVGSVGElement | null>;
+  viewportRef: RefObject<HTMLDivElement | null>;
   transform: string;
   tourActive: boolean;
   tourX: number;
@@ -182,7 +188,11 @@ type Props = {
   onResetView: () => void;
   overviewNonce: number;
   focusedSpokeId?: string | null;
+  columnScrollKey?: number;
   columnLayout?: boolean;
+  mapExiting?: boolean;
+  mapEntering?: boolean;
+  columnRailExiting?: boolean;
   onShowTooltip: (evt: MouseEvent, title: string, desc: string, hasMoreInfo?: boolean) => void;
   onHideTooltip: () => void;
 };
@@ -190,6 +200,7 @@ type Props = {
 export function CanvasGraph({
   spec,
   svgRef,
+  viewportRef,
   transform,
   tourActive,
   tourX,
@@ -200,7 +211,11 @@ export function CanvasGraph({
   onResetView,
   overviewNonce,
   focusedSpokeId = null,
+  columnScrollKey = 0,
   columnLayout = false,
+  mapExiting = false,
+  mapEntering = false,
+  columnRailExiting = false,
   onShowTooltip,
   onHideTooltip,
 }: Props) {
@@ -210,8 +225,11 @@ export function CanvasGraph({
     [columnLayout, spec.nodes],
   );
   const activeViewBox = columnPlan?.viewBox ?? mapViewBox;
-  const viewBoxAttr = `0 0 ${activeViewBox.w} ${activeViewBox.h}`;
+  const viewBoxAttr = columnPlan
+    ? `${columnPlan.viewBox.x} ${columnPlan.viewBox.y} ${columnPlan.viewBox.w} ${columnPlan.viewBox.h}`
+    : `0 0 ${activeViewBox.w} ${activeViewBox.h}`;
   const revealSatellites = spec.appearance === "iom";
+  const motionMs = (baseMs: number) => (revealSatellites ? iomMotionMs(baseMs) : baseMs);
   const clusters = useMemo(
     () => (revealSatellites ? satelliteClusters(spec) : null),
     [revealSatellites, spec],
@@ -227,6 +245,17 @@ export function CanvasGraph({
     pinned: string | null;
   }>({ nonce: overviewNonce, open: null, pinned: null });
   const hideTimer = useRef(0);
+  const columnLayoutWasActiveRef = useRef(false);
+  const columnScrollReadyRef = useRef(false);
+  const columnScrollSpokeRef = useRef<string | null>(null);
+  const [columnRailEnterKey, setColumnRailEnterKey] = useState(0);
+
+  useEffect(() => {
+    if (columnLayout && !columnLayoutWasActiveRef.current) {
+      setColumnRailEnterKey((key) => key + 1);
+    }
+    columnLayoutWasActiveRef.current = columnLayout;
+  }, [columnLayout]);
 
   const current = reveal.nonce === overviewNonce ? reveal : null;
   const openParentId = current?.open ?? null;
@@ -243,7 +272,7 @@ export function CanvasGraph({
     window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(
       () => setReveal((prev) => ({ ...prev, open: null })),
-      1000,
+      motionMs(2000),
     );
   };
 
@@ -270,16 +299,68 @@ export function CanvasGraph({
   };
 
   useEffect(() => {
-    if (!columnLayout || !focusedSpokeId || !svgRef.current) return;
+    if (!columnLayout) {
+      columnScrollReadyRef.current = false;
+      columnScrollSpokeRef.current = null;
+      return;
+    }
+    if (!focusedSpokeId || !columnPlan) return;
+    const viewport = viewportRef.current;
+    const svg = svgRef.current;
+    if (!viewport || !svg) return;
+
     const match =
       (spec.nodes ?? []).find(
         (node) => node.spokeId === focusedSpokeId && isColumnNode(node),
       ) ?? null;
     if (!match) return;
-    const target = svgRef.current.querySelector(`[data-graph-node-id="${match.id}"]`);
-    if (!(target instanceof Element)) return;
-    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [columnLayout, focusedSpokeId, spec.nodes, svgRef]);
+
+    const slot = columnPlan.positions.get(match.id);
+    if (!slot) return;
+
+    const scrollActive = (behavior: ScrollBehavior = "smooth") => {
+      scrollColumnLayoutToCenter(viewport, svg, slot.y, behavior);
+    };
+
+    const spokeChanged =
+      columnScrollReadyRef.current &&
+      columnScrollSpokeRef.current !== null &&
+      columnScrollSpokeRef.current !== focusedSpokeId;
+    columnScrollSpokeRef.current = focusedSpokeId;
+
+    if (spokeChanged) {
+      scrollActive("smooth");
+      const retry = window.setTimeout(
+        () => scrollActive("smooth"),
+        revealSatellites ? iomMotionMs(120) : 120,
+      );
+      return () => window.clearTimeout(retry);
+    }
+
+    columnScrollReadyRef.current = true;
+    scrollActive("auto");
+    let innerFrame = 0;
+    const frame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => scrollActive("smooth"));
+    });
+    const retryMs = [80, 320, 520].map((ms) => motionMs(ms));
+    const timers = retryMs.map((ms) => window.setTimeout(() => scrollActive("smooth"), ms));
+
+    return () => {
+      cancelAnimationFrame(frame);
+      cancelAnimationFrame(innerFrame);
+      timers.forEach((id) => window.clearTimeout(id));
+    };
+  }, [
+    columnLayout,
+    columnPlan,
+    columnScrollKey,
+    focusedSpokeId,
+    revealSatellites,
+    spec.nodes,
+    svgRef,
+    viewportRef,
+  ]);
 
   const renderNode = (node: CanvasNode, parentId?: string, delayMs = 0) => {
     const { x, y } = nodePosition(node);
@@ -292,7 +373,7 @@ export function CanvasGraph({
       node={{ ...node, x, y, r }}
       contentRadius={contentRadius}
       centered={emphasis}
-      emphasis={emphasis && !columnLayout}
+      emphasis={emphasis && (!columnLayout || node.variant === "hub")}
       selected={Boolean(focusedNode && node.id === focusedNode.id)}
       enterDelay={delayMs}
       onFocusNode={onFocusNode}
@@ -309,6 +390,7 @@ export function CanvasGraph({
   const columnPreserve = columnLayout ? "xMidYMin meet" : "xMidYMid meet";
   const graphSvg = (
     <svg
+      key={columnLayout ? "column" : "map"}
       ref={svgRef}
       className={`canvas-svg${columnLayout ? " column-scroll-svg" : ""}`}
       viewBox={viewBoxAttr}
@@ -382,7 +464,9 @@ export function CanvasGraph({
               {group.edges.map((edge, idx) => (
                 <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} hot={touchesFocus(edge)} />
               ))}
-              {group.nodes.map((node, idx) => renderNode(node, group.parent.id, idx * 40))}
+              {group.nodes.map((node, idx) =>
+                renderNode(node, group.parent.id, idx * motionMs(80)),
+              )}
             </g>
           ))
         : null}
@@ -447,15 +531,15 @@ export function CanvasGraph({
     </svg>
   );
 
-  return (
-    <>
-      {spec.appearance === "iom" && !columnLayout ? (
-        <svg
-          className="canvas-stage"
-          viewBox={viewBoxAttr}
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
+  const mapViewBoxAttr = `0 0 ${mapViewBox.w} ${mapViewBox.h}`;
+  const mapStage =
+    spec.appearance === "iom" ? (
+      <svg
+        className="canvas-stage"
+        viewBox={mapViewBoxAttr}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      >
           <defs>
             <radialGradient id="iomStageCore" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#143458" stopOpacity="0.62" />
@@ -491,9 +575,33 @@ export function CanvasGraph({
             </clipPath>
           </defs>
           <GraphStage spec={spec} />
-        </svg>
+      </svg>
+    ) : null;
+
+  const showMapLayer = !columnLayout || mapExiting || mapEntering;
+
+  return (
+    <>
+      {showMapLayer ? (
+        spec.appearance === "iom" ? (
+          <div
+            className={`iom-map-layer${mapExiting ? " iom-map-exiting" : ""}${mapEntering ? " iom-map-entering" : ""}`}
+          >
+            {mapStage}
+            {graphSvg}
+          </div>
+        ) : (
+          graphSvg
+        )
       ) : null}
-      {columnLayout ? <div className="column-bubble-list">{graphSvg}</div> : graphSvg}
+      {columnLayout ? (
+        <div
+          key={columnRailEnterKey}
+          className={`column-bubble-list${columnRailExiting ? " iom-column-rail-exiting" : ""}`}
+        >
+          {graphSvg}
+        </div>
+      ) : null}
     </>
   );
 }

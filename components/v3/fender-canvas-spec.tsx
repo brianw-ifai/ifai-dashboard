@@ -38,11 +38,9 @@ export const fenderCanvasSpec = defineCanvas({
     storageKey: "ifai:fender:metric-widgets:v2",
   },
   brand: {
-    name: "Fender Brand Intelligence Canvas v3",
-    subtitle:
-      "FMIC Omnichannel Intelligence · 3,430 Monitored Electric SKUs Across 6 Catalog Divisions (live catalog, updated 2026-09-29)",
+    name: "IntoFocus AEO Consensus Control",
+    subtitle: "",
     logoSrc: "/icon.png",
-    badge: "Enterprise Command",
   },
   tickers: [
     {
@@ -85,6 +83,7 @@ export const fenderCanvasSpec = defineCanvas({
       ),
     },
   ],
+  showLegend: false,
   legend: [
     { status: "danger", label: "Critical / Buy Box Suppression" },
     { status: "warning", label: "At Risk / Review Splintering" },

@@ -1,4 +1,4 @@
-import { AuthForm } from "@/components/auth/AuthForm";
+import { redirect } from "next/navigation";
 import { safeNextPath } from "@/lib/auth/paths";
 
 export default async function LoginPage({
@@ -7,10 +7,10 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const params = await searchParams;
-  const banner =
-    params.error === "confirm"
-      ? "That confirmation link is invalid or has expired. Sign up again to get a new one."
-      : undefined;
-
-  return <AuthForm mode="login" next={safeNextPath(params.next)} banner={banner} />;
+  const next = safeNextPath(params.next);
+  const query = new URLSearchParams();
+  if (next !== "/") query.set("next", next);
+  if (params.error) query.set("error", params.error);
+  const suffix = query.size ? `?${query.toString()}` : "";
+  redirect(`/${suffix}`);
 }

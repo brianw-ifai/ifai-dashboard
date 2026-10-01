@@ -4,14 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const DEFAULT_VIEWBOX = { w: 1600, h: 1000 };
 
+const DEFAULT_CAMERA_ANIMATION_MS = 600;
+
 export function useCanvasCamera({
   viewBox = DEFAULT_VIEWBOX,
   viewportRef,
   svgRef,
+  cameraAnimationMs = DEFAULT_CAMERA_ANIMATION_MS,
 }: {
   viewBox?: { w: number; h: number };
   viewportRef: React.RefObject<HTMLDivElement | null>;
   svgRef: React.RefObject<SVGSVGElement | null>;
+  /** How long `camera-animating` stays on the SVG; should match theme CSS transition duration. */
+  cameraAnimationMs?: number;
 }) {
   const pan = useRef({
     scale: 1,
@@ -36,10 +41,10 @@ export function useCanvasCamera({
       window.clearTimeout(cameraTimerRef.current);
       cameraTimerRef.current = window.setTimeout(() => {
         svg.classList.remove("camera-animating");
-      }, 600);
+      }, cameraAnimationMs);
     }
     applyTransform();
-  }, [applyTransform, svgRef]);
+  }, [applyTransform, cameraAnimationMs, svgRef]);
 
   const viewBoxToLocal = useCallback(
     (x: number, y: number) => {
@@ -75,6 +80,18 @@ export function useCanvasCamera({
     runCameraAnimation();
   }, [runCameraAnimation]);
 
+  const frameOverviewInstant = useCallback(() => {
+    const svg = svgRef.current;
+    if (svg) {
+      window.clearTimeout(cameraTimerRef.current);
+      svg.classList.remove("camera-animating");
+    }
+    pan.current.scale = 1;
+    pan.current.x = 0;
+    pan.current.y = 0;
+    applyTransform();
+  }, [applyTransform, svgRef]);
+
   const zoomBy = useCallback(
     (factor: number) => {
       const viewport = viewportRef.current;
@@ -99,5 +116,13 @@ export function useCanvasCamera({
     return () => window.clearTimeout(cameraTimerRef.current);
   }, []);
 
-  return { pan, transform, applyTransform, framePoint, frameOverview, zoomBy };
+  return {
+    pan,
+    transform,
+    applyTransform,
+    framePoint,
+    frameOverview,
+    frameOverviewInstant,
+    zoomBy,
+  };
 }

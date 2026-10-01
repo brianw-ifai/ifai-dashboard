@@ -17,21 +17,21 @@ export function MetricCard({
   sub?: ReactNode;
   tone?: "danger" | "warning" | "success" | "accent";
 }) {
-  const color =
+  const toneClass =
     tone === "danger"
-      ? "var(--danger-red)"
+      ? "tone-danger"
       : tone === "warning"
-        ? "var(--warning-amber)"
+        ? "tone-warning"
         : tone === "success"
-          ? "var(--success-green)"
+          ? "tone-success"
           : tone === "accent"
-            ? "var(--accent-purple)"
-            : undefined;
+            ? "tone-accent"
+            : "";
 
   return (
     <div className="metric-card-sm">
       <span className="metric-card-label">{label}</span>
-      <div className="metric-card-val" style={color ? { color } : undefined}>
+      <div className={`metric-card-val${toneClass ? ` ${toneClass}` : ""}`}>
         {value}
       </div>
       {sub ? <span className="metric-card-sub">{sub}</span> : null}

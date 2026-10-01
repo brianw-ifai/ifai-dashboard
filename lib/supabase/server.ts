@@ -33,3 +33,11 @@ export async function getUserEmail(): Promise<string | null> {
   const email = data.claims.email;
   return typeof email === "string" ? email : null;
 }
+
+export async function getAuthUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getClaims();
+  if (error || !data?.claims) return null;
+  const sub = data.claims.sub;
+  return typeof sub === "string" ? sub : null;
+}

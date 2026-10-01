@@ -135,6 +135,22 @@ export type CanvasMetricWidgets = {
   storageKey: string;
 };
 
+export type CanvasUserMenuOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type CanvasUserMenu = {
+  email: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  organizationName?: string | null;
+  roleLabel?: string | null;
+  organizations?: CanvasUserMenuOrganization[];
+  activeOrganizationId?: string | null;
+};
+
 export type CanvasFilter = {
   value: string;
   label: string;
@@ -186,7 +202,12 @@ export type CanvasSpec = {
   headerActions?: CanvasHeaderAction[];
   /** Extra header control, e.g. a view toggle. Rendered before search. */
   headerSlot?: ReactNode;
+  /** Signed-in user; renders account menu (theme + log out) in the header. */
+  userEmail?: string;
+  userMenu?: CanvasUserMenu;
   legend?: CanvasLegendItem[];
+  /** Set false to hide the bottom-left status legend while keeping `legend` data in the spec. */
+  showLegend?: boolean;
   nodes?: CanvasNode[];
   edges?: CanvasEdge[];
   paths?: CanvasPath[];
@@ -202,6 +223,7 @@ export type CanvasSpec = {
 
 export type CanvasRenderContext = {
   svgRef: RefObject<SVGSVGElement | null>;
+  viewportRef: RefObject<HTMLDivElement | null>;
   transform: string;
   tourActive: boolean;
   tourX: number;
@@ -212,7 +234,14 @@ export type CanvasRenderContext = {
   resetView: () => void;
   overviewNonce: number;
   focusedSpokeId: string | null;
+  columnScrollKey: number;
   columnLayout: boolean;
+  /** IOM map overview is playing fade/slide-out before the column rail mounts. */
+  mapExiting?: boolean;
+  /** IOM radial map is fading/sliding back in after the column rail closes. */
+  mapEntering?: boolean;
+  /** IOM column rail is sliding out before the map returns. */
+  columnRailExiting?: boolean;
   showTooltip: (
     evt: MouseEvent,
     title: string,

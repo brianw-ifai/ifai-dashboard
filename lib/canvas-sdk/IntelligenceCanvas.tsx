@@ -11,6 +11,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
         <CanvasGraph
           spec={spec}
           svgRef={ctx.svgRef}
+          viewportRef={ctx.viewportRef}
           transform={ctx.transform}
           tourActive={ctx.tourActive}
           tourX={ctx.tourX}
@@ -21,7 +22,11 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           onResetView={ctx.resetView}
           overviewNonce={ctx.overviewNonce}
           focusedSpokeId={ctx.focusedSpokeId}
+          columnScrollKey={ctx.columnScrollKey}
           columnLayout={ctx.columnLayout}
+          mapExiting={ctx.mapExiting}
+          mapEntering={ctx.mapEntering}
+          columnRailExiting={ctx.columnRailExiting}
           onShowTooltip={ctx.showTooltip}
           onHideTooltip={ctx.hideTooltip}
         />
