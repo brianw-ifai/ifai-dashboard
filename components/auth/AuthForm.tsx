@@ -39,15 +39,13 @@ function AuthFormFields({
 }) {
   return (
     <>
-      <p className="auth-form-eyebrow">IntoFocus</p>
+      <p className="auth-form-eyebrow">IntoFocus AI</p>
       <h1 className="auth-form-title" id="auth-form-title">
         {title}
       </h1>
-      <p className="auth-form-lead">
-        {mode === "login"
-          ? "Use the email and password for this dashboard."
-          : "Create an account with your IntoFocus email."}
-      </p>
+      {mode === "signup" ? (
+        <p className="auth-form-lead">Create an account with your IntoFocus email.</p>
+      ) : null}
 
       {banner ? <p className="auth-form-banner auth-form-banner-error">{banner}</p> : null}
       {error ? <p className="auth-form-banner auth-form-banner-error">{error}</p> : null}
