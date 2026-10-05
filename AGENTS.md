@@ -7,3 +7,36 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# IntoFocus AI — product context (durable)
+
+Keep this section **outside** the Next.js block above. Cursor agents also load `.cursor/rules/product-context.mdc` (`alwaysApply`). Both should stay aligned. This applies to every contributor and every agent session on this repo (including Brian Magazu and Brian Watson), not only one local chat.
+
+## Company and stakeholders
+
+- **Company:** IntoFocus AI (IntoFocus)
+- **COO:** Brian Magazu — product and commercial direction for this dashboard
+- Session memory is not enough; treat this file and `.cursor/rules/product-context.mdc` as source of truth
+
+## Clients
+
+- **Intended clients:** product companies (brands that sell products)
+- **Example in this repo:** Fender Musical Instruments Corporation (FMIC) — pilot / example briefing
+- **Offer:** explain how **ecommerce performance affects AEO success**, and partner to improve AEO from all useful angles
+
+## Audience
+
+- Executives / sponsors and day-to-day operators, **equally**
+- Write for an e-commerce or marketing operator, not an engineer
+
+## Dashboard intent
+
+1. Show clearly how the brand is performing on ecommerce and AEO
+2. Show clearly how ecommerce issues change brand performance in AI search
+3. Give clear next steps to improve overall results
+4. Drill to foundational data: external listings/pages **and** IntoFocus measurements / assumption chains (e.g. a $680K uplift estimate must open to sniff-testable inputs and plain explanations; a suppressed Amazon listing must link to the Walmart listing causing it when that is the cause)
+5. **Delegation / paid tiers — parked.** Do not design or build DIY / Done-with-You / Done-for-You workflows unless explicitly asked. Future awareness only: DIY (client/agents act), Done-with-You (shared ownership indicators), Done-for-You (IntoFocus owns actions)
+
+## Implementation priority
+
+Prefer clarity of the ecommerce ↔ AEO story and evidence trails over generic analytics chrome. Every headline metric should have a path to source assumptions and raw inputs.
