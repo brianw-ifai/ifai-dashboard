@@ -6,7 +6,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the 3,430 monitored electric SKUs, ranked by what they cost you while they sit open.",
   summary:
-    "Fender is Partner-Led, so Amazon 1P share is not the lead number. 457 of 993 active offers are under MAP. 39 have no Featured Offer because the new price is above Amazon's outside benchmark. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and the sampled fender.com pages publish no machine-readable specs.",
+    "Portfolio Retail shows 457 of 993 active offers under MAP and 39 suppressed listings where the new offer is above Amazon's outside benchmark. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and the sampled fender.com pages publish no machine-readable specs.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
@@ -22,9 +22,9 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "review-splintering",
-      title: "2,420 customer reviews are stranded on the wrong pages",
-      why: "Every time a partner lists a Strat bundled with a gig bag, they create a separate product page, and the reviews customers leave there never reach your main listing. Amazon hands its 'Overall Pick' badge to whoever has the most reviews, so that badge is currently going to PRS and Yamaha instead of you.",
-      impact: "Nesting partner bundles under your parent listings pools the reviews back without costing partners a single sale.",
+      title: "14 partner bundle listings need catalog governance",
+      why: "Separate bundle pages can fragment the shopping journey and introduce inconsistent titles, attributes, or product specifications. The action queue identifies each listing that needs a parent-child eligibility review, catalog cleanup, or seller attribution.",
+      impact: "Twelve cases already have a named partner and two need seller attribution before the catalog-governance action can be assigned.",
       severity: "critical",
       spokeId: "ecommerce",
       subTab: "Catalog",
@@ -53,7 +53,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "map-leakage",
       title: "Discounted bundles are dragging your prices down everywhere",
-      why: "457 of 993 active offers are priced under the stored MAP. That is the wider Partner-Led issue, ahead of the 39 Featured Offers that are suppressed.",
+      why: "457 of 993 active offers are priced under the stored MAP. It is the highest-volume Portfolio Retail issue, ahead of the 39 suppressed listings.",
       impact: "The average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 combined.",
       severity: "high",
       spokeId: "ecommerce",

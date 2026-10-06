@@ -193,7 +193,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "avg $221.96 · sum $101,435",
       spokeId: "ecommerce",
       subTab: "map",
-      tooltip: {"title": "MAP leakage on active offers", "desc": "457 of 993 active offers are priced under the stored MAP. The average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 combined. This is the wider Partner-Led issue, so it leads the Portfolio Retail bubble."},
+      tooltip: {"title": "MAP leakage on active offers", "desc": "457 of 993 active offers are priced under the stored MAP. The average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 combined. This is the highest-volume Portfolio Retail issue, so it leads the bubble."},
     },
     {
       id: "sat-schema",

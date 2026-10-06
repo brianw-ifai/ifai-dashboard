@@ -45,10 +45,10 @@ export const partnerLedHero = {
   issue: partnerLedHeroIssue(),
   statA: "457 MAP",
   statB: "46.0%",
-  meta: "39 Featured Offers suppressed",
-  tooltipTitle: "Portfolio Retail, Partner-Led",
+  meta: "39 Suppressed Listings",
+  tooltipTitle: "Portfolio Retail",
   tooltipDesc:
-    "Fender is Partner-Led, so Amazon 1P share is not the hero. The wider issue is MAP leakage: 457 of 993 active offers are under MAP (46.0%). Average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 in total. Featured Offer suppression is next: 39 listings (3.9%) have no Featured Offer because the new price is above Amazon's outside benchmark. A price at MAP can still be suppressed when that benchmark is lower.",
+    "Portfolio Retail highlights marketplace listings that need action to protect price integrity, availability, and Featured Offer coverage. The top priority is MAP leakage: 457 of 993 active offers are under MAP (46.0%), averaging 16.49% and $221.96 below MAP. Next are 39 suppressed listings (3.9%) where the new offer is above Amazon's Competitive External Price.",
 } as const;
 
 export const suppressionDrilldownHtml = `
@@ -57,7 +57,7 @@ export const suppressionDrilldownHtml = `
     <span>Why can a MAP-priced listing still lose the Featured Offer?</span>
   </div>
   <div class="ceo-callout-body">
-    Fender is <strong>Partner-Led</strong>. Amazon 1P share is not the number that matters. On 993 active offers, Partner-Led compares two issues and leads with the wider one: <strong>MAP leakage, 457 listings (46.0%)</strong>, ahead of <strong>Featured Offer suppression, 39 listings (3.9%)</strong>.
+    Portfolio Retail prioritizes listing health, price integrity, and Featured Offer availability across 993 active offers. The largest immediate issue is <strong>MAP leakage, affecting 457 listings (46.0%)</strong>, followed by <strong>39 suppressed listings (3.9%)</strong>.
     <br/><br/>
     MAP leakage on those 457 listings averages <strong>16.49%</strong> under MAP, <strong>$221.96</strong> per listing, and <strong>$101,434.60</strong> combined.
     <br/><br/>
@@ -67,7 +67,7 @@ export const suppressionDrilldownHtml = `
 
 <div class="content-box" style="margin-top:12px;">
   <div class="content-box-title">
-    <span>Suppressed Featured Offers</span>
+    <span>Suppressed Listings</span>
     <span class="tag-badge tag-danger">39 of 993</span>
   </div>
   <p style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;">

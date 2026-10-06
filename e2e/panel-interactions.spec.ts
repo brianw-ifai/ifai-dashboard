@@ -93,6 +93,23 @@ test.describe("collapsible explanations", () => {
 });
 
 test.describe("drill-downs", () => {
+  test("catalog governance shows listing actions and consolidation upside", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.openPriority("partner bundle listings need catalog governance");
+
+    await expect(canvas.activeTab).toContainText("Catalog Consolidation");
+    await expect(page.getByLabel("Priority listings by partner")).toBeVisible();
+    await expect(page.locator(".drilldown-body tbody tr")).toHaveCount(14);
+    await expect(page.locator(".drilldown-body")).toContainText(
+      "Validate variation eligibility",
+    );
+    await expect(page.locator(".drilldown-body")).not.toContainText(
+      "cease-and-desist",
+    );
+  });
+
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Strategy Roadmap");
     await expect(page.locator(".ifai-open-hint")).toHaveCount(3);
