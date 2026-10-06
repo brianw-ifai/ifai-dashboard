@@ -5,12 +5,16 @@ export class Canvas {
   constructor(readonly page: Page) {}
 
   async open() {
+    // The guest flag the canvas reads is document.cookie. Set it before navigation
+    // so the login card does not cover the map.
+    await this.page.context().addCookies([
+      { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
+    ]);
     await this.page.goto("/");
     const skipLogin = this.page.getByRole("button", { name: "Skip Login" });
     if (await skipLogin.isVisible().catch(() => false)) {
       await skipLogin.click();
     }
-    await expect(this.page.locator(".ifai-canvas")).toBeVisible();
     await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
   }
 

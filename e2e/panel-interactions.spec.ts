@@ -108,11 +108,27 @@ test.describe("drill-downs", () => {
     await expect(page.locator(".map-channel-row")).toHaveCount(0);
   });
 
-  test("the recorded Keepa reading stays labeled on Portfolio Retail", async ({ canvas, page }) => {
+  test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
     await canvas.openPriority("7.4% of active Amazon offers");
     const body = page.locator(".drilldown-body");
-    await expect(body).toContainText("Recorded Keepa reading");
-    await expect(body).toContainText("39 of 993");
+    const list = page.locator(".suppressed-listings");
+    await expect(list).toBeVisible();
+    await expect(list).toContainText("Competitive External Price");
+    await expect(list).not.toContainText("Recorded Keepa reading");
+    await expect(list).not.toContainText("39 of 993");
+    await expect(list).not.toContainText("Reverb");
+    await expect(list).not.toContainText("Sweetwater");
+    await expect(body).not.toContainText("$808.00");
+
+    const unavailable = list.getByText("The reading is not available.");
+    const count = list.locator(".suppressed-count");
+    await expect(unavailable.or(count)).toBeVisible();
+    if (await count.isVisible()) {
+      const badge = Number((await count.innerText()).replace(/,/g, ""));
+      const empty = await list.getByText("No listing in this reading").count();
+      const dataRows = empty ? 0 : await list.locator("tbody tr").count();
+      expect(badge).toBe(dataRows);
+    }
   });
 
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
