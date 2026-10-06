@@ -8,6 +8,16 @@ export const fenderGlossary: Record<string, string> = {
   MAP: "Minimum Advertised Price: the lowest price a retail partner has agreed to display publicly. Partners get around it by bundling a cheap accessory and discounting the pair.",
   "Brand Registry":
     "Amazon's brand-owner program. It lets Fender control its own listings and fold partner bundles in as variations of the official product.",
+  "variation nesting":
+    "Placing authorized bundle ASINs beneath the official parent product so shoppers can choose the bundle while reviews and product authority stay together.",
+  Keepa:
+    "A service that tracks Amazon offers, sellers, prices, and Buy Box history. Here it supplies the seller-level evidence being backfilled across the catalog.",
+  "Overall Pick":
+    "An Amazon recommendation badge influenced by signals such as ratings, reviews, price, and availability. Splitting one product across bundle pages weakens those signals.",
+  "parent ASIN":
+    "The Amazon record that groups purchasable child versions of the same core product into one detail-page family.",
+  "Vendor Central":
+    "Amazon's portal for brands that sell inventory wholesale to Amazon Retail, which then becomes the seller of record.",
   "Schema.org":
     "A shared vocabulary for publishing facts about a product in a form machines can read, rather than leaving them to guess from marketing copy.",
   "JSON-LD":

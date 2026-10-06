@@ -44,6 +44,7 @@ Follow these rules for every visible string: titles, labels, tooltips, tour step
 | --- | --- |
 | `components/v3/fender-canvas-spec.tsx` | Brand header, tickers, legend, node titles, stats, and tooltips |
 | `components/v3/spoke-data.ts` | Spoke titles, descriptions, tabs, panel HTML, and guided tour steps |
+| `components/v3/portfolio-retail-data.ts` | Portfolio Retail opportunity, ASIN, partner, and channel drill-downs |
 | `components/v3/command-center-data.ts` | Command center heading, summary, and priority items |
 | `components/v3/fender-metrics.ts` | Metric widget labels and values |
 | `components/v3/glossary.ts` | Hover definitions for jargon |

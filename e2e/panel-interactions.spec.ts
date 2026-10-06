@@ -93,6 +93,33 @@ test.describe("collapsible explanations", () => {
 });
 
 test.describe("drill-downs", () => {
+  test("Portfolio Retail filters the pilot and opens supporting evidence", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.openSpokeFromMap("Portfolio Retail");
+    await expect(canvas.activeTab).toContainText("Commercial Opportunity");
+    await expect(page.locator("#retail-asin-list tr")).toHaveCount(14);
+
+    await canvas.filterChip("Amps (2)").click();
+    await expect(page.locator("#retail-asin-list tr:visible")).toHaveCount(2);
+
+    await page
+      .locator("#retail-asin-list tr", { hasText: "Mustang Micro" })
+      .locator(".ifai-open-hint")
+      .click();
+    await expect(canvas.activeTab).toContainText("Hallucination");
+  });
+
+  test("Portfolio Retail exposes partner-level MAP actions", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("Portfolio Retail");
+    await canvas.openTab("MAP");
+
+    await expect(page.locator(".drilldown-body")).toContainText("GearDirect");
+    await expect(page.locator(".drilldown-body")).toContainText("Austin Bazaar");
+    await expect(page.locator(".drilldown-body")).toContainText("−$77.58");
+  });
+
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Strategy Roadmap");
     await expect(page.locator(".ifai-open-hint")).toHaveCount(3);

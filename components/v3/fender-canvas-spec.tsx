@@ -185,13 +185,13 @@ export const fenderCanvasSpec = defineCanvas({
       status: "danger",
       title: "MAP Leakage",
       stats: [
-        "-$39.21 Avg",
+        `${FENDER_METRICS.amazonMapDrift.value} Avg`,
         `${FENDER_METRICS.flaggedAsins.value} ASINs`,
       ],
       meta: "Amazon · Reverb · Walmart",
       spokeId: "ecommerce",
       subTab: "map",
-      tooltip: {"title": "Cross-Marketplace MAP Leakage", "desc": "Starter kit bundles sidestep standalone MAP, which prompts automated scrapers on Reverb and Walmart to undercut the price."},
+      tooltip: {"title": "Cross-Marketplace MAP Leakage", "desc": "Amazon price drift averages −$77.58 across 118 active-offer SKUs. Drill in to see which partners and channels should be addressed first."},
     },
     {
       id: "sat-schema",
