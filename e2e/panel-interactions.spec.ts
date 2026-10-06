@@ -95,10 +95,10 @@ test.describe("collapsible explanations", () => {
 test.describe("drill-downs", () => {
   test("opening a spoke dismisses the node tooltip", async ({ canvas, page }) => {
     const retailNode = page.locator('[data-graph-node-id="spoke-retail"]');
-    await retailNode.hover();
+    await retailNode.hover({ force: true });
     await expect(page.locator(".node-tooltip")).toBeVisible();
 
-    await retailNode.click();
+    await retailNode.click({ force: true });
     await expect(canvas.panel).toBeVisible();
     await expect(page.locator(".node-tooltip")).toBeHidden();
   });
