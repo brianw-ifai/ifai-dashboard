@@ -14,7 +14,7 @@ Tickers across the top surface the headline alerts and jump to the matching spok
 
 **Brand Portfolio (hub).** Executive briefing, division performance, and commercial sizing for the pilot and the full enterprise portfolio.
 
-**Portfolio Retail.** Who holds the Amazon Featured Offer (also called the Buy Box, or BB), partner bundle ASINs that split reviews, Brand Registry consolidation, and MAP price leakage across marketplaces.
+**Portfolio Retail.** Who holds the Amazon Featured Offer (also called the Buy Box, or BB), partner bundle ASINs that split reviews, Brand Registry consolidation, and MAP price leakage across marketplaces. Fender's seller type is Partner-led. The five types are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
 
 **AI Search Visibility.** How AI assistants such as ChatGPT, Perplexity, and Gemini recommend and cite Fender. Panels cover prompt simulations, citation sources, and the spec hallucinations models repeat.
 

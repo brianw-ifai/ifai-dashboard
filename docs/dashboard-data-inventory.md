@@ -11,6 +11,7 @@ Exhaustive catalogue of every data point on the **Fender Brand Intelligence Canv
 
 - **Nothing here is live.** There are no `fetch()` calls, API routes, or database reads. Every number is a TypeScript literal or an HTML string inside a spoke `render()` function.
 - **Featured Offer is the Buy Box.** Amazon's current name is Featured Offer. Buy Box and BB in this file mean that same button. New writing uses Featured Offer. See `docs/featured-offer-high-price.md`.
+- **Fender is Partner-led.** The five seller types are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
 - **No runtime aggregation.** Spoke panels, node stats, tickers, and tour copy are all authored independently. If a total “should” equal its parts, that arithmetic was done by hand in the copy, not in code.
 - **“Appearances”** lists every UI surface that shows the same value (or the same fact restated). Duplicate rows are intentional.
 

@@ -1,7 +1,9 @@
 /**
  * Seller model for the retail hero.
- * Partner-Led is the only type named in this workspace. The other four
- * IntoFocus seller types were described in another chat and are not here.
+ * The five types, and the question each is meant to answer, are in
+ * docs/client-seller-models.md. Fender is Partner-led. How each type is
+ * drawn on the dashboard is not decided. This module is the interim
+ * Partner-led comparison only.
  */
 export const SELLER_TYPES = {
   partnerLed: "partner-led",

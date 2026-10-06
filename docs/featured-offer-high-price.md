@@ -4,6 +4,8 @@ Captured 5 Oct 2026. This is drill-down guidance, not a change to the live canva
 
 **Featured Offer** is Amazon's name for the button this project has called the Buy Box (BB). They are the same thing. New writing says Featured Offer. Buy Box and BB are accepted aliases.
 
+Fender's seller type is **Partner-led**. The five seller types, and the question each one is meant to answer, are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
+
 ## Tooltip
 
 Use this when a listing is at MAP, or under MAP, and Amazon still shows no Featured Offer:
