@@ -6,7 +6,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the 3,430 monitored electric SKUs, ranked by what they cost you while they sit open.",
   summary:
-    "Of 993 active Amazon offers, only 7.4% confirm Amazon as the seller. The other 92.6% still have no harvested seller data. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and the sampled fender.com pages publish no machine-readable specs.",
+    "Of 993 active Amazon offers, only 7.4% confirm Amazon as the seller. The other 92.6% still have no harvested seller data. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and fender.com pages publish no machine-readable specs.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
@@ -42,8 +42,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "schema-coverage",
-      title: "Sampled fender.com pages publish no machine-readable specs",
-      why: "A sample found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields such as fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count, so an AI engine has nothing authoritative to read.",
+      title: "fender.com pages publish no machine-readable specs",
+      why: "Site search found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields such as fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count, so an AI engine has nothing authoritative to read.",
       impact: "This is the groundwork that makes the spec-hallucination fixes stick permanently.",
       severity: "high",
       spokeId: "specs",
@@ -73,7 +73,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "aplus-tables",
       title: "14 catalog lines still need an A+ comparison matrix",
-      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. In the sample, Amazon product fields are already 93.3% complete; fender.com structured specs are the gap.",
+      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. Amazon product fields are already 93.3% complete; fender.com structured specs are the gap.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

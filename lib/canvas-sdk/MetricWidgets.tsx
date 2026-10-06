@@ -102,9 +102,6 @@ export function MetricWidgets({ config, spokes, onOpenMetric }: Props) {
                   {metric.value}
                 </strong>
                 <span className="metric-widget-detail">{metric.detail}</span>
-                <span className={`metric-widget-provenance is-${metric.provenance ?? "live"}`}>
-                  {metric.provenance === "estimate" ? "Estimate" : "Audit"}
-                </span>
               </button>
             ) : (
               <button

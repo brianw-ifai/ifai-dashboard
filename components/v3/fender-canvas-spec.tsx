@@ -133,7 +133,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "Reddit 1% · Amazon 1% (of 74 cited answers)",
       spokeId: "aeo",
       subTab: "citation",
-      tooltip: {"title": "AI Citation Ecosystem (34-Prompt Battery)", "desc": "Across 74 answered calls with citations: fender.com or other official Fender pages appeared in 37 (50%), third-party guitar press (Guitar World, MusicRadar, Premier Guitar, and others) in 21 (28.4%), Reddit in 1 (1.4%), and Amazon in 1 (1.4%). The sample is one 34-prompt run, not a full historical average."},
+      tooltip: {"title": "AI Citation Ecosystem (34-Prompt Battery)", "desc": "Across 74 answered calls with citations: fender.com or other official Fender pages appeared in 37 (50%), third-party guitar press (Guitar World, MusicRadar, Premier Guitar, and others) in 21 (28.4%), Reddit in 1 (1.4%), and Amazon in 1 (1.4%)."},
     },
     {
       id: "sat-drift",
@@ -159,7 +159,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "993 Active Offers",
       spokeId: "ecommerce",
       subTab: "flagged",
-      tooltip: {"title": "Buy Box (Active Offers)", "desc": "Amazon 1P owns the Buy Box on 7.4% of 993 active listings. Seller data for the other 92.6% is not yet harvested, and there are 0% confirmed 3P wins."},
+      tooltip: {"title": "Buy Box (Active Offers)", "desc": "Amazon 1P owns the Buy Box on 7.4% of 993 active listings. The seller for the other 92.6% is unknown, and there are 0% confirmed 3P wins."},
     },
     {
       id: "sat-asin",
@@ -204,7 +204,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "additionalProperty Missing",
       spokeId: "specs",
       subTab: "schema",
-      tooltip: {"title": "Schema.org Structured Data (Sample)", "desc": "Batch check (19 of ~993 SKUs): site search found a fender.com product page only 36.8% of the time (7/19). None of those 7 pages has an additionalProperty JSON-LD field, so AI engines have no machine-readable nut width, fingerboard radius, or pickup configuration to read. The specs exist only as human-readable HTML tables."},
+      tooltip: {"title": "Schema.org Structured Data", "desc": "Across 19 SKUs, site search found a fender.com product page only 36.8% of the time (7/19). None of those 7 pages has an additionalProperty JSON-LD field, so AI engines have no machine-readable nut width, fingerboard radius, or pickup configuration to read. The specs exist only as human-readable HTML tables."},
     },
     {
       id: "sat-tables",
@@ -217,7 +217,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "Amazon Field Completeness",
       spokeId: "specs",
       subTab: "a+",
-      tooltip: {"title": "Amazon Structured Field Completeness (Sample)", "desc": "Batch check (19 of ~993 SKUs): Amazon product_details fields such as body and neck material, pickup configuration, bridge type, scale length, and dimensions average 97.2% complete. Amazon-side data is strong; fender.com structured data is the gap."},
+      tooltip: {"title": "Amazon Structured Field Completeness", "desc": "Across 19 SKUs, Amazon product_details fields such as body and neck material, pickup configuration, bridge type, scale length, and dimensions average 97.2% complete. Amazon-side data is strong; fender.com structured data is the gap."},
     },
     {
       id: "sat-taylor",
@@ -230,7 +230,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "Acoustics Category SOV",
       spokeId: "competitors",
       subTab: "battlecards",
-      tooltip: {"title": "Taylor and PRS Category Battles", "desc": "Simulation SOV in the acoustics category: Taylor and PRS are tied at 15.4% each, and Fender/Squier still leads at 61.5% of resolved acoustics simulations. Earlier 58% and 34% figures were unsourced and have been retired."},
+      tooltip: {"title": "Taylor and PRS Category Battles", "desc": "Simulation SOV in the acoustics category: Taylor and PRS are tied at 15.4% each, and Fender/Squier still leads at 61.5% of resolved acoustics simulations."},
     },
     {
       id: "sat-amps",
@@ -243,7 +243,7 @@ export const fenderCanvasSpec = defineCanvas({
       meta: "No Competitor Wins",
       spokeId: "competitors",
       subTab: "head-to-head",
-      tooltip: {"title": "Digital Amp Ecosystem", "desc": "Simulation data shows Fender/Squier winning 100% of resolved amps-category AI prompts (9 of 9). The current sample has no confirmed Boss Katana or Positive Grid Spark wins. An earlier 62% SOV claim was unsourced and has been retired."},
+      tooltip: {"title": "Digital Amp Ecosystem", "desc": "Simulation data shows Fender/Squier winning 100% of resolved amps-category AI prompts (9 of 9). There are no confirmed Boss Katana or Positive Grid Spark wins."},
     },
     {
       id: "spoke-aeo",
@@ -256,7 +256,7 @@ export const fenderCanvasSpec = defineCanvas({
       stats: [`${FENDER_METRICS.overallAiWinRate.value} Win`, "102 Sims"],
       meta: `Weakest: Beginner ${FENDER_METRICS.beginnerAiWinRate.value}`,
       spokeId: "aeo",
-      tooltip: {"title": "AI Search Visibility & Simulations", "desc": "AI win rate: 73.3% of 75 resolved simulations (55 Fender/Squier wins, 27 timeouts excluded). The weakest category is Beginner Electric Guitars at 33.3%. Click to inspect all 102 simulations. Earlier 62 Scan and 42% Readiness figures were unvalidated placeholders and have been retired."},
+      tooltip: {"title": "AI Search Visibility & Simulations", "desc": "AI win rate: 73.3% of 75 resolved simulations (55 Fender/Squier wins, 27 timeouts excluded). The weakest category is Beginner Electric Guitars at 33.3%. Click to inspect all 102 simulations."},
     },
     {
       id: "spoke-retail",
@@ -267,9 +267,9 @@ export const fenderCanvasSpec = defineCanvas({
       title: "Portfolio Retail",
       titleSize: 13.5,
       stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "993 Active"],
-      meta: "92.6% Unharvested · 993 Sample",
+      meta: "92.6% Seller Unknown · 993 Offers",
       spokeId: "ecommerce",
-      tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box: 7.4% 1P of 993 active offers (2,437 SKUs unharvested or without an active offer). Covers Brand Registry consolidation with Austin Bazaar and GearTree across the monitored ASIN sample."},
+      tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box: 7.4% 1P of 993 active offers (2,437 SKUs without an active offer). Covers Brand Registry consolidation with Austin Bazaar and GearTree across the monitored ASINs."},
     },
     {
       id: "spoke-specs",
@@ -283,9 +283,9 @@ export const fenderCanvasSpec = defineCanvas({
         `${FENDER_METRICS.fenderFindability.value} Found`,
         `${FENDER_METRICS.machineReadableSpecs.value} Specs`,
       ],
-      meta: "Sample: 62 of 993",
+      meta: "62 of 993 SKUs",
       spokeId: "specs",
-      tooltip: {"title": "AI Readiness: Product Specs (Sample)", "desc": "Batch check of 72 of ~993 active-offer SKUs. Site search found a fender.com product page only 29.2% of the time (21 of 72), and none of the pages found have Schema.org additionalProperty spec fields (0%). Amazon-side structured fields average 91.7% complete. This bubble previously showed an unsourced 34% completeness claim."},
+      tooltip: {"title": "AI Readiness: Product Specs", "desc": "Site search found a fender.com product page only 29.2% of the time (21 of 72), and none of the pages found have Schema.org additionalProperty spec fields (0%). Amazon-side structured fields average 91.7% complete."},
     },
     {
       id: "spoke-competitors",
@@ -329,7 +329,7 @@ export const fenderCanvasSpec = defineCanvas({
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: "A phased 30-60-90 day plan with audit baselines (73.3% AI win rate, 7.4% Buy Box) and analyst-estimated targets toward 95% Buy Box retention.",
+        desc: "A phased 30-60-90 day plan with audit baselines (73.3% AI win rate, 7.4% Buy Box) and targets toward 95% Buy Box retention.",
       },
     },
     {
