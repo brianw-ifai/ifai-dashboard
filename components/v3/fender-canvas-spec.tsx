@@ -1,12 +1,15 @@
 import { fenderCommandCenter } from "@/components/v3/command-center-data";
 import { FENDER_METRICS, fenderWidgetMetrics } from "@/components/v3/fender-metrics";
 import { fenderGlossary } from "@/components/v3/glossary";
+import { mapSatellite, unavailableRetailReading } from "@/components/v3/portfolio-retail-reading";
 import {
   featuredOfferSuppression,
   partnerLedHero,
 } from "@/components/v3/retail-partner-led";
 import { spokeData, tourSteps } from "@/components/v3/spoke-data";
 import { defineCanvas } from "@/lib/canvas-sdk";
+
+const unavailableMapSatellite = mapSatellite(unavailableRetailReading);
 
 const FOCUS_TARGETS = {
   "hub": { x: 800, y: 500 },
@@ -57,7 +60,7 @@ export const fenderCanvasSpec = defineCanvas({
       label: (
         <>
           Featured Offer: <strong>{featuredOfferSuppression.listings} suppressed</strong>{" "}
-          ({featuredOfferSuppression.pctLabel} of 993)
+          ({featuredOfferSuppression.pctLabel} of 993, recorded Keepa reading)
         </>
       ),
     },
@@ -160,10 +163,10 @@ export const fenderCanvasSpec = defineCanvas({
       status: "danger",
       title: "Featured Offer",
       stats: [`${featuredOfferSuppression.listings} Suppressed`, featuredOfferSuppression.pctLabel],
-      meta: "of 993 active offers",
+      meta: "recorded Keepa reading",
       spokeId: "ecommerce",
       subTab: "suppressed",
-      tooltip: {"title": "Featured Offer suppression", "desc": "39 of 993 active offers have no Featured Offer (the Buy Box) because the new price is above Amazon's Competitive External Price. A listing at MAP can still be suppressed when that outside benchmark is lower. Amazon does not name the retailer."},
+      tooltip: {"title": "Featured Offer suppression", "desc": "39 of 993 active offers have no Featured Offer (the Buy Box) because the new price is above Amazon's Competitive External Price. A listing at MAP can still be suppressed when that outside benchmark is lower. Amazon does not name the retailer. This 39 is a recorded Keepa reading."},
     },
     {
       id: "sat-map",
@@ -172,11 +175,11 @@ export const fenderCanvasSpec = defineCanvas({
       r: 52,
       status: "danger",
       title: "MAP Leakage",
-      stats: ["457 Listings", "16.49%"],
-      meta: "avg $221.96 · sum $101,435",
+      stats: [...unavailableMapSatellite.stats],
+      meta: unavailableMapSatellite.meta,
       spokeId: "ecommerce",
       subTab: "map",
-      tooltip: {"title": "MAP leakage on active offers", "desc": "457 of 993 active offers are priced under the stored MAP. The average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 combined. This is the highest-volume Portfolio Retail issue, so it leads the bubble."},
+      tooltip: {"title": "MAP leakage on active offers", "desc": unavailableMapSatellite.tooltipDesc},
     },
     {
       id: "sat-schema",

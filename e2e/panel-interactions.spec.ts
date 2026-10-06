@@ -100,8 +100,14 @@ test.describe("drill-downs", () => {
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toContainText("Highlights marketplace listings");
     await expect(tooltip).not.toContainText("Portfolio Retail highlights");
-    await expect(retailNode).toContainText("457 below MAP");
-    await expect(retailNode).toContainText("46% of 993");
+    await expect(tooltip).toContainText("Below-MAP rows are not available");
+    await expect(tooltip).toContainText("recorded Keepa reading");
+    await expect(tooltip).not.toContainText("Partner-led");
+    await expect(tooltip).not.toContainText("Partner-Led");
+    await expect(tooltip).not.toContainText("Amazon 1P");
+    await expect(retailNode).toContainText("Rows not available");
+    await expect(retailNode).toContainText("39 listings suppressed");
+    await expect(retailNode).not.toContainText("457 below MAP");
 
     await retailNode.click({ force: true });
     await expect(canvas.panel).toBeVisible();
@@ -121,22 +127,24 @@ test.describe("drill-downs", () => {
     await expect(page.locator(".drilldown-body tbody tr")).toHaveCount(0);
   });
 
-  test("MAP tab keeps the saved gap and hides channel listing rows", async ({ canvas, page }) => {
+  test("MAP tab says the rows are not available without a listing read", async ({ canvas, page }) => {
     await canvas.openPriority("Discounted bundles are dragging");
     await expect(canvas.activeTab).toContainText("MAP");
 
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Minimum Advertised Price");
-    await expect(body).toContainText("457");
-    await expect(body).toContainText("16.49%");
-    await expect(body).toContainText("$221.96");
-    await expect(body).toContainText("$101,434.60");
-    await expect(body).toContainText(
-      "Listing rows are not shown until they come from the database.",
-    );
+    await expect(body).toContainText("Below-MAP rows are not available");
+    await expect(body).toContainText("The average MAP gap is not available");
+    await expect(body).not.toContainText("457");
+    await expect(body).not.toContainText("16.49%");
+    await expect(body).not.toContainText("$221.96");
+    await expect(body).not.toContainText("$101,434.60");
+    await expect(body.locator("tbody tr")).toHaveCount(0);
     await expect(page.locator(".map-channel-row")).toHaveCount(0);
     await expect(body).not.toContainText("$808.00");
     await expect(body).not.toContainText("Walmart Marketplace");
+    await expect(body).not.toContainText("Reverb");
+    await expect(body).not.toContainText("Sweetwater");
     await expect(body).not.toContainText("Featured Offer withheld");
     await expect(body).not.toContainText("Prices at MAP");
   });
@@ -183,6 +191,8 @@ test.describe("drill-downs", () => {
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
     await canvas.openPriority("39 active offers have no Featured Offer");
+    await expect(page.locator(".drilldown-body")).toContainText("Recorded Keepa reading");
+    await expect(page.locator(".drilldown-body tbody tr")).toHaveCount(39);
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);

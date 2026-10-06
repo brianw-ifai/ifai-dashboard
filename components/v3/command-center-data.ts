@@ -6,7 +6,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the 3,430 monitored electric SKUs, ranked by what they cost you while they sit open.",
   summary:
-    "Portfolio Retail shows 457 of 993 active offers under MAP and 39 suppressed listings where the new offer is above Amazon's outside benchmark. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and the sampled fender.com pages publish no machine-readable specs.",
+    "Portfolio Retail: Below-MAP rows are not available. 39 suppressed listings are a recorded Keepa reading, where the new offer is above Amazon's outside benchmark. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and the sampled fender.com pages publish no machine-readable specs.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
@@ -14,7 +14,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
       id: "buybox-suppression",
       title: "39 active offers have no Featured Offer",
       why: "On 6 Oct 2026, Keepa showed 39 of 993 active offers with no Featured Offer (the Buy Box) because the new price is above Amazon's Competitive External Price. A listing can be at MAP and still be suppressed when that outside benchmark is lower. Amazon does not name the retailer. Open the row to see the Amazon listing, and a Walmart, Musician's Friend, or Guitar Center link when a page at that benchmark was found.",
-      impact: "These 39 are 3.9% of active offers. MAP leakage is wider: 457 listings, averaging 16.49% under MAP and $221.96 each.",
+      impact: "These 39 are 3.9% of active offers in a recorded Keepa reading. Below-MAP rows are not available. The average MAP gap is not available.",
       severity: "critical",
       spokeId: "ecommerce",
       subTab: "Suppressed",
@@ -43,8 +43,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "map-leakage",
       title: "Discounted bundles are dragging your prices down everywhere",
-      why: "457 of 993 active offers are priced under the stored MAP. It is the highest-volume Portfolio Retail issue, ahead of the 39 suppressed listings.",
-      impact: "The average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 combined.",
+      why: "Below-MAP rows are not available. It is the highest-volume Portfolio Retail issue when the read succeeds, ahead of the 39 suppressed listings in the recorded Keepa reading.",
+      impact: "The average MAP gap is not available.",
       severity: "high",
       spokeId: "ecommerce",
       subTab: "MAP",

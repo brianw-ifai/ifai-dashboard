@@ -1,10 +1,14 @@
 /**
  * Seller model for the retail hero.
  * The five types, and the question each is meant to answer, are in
- * docs/client-seller-models.md. Fender is Partner-led. How each type is
- * drawn on the dashboard is not decided. This module is the interim
- * Partner-led comparison only.
+ * docs/client-seller-models.md. How each type is drawn on the dashboard
+ * is not decided. MAP counts on the bubble come from the listing read.
  */
+import {
+  retailBubble,
+  unavailableRetailReading,
+} from "@/components/v3/portfolio-retail-reading";
+
 export const SELLER_TYPES = {
   partnerLed: "partner-led",
 } as const;
@@ -22,34 +26,17 @@ export const featuredOfferSuppression = {
   detail: "39 of 993 active offers",
 };
 
-export const mapLeakage = {
-  listings: 457,
-  pctLabel: "46.0%",
-  avgPctLabel: "16.49%",
-  avgDollarsLabel: "$221.96",
-  sumDollarsLabel: "$101,434.60",
-  detail: "457 of 993 active offers priced under MAP",
-};
-
 export type RetailIssueId = "suppression" | "map";
 
-/** Partner-Led: show the issue that covers more of the monitored listings. */
+/** Show the issue that covers more of the monitored listings. */
 export function partnerLedHeroIssue(
-  suppressionListings = featuredOfferSuppression.listings,
-  mapListings = mapLeakage.listings,
+  suppressionListings: number,
+  mapListings: number,
 ): RetailIssueId {
   return mapListings >= suppressionListings ? "map" : "suppression";
 }
 
-export const partnerLedHero = {
-  issue: partnerLedHeroIssue(),
-  statA: "457 below MAP",
-  statB: "46% of 993",
-  meta: "39 listings suppressed",
-  tooltipTitle: "Highlights marketplace listings",
-  tooltipDesc:
-    "These listings need action to protect price integrity, availability, and Featured Offer coverage. The top priority is MAP leakage: 457 of 993 active offers are under MAP (46.0%), averaging 16.49% and $221.96 below MAP. Next are 39 suppressed listings (3.9%) where the new offer is above Amazon's Competitive External Price.",
-} as const;
+export const partnerLedHero = retailBubble(unavailableRetailReading);
 
 export const suppressionDrilldownHtml = `
 <div class="ceo-callout">
@@ -57,11 +44,11 @@ export const suppressionDrilldownHtml = `
     <span>Why can a MAP-priced listing still lose the Featured Offer?</span>
   </div>
   <div class="ceo-callout-body">
-    Portfolio Retail prioritizes listing health, price integrity, and Featured Offer availability across 993 active offers. The largest immediate issue is <strong>MAP leakage, affecting 457 listings (46.0%)</strong>, followed by <strong>39 suppressed listings (3.9%)</strong>.
+    Portfolio Retail prioritizes listing health, price integrity, and Featured Offer availability. <strong>Below-MAP rows are not available.</strong>
     <br/><br/>
-    MAP leakage on those 457 listings averages <strong>16.49%</strong> under MAP, <strong>$221.96</strong> per listing, and <strong>$101,434.60</strong> combined.
+    <strong>The average MAP gap is not available.</strong>
     <br/><br/>
-    A listing at <strong>MAP</strong> can still have no <strong>Featured Offer</strong> (the Buy Box). Amazon withholds it when the offer, including shipping, is above the Competitive External Price: the lowest price it recently found outside Amazon. Amazon does not name that retailer. The 39 rows below are where that benchmark is known and the new offer sits above it. A channel button is shown only when a listing at that amount was found.
+    A listing at <strong>MAP</strong> can still have no <strong>Featured Offer</strong> (the Buy Box). Amazon withholds it when the offer, including shipping, is above the Competitive External Price: the lowest price it recently found outside Amazon. Amazon does not name that retailer. The 39 rows below are a recorded Keepa reading, where that benchmark is known and the new offer sits above it. A channel button is shown only when a listing at that amount was found.
   </div>
 </div>
 
@@ -71,7 +58,7 @@ export const suppressionDrilldownHtml = `
     <span class="tag-badge tag-danger">39 of 993</span>
   </div>
   <p style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;">
-    Keepa read on 6 Oct 2026. The gap is the new Amazon offer minus Amazon's Competitive External Price.
+    Recorded Keepa reading, 6 Oct 2026. This table is that saved reading, not the current MAP query. The gap is the new Amazon offer minus Amazon's Competitive External Price.
   </p>
   <div style="overflow-x:auto;">
     <table class="table-sm">

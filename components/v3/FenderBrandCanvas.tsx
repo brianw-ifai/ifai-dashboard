@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { applyPortfolioRetailReading } from "@/components/v3/apply-portfolio-retail";
 import { fenderCanvasSpec } from "@/components/v3/fender-canvas-spec";
+import {
+  unavailableRetailReading,
+  type PortfolioRetailReading,
+} from "@/components/v3/portfolio-retail-reading";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 
@@ -42,9 +47,11 @@ function viewerStorageScope(viewerId?: string) {
 export function FenderBrandCanvas({
   userMenu,
   viewerId,
+  retailReading = unavailableRetailReading,
 }: {
   userMenu?: CanvasUserMenu;
   viewerId?: string;
+  retailReading?: PortfolioRetailReading;
 }) {
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
@@ -79,18 +86,19 @@ export function FenderBrandCanvas({
   }, []);
 
   const spec = useMemo(() => {
-    const metricWidgets = fenderCanvasSpec.metricWidgets
+    const withRetail = applyPortfolioRetailReading(fenderCanvasSpec, retailReading);
+    const metricWidgets = withRetail.metricWidgets
       ? {
-          ...fenderCanvasSpec.metricWidgets,
-          storageKey: `${fenderCanvasSpec.metricWidgets.storageKey}:${viewerStorageScope(viewerId)}`,
+          ...withRetail.metricWidgets,
+          storageKey: `${withRetail.metricWidgets.storageKey}:${viewerStorageScope(viewerId)}`,
         }
       : undefined;
     return {
-      ...fenderCanvasSpec,
+      ...withRetail,
       ...(userMenu ? { userMenu, userEmail: userMenu.email } : {}),
       ...(metricWidgets ? { metricWidgets } : {}),
     };
-  }, [userMenu, viewerId]);
+  }, [retailReading, userMenu, viewerId]);
 
   return <IntelligenceCanvas spec={spec} />;
 }

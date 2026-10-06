@@ -4,6 +4,7 @@ import { FenderBrandCanvas } from "@/components/v3/FenderBrandCanvas";
 import { resolveActiveOrganization } from "@/lib/command/active-organization";
 import { commandSessionToUserMenu, getCommandSession } from "@/lib/command/session";
 import { safeNextPath } from "@/lib/auth/paths";
+import { readPortfolioRetail } from "@/lib/retail/read-listing-monitor";
 
 export default async function Home({
   searchParams,
@@ -32,8 +33,13 @@ export default async function Home({
   const userMenu = commandSessionToUserMenu(session, activeOrganization);
 
   if (activeOrganization?.slug === "fender") {
+    const retailReading = await readPortfolioRetail();
     return (
-      <FenderBrandCanvas userMenu={userMenu} viewerId={session.userId} />
+      <FenderBrandCanvas
+        userMenu={userMenu}
+        viewerId={session.userId}
+        retailReading={retailReading}
+      />
     );
   }
 
