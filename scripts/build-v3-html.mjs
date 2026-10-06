@@ -10,6 +10,14 @@ const htmlPath = join(root, "fender-brand-canvas-v3.html");
 
 mkdirSync(outDir, { recursive: true });
 
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  "https://qftczrlksczfimnzfiov.supabase.co";
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  "";
+
 const build = spawnSync(
   "npx",
   [
@@ -22,12 +30,16 @@ const build = spawnSync(
     "--minify",
     "--alias:@=.",
     "--alias:@/app/auth/actions=./scripts/standalone-shims/auth-actions.ts",
+    "--alias:@/app/auth/guest-actions=./scripts/standalone-shims/guest-actions.ts",
     "--alias:@/app/auth/organization-actions=./scripts/standalone-shims/organization-actions.ts",
     "--alias:@/app/settings/profile/actions=./scripts/standalone-shims/profile-actions.ts",
     "--alias:next/navigation=./scripts/standalone-shims/next-navigation.ts",
     `--outfile=${bundleBase}.js`,
     "--loader:.css=css",
     "--external:/fonts/*",
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_URL=${JSON.stringify(supabaseUrl)}`,
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY=${JSON.stringify(supabaseKey)}`,
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${JSON.stringify(supabaseKey)}`,
   ],
   { cwd: root, stdio: "inherit" },
 );

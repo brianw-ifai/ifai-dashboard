@@ -1,14 +1,10 @@
 import { cookies } from "next/headers";
+import {
+  GUEST_DASHBOARD_COOKIE,
+  guestDashboardCookieOptions,
+} from "@/lib/auth/guest-dashboard.constants";
 
-/** Marks a browser as allowed to view the Fender demo canvas without signing in. */
-export const GUEST_DASHBOARD_COOKIE = "ifai_guest_fender";
-
-export const guestDashboardCookieOptions = {
-  httpOnly: true,
-  sameSite: "lax" as const,
-  path: "/",
-  maxAge: 60 * 60 * 24 * 30,
-};
+export { GUEST_DASHBOARD_COOKIE, guestDashboardCookieOptions };
 
 /** Playwright dev server sets `E2E_AUTH_BYPASS=1` so tests skip the login modal. */
 export function e2eGuestDashboardBypass(): boolean {

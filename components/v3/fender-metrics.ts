@@ -190,7 +190,7 @@ export const FENDER_METRICS = {
     id: "enterprise-potential",
     spokeId: "suggestions",
     label: "Enterprise GMV Potential",
-    value: "+$38M–$62M",
+    value: "+$38M to $62M",
     detail: "Annual estimate · full portfolio",
     tone: "success",
     subTab: "ROI",

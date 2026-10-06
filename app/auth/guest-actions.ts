@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   GUEST_DASHBOARD_COOKIE,
   guestDashboardCookieOptions,
-} from "@/lib/auth/guest-dashboard";
+} from "@/lib/auth/guest-dashboard.constants";
 
 export async function enterGuestDashboard(): Promise<void> {
   const cookieStore = await cookies();
