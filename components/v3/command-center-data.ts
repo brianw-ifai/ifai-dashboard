@@ -6,14 +6,14 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the 3,430 monitored electric SKUs, ranked by what they cost you while they sit open.",
   summary:
-    "Of 993 active Amazon offers, only 7.4% confirm Amazon as the seller. The other 92.6% still have no harvested seller data. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and the sampled fender.com pages publish no machine-readable specs.",
+    "Of 993 active Amazon offers, only 7.4% confirm Amazon as the seller. The other 92.6% still have no harvested seller data. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and fender.com pages publish no machine-readable specs.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
     {
       id: "buybox-suppression",
       title: "Only 7.4% of active Amazon offers confirm your Buy Box",
-      why: "A live scan of 3,430 electric SKUs found 993 with an active Amazon offer. Amazon itself is the seller on 74 of those (7.4%). The remaining 919 (92.6%) have no seller data yet, so you cannot tell who owns the buy button. Fourteen listings are still flagged for bundle leakage with Austin Bazaar and GearTree.",
+      why: "The audit of 3,430 electric SKUs found 993 with an active Amazon offer. Amazon itself is the seller on 74 of those (7.4%). The remaining 919 (92.6%) have no seller data yet, so you cannot tell who owns the buy button. Fourteen listings are still flagged for bundle leakage with Austin Bazaar and GearTree.",
       impact: "Restoring the buy button on the 14 flagged listings is the single fastest revenue recovery on this board.",
       severity: "critical",
       spokeId: "ecommerce",
@@ -42,8 +42,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "schema-coverage",
-      title: "Sampled fender.com pages publish no machine-readable specs",
-      why: "A live sample found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields such as fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count, so an AI engine has nothing authoritative to read.",
+      title: "fender.com pages publish no machine-readable specs",
+      why: "Site search found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields such as fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count, so an AI engine has nothing authoritative to read.",
       impact: "This is the groundwork that makes the spec-hallucination fixes stick permanently.",
       severity: "high",
       spokeId: "specs",
@@ -63,7 +63,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "midrange-losses",
       title: "You lose head-to-head recommendations at $600–$1,200",
-      why: "Live simulations put Yamaha at 66.7% share of voice in the beginner category, and Taylor and PRS tied at 15.4% each in acoustics. Fender still leads acoustics at 61.5% and amps at 100% of 9 resolved prompts, but the beginner gap is 50 points.",
+      why: "Simulations put Yamaha at 66.7% share of voice in the beginner category, and Taylor and PRS tied at 15.4% each in acoustics. Fender still leads acoustics at 61.5% and amps at 100% of 9 resolved prompts, but the beginner gap is 50 points.",
       impact: "This is the bracket where recovered visibility converts fastest.",
       severity: "high",
       spokeId: "competitors",
@@ -73,7 +73,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "aplus-tables",
       title: "14 catalog lines still need an A+ comparison matrix",
-      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. On the live sample, Amazon product fields are already 93.3% complete; fender.com structured specs are the gap.",
+      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. Amazon product fields are already 93.3% complete; fender.com structured specs are the gap.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

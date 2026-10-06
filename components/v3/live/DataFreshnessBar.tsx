@@ -69,11 +69,7 @@ export function DataFreshnessBar({
         <span className="tag-badge tag-warning" style={{ fontSize: 10 }}>
           Stale
         </span>
-      ) : (
-        <span className="tag-badge tag-success" style={{ fontSize: 10 }}>
-          Live
-        </span>
-      )}
+      ) : null}
     </div>
   );
 }

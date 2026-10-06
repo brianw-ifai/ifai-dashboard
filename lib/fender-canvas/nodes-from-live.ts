@@ -32,7 +32,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       spokeId: "aeo",
       subTab: "simulations",
       tooltip: {
-        title: "AI Simulation Battery (Live Run)",
+        title: "AI Simulation Battery",
         desc: `${formatInt(m.sim_total)} prompt-engine calls in the latest battery. ${formatInt(m.sim_wins)} Fender/Squier wins of ${formatInt(m.sim_resolved)} resolved (${formatInt(m.sim_unclear)} unclear, ${formatInt(m.sim_errors)} errors).`,
       },
     },
@@ -43,7 +43,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       r: 52,
       status: "warning",
       title: "Citations",
-      stats: ["Live SOV mix", "See drill-down"],
+      stats: ["SOV mix", "See drill-down"],
       meta: "Category breakdown in panel",
       spokeId: "aeo",
       subTab: "citation",
@@ -84,7 +84,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       subTab: "flagged",
       tooltip: {
         title: "Buy Box (Active Offers)",
-        desc: `Amazon 1P holds ${bb1p} of ${formatInt(m.bb_total)} active listings. ${formatInt(m.bb_unharvested)} listings still lack harvested seller data; ${formatInt(m.bb_3p)} confirmed 3P.`,
+        desc: `Amazon 1P holds ${bb1p} of ${formatInt(m.bb_total)} active listings. The seller for ${formatInt(m.bb_unharvested)} listings is unknown; ${formatInt(m.bb_3p)} confirmed 3P.`,
       },
     },
     {
@@ -100,12 +100,12 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
           ? "Reviews pending"
           : `${metrics.strandedReviews.value} Reviews`,
       ],
-      meta: "Live retail listings",
+      meta: "Retail listings",
       spokeId: "ecommerce",
       subTab: "catalog",
       tooltip: {
         title: "Splintered Bundle ASINs",
-        desc: "Partner bundles and MAP violations from the live retail listings feed. Use the drill-down table to inspect ASIN-level leakage.",
+        desc: "Partner bundles and MAP violations from the retail listings. Use the drill-down table to inspect ASIN-level leakage.",
       },
     },
     {
@@ -142,7 +142,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       spokeId: "specs",
       subTab: "schema",
       tooltip: {
-        title: "Schema.org Structured Data (Live)",
+        title: "Schema.org Structured Data",
         desc: `${formatPct(m.spec_fender_found_pct)} of audited SKUs have a fender.com page (${formatInt(m.spec_fender_found)} of ${formatInt(m.spec_checked)}). ${formatInt(m.spec_missing_additional_property)} pages lack additionalProperty specs.`,
       },
     },
@@ -162,7 +162,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       subTab: "a+",
       tooltip: {
         title: "Amazon Structured Field Completeness",
-        desc: `Amazon product attribute completeness averages ${formatPct(m.spec_avg_amazon_pct)} across ${formatInt(m.spec_checked)} SKUs in the spec audit sample.`,
+        desc: `Amazon product attribute completeness averages ${formatPct(m.spec_avg_amazon_pct)} across ${formatInt(m.spec_checked)} SKUs in the spec audit.`,
       },
     },
     {
@@ -178,12 +178,12 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
           : "Acoustics SOV",
         `${formatPct(acoustics?.fender_win_pct ?? null)} Fender`,
       ],
-      meta: "Acoustics category (live)",
+      meta: "Acoustics category",
       spokeId: "competitors",
       subTab: "battlecards",
       tooltip: {
         title: "Taylor and PRS Category Battles",
-        desc: `Live acoustics win rate: Fender/Squier ${formatPct(acoustics?.fender_win_pct ?? null)} vs top rival ${acoustics?.top_competitor ?? "n/a"} ${formatPct(acoustics?.top_competitor_pct ?? null)}.`,
+        desc: `Acoustics win rate: Fender/Squier ${formatPct(acoustics?.fender_win_pct ?? null)} vs top rival ${acoustics?.top_competitor ?? "n/a"} ${formatPct(acoustics?.top_competitor_pct ?? null)}.`,
       },
     },
     {
@@ -197,7 +197,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
         `${formatPct(amps?.fender_win_pct ?? null)} Fender`,
         `${formatInt(amps?.resolved ?? null)} resolved sims`,
       ],
-      meta: "Live AI simulations",
+      meta: "AI simulations",
       spokeId: "competitors",
       subTab: "head-to-head",
       tooltip: {
@@ -217,7 +217,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       meta: `Weakest: ${m.weakest_category ?? "n/a"} ${beginnerWin}`,
       spokeId: "aeo",
       tooltip: {
-        title: "AI Search Visibility & Simulations (Live Data)",
+        title: "AI Search Visibility & Simulations",
         desc: `Overall win rate ${simWin} across ${formatInt(m.sim_resolved)} resolved simulations. Weakest category: ${m.weakest_category ?? "n/a"} at ${formatPct(m.weakest_win_pct)}.`,
       },
     },
@@ -230,11 +230,11 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       title: "Portfolio Retail",
       titleSize: 13.5,
       stats: [`${bb1p} 1P`, `${formatInt(m.bb_total)} Active`],
-      meta: `${unharvestedPct} unharvested`,
+      meta: `${unharvestedPct} seller unknown`,
       spokeId: "ecommerce",
       tooltip: {
         title: "Portfolio Retail & Brand Registry",
-        desc: `Buy Box: ${bb1p} 1P on ${formatInt(m.bb_total)} active offers. ${formatInt(m.bb_no_offer)} SKUs without a live offer in the catalog scan.`,
+        desc: `Buy Box: ${bb1p} 1P on ${formatInt(m.bb_total)} active offers. ${formatInt(m.bb_no_offer)} SKUs without an active offer.`,
       },
     },
     {
@@ -249,10 +249,10 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
         `${metrics.fenderFindability.value} Found`,
         `${metrics.machineReadableSpecs.value} Amazon specs`,
       ],
-      meta: `Sample: ${formatInt(m.spec_checked)} SKUs`,
+      meta: `${formatInt(m.spec_checked)} SKUs checked`,
       spokeId: "specs",
       tooltip: {
-        title: "AI Readiness: Product Specs (Live)",
+        title: "AI Readiness: Product Specs",
         desc: `fender.com findability ${metrics.fenderFindability.value}. Amazon structured completeness ${metrics.machineReadableSpecs.value} on average.`,
       },
     },
@@ -307,7 +307,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: `Live baselines: Buy Box ${bb1p}, AI win ${simWin}. Estimated Day 90 Buy Box target ${metrics.dayNinetyBuyBoxTarget.value}.`,
+        desc: `Baselines: Buy Box ${bb1p}, AI win ${simWin}. Day 90 Buy Box target ${metrics.dayNinetyBuyBoxTarget.value}.`,
       },
     },
     {

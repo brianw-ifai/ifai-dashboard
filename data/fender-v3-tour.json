@@ -8,8 +8,8 @@
     "subtitle": "Fender's health across 6 catalog divisions",
     "category": "BRAND CORE",
     "displays": [
-      "3,430 monitored electric SKUs (live catalog, updated 2026-09-29)",
-      "Buy Box: 7.4% Amazon 1P on 993 active offers; 92.6% seller data still unharvested",
+      "3,430 monitored electric SKUs (Audit · Sep 29, 2026)",
+      "Buy Box: 7.4% Amazon 1P on 993 active offers; 92.6% seller unknown",
       "AI win rate 73.3% of answered prompts; weakest is Beginner at 33.3%"
     ],
     "value": "One page tying Amazon listing problems and AI recommendations to revenue."
@@ -23,7 +23,7 @@
     "subtitle": "Buy Box, price leaks, and partner bundles",
     "category": "RETAIL HEALTH",
     "displays": [
-      "7.4% of 993 active offers confirm Amazon 1P; 92.6% are still unharvested",
+      "7.4% of 993 active offers confirm Amazon 1P; 92.6% seller unknown",
       "14 flagged ASINs and 2,420+ stranded reviews",
       "MAP drift: Amazon -$77.58 average on 118 active-offer SKUs"
     ],
@@ -54,7 +54,7 @@
     "category": "AI READINESS",
     "displays": [
       "0% of found fender.com pages have Schema.org additionalProperty fields",
-      "Product page found on 29.2% of the live sample (21 of 72)",
+      "Product page found for 21 of 72 SKUs (29.2%)",
       "6 spec fields still missing from fender.com templates"
     ],
     "value": "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns."
@@ -98,8 +98,8 @@
     "subtitle": "What happens at 30, 60, and 90 days",
     "category": "ROADMAP",
     "displays": [
-      "Live baseline: Buy Box 7.4%, AI win 73.3%",
-      "Estimated targets toward 95% Buy Box (not yet measured)",
+      "Baseline: Buy Box 7.4%, AI win 73.3%",
+      "Targets toward 95% Buy Box",
       "Choose who does the work: IntoFocus or your team"
     ],
     "value": "Follow a clear 90-day plan with targets, whichever team does the work."

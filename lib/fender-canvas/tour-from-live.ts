@@ -16,7 +16,7 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       subtitle: "Fender's health across catalog divisions",
       category: "BRAND CORE",
       displays: [
-        `${formatInt(m.catalog_skus)} monitored SKUs (live catalog)`,
+        `${formatInt(m.catalog_skus)} monitored SKUs`,
         `Buy Box: ${formatPct(m.bb_1p_pct)} Amazon 1P on ${formatInt(m.bb_total)} active offers`,
         `AI win rate ${formatPct(m.sim_win_pct)}; weakest is ${m.weakest_category ?? "n/a"} at ${formatPct(m.weakest_win_pct)}`,
       ],
@@ -78,7 +78,7 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       displays: [
         `${beginner?.top_competitor ?? "Rival"} ${formatPct(beginner?.top_competitor_pct ?? null)} in beginner`,
         `Strongest category: ${m.strongest_category ?? "n/a"} at ${formatPct(m.strongest_win_pct)}`,
-        "SOV from live simulation battery",
+        "SOV from the simulation battery",
       ],
       value: "Get ready-made playbooks for shoppers deciding between Fender and a rival.",
     },
@@ -92,8 +92,8 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       category: "OPPORTUNITY",
       displays: [
         "18 Action Items ranked by revenue recovered",
-        "Phase 1 quick win: +$680K (estimate)",
-        "Enterprise potential: +$38M to $62M (estimate)",
+        "Phase 1 quick win: +$680K",
+        "Enterprise potential: +$38M to $62M",
       ],
       value: "See what each Action Item is worth, so you know where to start.",
     },
@@ -106,8 +106,8 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       subtitle: "What happens at 30, 60, and 90 days",
       category: "ROADMAP",
       displays: [
-        `Live baseline: Buy Box ${formatPct(m.bb_1p_pct)}, AI win ${formatPct(m.sim_win_pct)}`,
-        "Estimated targets toward 95% Buy Box (not yet measured)",
+        `Baseline: Buy Box ${formatPct(m.bb_1p_pct)}, AI win ${formatPct(m.sim_win_pct)}`,
+        "Targets toward 95% Buy Box",
         "Choose who does the work: IntoFocus or your team",
       ],
       value: "Follow a clear 90-day plan with targets, whichever team does the work.",
