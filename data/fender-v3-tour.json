@@ -1,0 +1,107 @@
+[
+  {
+    "nodeId": "hub",
+    "targetX": 800,
+    "targetY": 500,
+    "radius": 185,
+    "title": "Brand Overview",
+    "subtitle": "Fender's health across 6 catalog divisions",
+    "category": "BRAND CORE",
+    "displays": [
+      "3,430 monitored electric SKUs (Audit · Sep 29, 2026)",
+      "Buy Box: 7.4% Amazon 1P on 993 active offers; 92.6% seller unknown",
+      "AI win rate 73.3% of answered prompts; weakest is Beginner at 33.3%"
+    ],
+    "value": "One page tying Amazon listing problems and AI recommendations to revenue."
+  },
+  {
+    "nodeId": "ecommerce",
+    "targetX": 1160,
+    "targetY": 320,
+    "radius": 125,
+    "title": "Amazon & Retail Health",
+    "subtitle": "Buy Box, price leaks, and partner bundles",
+    "category": "RETAIL HEALTH",
+    "displays": [
+      "7.4% of 993 active offers confirm Amazon 1P; 92.6% seller unknown",
+      "14 flagged ASINs and 2,420+ stranded reviews",
+      "MAP drift: Amazon -$77.58 average on 118 active-offer SKUs"
+    ],
+    "value": "Win back the Buy Box (target 95%) by working with partners, not sending legal threats."
+  },
+  {
+    "nodeId": "aeo",
+    "targetX": 440,
+    "targetY": 320,
+    "radius": 125,
+    "title": "AI Search Visibility",
+    "subtitle": "What ChatGPT, Perplexity, and Gemini say about Fender",
+    "category": "AI SEARCH VISIBILITY",
+    "displays": [
+      "102 calls: 34 prompts across ChatGPT, Perplexity, and Gemini",
+      "73.3% Fender/Squier wins on 75 answered calls (27 timeouts excluded)",
+      "2 confirmed spec hallucinations: Mustang Micro described as having tubes"
+    ],
+    "value": "See why AI assistants leave Fender out of recommendations and exactly what to change."
+  },
+  {
+    "nodeId": "specs",
+    "targetX": 440,
+    "targetY": 680,
+    "radius": 120,
+    "title": "Product Readiness",
+    "subtitle": "Can AI and Amazon read your specs correctly?",
+    "category": "AI READINESS",
+    "displays": [
+      "0% of found fender.com pages have Schema.org additionalProperty fields",
+      "Product page found for 21 of 72 SKUs (29.2%)",
+      "6 spec fields still missing from fender.com templates"
+    ],
+    "value": "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns."
+  },
+  {
+    "nodeId": "competitors",
+    "targetX": 1160,
+    "targetY": 680,
+    "radius": 120,
+    "title": "Competitors",
+    "subtitle": "Where rivals beat Fender, and why",
+    "category": "COMPETITORS",
+    "displays": [
+      "Yamaha 66.7% in beginner; Taylor and PRS tied at 15.4% in acoustics",
+      "Fender/Squier leads acoustics at 61.5% and amps at 100% (9 of 9)",
+      "Tracked on Amazon, Sweetwater, Reverb, and Walmart"
+    ],
+    "value": "Get ready-made playbooks for shoppers deciding between Fender and a rival."
+  },
+  {
+    "nodeId": "suggestions",
+    "targetX": 800,
+    "targetY": 180,
+    "radius": 115,
+    "title": "Action Items & ROI",
+    "subtitle": "18 Action Items, ranked by revenue",
+    "category": "OPPORTUNITY",
+    "displays": [
+      "18 Action Items ranked by revenue recovered",
+      "Phase 1 quick win: +$680K",
+      "Enterprise potential: +$38M to $62M"
+    ],
+    "value": "See what each Action Item is worth, so you know where to start."
+  },
+  {
+    "nodeId": "roadmap",
+    "targetX": 800,
+    "targetY": 820,
+    "radius": 115,
+    "title": "90-Day Roadmap",
+    "subtitle": "What happens at 30, 60, and 90 days",
+    "category": "ROADMAP",
+    "displays": [
+      "Baseline: Buy Box 7.4%, AI win 73.3%",
+      "Targets toward 95% Buy Box",
+      "Choose who does the work: IntoFocus or your team"
+    ],
+    "value": "Follow a clear 90-day plan with targets, whichever team does the work."
+  }
+]

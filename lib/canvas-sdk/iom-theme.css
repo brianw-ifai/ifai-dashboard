@@ -1133,6 +1133,20 @@
   backdrop-filter: blur(10px);
 }
 
+.ifai-canvas.theme-iom .map-chrome-slide.tour-launcher.hdr-btn {
+  transition:
+    transform calc(0.42s * var(--iom-motion-scale, 1)) cubic-bezier(0.22, 0.9, 0.24, 1),
+    opacity calc(0.34s * var(--iom-motion-scale, 1)) ease,
+    background 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.ifai-canvas.theme-iom .map-chrome-slide.canvas-hud-controls {
+  transition:
+    transform calc(0.42s * var(--iom-motion-scale, 1)) cubic-bezier(0.22, 0.9, 0.24, 1),
+    opacity calc(0.34s * var(--iom-motion-scale, 1)) ease;
+}
+
 .ifai-canvas.theme-iom .tour-launcher.hdr-btn-primary {
   background: #0284c7;
   border-color: #0284c7;

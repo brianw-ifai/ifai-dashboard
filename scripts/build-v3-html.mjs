@@ -10,6 +10,14 @@ const htmlPath = join(root, "fender-brand-canvas-v3.html");
 
 mkdirSync(outDir, { recursive: true });
 
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  "https://qftczrlksczfimnzfiov.supabase.co";
+const supabaseKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  "";
+
 const build = spawnSync(
   "npx",
   [
@@ -19,10 +27,19 @@ const build = spawnSync(
     "--bundle",
     "--format=iife",
     "--jsx=automatic",
+    "--minify",
     "--alias:@=.",
+    "--alias:@/app/auth/actions=./scripts/standalone-shims/auth-actions.ts",
+    "--alias:@/app/auth/guest-actions=./scripts/standalone-shims/guest-actions.ts",
+    "--alias:@/app/auth/organization-actions=./scripts/standalone-shims/organization-actions.ts",
+    "--alias:@/app/settings/profile/actions=./scripts/standalone-shims/profile-actions.ts",
+    "--alias:next/navigation=./scripts/standalone-shims/next-navigation.ts",
     `--outfile=${bundleBase}.js`,
     "--loader:.css=css",
     "--external:/fonts/*",
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_URL=${JSON.stringify(supabaseUrl)}`,
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY=${JSON.stringify(supabaseKey)}`,
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${JSON.stringify(supabaseKey)}`,
   ],
   { cwd: root, stdio: "inherit" },
 );
@@ -68,8 +85,15 @@ const html = `<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
   <style>
+    @font-face {
+      font-family: Inter;
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+    }
     :root { --font-playfair: "Playfair Display", Georgia, "Times New Roman", serif; }
-    html, body { margin: 0; height: 100%; background: #070d18; }
+    html, body { margin: 0; height: 100%; background: #070d18; font-family: Inter, system-ui, sans-serif; }
     #root { height: 100%; }
     ${css}
   </style>
@@ -81,5 +105,6 @@ const html = `<!DOCTYPE html>
 </html>
 `;
 
-writeFileSync(htmlPath, html);
-console.log(`Wrote ${htmlPath} (${html.length} bytes)`);
+const inlined = inlineAssets(html);
+writeFileSync(htmlPath, inlined);
+console.log(`Wrote ${htmlPath} (${inlined.length} bytes)`);

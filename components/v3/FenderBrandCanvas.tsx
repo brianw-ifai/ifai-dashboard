@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { applyPortfolioRetailReading } from "@/components/v3/apply-portfolio-retail";
-import { fenderCanvasSpec } from "@/components/v3/fender-canvas-spec";
-import {
-  unavailableRetailReading,
-  type PortfolioRetailReading,
-} from "@/components/v3/portfolio-retail-reading";
+import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
+import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
+import { useFenderCanvasData } from "@/components/v3/use-fender-canvas-data";
+import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 
@@ -47,12 +45,12 @@ function viewerStorageScope(viewerId?: string) {
 export function FenderBrandCanvas({
   userMenu,
   viewerId,
-  retailReading = unavailableRetailReading,
 }: {
   userMenu?: CanvasUserMenu;
   viewerId?: string;
-  retailReading?: PortfolioRetailReading;
 }) {
+  const { bundle, loading, stale, error } = useFenderCanvasData();
+
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
       if (mode === "enterprise") {
@@ -86,19 +84,28 @@ export function FenderBrandCanvas({
   }, []);
 
   const spec = useMemo(() => {
-    const withRetail = applyPortfolioRetailReading(fenderCanvasSpec, retailReading);
-    const metricWidgets = withRetail.metricWidgets
-      ? {
-          ...withRetail.metricWidgets,
-          storageKey: `${withRetail.metricWidgets.storageKey}:${viewerStorageScope(viewerId)}`,
-        }
-      : undefined;
-    return {
-      ...withRetail,
-      ...(userMenu ? { userMenu, userEmail: userMenu.email } : {}),
-      ...(metricWidgets ? { metricWidgets } : {}),
-    };
-  }, [retailReading, userMenu, viewerId]);
+    if (!bundle) return null;
+    return buildFenderCanvasSpec(bundle, {
+      userMenu,
+      viewerId,
+      metricStorageSuffix: viewerStorageScope(viewerId),
+      headerSlot: (
+        <DataFreshnessBar fresh={bundle.fresh} stale={stale} />
+      ),
+    });
+  }, [bundle, stale, userMenu, viewerId]);
+
+  if (loading && !spec) {
+    return <CanvasLoadingShell />;
+  }
+
+  if (!spec) {
+    return (
+      <div style={{ padding: 24, color: "var(--danger-red, #ef4444)" }}>
+        Could not load live canvas data.{error ? ` ${error.message}` : ""}
+      </div>
+    );
+  }
 
   return <IntelligenceCanvas spec={spec} />;
 }

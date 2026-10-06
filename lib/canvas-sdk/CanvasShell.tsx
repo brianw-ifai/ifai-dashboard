@@ -19,6 +19,8 @@ import {
   iomMotionMs,
 } from "@/lib/canvas-sdk/iom-motion";
 import { IomCursor } from "@/lib/canvas-sdk/IomCursor";
+import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
+import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import {
@@ -30,9 +32,7 @@ import {
   ListChecks,
   Maximize2,
   Minimize2,
-  Minus,
   Moon,
-  Plus,
   Route,
   Search,
   Sparkles,
@@ -143,6 +143,30 @@ export function CanvasShell({ spec, children }: Props) {
   const [tourProgress, setTourProgress] = useState<number | null>(null);
   /** Bottom-left launcher hides after click until the tour closes again. */
   const [tourLauncherDismissed, setTourLauncherDismissed] = useState(false);
+  const [tourLauncherExiting, setTourLauncherExiting] = useState(false);
+  const overviewChromeExitPartsRef = useRef(0);
+  const restoreTourLauncher = useCallback(() => {
+    if (!tourActiveRef.current) {
+      setTourLauncherExiting(false);
+      setTourLauncherDismissed(false);
+    }
+  }, []);
+  const completeOverviewChromeExit = useCallback(() => {
+    setTourLauncherExiting(false);
+    setTourLauncherDismissed(true);
+  }, []);
+  const onOverviewChromePartExitComplete = useCallback(() => {
+    overviewChromeExitPartsRef.current -= 1;
+    if (overviewChromeExitPartsRef.current > 0) return;
+    completeOverviewChromeExit();
+  }, [completeOverviewChromeExit]);
+  const beginOverviewChromeExit = useCallback(() => {
+    if (tourLauncherDismissed || tourLauncherExiting) return;
+    let parts = 1;
+    if (tourSteps.length > 0 && !tourActiveRef.current) parts += 1;
+    overviewChromeExitPartsRef.current = parts;
+    setTourLauncherExiting(true);
+  }, [tourLauncherDismissed, tourLauncherExiting, tourSteps.length]);
   const [panelLayout, setPanelLayout] = useState<PanelLayout>(iom ? "hidden" : "wide");
   const panelLayoutBeforeHide = useRef<Exclude<PanelLayout, "hidden">>("wide");
   const [panelView, setPanelView] = useState<"spoke" | "command">(
@@ -339,6 +363,7 @@ export function CanvasShell({ spec, children }: Props) {
       setPanelLayout("hidden");
       setOverviewNonce((nonce) => nonce + 1);
       frameOverview();
+      restoreTourLauncher();
       return;
     }
 
@@ -358,9 +383,10 @@ export function CanvasShell({ spec, children }: Props) {
         setOverviewNonce((nonce) => nonce + 1);
         frameOverview();
         iomTransitionLockRef.current = false;
+        restoreTourLauncher();
       }, iomMotionMs(IOM_MAP_EXIT_BASE_MS));
     }, iomMotionMs(IOM_RAIL_MOTION_BASE_MS));
-  }, [frameOverview, iom, iomMapExiting, panelLayout]);
+  }, [frameOverview, iom, iomMapExiting, panelLayout, restoreTourLauncher]);
 
   const columnRailScrollGuardRef = useRef({ tracking: false, moved: false, startY: 0 });
 
@@ -416,15 +442,21 @@ export function CanvasShell({ spec, children }: Props) {
     }
     if (iom) return;
     setActiveSpoke(null);
-    if (!tourActiveRef.current) frameOverview();
-  }, [frameOverview, iom]);
+    if (!tourActiveRef.current) {
+      frameOverview();
+      restoreTourLauncher();
+    }
+  }, [frameOverview, iom, restoreTourLauncher]);
 
   const [overviewNonce, setOverviewNonce] = useState(0);
   const resetCanvasView = useCallback(() => {
-    if (!iom) setActiveSpoke(null);
+    if (!iom) {
+      setActiveSpoke(null);
+      restoreTourLauncher();
+    }
     setOverviewNonce((nonce) => nonce + 1);
     frameOverview();
-  }, [frameOverview, iom]);
+  }, [frameOverview, iom, restoreTourLauncher]);
 
   /** Same as the sidebar Close on IOM (hide panel + overview); closes drilldown elsewhere. */
   const resetMainView = useCallback(() => {
@@ -438,8 +470,8 @@ export function CanvasShell({ spec, children }: Props) {
     }
     if (iom) hidePanel();
     else closeDrilldown();
-    if (!tourActiveRef.current && tourSteps.length) setTourLauncherDismissed(false);
-  }, [closeDrilldown, frameOverview, hidePanel, iom, tourSteps.length]);
+    restoreTourLauncher();
+  }, [closeDrilldown, frameOverview, hidePanel, iom, restoreTourLauncher]);
 
   const focusNode = useCallback(
     (spokeId: string, subTab?: string) => {
@@ -460,7 +492,7 @@ export function CanvasShell({ spec, children }: Props) {
         setActiveTab(0);
       }
       setTooltipVisible(false);
-      if (tourSteps.length) setTourLauncherDismissed(true);
+      beginOverviewChromeExit();
       if (iom) {
         if (spokeId === "hub") setOverviewNonce((nonce) => nonce + 1);
         return;
@@ -483,6 +515,8 @@ export function CanvasShell({ spec, children }: Props) {
       panelLayout,
       spec.focusTargets,
       spec.spokes,
+      beginOverviewChromeExit,
+      restoreTourLauncher,
       tourSteps.length,
     ],
   );
@@ -495,10 +529,10 @@ export function CanvasShell({ spec, children }: Props) {
       setTourActive(false);
       setTourSuspended(false);
       setTourProgress(completed ? null : tourStepRef.current);
-      setTourLauncherDismissed(false);
+      restoreTourLauncher();
       resetCanvasView();
     },
-    [resetCanvasView],
+    [resetCanvasView, restoreTourLauncher],
   );
 
   const smoothPanToNode = useCallback(
@@ -824,8 +858,10 @@ export function CanvasShell({ spec, children }: Props) {
   function handleFilterChange(value: string) {
     const option = spec.filters?.find((item) => item.value === value);
     const target = option?.target ?? (value === "all" ? "overview" : undefined);
-    if (!target || target === "overview") resetCanvasView();
-    else focusNode(target);
+    if (!target || target === "overview") {
+      if (iom) hidePanel();
+      else resetCanvasView();
+    } else focusNode(target);
   }
 
   function handleSearch(query: string) {
@@ -874,8 +910,12 @@ export function CanvasShell({ spec, children }: Props) {
   const panelOpen = showingCommand || Boolean(spoke);
   const tourOverlayVisible = tourActive && !tourSuspended;
   const canResumeTour = !tourActive && tourProgress !== null && tourProgress > 0;
-  const showTourLauncher =
-    tourSteps.length > 0 && !tourActive && !tourLauncherDismissed;
+  const tourLauncherEligible = tourSteps.length > 0 && !tourActive;
+  const overviewChromeOpen = !tourLauncherDismissed;
+  const tourLauncherOpen = tourLauncherEligible && overviewChromeOpen;
+  const tourLauncherLabel = canResumeTour
+    ? `Resume tour · ${(tourProgress ?? 0) + 1}/${tourSteps.length}`
+    : "Guided tour";
 
   const openTourFromLauncher = useCallback(() => {
     setTourLauncherDismissed(true);
@@ -1113,20 +1153,22 @@ export function CanvasShell({ spec, children }: Props) {
           />
         ) : null}
 
-        {showTourLauncher ? (
-          <button
-            type="button"
-            className="tour-launcher hdr-btn hdr-btn-primary"
-            onClick={openTourFromLauncher}
-          >
-            <Compass size={14} />
-            <span>
-              {canResumeTour
-                ? `Resume tour · ${(tourProgress ?? 0) + 1}/${tourSteps.length}`
-                : "Guided tour"}
-            </span>
-          </button>
-        ) : null}
+        <TourLauncher
+          open={tourLauncherOpen}
+          exiting={tourLauncherExiting}
+          onExitComplete={onOverviewChromePartExitComplete}
+          label={tourLauncherLabel}
+          onLaunch={openTourFromLauncher}
+        />
+
+        <CanvasHudZoomControls
+          open={overviewChromeOpen}
+          exiting={tourLauncherExiting}
+          onExitComplete={onOverviewChromePartExitComplete}
+          onZoomIn={() => zoomBy(1.2)}
+          onZoomOut={() => zoomBy(1 / 1.2)}
+          onResetView={resetCanvasView}
+        />
 
         {spec.showLegend !== false ? (
           <div className="canvas-hud-legend">
@@ -1136,22 +1178,6 @@ export function CanvasShell({ spec, children }: Props) {
                 <span>{item.label}</span>
               </div>
             ))}
-          </div>
-        ) : null}
-
-        {!columnLayout ? (
-          <div className="canvas-hud-controls">
-            <div className="hud-btn-group">
-              <button className="hud-btn" onClick={() => zoomBy(1.2)} title="Zoom In (+)">
-                <Plus size={16} />
-              </button>
-              <button className="hud-btn" onClick={() => zoomBy(1 / 1.2)} title="Zoom Out (-)">
-                <Minus size={16} />
-              </button>
-              <button className="hud-btn" onClick={resetCanvasView} title="Center & Overview">
-                <Compass size={16} />
-              </button>
-            </div>
           </div>
         ) : null}
 

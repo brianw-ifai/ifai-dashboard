@@ -55,6 +55,19 @@ test.describe("guided tour", () => {
     await expect(canvas.tourStep).toHaveText(step);
   });
 
+  test("returning to the map overview brings back the guided tour launcher", async ({
+    canvas,
+    page,
+  }) => {
+    await expect(page.locator(".tour-launcher.map-chrome-onscreen")).toBeVisible();
+    await canvas.openSpokeFromMap("Brand AEO");
+    await expect(page.locator(".tour-launcher.map-chrome-onscreen")).toHaveCount(0);
+
+    await page.locator(".drilldown-hide-btn").click();
+    await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
+    await expect(page.locator(".tour-launcher.map-chrome-onscreen")).toBeVisible();
+  });
+
   test("finishing the tour clears the resume offer", async ({ canvas }) => {
     await canvas.startTour();
     const total = await canvas.page.locator(".tour-dot").count();

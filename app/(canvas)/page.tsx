@@ -1,59 +1,9 @@
-import { DashboardAuthView } from "@/components/dashboard/DashboardAuthView";
-import { DashboardOrgPlaceholder } from "@/components/dashboard/DashboardOrgPlaceholder";
-import { FenderBrandCanvas } from "@/components/v3/FenderBrandCanvas";
-import { resolveActiveOrganization } from "@/lib/command/active-organization";
-import { commandSessionToUserMenu, getCommandSession } from "@/lib/command/session";
-import { safeNextPath } from "@/lib/auth/paths";
-import { readPortfolioRetail } from "@/lib/retail/read-listing-monitor";
+import { HomeCanvasDynamic } from "@/components/v3/HomeCanvasDynamic";
+import { HomeCanvasStatic } from "@/components/v3/HomeCanvasStatic";
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ next?: string; error?: string; auth?: string }>;
-}) {
-  const params = await searchParams;
-  const session = await getCommandSession();
-
-  if (!session) {
-    const banner =
-      params.error === "confirm"
-        ? "That confirmation link is invalid or has expired. Sign up again to get a new one."
-        : undefined;
-    const mode = params.auth === "signup" ? "signup" : "login";
-    return (
-      <DashboardAuthView
-        mode={mode}
-        next={safeNextPath(params.next)}
-        banner={banner}
-      />
-    );
+export default function Home() {
+  if (process.env.NEXT_PUBLIC_STATIC_EXPORT === "1") {
+    return <HomeCanvasStatic />;
   }
-
-  const activeOrganization = resolveActiveOrganization(session);
-  const userMenu = commandSessionToUserMenu(session, activeOrganization);
-
-  if (activeOrganization?.slug === "fender") {
-    const retailReading = await readPortfolioRetail();
-    return (
-      <FenderBrandCanvas
-        userMenu={userMenu}
-        viewerId={session.userId}
-        retailReading={retailReading}
-      />
-    );
-  }
-
-  const hint =
-    userMenu.organizations.length > 1
-      ? "Open your profile menu and pick which organization you want to view."
-      : userMenu.organizations.length === 1
-        ? "This organization does not have a map view yet."
-        : "You are not assigned to a client organization yet.";
-
-  return (
-    <DashboardOrgPlaceholder
-      {...userMenu}
-      hint={hint}
-    />
-  );
+  return <HomeCanvasDynamic />;
 }

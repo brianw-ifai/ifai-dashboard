@@ -1259,20 +1259,37 @@
       border: 1px dashed var(--border-color);
     }
 
-    /* Guided tour entry (bottom left); hides on click while the tour runs. */
+    /* Map overview chrome (tour launcher, zoom HUD): slide off bottom edge. */
+    .map-chrome-slide {
+      transform: translate3d(0, calc(100% + 28px), 0);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        transform calc(0.42s * var(--iom-motion-scale, 1)) cubic-bezier(0.22, 0.9, 0.24, 1),
+        opacity calc(0.34s * var(--iom-motion-scale, 1)) ease;
+    }
+
+    .map-chrome-slide.map-chrome-onscreen {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     .tour-launcher {
       position: absolute;
       bottom: 24px;
       left: 24px;
-      z-index: 44;
+      /* Above drilldown (45) so slide-off stays visible; below header chrome (55). */
+      z-index: 52;
       padding: 8px 14px;
       min-height: 36px;
       font-size: 12px;
       box-shadow: var(--shadow-soft);
     }
 
-    .ifai-canvas:has(.tour-launcher) .canvas-hud-legend {
+    .ifai-canvas:has(.tour-launcher.map-chrome-onscreen) .canvas-hud-legend {
       bottom: calc(24px + 36px + 10px);
+      transition: bottom calc(0.42s * var(--iom-motion-scale, 1)) cubic-bezier(0.22, 0.9, 0.24, 1);
     }
 
     /* Canvas HUD Legend (Bottom Left) */
@@ -1315,15 +1332,10 @@
       position: absolute;
       bottom: 24px;
       right: 24px;
-      z-index: 30;
+      z-index: 52;
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: right 0.45s cubic-bezier(0.22, 0.9, 0.24, 1);
-    }
-
-    .ifai-canvas.panel-open .canvas-hud-controls {
-      right: calc(var(--drilldown-width) + 24px);
     }
 
     .hud-btn-group {
