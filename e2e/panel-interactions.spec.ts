@@ -93,6 +93,16 @@ test.describe("collapsible explanations", () => {
 });
 
 test.describe("drill-downs", () => {
+  test("opening a spoke dismisses the node tooltip", async ({ canvas, page }) => {
+    const retailNode = page.locator(".graph-node").filter({ hasText: "Portfolio Retail" });
+    await retailNode.hover();
+    await expect(page.locator(".node-tooltip")).toBeVisible();
+
+    await retailNode.click();
+    await expect(canvas.panel).toBeVisible();
+    await expect(page.locator(".node-tooltip")).toBeHidden();
+  });
+
   test("catalog governance shows listing actions and consolidation upside", async ({
     canvas,
     page,

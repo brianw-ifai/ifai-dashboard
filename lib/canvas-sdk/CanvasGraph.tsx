@@ -148,6 +148,7 @@ function GraphNode({
         // including when the camera is already framed on the hub.
         if (node.spokeId) onFocusNode(node.spokeId, node.subTab);
         else onResetView();
+        onHideTooltip();
       }}
       onMouseEnter={(evt) => {
         onGroupEnter?.();
