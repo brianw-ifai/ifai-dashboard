@@ -630,6 +630,10 @@ export function CanvasShell({ spec, children }: Props) {
     setTooltipVisible(false);
   }, []);
 
+  useEffect(() => {
+    if (activeSpoke || panelView === "command") hideTooltip();
+  }, [activeSpoke, hideTooltip, panelView]);
+
   const showDefinitionTooltip = useCallback((target: Element) => {
     if (tourActiveRef.current && !tourSuspendedRef.current) return;
     const title =
