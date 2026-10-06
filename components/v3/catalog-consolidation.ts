@@ -41,7 +41,7 @@ export const catalogConsolidationHtml = `
       <thead>
         <tr>
           <th>Listing</th>
-          <th><button type="button" class="ifai-sort-btn" data-ifai-sort="partner">Partner / bundle</button></th>
+          <th><button type="button" class="ifai-sort-btn" data-ifai-sort="partner">Partner</button></th>
           <th>Action</th>
           <th><button type="button" class="ifai-sort-btn" data-ifai-sort="owner">Owner</button></th>
         </tr>
