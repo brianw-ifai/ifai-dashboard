@@ -78,7 +78,45 @@ function mapMembership(row: MembershipRow): CommandMembership | null {
   };
 }
 
+function e2eFenderSession(): CommandSession {
+  const organization = {
+    id: "e2e-fender",
+    name: "Fender",
+    slug: "fender",
+    isPlatformOrg: false,
+  };
+  return {
+    userId: "e2e-user",
+    email: "e2e@intofocus.ai",
+    profile: {
+      id: "e2e-user",
+      displayName: "E2E",
+      avatarPath: null,
+      settings: {},
+    },
+    memberships: [
+      {
+        id: "e2e-membership",
+        role: "intofocus_admin",
+        status: "active",
+        organization,
+      },
+    ],
+    primaryOrganization: organization,
+    primaryRole: "intofocus_admin",
+    isIntoFocusAdmin: false,
+    avatarSignedUrl: null,
+  };
+}
+
 export async function getCommandSession(): Promise<CommandSession | null> {
+  if (
+    process.env.E2E_AUTH_BYPASS === "1" &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    return e2eFenderSession();
+  }
+
   const [userId, email] = await Promise.all([getAuthUserId(), getUserEmail()]);
   if (!userId || !email) return null;
 

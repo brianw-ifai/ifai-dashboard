@@ -4,7 +4,9 @@
     enough to read without leaving the page. */
 export const fenderGlossary: Record<string, string> = {
   "Buy Box":
-    "The one-click 'Add to Cart' button on an Amazon listing. Only one seller wins it at a time; when nobody wins it, shoppers see 'Available from these sellers' instead and far fewer of them buy.",
+    "Amazon's name for this is Featured Offer: the one-click Add to Cart button. Only one seller wins it. When nobody wins it, shoppers see other sellers listed and far fewer of them buy.",
+  "Featured Offer":
+    "The one-click Add to Cart button on an Amazon listing, also called the Buy Box. Amazon withholds it when the offer, including shipping, is above a benchmark from outside Amazon, even if the price is at MAP.",
   MAP: "Minimum Advertised Price: the lowest price a retail partner has agreed to display publicly. Partners get around it by bundling a cheap accessory and discounting the pair.",
   "Brand Registry":
     "Amazon's brand-owner program. It lets Fender control its own listings and fold partner bundles in as variations of the official product.",

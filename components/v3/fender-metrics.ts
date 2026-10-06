@@ -29,11 +29,11 @@ export const FENDER_METRICS = {
   buyBoxRetention: {
     id: "buy-box-retention",
     spokeId: "ecommerce",
-    label: "Confirmed Amazon 1P Buy Box",
-    value: "7.4%",
-    detail: "74 of 993 active offers · backfill running",
+    label: "Featured Offers Suppressed",
+    value: "39",
+    detail: "3.9% of 993 active offers · above the outside benchmark",
     tone: "danger",
-    subTab: "Flagged ASINs",
+    subTab: "Suppressed",
     provenance: "live",
   },
   sellerDataCoverage: {
@@ -43,7 +43,7 @@ export const FENDER_METRICS = {
     value: "2.2%",
     detail: "74 of 3,430 SKUs · backfill running",
     tone: "warning",
-    subTab: "Flagged ASINs",
+    subTab: "Suppressed",
     provenance: "live",
   },
   flaggedAsins: {
@@ -53,7 +53,7 @@ export const FENDER_METRICS = {
     value: "14",
     detail: "Bundle leakage and review dilution",
     tone: "danger",
-    subTab: "Flagged ASINs",
+    subTab: "Suppressed",
     provenance: "live",
   },
   strandedReviews: {
@@ -201,7 +201,7 @@ export const FENDER_METRICS = {
     spokeId: "roadmap",
     label: "Day 90 Buy Box Target",
     value: "95%+",
-    detail: "Estimated target · live baseline 7.4%",
+    detail: "Estimated target · 39 Featured Offers suppressed today",
     tone: "success",
     subTab: "KPI Target",
     provenance: "estimate",

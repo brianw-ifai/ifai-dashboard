@@ -1,6 +1,10 @@
 import { fenderCommandCenter } from "@/components/v3/command-center-data";
 import { FENDER_METRICS, fenderWidgetMetrics } from "@/components/v3/fender-metrics";
 import { fenderGlossary } from "@/components/v3/glossary";
+import {
+  featuredOfferSuppression,
+  partnerLedHero,
+} from "@/components/v3/retail-partner-led";
 import { spokeData, tourSteps } from "@/components/v3/spoke-data";
 import { defineCanvas } from "@/lib/canvas-sdk";
 
@@ -11,6 +15,7 @@ const FOCUS_TARGETS = {
   "aeo:citation": { x: 180, y: 360 },
   "aeo:hallucination": { x: 260, y: 480 },
   "ecommerce": { x: 1160, y: 320 },
+  "ecommerce:suppressed": { x: 1360, y: 200 },
   "ecommerce:flagged": { x: 1360, y: 200 },
   "ecommerce:catalog": { x: 1420, y: 360 },
   "ecommerce:map": { x: 1340, y: 480 },
@@ -48,11 +53,11 @@ export const fenderCanvasSpec = defineCanvas({
       tone: "danger",
       icon: "pulse",
       spokeId: "ecommerce",
-      subTab: "flagged",
+      subTab: "suppressed",
       label: (
         <>
-          Buy Box (Active Offers): <strong>{FENDER_METRICS.buyBoxRetention.value} 1P</strong>{" "}
-          (74 of 993 active)
+          Featured Offer: <strong>{featuredOfferSuppression.listings} suppressed</strong>{" "}
+          ({featuredOfferSuppression.pctLabel} of 993)
         </>
       ),
     },
@@ -154,12 +159,12 @@ export const fenderCanvasSpec = defineCanvas({
       y: 200,
       r: 54,
       status: "danger",
-      title: "Buy Box",
-      stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "92.6% Unk"],
-      meta: "993 Active Offers",
+      title: "Featured Offer",
+      stats: [`${featuredOfferSuppression.listings} Suppressed`, featuredOfferSuppression.pctLabel],
+      meta: "of 993 active offers",
       spokeId: "ecommerce",
-      subTab: "flagged",
-      tooltip: {"title": "Buy Box (Active Offers)", "desc": "Amazon 1P owns the Buy Box on 7.4% of 993 active listings. Seller data for the other 92.6% is not yet harvested, and there are 0% confirmed 3P wins."},
+      subTab: "suppressed",
+      tooltip: {"title": "Featured Offer suppression", "desc": "39 of 993 active offers have no Featured Offer (the Buy Box) because the new price is above Amazon's Competitive External Price. A listing at MAP can still be suppressed when that outside benchmark is lower. Amazon does not name the retailer."},
     },
     {
       id: "sat-asin",
@@ -184,14 +189,11 @@ export const fenderCanvasSpec = defineCanvas({
       r: 52,
       status: "danger",
       title: "MAP Leakage",
-      stats: [
-        "-$39.21 Avg",
-        `${FENDER_METRICS.flaggedAsins.value} ASINs`,
-      ],
-      meta: "Amazon · Reverb · Walmart",
+      stats: ["457 Listings", "16.49%"],
+      meta: "avg $221.96 · sum $101,435",
       spokeId: "ecommerce",
       subTab: "map",
-      tooltip: {"title": "Cross-Marketplace MAP Leakage", "desc": "Starter kit bundles sidestep standalone MAP, which prompts automated scrapers on Reverb and Walmart to undercut the price."},
+      tooltip: {"title": "MAP leakage on active offers", "desc": "457 of 993 active offers are priced under the stored MAP. The average gap is 16.49% of MAP, $221.96 per listing, $101,434.60 combined. This is the wider Partner-Led issue, so it leads the Portfolio Retail bubble."},
     },
     {
       id: "sat-schema",
@@ -266,10 +268,10 @@ export const fenderCanvasSpec = defineCanvas({
       status: "danger",
       title: "Portfolio Retail",
       titleSize: 13.5,
-      stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "993 Active"],
-      meta: "92.6% Unharvested · 993 Sample",
+      stats: [partnerLedHero.statA, partnerLedHero.statB],
+      meta: partnerLedHero.meta,
       spokeId: "ecommerce",
-      tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box: 7.4% 1P of 993 active offers (2,437 SKUs unharvested or without an active offer). Covers Brand Registry consolidation with Austin Bazaar and GearTree across the monitored ASIN sample."},
+      tooltip: {"title": partnerLedHero.tooltipTitle, "desc": partnerLedHero.tooltipDesc},
     },
     {
       id: "spoke-specs",
@@ -329,7 +331,7 @@ export const fenderCanvasSpec = defineCanvas({
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: "A phased 30-60-90 day plan with live baselines (73.3% AI win rate, 7.4% Buy Box) and analyst-estimated targets toward 95% Buy Box retention.",
+        desc: "A phased 30-60-90 day plan with live baselines (73.3% AI win rate, 39 suppressed Featured Offers) and analyst-estimated targets.",
       },
     },
     {

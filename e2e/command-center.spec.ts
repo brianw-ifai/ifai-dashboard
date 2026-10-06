@@ -27,7 +27,7 @@ test.describe("command center", () => {
     await expect(quadrants.nth(1)).toContainText("7");
     await expect(quadrants.nth(0)).toContainText("3"); // critical
 
-    await canvas.priority("7.4% of active Amazon offers").locator(".cc-done-btn").click();
+    await canvas.priority("39 active offers have no Featured Offer").locator(".cc-done-btn").click();
     await expect(canvas.priorities).toHaveCount(6);
     await expect(quadrants.nth(1)).toContainText("6");
     await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
@@ -45,7 +45,7 @@ test.describe("command center", () => {
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
     await canvas.openCommandCenter();
-    const item = canvas.priority("7.4% of active Amazon offers");
+    const item = canvas.priority("39 active offers have no Featured Offer");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -54,7 +54,7 @@ test.describe("command center", () => {
     await canvas.reload();
     await canvas.openCommandCenter();
     await expect(
-      canvas.priority("7.4% of active Amazon offers").locator(".cc-owner-btn.active"),
+      canvas.priority("39 active offers have no Featured Offer").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -67,7 +67,7 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["7.4% of active Amazon offers", "Flagged ASINs"],
+    ["39 active offers have no Featured Offer", "Suppressed"],
     ["customer reviews are stranded", "Catalog"],
     ["AI assistants are quoting specs", "Hallucination"],
     ["machine-readable specs", "Schema"],
@@ -84,7 +84,7 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("39 active offers have no Featured Offer");
     await canvas.backToPriorities();
     await expect(canvas.priorities).toHaveCount(7);
   });
