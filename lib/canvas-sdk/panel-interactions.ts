@@ -150,9 +150,44 @@ export function usePanelInteractions({ bodyRef, onOpen, storageKey, scope, gloss
     const body = bodyRef.current;
     if (!body) return;
 
+    function toggleExpand(row: HTMLElement) {
+      const id = row.dataset.ifaiExpand;
+      const detail = id
+        ? row.parentElement?.querySelector<HTMLElement>(`[data-ifai-detail="${id}"]`)
+        : null;
+      if (!detail) return;
+      const open = detail.hidden;
+      detail.hidden = !open;
+      row.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function sortRows(button: HTMLElement) {
+      const table = button.closest("table");
+      const tbody = table?.tBodies[0];
+      const key = button.dataset.ifaiSort;
+      if (!table || !tbody || !key) return;
+      const direction = button.dataset.sortDir === "asc" ? "desc" : "asc";
+      table.querySelectorAll<HTMLElement>("[data-ifai-sort]").forEach((header) => {
+        header.removeAttribute("data-sort-dir");
+        header.removeAttribute("aria-sort");
+      });
+      button.dataset.sortDir = direction;
+      button.setAttribute("aria-sort", direction === "asc" ? "ascending" : "descending");
+      const rows = Array.from(tbody.rows).map((row, index) => ({ row, index }));
+      rows.sort((a, b) => {
+        const left = a.row.dataset[key] ?? "";
+        const right = b.row.dataset[key] ?? "";
+        const compared = left.localeCompare(right, undefined, { sensitivity: "base" });
+        if (compared === 0) return a.index - b.index;
+        return direction === "asc" ? compared : -compared;
+      });
+      rows.forEach(({ row }) => tbody.appendChild(row));
+    }
+
     function onClick(event: MouseEvent) {
       const target = event.target;
       if (!(target instanceof Element)) return;
+      if (target.closest("a[href]")) return;
 
       const collapse = target.closest<HTMLElement>("[data-ifai-collapse]");
       if (collapse) {
@@ -188,11 +223,41 @@ export function usePanelInteractions({ bodyRef, onOpen, storageKey, scope, gloss
       if (open) {
         event.preventDefault();
         onOpen(open.dataset.ifaiOpen as string, open.dataset.ifaiTab || undefined);
+        return;
+      }
+
+      const sort = target.closest<HTMLElement>("[data-ifai-sort]");
+      if (sort) {
+        event.preventDefault();
+        sortRows(sort);
+        return;
+      }
+
+      if (target.closest(".ifai-term")) return;
+      const expand = target.closest<HTMLElement>("[data-ifai-expand]");
+      if (expand) {
+        event.preventDefault();
+        toggleExpand(expand);
       }
     }
 
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.closest("a, button, input, textarea, select")) return;
+      const expand = target.closest<HTMLElement>("[data-ifai-expand]");
+      if (!expand) return;
+      event.preventDefault();
+      toggleExpand(expand);
+    }
+
     body.addEventListener("click", onClick);
-    return () => body.removeEventListener("click", onClick);
+    body.addEventListener("keydown", onKeyDown);
+    return () => {
+      body.removeEventListener("click", onClick);
+      body.removeEventListener("keydown", onKeyDown);
+    };
   }, [bodyRef, onOpen, state.starred, toggleIn]);
 
   const clearStarred = useCallback(

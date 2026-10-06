@@ -96,28 +96,67 @@ test.describe("drill-downs", () => {
   test("opening a spoke dismisses the node tooltip", async ({ canvas, page }) => {
     const retailNode = page.locator('[data-graph-node-id="spoke-retail"]');
     await retailNode.hover({ force: true });
-    await expect(page.locator(".node-tooltip")).toBeVisible();
+    const tooltip = page.locator(".node-tooltip");
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText("Highlights marketplace listings");
+    await expect(tooltip).not.toContainText("Portfolio Retail highlights");
+    await expect(retailNode).toContainText("457 below MAP");
+    await expect(retailNode).toContainText("46% of 993");
 
     await retailNode.click({ force: true });
     await expect(canvas.panel).toBeVisible();
-    await expect(page.locator(".node-tooltip")).toBeHidden();
+    await expect(tooltip).toBeHidden();
   });
 
-  test("catalog governance shows listing actions and consolidation upside", async ({
+  test("catalog governance connects listings to AI search and sorts the queue", async ({
     canvas,
     page,
   }) => {
     await canvas.openPriority("partner bundle listings need catalog governance");
 
     await expect(canvas.activeTab).toContainText("Catalog Consolidation");
-    await expect(page.getByLabel("Priority listings by partner")).toBeVisible();
-    await expect(page.locator(".drilldown-body tbody tr")).toHaveCount(14);
     await expect(page.locator(".drilldown-body")).toContainText(
-      "Validate variation eligibility",
+      "Why these listings matter to AI search",
     );
     await expect(page.locator(".drilldown-body")).not.toContainText(
-      "cease-and-desist",
+      "Consolidation Opportunity by Partner",
     );
+    const rows = page.locator(".drilldown-body tbody tr");
+    await expect(rows).toHaveCount(14);
+
+    const listing = rows.first().locator("a.listing-link").first();
+    await expect(listing).toHaveAttribute("href", /amazon\.com\/dp\//);
+    const popupPromise = page.waitForEvent("popup");
+    await listing.click();
+    const popup = await popupPromise;
+    await expect(popup).toHaveURL(/amazon\.com\/dp\//);
+    await popup.close();
+
+    const partnerSort = page.locator(".ifai-sort-btn", { hasText: "Partner" });
+    await partnerSort.click();
+    await expect(rows.first()).toContainText("Mustang Micro");
+    await partnerSort.click();
+    await expect(rows.first()).toContainText("Player II Telecaster");
+  });
+
+  test("MAP channels open listing rows and explain consequences", async ({ canvas, page }) => {
+    await canvas.openPriority("Discounted bundles are dragging");
+    await expect(canvas.activeTab).toContainText("MAP");
+
+    const amazon = page.locator(".map-channel-row", { hasText: "Amazon.com" });
+    await amazon.click();
+    const detail = page.locator('[data-ifai-detail="amazon"]');
+    await expect(detail).toBeVisible();
+    await expect(detail.locator("tbody tr")).toHaveCount(14);
+    await expect(detail.locator("a.listing-link").first()).toHaveAttribute(
+      "href",
+      /amazon\.com\/dp\//,
+    );
+
+    const consequence = amazon.locator(".ifai-term");
+    await expect(consequence).toHaveAttribute("data-ifai-tooltip-desc", /.+/);
+    await consequence.hover();
+    await expect(page.locator(".node-tooltip")).toContainText("Competitive External Price");
   });
 
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
