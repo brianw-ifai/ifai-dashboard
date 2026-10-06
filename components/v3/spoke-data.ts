@@ -66,7 +66,7 @@ export const spokeData: Record<SpokeId, SpokeDefinition> = {
     tabs: [
   "Suppressed Listings",
   "Catalog Consolidation & Brand Registry Governance",
-  "MAP (Minimum Advertised Price) Multi-Channel Engine"
+  "MAP"
 ],
     navLabel: "Portfolio Retail",
     next: "competitors",

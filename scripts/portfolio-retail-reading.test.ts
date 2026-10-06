@@ -109,17 +109,34 @@ test("MAP rows show a channel only when that channel has a stored price", () => 
     }),
   ]);
   const html = buildMapLeakageHtml(reading);
+  assert.match(html, /Listings under MAP/);
   assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B000000001"/);
   assert.match(html, /Tele &lt;caster&gt;/);
-  assert.match(html, /Walmart \$77\.50/);
+  assert.match(html, /<strong>Amazon<\/strong> · 3 listings/);
+  assert.match(html, /<strong>Walmart<\/strong> · 2 listings/);
+  assert.match(html, /<strong>Musician's Friend<\/strong> · 1 listing/);
+  assert.match(html, /<th>Amazon<\/th>/);
+  assert.match(html, /<th>Walmart<\/th>/);
+  assert.match(html, /<th>Musician's Friend<\/th>/);
+  assert.match(html, /\$77\.50/);
   assert.match(html, /href="https:\/\/www\.walmart\.com\/ip\/1"/);
-  assert.match(html, /Musician&#39;s Friend \$79\.00/);
-  assert.match(html, /Walmart \$65\.00/);
+  assert.match(html, /\$79\.00/);
+  assert.match(html, /\$65\.00/);
   assert.doesNotMatch(html, /should-not-show/);
-  assert.doesNotMatch(html, /Reverb|Sweetwater|Featured Offer withheld/);
+  assert.doesNotMatch(html, /Reverb|Sweetwater|Featured Offer withheld|\$808|Prices at MAP/);
   assert.equal(html.match(/<tr>/g)?.length, 4);
+
+  const amazonOnly = buildMapLeakageHtml(
+    summarizeRetailRows([row({ asin: "B000000004", mapPrice: 50, offerPrice: 40 })]),
+  );
+  assert.match(amazonOnly, /<strong>Amazon<\/strong> · 1 listing/);
+  assert.match(amazonOnly, /<th>Amazon<\/th>/);
+  assert.doesNotMatch(amazonOnly, /Walmart|Musician|Reverb|Sweetwater/);
 
   const unavailable = buildMapLeakageHtml(unavailableRetailReading);
   assert.match(unavailable, /Below-MAP rows are not available/);
-  assert.doesNotMatch(unavailable, /457|16\.49%|\$221\.96|\$101,434\.60|<tbody>/);
+  assert.doesNotMatch(
+    unavailable,
+    /457|16\.49%|\$221\.96|\$101,434\.60|<tbody>|Walmart|Musician|Reverb|Sweetwater|\$808/,
+  );
 });
