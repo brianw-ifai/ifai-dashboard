@@ -19,7 +19,12 @@ const build = spawnSync(
     "--bundle",
     "--format=iife",
     "--jsx=automatic",
+    "--minify",
     "--alias:@=.",
+    "--alias:@/app/auth/actions=./scripts/standalone-shims/auth-actions.ts",
+    "--alias:@/app/auth/organization-actions=./scripts/standalone-shims/organization-actions.ts",
+    "--alias:@/app/settings/profile/actions=./scripts/standalone-shims/profile-actions.ts",
+    "--alias:next/navigation=./scripts/standalone-shims/next-navigation.ts",
     `--outfile=${bundleBase}.js`,
     "--loader:.css=css",
     "--external:/fonts/*",
@@ -68,8 +73,15 @@ const html = `<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
   <style>
+    @font-face {
+      font-family: Inter;
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: swap;
+      src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2-variations");
+    }
     :root { --font-playfair: "Playfair Display", Georgia, "Times New Roman", serif; }
-    html, body { margin: 0; height: 100%; background: #070d18; }
+    html, body { margin: 0; height: 100%; background: #070d18; font-family: Inter, system-ui, sans-serif; }
     #root { height: 100%; }
     ${css}
   </style>
@@ -81,5 +93,6 @@ const html = `<!DOCTYPE html>
 </html>
 `;
 
-writeFileSync(htmlPath, html);
-console.log(`Wrote ${htmlPath} (${html.length} bytes)`);
+const inlined = inlineAssets(html);
+writeFileSync(htmlPath, inlined);
+console.log(`Wrote ${htmlPath} (${inlined.length} bytes)`);

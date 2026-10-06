@@ -1,6 +1,7 @@
 import { DashboardAuthView } from "@/components/dashboard/DashboardAuthView";
 import { DashboardOrgPlaceholder } from "@/components/dashboard/DashboardOrgPlaceholder";
 import { FenderBrandCanvas } from "@/components/v3/FenderBrandCanvas";
+import { hasGuestDashboardAccess } from "@/lib/auth/guest-dashboard";
 import { resolveActiveOrganization } from "@/lib/command/active-organization";
 import { commandSessionToUserMenu, getCommandSession } from "@/lib/command/session";
 import { safeNextPath } from "@/lib/auth/paths";
@@ -14,6 +15,10 @@ export default async function Home({
   const session = await getCommandSession();
 
   if (!session) {
+    if (await hasGuestDashboardAccess()) {
+      return <FenderBrandCanvas />;
+    }
+
     const banner =
       params.error === "confirm"
         ? "That confirmation link is invalid or has expired. Sign up again to get a new one."

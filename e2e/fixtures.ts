@@ -6,6 +6,10 @@ export class Canvas {
 
   async open() {
     await this.page.goto("/");
+    const skipLogin = this.page.getByRole("button", { name: "Skip Login" });
+    if (await skipLogin.isVisible().catch(() => false)) {
+      await skipLogin.click();
+    }
     await expect(this.page.locator(".ifai-canvas")).toBeVisible();
     await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
   }
@@ -74,7 +78,7 @@ export class Canvas {
   }
 
   get tourButton() {
-    return this.page.locator(".hdr-btn-primary");
+    return this.page.locator(".tour-launcher.map-chrome-onscreen");
   }
 
   async startTour() {
