@@ -7,7 +7,7 @@ export function FenderDivisionsTable({ divisions }: { divisions: CanvasDivisionR
   return (
     <div className="content-box">
       <div className="content-box-title">
-        <span>FMIC Catalog Division Performance Matrix (Live)</span>
+        <span>FMIC Catalog Division Performance Matrix</span>
         <span className="tag-badge tag-neutral">{formatInt(divisions.length)} divisions</span>
       </div>
       <table className="table-sm">

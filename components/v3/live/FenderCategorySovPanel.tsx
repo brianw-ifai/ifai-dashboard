@@ -14,7 +14,7 @@ export function FenderCategorySovPanel({
 
   return (
     <div className="content-box" style={{ marginTop: 12 }}>
-      <div className="content-box-title">Share of Voice by category (live)</div>
+      <div className="content-box-title">Share of Voice by category</div>
       <table className="table-sm">
         <thead>
           <tr>

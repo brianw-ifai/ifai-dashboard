@@ -59,7 +59,7 @@ export function FenderSimulationsPanel() {
   return (
     <div className="content-box">
       <div className="content-box-title">
-        <span>AI Simulations (Live)</span>
+        <span>AI Simulations</span>
         {total != null ? (
           <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
         ) : null}

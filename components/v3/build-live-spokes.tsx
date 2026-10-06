@@ -27,7 +27,7 @@ const TAB_OVERRIDES: Partial<
       <>
         {htmlBlock(
           bindCopy(
-            `<div class="ceo-callout"><div class="ceo-callout-header"><span>What does Buy Box coverage mean?</span></div><div class="ceo-callout-body">Live scan: {catalog_skus} SKUs, {bb_total} active offers ({active_offer_coverage_pct}). {bb_1p_pct} ({bb_1p} of {bb_total}) Amazon 1P; {bb_3p} confirmed 3P; {bb_unharvested} unharvested.</div></div>`,
+            `<div class="ceo-callout"><div class="ceo-callout-header"><span>What does Buy Box coverage mean?</span></div><div class="ceo-callout-body">{catalog_skus} SKUs, {bb_total} active offers ({active_offer_coverage_pct}). {bb_1p_pct} ({bb_1p} of {bb_total}) Amazon 1P; {bb_3p} confirmed 3P; {bb_unharvested} seller unknown.</div></div>`,
             vars,
           ),
         )}

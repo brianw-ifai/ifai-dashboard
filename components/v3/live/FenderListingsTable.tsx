@@ -50,7 +50,7 @@ export function FenderListingsTable() {
   return (
     <div className="content-box" style={{ marginTop: 12 }}>
       <div className="content-box-title">
-        <span>Retail Listings Drill-Down (Live)</span>
+        <span>Retail Listings Drill-Down</span>
         {total != null ? (
           <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
         ) : null}

@@ -31,7 +31,7 @@ export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }
   return (
     <>
       <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Top missing schema fields (live)</div>
+        <div className="content-box-title">Top missing schema fields</div>
         {topMissing.map((row) => (
           <div key={`${row.source}-${row.field}`} style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
