@@ -1,142 +1,63 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildMapLeakageHtml } from "../components/v3/map-channel-drilldown.ts";
-import {
-  MAP_COUNT_SLOT,
-  fillRetailSlots,
-  retailBubble,
-  summarizeRetailRows,
-  unavailableRetailReading,
-  type RetailPriceRow,
-} from "../components/v3/portfolio-retail-reading.ts";
+import { mapTabModel, type MapSourceRow } from "../lib/fender-canvas/map-channels.ts";
 
-function row(
-  overrides: Partial<RetailPriceRow> & Pick<RetailPriceRow, "asin" | "mapPrice" | "offerPrice">,
-): RetailPriceRow {
+function row(overrides: Partial<MapSourceRow> & Pick<MapSourceRow, "asin">): MapSourceRow {
   return {
-    title: overrides.asin,
-    buyboxStatus: "3P Confirmed",
-    wmtPrice: null,
-    wmtUrl: null,
-    mfPrice: null,
+    model_name: overrides.asin,
+    title: null,
+    map_price: 100,
+    offer_price: 80,
+    worst_leakage: -20,
+    wmt_price: null,
+    wmt_url: null,
+    mf_price: null,
+    mf_leakage: null,
     ...overrides,
-    title: overrides.title ?? overrides.asin,
   };
 }
 
-test("below-MAP totals are counts and gaps of the returned active rows", () => {
-  const reading = summarizeRetailRows([
-    row({ asin: "B000000001", mapPrice: 100, offerPrice: 80 }),
-    row({ asin: "B000000002", mapPrice: 200, offerPrice: 150 }),
-    row({ asin: "B000000003", mapPrice: 50, offerPrice: 50 }),
-    row({ asin: "B000000004", mapPrice: 40, offerPrice: 10, buyboxStatus: "No Active Offer" }),
-    row({ asin: "B000000005", mapPrice: 80, offerPrice: 90 }),
-  ]);
-
-  assert.equal(reading.activeOffers, 4);
-  assert.equal(reading.belowMap, 2);
-  assert.equal(reading.pctOfActive, 50);
-  assert.equal(reading.rows.map((item) => item.asin).join(","), "B000000002,B000000001");
-  assert.equal(reading.combinedDollarGap, 70);
-  assert.equal(reading.avgDollarGap, 35);
-  assert.ok(Math.abs(reading.avgPercentGap - 22.5) < 1e-9);
-});
-
-test("a row that is no longer below MAP is not listed", () => {
-  const first = summarizeRetailRows([
-    row({ asin: "B000000001", mapPrice: 100, offerPrice: 80 }),
-    row({ asin: "B000000009", mapPrice: 100, offerPrice: 70 }),
-  ]);
-  const next = summarizeRetailRows([
-    row({ asin: "B000000001", mapPrice: 100, offerPrice: 100 }),
-    row({ asin: "B000000009", mapPrice: 100, offerPrice: 70 }),
-  ]);
-  assert.deepEqual(first.rows.map((item) => item.asin), ["B000000009", "B000000001"]);
-  assert.deepEqual(next.rows.map((item) => item.asin), ["B000000009"]);
-  assert.equal(next.belowMap, 1);
-});
-
-test("saved copy slots are replaced only after a successful read", () => {
-  const source = `${MAP_COUNT_SLOT} MAP n/a`;
-  assert.equal(fillRetailSlots(source, unavailableRetailReading), source);
-  const ready = summarizeRetailRows([
-    row({ asin: "B000000001", mapPrice: 100, offerPrice: 75 }),
-  ]);
-  const filled = fillRetailSlots(source, ready);
-  assert.match(filled, /1 of 1 active offers are under MAP \(100\.0%\)\./);
-  assert.match(filled, /^1 /);
-  assert.doesNotMatch(filled, /457/);
-});
-
-test("the client tooltip keeps the Keepa 39 and omits seller-model claims", () => {
-  const ready = summarizeRetailRows([
-    row({ asin: "B000000001", mapPrice: 100, offerPrice: 75 }),
-  ]);
-  for (const reading of [unavailableRetailReading, ready]) {
-    const bubble = retailBubble(reading);
-    assert.equal(bubble.meta, "39 listings suppressed");
-    assert.match(bubble.tooltipDesc, /recorded Keepa reading/);
-    assert.match(bubble.tooltipDesc, /39 suppressed listings \(3\.9%\)/);
-    assert.doesNotMatch(bubble.tooltipDesc, /Partner-led|Partner-Led|Amazon 1P/i);
-  }
-  assert.match(retailBubble(unavailableRetailReading).statA, /Rows not available/);
-  assert.match(retailBubble(ready).statA, /1 below MAP/);
-  assert.match(retailBubble(ready).tooltipDesc, /\$25\.00/);
-});
-
-test("MAP rows show a channel only when that channel has a stored price", () => {
-  const reading = summarizeRetailRows([
+test("channels appear only when this read stored a price", () => {
+  const model = mapTabModel([
     row({
       asin: "B000000001",
-      title: "Tele <caster>",
-      mapPrice: 100,
-      offerPrice: 80,
-      wmtPrice: 77.5,
-      wmtUrl: "https://www.walmart.com/ip/1",
-      mfPrice: 79,
+      offer_price: 80,
+      worst_leakage: -20,
+      wmt_price: 77.5,
+      wmt_url: "https://www.walmart.com/ip/1",
+      mf_price: 79,
+      mf_leakage: -21,
     }),
-    row({
-      asin: "B000000002",
-      mapPrice: 100,
-      offerPrice: 90,
-      wmtUrl: "https://www.walmart.com/ip/should-not-show",
-    }),
-    row({
-      asin: "B000000003",
-      mapPrice: 100,
-      offerPrice: 70,
-      wmtPrice: 65,
-    }),
+    row({ asin: "B000000002", offer_price: 90, worst_leakage: -10, wmt_url: "https://www.walmart.com/ip/skip" }),
+    row({ asin: "B000000003", offer_price: 70, worst_leakage: -30, wmt_price: 65 }),
   ]);
-  const html = buildMapLeakageHtml(reading);
-  assert.match(html, /Listings under MAP/);
-  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B000000001"/);
-  assert.match(html, /Tele &lt;caster&gt;/);
-  assert.match(html, /<strong>Amazon<\/strong> · 3 listings/);
-  assert.match(html, /<strong>Walmart<\/strong> · 2 listings/);
-  assert.match(html, /<strong>Musician's Friend<\/strong> · 1 listing/);
-  assert.match(html, /<th>Amazon<\/th>/);
-  assert.match(html, /<th>Walmart<\/th>/);
-  assert.match(html, /<th>Musician's Friend<\/th>/);
-  assert.match(html, /\$77\.50/);
-  assert.match(html, /href="https:\/\/www\.walmart\.com\/ip\/1"/);
-  assert.match(html, /\$79\.00/);
-  assert.match(html, /\$65\.00/);
-  assert.doesNotMatch(html, /should-not-show/);
-  assert.doesNotMatch(html, /Reverb|Sweetwater|Featured Offer withheld|\$808|Prices at MAP/);
-  assert.equal(html.match(/<tr>/g)?.length, 4);
 
-  const amazonOnly = buildMapLeakageHtml(
-    summarizeRetailRows([row({ asin: "B000000004", mapPrice: 50, offerPrice: 40 })]),
+  assert.equal(model.count, 3);
+  assert.deepEqual(
+    model.channels.map((channel) => channel.name),
+    ["Amazon", "Walmart", "Musician's Friend"],
   );
-  assert.match(amazonOnly, /<strong>Amazon<\/strong> · 1 listing/);
-  assert.match(amazonOnly, /<th>Amazon<\/th>/);
-  assert.doesNotMatch(amazonOnly, /Walmart|Musician|Reverb|Sweetwater/);
+  assert.equal(model.channels[1]?.count, 2);
+  assert.equal(model.channels[2]?.count, 1);
+  assert.equal(model.showWalmart, true);
+  assert.equal(model.showMusiciansFriend, true);
+  assert.equal(model.combinedGap, -60);
+  assert.equal(model.averageGap, -20);
+});
 
-  const unavailable = buildMapLeakageHtml(unavailableRetailReading);
-  assert.match(unavailable, /Below-MAP rows are not available/);
-  assert.doesNotMatch(
-    unavailable,
-    /457|16\.49%|\$221\.96|\$101,434\.60|<tbody>|Walmart|Musician|Reverb|Sweetwater|\$808/,
-  );
+test("Amazon-only rows do not invent Walmart or Musician's Friend", () => {
+  const model = mapTabModel([row({ asin: "B000000004", offer_price: 40, map_price: 50, worst_leakage: -10 })]);
+  assert.deepEqual(model.channels.map((channel) => channel.name), ["Amazon"]);
+  assert.equal(model.showWalmart, false);
+  assert.equal(model.showMusiciansFriend, false);
+});
+
+test("a listing that is no longer returned is not counted", () => {
+  const first = mapTabModel([
+    row({ asin: "B000000001" }),
+    row({ asin: "B000000009", worst_leakage: -30 }),
+  ]);
+  const next = mapTabModel([row({ asin: "B000000009", worst_leakage: -30 })]);
+  assert.equal(first.count, 2);
+  assert.equal(next.count, 1);
 });

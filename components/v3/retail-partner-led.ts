@@ -1,56 +1,16 @@
 /**
- * Seller model for the retail hero.
- * The five types, and the question each is meant to answer, are in
- * docs/client-seller-models.md. How each type is drawn on the dashboard
- * is not decided. MAP counts on the bubble come from the listing read.
+ * Recorded Keepa reading of 39 suppressed listings.
+ * This is not the live MAP query. Postgres has no Competitive External Price column.
  */
-import {
-  retailBubble,
-  unavailableRetailReading,
-} from "@/components/v3/portfolio-retail-reading";
-
-export const SELLER_TYPES = {
-  partnerLed: "partner-led",
-} as const;
-
-export type SellerTypeId = (typeof SELLER_TYPES)[keyof typeof SELLER_TYPES];
-
-/** What IntoFocus has told this dashboard Fender is. */
-export const FENDER_SELLER_TYPE: SellerTypeId = SELLER_TYPES.partnerLed;
-
-export const RETAIL_MONITORED_LISTINGS = 993;
-
-export const featuredOfferSuppression = {
-  listings: 39,
-  pctLabel: "3.9%",
-  detail: "39 of 993 active offers",
-};
-
-export type RetailIssueId = "suppression" | "map";
-
-/** Show the issue that covers more of the monitored listings. */
-export function partnerLedHeroIssue(
-  suppressionListings: number,
-  mapListings: number,
-): RetailIssueId {
-  return mapListings >= suppressionListings ? "map" : "suppression";
-}
-
-export const partnerLedHero = retailBubble(unavailableRetailReading);
-
-export const suppressionDrilldownHtml = `
-<div class="ceo-callout">
-  <div class="ceo-callout-header">
-    <span>Why can a MAP-priced listing still lose the Featured Offer?</span>
+export const recordedKeepaSuppressionHtml = `
+<div class="ceo-callout" style="margin-top:12px;">
+    <div class="ceo-callout-header">
+      <span>Why can a MAP-priced listing still lose the Featured Offer?</span>
+    </div>
+    <div class="ceo-callout-body">
+      A listing at <strong>MAP</strong> can still have no <strong>Featured Offer</strong>. Amazon withholds it when the offer, including shipping, is above the Competitive External Price: the lowest price it recently found outside Amazon. Amazon does not name that retailer. The 39 rows below are a recorded Keepa reading, where that benchmark is known and the new offer sits above it. A channel button is shown only when a listing at that amount was found.
+    </div>
   </div>
-  <div class="ceo-callout-body">
-    Portfolio Retail prioritizes listing health, price integrity, and Featured Offer availability. <strong>Below-MAP rows are not available.</strong>
-    <br/><br/>
-    <strong>The average MAP gap is not available.</strong>
-    <br/><br/>
-    A listing at <strong>MAP</strong> can still have no <strong>Featured Offer</strong> (the Buy Box). Amazon withholds it when the offer, including shipping, is above the Competitive External Price: the lowest price it recently found outside Amazon. Amazon does not name that retailer. The 39 rows below are a recorded Keepa reading, where that benchmark is known and the new offer sits above it. A channel button is shown only when a listing at that amount was found.
-  </div>
-</div>
 
 <div class="content-box" style="margin-top:12px;">
   <div class="content-box-title">

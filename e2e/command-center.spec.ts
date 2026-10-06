@@ -6,7 +6,7 @@ test.describe("command center", () => {
   test("opens from the priorities control", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toBeVisible();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(7);
     await expect(canvas.page.locator(".drilldown-title")).toContainText(
       "What do I need to worry about?",
     );
@@ -15,7 +15,7 @@ test.describe("command center", () => {
   test("every priority explains why it is top of the list", async ({ canvas }) => {
     await canvas.openCommandCenter();
     const whys = canvas.page.locator(".cc-why p");
-    await expect(whys).toHaveCount(6);
+    await expect(whys).toHaveCount(7);
     for (const text of await whys.allInnerTexts()) {
       expect(text.trim().length).toBeGreaterThan(40);
     }
@@ -24,28 +24,28 @@ test.describe("command center", () => {
   test("counts reflect the queue", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     const quadrants = page.locator(".cc-quadrant");
-    await expect(quadrants.nth(1)).toContainText("6");
-    await expect(quadrants.nth(0)).toContainText("2"); // critical
+    await expect(quadrants.nth(1)).toContainText("7");
+    await expect(quadrants.nth(0)).toContainText("3"); // critical
 
-    await canvas.priority("39 active offers have no Featured Offer").locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(5);
-    await expect(quadrants.nth(1)).toContainText("5");
+    await canvas.priority("7.4% of active Amazon offers").locator(".cc-done-btn").click();
+    await expect(canvas.priorities).toHaveCount(6);
+    await expect(quadrants.nth(1)).toContainText("6");
     await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
   });
 
   test("a cleared item can be reopened", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await canvas.priorities.first().locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(5);
+    await expect(canvas.priorities).toHaveCount(6);
 
     await page.locator(".cc-cleared summary").click();
     await page.locator(".cc-undo-btn").first().click();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(7);
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
     await canvas.openCommandCenter();
-    const item = canvas.priority("39 active offers have no Featured Offer");
+    const item = canvas.priority("7.4% of active Amazon offers");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -54,7 +54,7 @@ test.describe("command center", () => {
     await canvas.reload();
     await canvas.openCommandCenter();
     await expect(
-      canvas.priority("39 active offers have no Featured Offer").locator(".cc-owner-btn.active"),
+      canvas.priority("7.4% of active Amazon offers").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -67,7 +67,8 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["39 active offers have no Featured Offer", "Suppressed"],
+    ["7.4% of active Amazon offers", "Flagged ASINs"],
+    ["customer reviews are stranded", "Catalog"],
     ["AI assistants are quoting specs", "Hallucination"],
     ["machine-readable specs", "Schema"],
     ["Discounted bundles are dragging", "MAP"],
@@ -83,9 +84,9 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
-    await canvas.openPriority("39 active offers have no Featured Offer");
+    await canvas.openPriority("7.4% of active Amazon offers");
     await canvas.backToPriorities();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(7);
   });
 
   test("the header Priorities button reopens the queue from a spoke", async ({

@@ -23,7 +23,7 @@
       "tabs": [
         "{map_violation_skus} Flagged ASINs & Price Leakage Explorer",
         "Catalog Consolidation & Brand Registry Governance",
-        "MAP (Minimum Advertised Price) Multi-Channel Engine"
+        "MAP"
       ],
       "navLabel": "Portfolio Retail",
       "next": "competitors",

@@ -53,8 +53,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "map-leakage",
       title: "Discounted bundles are dragging your prices down everywhere",
-      why: "A partner bundles a $849 Strat with a $15 gig bag and lists the pair at $808. Pricing bots on Walmart and Reverb see that number and match it within hours, and Amazon then reads those cheaper listings as a reason to suppress your buy button. One bundle sets off the whole chain.",
-      impact: "Amazon shows an average discount of $77.58 across 118 active-offer SKUs. Walmart has 8 listings at -$38, and Reverb has 11 at -$55.",
+      why: "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel.",
+      impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
       severity: "high",
       spokeId: "ecommerce",
       subTab: "MAP",

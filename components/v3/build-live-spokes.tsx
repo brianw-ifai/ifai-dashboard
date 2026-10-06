@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { FenderCategorySovPanel } from "@/components/v3/live/FenderCategorySovPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { FenderListingsTable } from "@/components/v3/live/FenderListingsTable";
+import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
+import { recordedKeepaSuppressionHtml } from "@/components/v3/retail-partner-led";
 import { FenderSimulationsPanel } from "@/components/v3/live/FenderSimulationsPanel";
 import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
@@ -32,8 +34,10 @@ const TAB_OVERRIDES: Partial<
           ),
         )}
         <FenderListingsTable />
+        {htmlBlock(recordedKeepaSuppressionHtml)}
       </>
     ),
+    2: () => <MapChannelPanel />,
   },
   aeo: {
     1: () => <FenderSimulationsPanel />,
