@@ -34,7 +34,7 @@ export const FENDER_METRICS = {
     detail: "Recorded Keepa reading · 3.9% of 993 active offers",
     tone: "danger",
     subTab: "Suppressed",
-    provenance: "live",
+    provenance: "recorded",
   },
   overallAiWinRate: {
     id: "overall-ai-win-rate",

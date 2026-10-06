@@ -74,8 +74,8 @@ test("the client tooltip keeps the Keepa 39 and omits seller-model claims", () =
   ]);
   for (const reading of [unavailableRetailReading, ready]) {
     const bubble = retailBubble(reading);
-    assert.match(bubble.meta, /39 listings suppressed/);
-    assert.match(bubble.meta, /recorded Keepa reading/);
+    assert.equal(bubble.meta, "39 listings suppressed");
+    assert.match(bubble.tooltipDesc, /recorded Keepa reading/);
     assert.match(bubble.tooltipDesc, /39 suppressed listings \(3\.9%\)/);
     assert.doesNotMatch(bubble.tooltipDesc, /Partner-led|Partner-Led|Amazon 1P/i);
   }

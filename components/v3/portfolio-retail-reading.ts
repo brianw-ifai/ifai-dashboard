@@ -15,7 +15,7 @@ export const MAP_GAP_SLOT = "The average MAP gap is not available.";
 /** Compact count left in copy until a successful read replaces it. */
 export const MAP_COUNT_VALUE_SLOT = "MAP n/a";
 
-export const KEEPA_BUBBLE_META = "39 listings suppressed · recorded Keepa reading";
+export const KEEPA_BUBBLE_META = "39 listings suppressed";
 
 export type RetailPriceRow = {
   asin: string;
