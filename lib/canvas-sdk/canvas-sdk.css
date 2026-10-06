@@ -2281,6 +2281,7 @@
       color: inherit;
       font: inherit;
       font-weight: 700;
+      text-transform: uppercase;
       padding: 0;
       cursor: pointer;
       white-space: nowrap;
