@@ -1,0 +1,53 @@
+---
+description: IntoFocus AI product context, clients, dashboard intent, and design priorities for all agents
+alwaysApply: true
+---
+
+# IntoFocus AI — product context (all agents)
+
+This repo is the IntoFocus AI client dashboard. Treat the following as project truth for every session and every contributor (including Brian Magazu and Brian Watson). Prefer this over session-only memory.
+
+## Company and stakeholders
+
+- **Company:** IntoFocus AI (IntoFocus)
+- **COO:** Brian Magazu — product and commercial direction for this dashboard
+- **Contributors** (e.g. Brian Watson) and agents must follow this context, not only a single user’s local chat history
+
+## Clients
+
+- **Intended clients:** product companies (brands that sell physical or digital products)
+- **Example brand in this repo:** Fender Musical Instruments Corporation (FMIC) — a pilot / example briefing, not the only customer shape
+- **What we sell:** clarity on how **ecommerce performance affects AEO (Answer Engine Optimization) success**, plus partnership to improve AEO from all useful angles (catalog, retail, structured data, citations, competitive visibility, and related work)
+
+## Who the dashboard is for
+
+- **Executives / sponsors** and **day-to-day operators**, equally
+- Briefing and priorities matter as much as drill-downs and actionable queues
+- Copy and UX should work for an e-commerce or marketing operator, not an engineer
+
+## What this dashboard must do
+
+1. **Show performance clearly** — how the brand is doing on ecommerce and AEO relative to the story above
+2. **Show the ecommerce → AI-search link clearly** — how catalog, retail, pricing, and product-data issues change brand performance in AI search / assistants
+3. **Give clear direction** — concrete next steps that improve overall results
+4. **Drill down to foundational data** — every chart, status, and estimate must open the evidence and assumption chain behind it
+   - External evidence: e.g. if an Amazon listing is suppressed because of low pricing on Walmart, link from that dashboard line to the Walmart listing causing the suppression
+   - IntoFocus measurements: e.g. if we estimate **$680K** in potential retail uplift, the user must reach the inputs, logic, and plain-language explanations so leadership can sniff-test reasonability
+5. **Delegation / paid tiers** — **parked; do not build or redesign this yet** unless explicitly asked. Future model (for awareness only):
+   - **DIY** — client (or included agents) takes suggested actions
+   - **Done-with-You** — shared action items; needs ownership toggles / indicators
+   - **Done-for-You** — IntoFocus handles all action items
+
+## Design and implementation priorities
+
+When choosing what to build or how to shape UI:
+
+- Optimize for **clarity of ecommerce ↔ AEO causality**, not for a generic analytics dashboard
+- Prefer **evidence trails** over orphan metrics: every headline number should have a path to source assumptions and raw inputs
+- Keep the first read executive-friendly; keep depth available for operators and for IntoFocus sniff-tests
+- Do not invent a delegation / tier workflow until product reopens item 5
+
+## Related human docs
+
+- `README.md` — canvas areas, copy rules, file map
+- `docs/dashboard-data-inventory.md` — data inventory behind figures
