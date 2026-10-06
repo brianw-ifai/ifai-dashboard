@@ -33,7 +33,7 @@ export const FENDER_METRICS = {
     value: "7.4%",
     detail: "74 of 993 active offers",
     tone: "danger",
-    subTab: "Flagged ASINs",
+    subTab: "Retail Listings",
     provenance: "live",
   },
   sellerDataCoverage: {
@@ -43,7 +43,7 @@ export const FENDER_METRICS = {
     value: "2.2%",
     detail: "74 of 3,430 SKUs",
     tone: "warning",
-    subTab: "Flagged ASINs",
+    subTab: "Retail Listings",
     provenance: "live",
   },
   flaggedAsins: {
@@ -53,7 +53,7 @@ export const FENDER_METRICS = {
     value: "14",
     detail: "Bundle leakage and review dilution",
     tone: "danger",
-    subTab: "Flagged ASINs",
+    subTab: "Retail Listings",
     provenance: "live",
   },
   strandedReviews: {

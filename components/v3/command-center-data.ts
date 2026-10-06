@@ -17,7 +17,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
       impact: "Restoring the buy button on the 14 flagged listings is the single fastest revenue recovery on this board.",
       severity: "critical",
       spokeId: "ecommerce",
-      subTab: "Flagged ASINs",
+      subTab: "Retail Listings",
       defaultOwner: "intofocus",
     },
     {

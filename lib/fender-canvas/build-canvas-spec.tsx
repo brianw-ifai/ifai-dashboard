@@ -99,7 +99,7 @@ export function buildFenderCanvasSpec(
         tone: "danger",
         icon: "pulse",
         spokeId: "ecommerce",
-        subTab: "flagged",
+        subTab: "Retail Listings",
         label: (
           <>
             Buy Box (Active Offers): <strong>{bb} 1P</strong> ({m ? formatInt(m.bb_1p) : "n/a"} of{" "}

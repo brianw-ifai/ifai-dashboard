@@ -108,8 +108,42 @@ test.describe("drill-downs", () => {
     await expect(page.locator(".map-channel-row")).toHaveCount(0);
   });
 
+  test("portfolio retail keeps listings, MAP, suppressed rows, and catalog apart", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.openPriority("7.4% of active Amazon offers");
+    await expect(page.locator(".drilldown-tab-btn")).toHaveText([
+      "Retail Listings",
+      "MAP",
+      "Suppressed Listings",
+      "Catalog Consolidation & Brand Registry Governance",
+    ]);
+
+    await expect(canvas.activeTab).toHaveText("Retail Listings");
+    await expect(page.getByText("Retail Listings Drill-Down")).toBeVisible();
+    await expect(page.locator(".segmented-btn", { hasText: "All" })).toBeVisible();
+    await expect(page.locator(".segmented-btn", { hasText: "MAP violations only" })).toBeVisible();
+    await expect(page.locator(".segmented-btn", { hasText: "Bundles only" })).toBeVisible();
+    await expect(page.locator(".suppressed-listings")).toHaveCount(0);
+
+    await canvas.openTab("Catalog Consolidation");
+    const catalog = page.locator(".drilldown-body");
+    await expect(catalog).toContainText(
+      "Catalog rows are not shown until they come from the database.",
+    );
+    await expect(catalog).not.toContainText("$808");
+    await expect(catalog).not.toContainText("8 Listings");
+    await expect(catalog).not.toContainText("11 Listings");
+    await expect(catalog).not.toContainText("0 Violations");
+    await expect(catalog).not.toContainText("Reverb");
+    await expect(catalog).not.toContainText("Sweetwater");
+    await expect(catalog).not.toContainText("Starter Kit");
+  });
+
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
     await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
     await expect(list).toBeVisible();
@@ -207,7 +241,7 @@ test.describe("glossary", () => {
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");
-    await canvas.openTab("Flagged ASINs");
+    await canvas.openTab("Retail Listings");
     await expect(page.locator(".ifai-term")).toHaveCount(before);
   });
 });

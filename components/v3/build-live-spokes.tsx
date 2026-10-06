@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { catalogConsolidationHtml } from "@/components/v3/catalog-consolidation";
 import { FenderCategorySovPanel } from "@/components/v3/live/FenderCategorySovPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { FenderListingsTable } from "@/components/v3/live/FenderListingsTable";
@@ -34,10 +35,11 @@ const TAB_OVERRIDES: Partial<
           ),
         )}
         <FenderListingsTable />
-        <SuppressedListingsPanel />
       </>
     ),
-    2: () => <MapChannelPanel />,
+    1: () => <MapChannelPanel />,
+    2: () => <SuppressedListingsPanel />,
+    3: () => htmlBlock(catalogConsolidationHtml),
   },
   aeo: {
     1: () => <FenderSimulationsPanel />,

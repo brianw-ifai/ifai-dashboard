@@ -81,7 +81,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       stats: [`${bb1p} 1P`, `${unharvestedPct} Unk`],
       meta: `${formatInt(m.bb_total)} active offers`,
       spokeId: "ecommerce",
-      subTab: "flagged",
+      subTab: "Retail Listings",
       tooltip: {
         title: "Buy Box (Active Offers)",
         desc: `Amazon 1P holds ${bb1p} of ${formatInt(m.bb_total)} active listings. The seller for ${formatInt(m.bb_unharvested)} listings is unknown; ${formatInt(m.bb_3p)} confirmed 3P.`,

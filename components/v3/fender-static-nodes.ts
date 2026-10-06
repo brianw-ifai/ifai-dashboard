@@ -51,7 +51,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "92.6% Unk"],
       meta: "993 Active Offers",
       spokeId: "ecommerce",
-      subTab: "flagged",
+      subTab: "Retail Listings",
       tooltip: {"title": "Buy Box (Active Offers)", "desc": "Amazon 1P owns the Buy Box on 7.4% of 993 active listings. The seller for the other 92.6% is unknown, and there are 0% confirmed 3P wins."},
     },
     {
