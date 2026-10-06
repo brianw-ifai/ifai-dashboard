@@ -136,6 +136,7 @@ function GraphNode({
       title={node.title}
       titleSize={node.titleSize}
       stats={node.stats}
+      meta={node.id === "spoke-retail" ? node.meta : undefined}
       centered={centered}
       logoSrc={node.logoSrc}
       emphasis={emphasis}

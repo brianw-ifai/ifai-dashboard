@@ -46,9 +46,9 @@ export const partnerLedHero = {
   statA: "457 below MAP",
   statB: "46% of 993",
   meta: "39 listings suppressed",
-  tooltipTitle: "Portfolio Retail",
+  tooltipTitle: "Highlights marketplace listings",
   tooltipDesc:
-    "Highlights marketplace listings that need action to protect price integrity, availability, and Featured Offer coverage. The top priority is MAP leakage: 457 of 993 active offers are under MAP (46.0%), averaging 16.49% and $221.96 below MAP. Next are 39 suppressed listings (3.9%) where the new offer is above Amazon's Competitive External Price.",
+    "These listings need action to protect price integrity, availability, and Featured Offer coverage. The top priority is MAP leakage: 457 of 993 active offers are under MAP (46.0%), averaging 16.49% and $221.96 below MAP. Next are 39 suppressed listings (3.9%) where the new offer is above Amazon's Competitive External Price.",
 } as const;
 
 export const suppressionDrilldownHtml = `

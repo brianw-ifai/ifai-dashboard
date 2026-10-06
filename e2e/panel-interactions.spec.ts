@@ -108,55 +108,37 @@ test.describe("drill-downs", () => {
     await expect(tooltip).toBeHidden();
   });
 
-  test("catalog governance connects listings to AI search and sorts the queue", async ({
-    canvas,
-    page,
-  }) => {
-    await canvas.openPriority("partner bundle listings need catalog governance");
+  test("catalog consolidation waits for database listing rows", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("Portfolio Retail");
+    await canvas.openTab("Catalog");
 
     await expect(canvas.activeTab).toContainText("Catalog Consolidation");
     await expect(page.locator(".drilldown-body")).toContainText(
-      "Why these listings matter to AI search",
+      "Listing rows are not shown until they come from the database.",
     );
-    await expect(page.locator(".drilldown-body")).not.toContainText(
-      "Consolidation Opportunity by Partner",
-    );
-    const rows = page.locator(".drilldown-body tbody tr");
-    await expect(rows).toHaveCount(14);
-
-    const listing = rows.first().locator("a.listing-link").first();
-    await expect(listing).toHaveAttribute("href", /amazon\.com\/dp\//);
-    const popupPromise = page.waitForEvent("popup");
-    await listing.click();
-    const popup = await popupPromise;
-    await expect(popup).toHaveURL(/amazon\.com\/dp\//);
-    await popup.close();
-
-    const partnerSort = page.locator(".ifai-sort-btn", { hasText: "Partner" });
-    await partnerSort.click();
-    await expect(rows.first()).toContainText("Mustang Micro");
-    await partnerSort.click();
-    await expect(rows.first()).toContainText("Player II Telecaster");
+    await expect(page.locator(".drilldown-body")).not.toContainText("Player II Telecaster");
+    await expect(page.locator(".drilldown-body")).not.toContainText("$808.00");
+    await expect(page.locator(".drilldown-body tbody tr")).toHaveCount(0);
   });
 
-  test("MAP channels open listing rows and explain consequences", async ({ canvas, page }) => {
+  test("MAP tab keeps the saved gap and hides channel listing rows", async ({ canvas, page }) => {
     await canvas.openPriority("Discounted bundles are dragging");
     await expect(canvas.activeTab).toContainText("MAP");
 
-    const amazon = page.locator(".map-channel-row", { hasText: "Amazon.com" });
-    await amazon.click();
-    const detail = page.locator('[data-ifai-detail="amazon"]');
-    await expect(detail).toBeVisible();
-    await expect(detail.locator("tbody tr")).toHaveCount(14);
-    await expect(detail.locator("a.listing-link").first()).toHaveAttribute(
-      "href",
-      /amazon\.com\/dp\//,
+    const body = page.locator(".drilldown-body");
+    await expect(body).toContainText("Minimum Advertised Price");
+    await expect(body).toContainText("457");
+    await expect(body).toContainText("16.49%");
+    await expect(body).toContainText("$221.96");
+    await expect(body).toContainText("$101,434.60");
+    await expect(body).toContainText(
+      "Listing rows are not shown until they come from the database.",
     );
-
-    const consequence = amazon.locator(".ifai-term");
-    await expect(consequence).toHaveAttribute("data-ifai-tooltip-desc", /.+/);
-    await consequence.hover();
-    await expect(page.locator(".node-tooltip")).toContainText("Competitive External Price");
+    await expect(page.locator(".map-channel-row")).toHaveCount(0);
+    await expect(body).not.toContainText("$808.00");
+    await expect(body).not.toContainText("Walmart Marketplace");
+    await expect(body).not.toContainText("Featured Offer withheld");
+    await expect(body).not.toContainText("Prices at MAP");
   });
 
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {

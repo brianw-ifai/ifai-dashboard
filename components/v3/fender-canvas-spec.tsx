@@ -17,7 +17,7 @@ const FOCUS_TARGETS = {
   "ecommerce": { x: 1136, y: 344 },
   "ecommerce:suppressed": { x: 1336, y: 224 },
   "ecommerce:flagged": { x: 1336, y: 224 },
-  "ecommerce:catalog": { x: 1396, y: 384 },
+  "ecommerce:catalog": { x: 1136, y: 344 },
   "ecommerce:map": { x: 1316, y: 504 },
   "specs": { x: 454, y: 658 },
   "specs:schema": { x: 244, y: 698 },
@@ -36,7 +36,7 @@ export const fenderCanvasSpec = defineCanvas({
   metricWidgets: {
     metrics: fenderWidgetMetrics,
     defaults: [
-      FENDER_METRICS.flaggedAsins.id,
+      FENDER_METRICS.buyBoxRetention.id,
       FENDER_METRICS.confirmedHallucinations.id,
       FENDER_METRICS.phaseOneLift.id,
     ],
@@ -106,7 +106,6 @@ export const fenderCanvasSpec = defineCanvas({
     { x1: 464, y1: 344, x2: 204, y2: 384 },
     { x1: 464, y1: 344, x2: 284, y2: 504 },
     { x1: 1136, y1: 344, x2: 1336, y2: 224, kind: "critical" },
-    { x1: 1136, y1: 344, x2: 1396, y2: 384, kind: "critical" },
     { x1: 1136, y1: 344, x2: 1316, y2: 504 },
     { x1: 454, y1: 658, x2: 244, y2: 698 },
     { x1: 454, y1: 658, x2: 334, y2: 848 },
@@ -165,22 +164,6 @@ export const fenderCanvasSpec = defineCanvas({
       spokeId: "ecommerce",
       subTab: "suppressed",
       tooltip: {"title": "Featured Offer suppression", "desc": "39 of 993 active offers have no Featured Offer (the Buy Box) because the new price is above Amazon's Competitive External Price. A listing at MAP can still be suppressed when that outside benchmark is lower. Amazon does not name the retailer."},
-    },
-    {
-      id: "sat-asin",
-      x: 1396,
-      y: 384,
-      r: 54,
-      status: "warning",
-      title: "ASIN Split",
-      stats: [
-        `${FENDER_METRICS.flaggedAsins.value} Bundles`,
-        `${FENDER_METRICS.strandedReviews.value} Reviews`,
-      ],
-      meta: "Austin Bazaar / GearTree",
-      spokeId: "ecommerce",
-      subTab: "catalog",
-      tooltip: {"title": "Splintered Bundle ASINs", "desc": "Key partners Austin Bazaar and GearTree hold Brand Registry bundle rights. Splintered reviews forfeit Amazon's Overall Pick badge."},
     },
     {
       id: "sat-map",

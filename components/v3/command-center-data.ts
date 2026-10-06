@@ -21,16 +21,6 @@ export const fenderCommandCenter: CommandCenterSpec = {
       defaultOwner: "intofocus",
     },
     {
-      id: "review-splintering",
-      title: "14 partner bundle listings need catalog governance",
-      why: "Separate bundle pages can fragment the shopping journey and introduce inconsistent titles, attributes, or product specifications. The action queue identifies each listing that needs a parent-child eligibility review, catalog cleanup, or seller attribution.",
-      impact: "Twelve cases already have a named partner and two need seller attribution before the catalog-governance action can be assigned.",
-      severity: "critical",
-      spokeId: "ecommerce",
-      subTab: "Catalog",
-      defaultOwner: "client",
-    },
-    {
       id: "ai-spec-hallucination",
       title: "AI assistants are quoting specs you never published",
       why: "ChatGPT, Claude, and Perplexity can't read specs out of marketing copy, so they scrape whatever a third-party bundle page claims. That is where the wrong fingerboard radius and the phantom Acoustasonic pickup configuration come from, and shoppers are being told those are your specs.",

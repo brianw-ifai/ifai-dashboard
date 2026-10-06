@@ -12,7 +12,9 @@ export class Canvas {
 
   /** Opens a spoke from the map column layout (panel starts hidden on IOM). */
   async openSpokeFromMap(titleFragment: string) {
-    await this.page.locator(".graph-node").filter({ hasText: titleFragment }).click();
+    // Spoke titles are drawn as separate SVG lines, so the DOM text has no space.
+    const pattern = new RegExp(titleFragment.trim().split(/\s+/).join("\\s*"), "i");
+    await this.page.locator(".graph-node").filter({ hasText: pattern }).click({ force: true });
     await expect(this.page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(this.panel).toBeVisible();
   }
