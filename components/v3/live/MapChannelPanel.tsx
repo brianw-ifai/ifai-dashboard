@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import {
   channelPriceLookup,
+  listingChannelFacts,
   listingLabel,
   mapTabModel,
   type ChannelPriceRow,
   type MapSourceRow,
   type MapTabModel,
+  type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 
 const PAGE_SIZE = 1000;
 
@@ -57,13 +63,72 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
   }
 }
 
-function columnCount(model: MapTabModel): number {
+function RetailSurface({ children }: { children: ReactNode }) {
+  return <div className="retail-surface">{children}</div>;
+}
+
+function mapColumns(model: MapTabModel): RetailColumn[] {
+  const money = (id: string, name: string, width = 164): RetailColumn => ({
+    id,
+    name,
+    label: name,
+    width,
+    minWidth: 148,
+    className: "money",
+  });
+  const columns: RetailColumn[] = [
+    {
+      id: "listing",
+      name: "Listing",
+      label: "Listing",
+      width: MAP_LISTING_COLUMN_WIDTH,
+      minWidth: 96,
+      className: "listing-col",
+    },
+    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
+    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money" },
+  ];
+  if (model.showAmazon) columns.push(money("amazon", "Amazon"));
+  if (model.showWalmart) columns.push(money("walmart", "Walmart"));
+  if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend", 176));
+  for (const channel of model.extraChannels) {
+    columns.push(money(channel.channel, channel.name));
+  }
+  return columns;
+}
+
+function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
+  if (read.phase === "loading") {
+    return <p className="retail-missing">Loading the retail reading…</p>;
+  }
+  if (read.phase === "error") {
+    return <p className="retail-missing">The retail read could not be loaded.</p>;
+  }
+  const reading = read.snapshot.mapLeakage;
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  const gap = reading.detail?.averageLeakage ?? null;
   return (
-    4 +
-    Number(model.showAmazon) +
-    Number(model.showWalmart) +
-    Number(model.showMusiciansFriend) +
-    model.extraChannels.length
+    <>
+      <div className="metric-grid-2" style={{ marginTop: 8 }}>
+        <div className="metric-card-sm">
+          <span className="metric-card-label">Listings below MAP</span>
+          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
+            {reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount)}
+          </div>
+          <span className="metric-card-sub">Stored channel leakage below MAP</span>
+        </div>
+        <div className="metric-card-sm">
+          <span className="metric-card-label">Average price gap</span>
+          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
+            {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
+          </div>
+          <span className="metric-card-sub">Price gap, not revenue</span>
+        </div>
+      </div>
+      {showMissing && reading.missingMessage ? (
+        <p className="retail-missing">{reading.missingMessage}</p>
+      ) : null}
+    </>
   );
 }
 
@@ -81,7 +146,7 @@ function mapDefinition() {
   );
 }
 
-export function MapChannelPanel() {
+export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
   const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
   const [failed, setFailed] = useState(false);
@@ -105,75 +170,61 @@ export function MapChannelPanel() {
 
   if (failed) {
     return (
-      <>
+      <RetailSurface>
         {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
-          <p style={{ fontSize: 12.5, lineHeight: 1.5, margin: "12px 0 0" }}>
-            Below-MAP rows are not available.
-          </p>
+          <MapReadingSummary read={read} />
+          <p className="retail-missing">Below-MAP rows are not available.</p>
         </div>
-      </>
+      </RetailSurface>
     );
   }
 
   if (!rows) {
     return (
-      <>
+      <RetailSurface>
         {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>Loading MAP rows…</p>
+          <MapReadingSummary read={read} />
+          <p className="retail-missing">Loading MAP rows…</p>
         </div>
-      </>
+      </RetailSurface>
     );
   }
 
   const model = mapTabModel(rows, channelPrices);
   const prices = channelPriceLookup(channelPrices);
+  const columns = mapColumns(model);
   const summaryChannels = [
     ...model.channels.map((channel) => ({
       key: channel.name,
       name: channel.name,
       count: channel.count,
     })),
-    ...model.extraChannels.map((channel) => ({
-      key: channel.channel,
-      name: channel.name,
-      count: channel.count,
-    })),
+    ...model.extraChannels
+      .filter((channel) => channel.count > 0)
+      .map((channel) => ({
+        key: channel.channel,
+        name: channel.name,
+        count: channel.count,
+      })),
   ];
 
   return (
-    <>
+    <RetailSurface>
       {mapDefinition()}
 
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">Summary</div>
-        <div className="metric-grid-2" style={{ marginTop: 8 }}>
-          <div className="metric-card-sm">
-            <span className="metric-card-label">Listings under MAP</span>
-            <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-              {formatInt(model.count)}
-            </div>
-            <span className="metric-card-sub">Rows returned by this read</span>
-          </div>
-          <div className="metric-card-sm">
-            <span className="metric-card-label">Gap</span>
-            <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-              {formatUsd(model.averageGap, { signed: true })}
-            </div>
-            <span className="metric-card-sub">
-              Average worst leakage · {formatUsd(model.combinedGap, { signed: true })} combined
-            </span>
-          </div>
-        </div>
+        <MapReadingSummary read={read} />
         {summaryChannels.length ? (
           <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
             {summaryChannels.map((channel) => (
               <li key={channel.key}>
                 <strong>{channel.name}</strong> · {formatInt(channel.count)}{" "}
-                {channel.count === 1 ? "listing" : "listings"}
+                {channel.count === 1 ? "listing" : "listings"} below MAP
               </li>
             ))}
           </ul>
@@ -181,37 +232,28 @@ export function MapChannelPanel() {
         <div className="content-box-title" style={{ marginTop: 14 }}>
           Listings
         </div>
-        <div style={{ overflow: "auto", maxHeight: 520, marginTop: 12 }}>
-          <table className="table-sm">
-            <thead>
-              <tr>
-                <th>Listing</th>
-                <th>ASIN</th>
-                <th>MAP</th>
-                {model.showAmazon ? <th>Amazon</th> : null}
-                <th>Gap</th>
-                {model.showWalmart ? <th>Walmart</th> : null}
-                {model.showMusiciansFriend ? <th>Musician&apos;s Friend</th> : null}
-                {model.extraChannels.map((channel) => (
-                  <th key={channel.channel}>{channel.name}</th>
-                ))}
-              </tr>
-            </thead>
+        <div style={{ marginTop: 12 }}>
+          <ResizableTable tableId="map-listings" columns={columns} freezeHeader maxHeight={520}>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columnCount(model)}>No active offers are under MAP.</td>
+                  <td colSpan={columns.length}>No active offers are under MAP.</td>
                 </tr>
               ) : (
                 rows.map((row) => {
                   const href = amazonHref(row.asin);
+                  const facts = new Map(
+                    listingChannelFacts(row, prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
+                  );
                   const walmartUrl = httpUrl(row.wmt_url);
                   return (
                     <tr key={row.asin}>
-                      <td>
-                        <strong>{listingLabel(row)}</strong>
+                      <td className="listing-col">
+                        <span className="listing-title-scroll">
+                          <strong>{listingLabel(row)}</strong>
+                        </span>
                       </td>
-                      <td>
+                      <td className="asin-col">
                         {href ? (
                           <a
                             className="listing-link"
@@ -225,77 +267,26 @@ export function MapChannelPanel() {
                           <span className="asin-chip">{row.asin}</span>
                         )}
                       </td>
-                      <td>{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
-                      {model.showAmazon ? (
-                        <td>
-                          {row.offer_price != null ? formatUsd(row.offer_price) : pendingLabel()}
-                        </td>
-                      ) : null}
-                      <td style={{ color: "var(--danger-red)", fontWeight: 700 }}>
-                        {formatUsd(row.worst_leakage, { signed: true })}
+                      <td className="money">
+                        {row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}
                       </td>
+                      {model.showAmazon ? <ChannelPriceCell fact={facts.get("amazon")} /> : null}
                       {model.showWalmart ? (
-                        <td>
-                          {row.wmt_price != null ? (
-                            <>
-                              {formatUsd(row.wmt_price)}
-                              {walmartUrl ? (
-                                <>
-                                  {" "}
-                                  <a
-                                    className="listing-link channel-tag channel-wmt"
-                                    href={walmartUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    Walmart
-                                  </a>
-                                </>
-                              ) : null}
-                            </>
-                          ) : null}
-                        </td>
+                        <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} />
                       ) : null}
                       {model.showMusiciansFriend ? (
-                        <td>
-                          {row.mf_price != null ? (
-                            <>
-                              {formatUsd(row.mf_price)}
-                              {row.mf_leakage != null
-                                ? ` (${formatUsd(row.mf_leakage, { signed: true })})`
-                                : ""}
-                            </>
-                          ) : null}
-                        </td>
+                        <ChannelPriceCell fact={facts.get("musicians-friend")} />
                       ) : null}
                       {model.extraChannels.map((channel) => {
-                        const cell = prices.get(row.asin)?.get(channel.channel);
-                        const channelHref = cell ? httpUrl(cell.url) : null;
+                        const cell: PricedChannelCell | undefined = prices
+                          .get(row.asin.trim())
+                          ?.get(channel.channel);
                         return (
-                          <td key={channel.channel}>
-                            {cell ? (
-                              <>
-                                {formatUsd(cell.price)}
-                                {channelHref ? (
-                                  <>
-                                    {" "}
-                                    <a
-                                      className={
-                                        channel.channel === "reverb"
-                                          ? "listing-link channel-tag channel-rev"
-                                          : "listing-link channel-tag"
-                                      }
-                                      href={channelHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      {channel.name}
-                                    </a>
-                                  </>
-                                ) : null}
-                              </>
-                            ) : null}
-                          </td>
+                          <ChannelPriceCell
+                            key={channel.channel}
+                            fact={facts.get(channel.channel)}
+                            href={cell ? httpUrl(cell.url) : null}
+                          />
                         );
                       })}
                     </tr>
@@ -303,9 +294,9 @@ export function MapChannelPanel() {
                 })
               )}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       </div>
-    </>
+    </RetailSurface>
   );
 }

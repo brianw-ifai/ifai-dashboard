@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { catalogConsolidationHtml } from "@/components/v3/catalog-consolidation";
+import { CatalogGovernancePanel } from "@/components/v3/live/CatalogGovernancePanel";
 import { CompetitorSovIntro } from "@/components/v3/live/CompetitorSovIntro";
 import { FenderCategorySovPanel } from "@/components/v3/live/FenderCategorySovPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { FenderHallucinationPanel } from "@/components/v3/live/FenderHallucinationPanel";
-import { FenderListingsTable } from "@/components/v3/live/FenderListingsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
+import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { FenderSimulationsPanel } from "@/components/v3/live/FenderSimulationsPanel";
 import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
@@ -17,14 +17,20 @@ import {
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
-import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { buildTemplateVars } from "@/lib/fender-canvas/template-vars";
 
 function htmlBlock(html: string) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-type TabOverride = (bundle: CanvasBundle, vars: Record<string, string>) => ReactNode | null;
+type TabOverride = (
+  bundle: CanvasBundle,
+  vars: Record<string, string>,
+  retail: RetailCanvasRead,
+) => ReactNode | null;
 
 const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>
@@ -33,20 +39,10 @@ const TAB_OVERRIDES: Partial<
     1: (bundle) => <FenderDivisionsTable divisions={bundle.divisions} />,
   },
   ecommerce: {
-    0: (_bundle, vars) => (
-      <>
-        {htmlBlock(
-          bindCopy(
-            `<div class="ceo-callout"><div class="ceo-callout-header"><span>What does Buy Box coverage mean?</span></div><div class="ceo-callout-body">{catalog_skus} SKUs, {bb_total} active offers ({active_offer_coverage_pct}). {bb_1p_pct} ({bb_1p} of {bb_total}) Amazon 1P; {bb_3p} confirmed 3P; {bb_unharvested} seller unknown.</div></div>`,
-            vars,
-          ),
-        )}
-        <FenderListingsTable />
-      </>
-    ),
-    1: () => <MapChannelPanel />,
-    2: () => <SuppressedListingsPanel />,
-    3: () => htmlBlock(catalogConsolidationHtml),
+    0: (_bundle, _vars, retail) => <RetailOverview read={retail} />,
+    1: (_bundle, _vars, retail) => <SuppressedListingsPanel read={retail} />,
+    2: (_bundle, _vars, retail) => <MapChannelPanel read={retail} />,
+    3: (_bundle, _vars, retail) => <CatalogGovernancePanel read={retail} />,
   },
   aeo: {
     1: () => <FenderSimulationsPanel />,
@@ -77,14 +73,26 @@ const TAB_OVERRIDES: Partial<
   },
 };
 
-function wrapSpoke(id: SpokeId, bundle: CanvasBundle, vars: Record<string, string>): SpokeDefinition {
+function wrapSpoke(
+  id: SpokeId,
+  bundle: CanvasBundle,
+  vars: Record<string, string>,
+  retail: RetailCanvasRead,
+): SpokeDefinition {
   const bound = bindNarrativeSpoke(spokeData[id], vars);
   const overrides = TAB_OVERRIDES[id] ?? {};
 
   return {
     ...bound,
+    ...(id === "ecommerce"
+      ? {
+          title: "Portfolio Retail",
+          desc: "Suppressed Featured Offers, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
+          tabs: [...RETAIL_PANEL_TABS],
+        }
+      : {}),
     render: (tabIdx) => {
-      const custom = overrides[tabIdx]?.(bundle, vars);
+      const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
       const content = bound.render(tabIdx);
       if (typeof content === "string") return htmlBlock(content);
@@ -93,10 +101,13 @@ function wrapSpoke(id: SpokeId, bundle: CanvasBundle, vars: Record<string, strin
   };
 }
 
-export function buildLiveSpokes(bundle: CanvasBundle): Record<SpokeId, SpokeDefinition> {
-  const vars = buildTemplateVars(bundle);
+export function buildLiveSpokes(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead = { phase: "loading" },
+): Record<SpokeId, SpokeDefinition> {
+  const vars = { ...buildTemplateVars(bundle), ...retailTemplateVars(bundle, retail) };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;
-  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars);
+  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail);
   return out;
 }

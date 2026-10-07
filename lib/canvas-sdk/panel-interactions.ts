@@ -322,7 +322,7 @@ function annotateGlossary(root: HTMLElement, glossary: Record<string, string>) {
       // .command-center is React-rendered; mutating it would fight reconciliation.
       if (
         parent.closest(
-          "code, pre, button, th, .ifai-term, .ifai-open-hint, .tag-badge, .command-center",
+          "code, pre, button, th, .ifai-term, .ifai-open-hint, .tag-badge, .command-center, .retail-health, .catalog-governance",
         )
       ) {
         return NodeFilter.FILTER_REJECT;

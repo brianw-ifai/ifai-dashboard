@@ -1,17 +1,26 @@
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { beginnerSovLine, beginnerSovWhy } from "@/lib/fender-canvas/beginner-sov";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import {
+  headlineSentence,
+  headlineSurface,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /** Command center copy from the canvas reads. Unsourced counts are omitted. */
-export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec {
+export function buildLiveCommandCenter(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead = { phase: "loading" },
+): CommandCenterSpec {
   const { m, divisions } = bundle;
   const divisionCount = divisions.length > 0 ? divisions.length : m.division_count;
   const sovLine = beginnerSovLine(bundle.sov);
   const sovWhy = beginnerSovWhy(bundle.sov);
+  const headline = headlineSurface(retail);
 
   const summaryParts = [
-    `Of ${formatInt(m.bb_total)} active Amazon offers, ${formatPct(m.bb_1p_pct)} confirm Amazon as the seller, ${formatPct(m.bb_3p_pct)} are confirmed third-party, and ${formatPct(m.bb_unharvested_pct)} have no seller in this read.`,
+    headlineSentence(headline),
     `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs across ${formatInt(divisionCount)} divisions.`,
   ];
   if (sovLine) summaryParts.push(`Beginner share of voice is ${sovLine}.`);
@@ -31,11 +40,13 @@ export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec 
     items: [
       {
         id: "buybox-suppression",
-        title: `Only ${formatPct(m.bb_1p_pct)} of active Amazon offers confirm Amazon as the seller`,
-        why: `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs. ${formatInt(m.bb_total)} have an active Amazon offer. Amazon is the seller on ${formatInt(m.bb_1p)} of those (${formatPct(m.bb_1p_pct)}). A third-party seller is confirmed on ${formatInt(m.bb_3p)} (${formatPct(m.bb_3p_pct)}). The seller is unknown on ${formatInt(m.bb_unharvested)} (${formatPct(m.bb_unharvested_pct)}).`,
+        title: headline.countLabel ? `${headline.label}: ${headline.countLabel}` : headline.label,
+        why: headline.missingMessage
+          ? headline.missingMessage
+          : `${headline.label} is the current retail headline${headline.countLabel ? `, with ${headline.countLabel}` : ""}.`,
         severity: "critical",
         spokeId: "ecommerce",
-        subTab: "Retail Listings",
+        subTab: headline.commandTab,
         defaultOwner: "intofocus",
       },
       {

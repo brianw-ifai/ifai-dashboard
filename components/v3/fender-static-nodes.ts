@@ -1,5 +1,8 @@
 import type { CanvasNode } from "@/lib/canvas-sdk/types";
 import { FENDER_METRICS } from "@/components/v3/fender-metrics";
+import { retailBubbleFaces } from "@/lib/fender-canvas/portfolio-retail-display";
+
+const retailFaces = retailBubbleFaces({ phase: "loading" });
 
 export const fenderStaticNodes: CanvasNode[] = [
     {
@@ -46,39 +49,24 @@ export const fenderStaticNodes: CanvasNode[] = [
       x: 1360,
       y: 200,
       r: 54,
-      status: "danger",
-      title: "Buy Box",
-      stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "Unavailable"],
-      meta: "Active offers",
       spokeId: "ecommerce",
-      subTab: "Retail Listings",
-      tooltip: {"title": "Buy Box (Active Offers)", "desc": "Amazon 1P, confirmed third-party, and unknown sellers load with the offer read."},
+      ...retailFaces.suppressed,
     },
     {
       id: "sat-asin",
       x: 1420,
       y: 360,
       r: 54,
-      status: "warning",
-      title: "ASIN Split",
-      stats: ["Unavailable", `${FENDER_METRICS.strandedReviews.value} Reviews`],
-      meta: "Austin Bazaar / GearTree",
       spokeId: "ecommerce",
-      subTab: "catalog",
-      tooltip: {"title": "Splintered Bundle ASINs", "desc": "Key partners Austin Bazaar and GearTree hold Brand Registry bundle rights. Splintered reviews forfeit Amazon's Overall Pick badge."},
+      ...retailFaces.catalog,
     },
     {
       id: "sat-map",
       x: 1340,
       y: 480,
-      r: 52,
-      status: "danger",
-      title: "MAP Leakage",
-      stats: ["Unavailable", "MAP reading unavailable"],
-      meta: "Amazon · Reverb · Walmart",
+      r: 60,
       spokeId: "ecommerce",
-      subTab: "map",
-      tooltip: {"title": "Cross-Marketplace MAP Leakage", "desc": "Starter kit bundles sidestep standalone MAP, which prompts automated scrapers on Reverb and Walmart to undercut the price."},
+      ...retailFaces.map,
     },
     {
       id: "sat-schema",
@@ -149,14 +137,10 @@ export const fenderStaticNodes: CanvasNode[] = [
       id: "spoke-retail",
       x: 1160,
       y: 320,
-      r: 86,
-      status: "danger",
-      title: "Portfolio Retail",
+      r: 96,
       titleSize: 13.5,
-      stats: [`${FENDER_METRICS.buyBoxRetention.value} 1P`, "Active offers"],
-      meta: "Seller mix loads with the offer read",
       spokeId: "ecommerce",
-      tooltip: {"title": "Portfolio Retail & Brand Registry", "desc": "Buy Box seller mix loads with the offer read. Retail listings, MAP, suppressed listings, and catalog consolidation stay on their own tabs."},
+      ...retailFaces.main,
     },
     {
       id: "spoke-specs",
@@ -212,11 +196,11 @@ export const fenderStaticNodes: CanvasNode[] = [
       title: "Strategy Roadmap",
       titleSize: 14,
       stats: ["90 Days", "3 Phases"],
-      meta: "Buy Box & AI Search Visibility",
+      meta: retailFaces.main.stats[0] ?? "Retail reading",
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: "A phased 30-60-90 day plan. Buy Box and AI win baselines load with the canvas read, with a target toward 95% Buy Box retention.",
+        desc: retailFaces.main.tooltip.desc,
       },
     },
     {

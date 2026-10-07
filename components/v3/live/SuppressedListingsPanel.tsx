@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import {
   competitivePriceReadingCountQuery,
   competitivePriceColumnProbe,
@@ -13,10 +14,37 @@ import {
   suppressionList,
   type SuppressionReading,
 } from "@/lib/fender-canvas/suppressed-listings";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
 const PAGE_SIZE = 1000;
 
-const UNAVAILABLE = "The reading is not available.";
+const SUPPRESSED_COLUMNS: RetailColumn[] = [
+  { id: "listing", name: "Listing", label: "Listing", width: 240, minWidth: 140 },
+  { id: "offer", name: "Offer price", label: "Offer price", width: 120, minWidth: 100, className: "money" },
+  {
+    id: "benchmark",
+    name: "Competitive External Price",
+    label: "Competitive External Price",
+    width: 200,
+    minWidth: 140,
+    className: "money",
+  },
+  {
+    id: "withheld",
+    name: "Featured Offer withheld",
+    label: "Featured Offer withheld",
+    width: 120,
+    minWidth: 88,
+  },
+  {
+    id: "gap",
+    name: "Above benchmark",
+    label: "Above benchmark",
+    width: 140,
+    minWidth: 110,
+    className: "money",
+  },
+];
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -60,7 +88,20 @@ function explanation() {
   );
 }
 
-export function SuppressedListingsPanel() {
+function ReadingNote({ read }: { read: RetailCanvasRead }) {
+  if (read.phase === "loading") {
+    return <p className="retail-missing">Loading the retail reading…</p>;
+  }
+  if (read.phase === "error") {
+    return <p className="retail-missing">The retail read could not be loaded.</p>;
+  }
+  const reading = read.snapshot.suppressedListings;
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  if (!showMissing || !reading.missingMessage) return null;
+  return <p className="retail-missing">{reading.missingMessage}</p>;
+}
+
+export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
   const [state, setState] = useState<
     "loading" | "unavailable" | { rows: SuppressionReading[] }
   >("loading");
@@ -83,43 +124,35 @@ export function SuppressedListingsPanel() {
   const rows = typeof state === "object" ? state.rows : null;
 
   return (
-    <div className="suppressed-listings">
+    <div className="suppressed-listings retail-surface">
       {explanation()}
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">
           <span>Suppressed Listings</span>
-          {rows ? (
-            <span className="tag-badge tag-danger suppressed-count">{formatInt(rows.length)}</span>
+          {read.phase === "ready" && read.snapshot.suppressedListings.issueCount != null ? (
+            <span className="tag-badge tag-danger suppressed-count">
+              {formatInt(read.snapshot.suppressedListings.issueCount)}
+            </span>
           ) : null}
         </div>
+        <ReadingNote read={read} />
         {state === "loading" ? (
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: "8px 0 0" }}>
-            Loading the reading…
-          </p>
+          <p className="retail-missing">Loading qualifying listings…</p>
         ) : null}
         {state === "unavailable" ? (
-          <p style={{ fontSize: 12.5, lineHeight: 1.5, margin: "8px 0 0" }}>{UNAVAILABLE}</p>
+          <p className="retail-missing">The qualifying rows could not be loaded.</p>
         ) : null}
         {rows ? (
           <>
             <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "8px 0" }}>
-              The gap is the new Amazon offer, including shipping, minus the Competitive External
-              Price. The count is the number of listings this read returned.
+              Source fields: offer price, Competitive External Price, and Featured Offer withheld.
+              The gap is the offer, including shipping, minus that external price.
             </p>
-            <div style={{ overflowX: "auto" }}>
-              <table className="table-sm">
-                <thead>
-                  <tr>
-                    <th>Listing</th>
-                    <th>Amazon offer</th>
-                    <th>Benchmark</th>
-                    <th>Above benchmark</th>
-                  </tr>
-                </thead>
+            <ResizableTable tableId="suppressed-listings" columns={SUPPRESSED_COLUMNS}>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>
+                      <td colSpan={5}>
                         No listing in this reading is above the Competitive External Price with the
                         Featured Offer withheld.
                       </td>
@@ -133,26 +166,29 @@ export function SuppressedListingsPanel() {
                           <td>
                             <strong>{listingLabel(row)}</strong>
                             <br />
-                            {href ? (
-                              <a
-                                className="listing-link channel-tag channel-amz"
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
+                            <span className="asin-line">
+                              {href ? (
+                                <a
+                                  className="listing-link channel-tag channel-amz"
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <span className="asin-chip">{row.asin}</span>
+                                </a>
+                              ) : (
                                 <span className="asin-chip">{row.asin}</span>
-                              </a>
-                            ) : (
-                              <span className="asin-chip">{row.asin}</span>
-                            )}
+                              )}
+                            </span>
                           </td>
-                          <td>{formatUsd(row.offer_price)}</td>
-                          <td>
+                          <td className="money">{formatUsd(row.offer_price)}</td>
+                          <td className="money">
                             {row.competitive_price_threshold_cents != null
                               ? formatUsd(row.competitive_price_threshold_cents / 100)
                               : ""}
                           </td>
-                          <td style={{ color: "var(--danger-red)", fontWeight: 700 }}>
+                          <td>{row.featured_offer_withheld === true ? "Yes" : "No"}</td>
+                          <td className="money" style={{ color: "var(--danger-red)", fontWeight: 700 }}>
                             {formatUsd(gap, { signed: true })}
                           </td>
                         </tr>
@@ -160,8 +196,7 @@ export function SuppressedListingsPanel() {
                     })
                   )}
                 </tbody>
-              </table>
-            </div>
+            </ResizableTable>
           </>
         ) : null}
       </div>

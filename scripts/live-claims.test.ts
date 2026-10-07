@@ -3,7 +3,13 @@ import { test } from "node:test";
 import { beginnerSovLine } from "../lib/fender-canvas/beginner-sov.ts";
 import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from-live.ts";
 import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-causes.ts";
+import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
+import { activeOfferClarity } from "../lib/fender-canvas/offer-clarity.ts";
+import { headlineSentence, headlineSurface } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import { bundleReadLine, mapReadLine } from "../lib/fender-canvas/retail-copy.ts";
+import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
 import type { CanvasBundle } from "../lib/fender-canvas/types.ts";
+import type { RetailCanvasRead } from "../lib/fender-canvas/portfolio-retail-display.ts";
 
 function bundle(): CanvasBundle {
   return {
@@ -94,20 +100,104 @@ test("beginner share of voice uses the stored competitor percents", () => {
   assert.equal(line, "Yamaha 66.7% vs Fender/Squier 33.3%");
 });
 
-test("command center uses live offer counts and drops unsourced claims", () => {
-  const spec = buildLiveCommandCenter(bundle());
+function retailReady(): RetailCanvasRead {
+  return {
+    phase: "ready",
+    snapshot: {
+      headline: null,
+      suppressedListings: {
+        status: "available_with_issues",
+        issueCount: 48,
+        missingMessage: null,
+        detail: null,
+      },
+      mapLeakage: {
+        status: "available_with_issues",
+        issueCount: 555,
+        missingMessage: null,
+        detail: null,
+      },
+      unnestedBundles: {
+        status: "available_with_issues",
+        issueCount: 12,
+        missingMessage: null,
+        detail: null,
+      },
+      amazonSpecGaps: {
+        status: "unavailable",
+        issueCount: null,
+        missingMessage: "Amazon spec-field readings have not been stored.",
+        detail: null,
+      },
+    },
+  };
+}
+
+test("command center uses the retail headline and drops unsourced claims", () => {
+  const retail = retailReady();
+  const spec = buildLiveCommandCenter(bundle(), retail);
   const text = [spec.desc, spec.summary, ...spec.items.flatMap((item) => [item.title, item.why, item.impact])]
     .filter(Boolean)
     .join("\n");
+  const headline = headlineSentence(headlineSurface(retail));
 
   assert.match(text, /3,598/);
-  assert.match(text, /1,025/);
-  assert.match(text, /8\.3%/);
+  assert.ok(text.includes(headline));
   assert.match(text, /13 divisions/);
   assert.match(text, /Yamaha 66\.7% vs Fender\/Squier 33\.3%/);
   assert.match(text, /222/);
+  assert.doesNotMatch(text, /8\.3%/);
   assert.doesNotMatch(text, /3,430|993|7\.4%|16\.7%|Fourteen|14 catalog|2,420|fingerboard|dual humbucker/i);
   assert.equal(spec.items.length, 6);
+});
+
+test("hub offer arithmetic does not pair the 1P count with the harvested percentage", () => {
+  const text = activeOfferClarity({
+    ...bundle().m,
+    bb_1p: 67,
+    bb_3p: 871,
+    bb_unharvested: 66,
+    bb_no_offer: 25,
+    catalog_skus: 3598,
+    seller_harvested_pct: 28.6,
+  });
+  assert.match(text, /1,004 listings have an active Amazon offer/);
+  assert.match(text, /67 of 1,004 \(6\.7%\)/);
+  assert.match(text, /871 of 1,004 \(86\.8%\)/);
+  assert.match(text, /66 of 1,004 offers have no stored seller name \(6\.6%\)/);
+  assert.match(text, /25 listings have no Amazon offer/);
+  assert.match(text, /not part of the active-offer count/);
+  assert.doesNotMatch(text, /28\.6%/);
+  assert.doesNotMatch(text, /67 of 3,598/);
+  assert.match(text, /Featured Offer/);
+});
+
+test("the MAP violations widget follows the listing read", () => {
+  const ready = buildLiveMetrics(bundle(), retailReady()).flaggedAsins;
+  assert.equal(ready.label, "MAP violations");
+  assert.equal(ready.value, "555");
+  assert.equal(ready.subTab, "MAP");
+  assert.doesNotMatch(ready.detail, /48/);
+
+  const failed = buildLiveMetrics(bundle(), { phase: "error" }).flaggedAsins;
+  assert.equal(failed.value, "Unavailable");
+  assert.doesNotMatch(failed.value, /533/);
+  assert.match(failed.detail, /did not succeed/);
+});
+
+test("the guided tour uses the same retail headline as the ticker", () => {
+  const retail = retailReady();
+  const headline = headlineSentence(headlineSurface(retail));
+  const steps = buildLiveTourSteps(bundle(), retail);
+  const hub = steps.find((step) => step.nodeId === "hub");
+  const roadmap = steps.find((step) => step.nodeId === "roadmap");
+  assert.ok(hub?.displays.includes(headline));
+  assert.ok(roadmap?.displays.includes(headline));
+  const text = [...(hub?.displays ?? []), ...(roadmap?.displays ?? []), roadmap?.value ?? ""].join(" ");
+  assert.doesNotMatch(text, /Buy Box:|95% Buy Box|6\.5%/);
+  assert.equal(mapReadLine(retail), "555 listings are below MAP in this listing read.");
+  assert.equal(bundleReadLine(retail), "12 bundles have no usable parent ASIN in this listing read.");
+  assert.match(mapReadLine({ phase: "error" }), /does not state a MAP count/);
 });
 
 test("hallucination groups are the stored root causes and their row counts", () => {
