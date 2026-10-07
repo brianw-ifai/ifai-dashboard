@@ -38,9 +38,10 @@ export function marketingPageFromPathname(pathname: string): MarketingPageId | n
   return SLUG_TO_PAGE[slug] ?? null;
 }
 
-export function marketingStaticParams(): { slug?: string[] }[] {
-  return [
-    {},
-    ...MARKETING_PAGES.filter((p) => p !== "home").map((p) => ({ slug: [p] })),
-  ];
+export function marketingStaticParams(): { slug: string[] }[] {
+  // Optional catch-all must include `slug` on every params object.
+  // An empty array is the static-export path for `/`.
+  return MARKETING_PAGES.map((page) => ({
+    slug: page === "home" ? [] : [page],
+  }));
 }
