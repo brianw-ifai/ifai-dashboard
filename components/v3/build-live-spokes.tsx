@@ -18,8 +18,9 @@ import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types"
 import { spokeData } from "@/components/v3/spoke-data";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
-import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { buildTemplateVars } from "@/lib/fender-canvas/template-vars";
 
 function htmlBlock(html: string) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
@@ -104,7 +105,7 @@ export function buildLiveSpokes(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
 ): Record<SpokeId, SpokeDefinition> {
-  const vars = buildTemplateVars(bundle);
+  const vars = { ...buildTemplateVars(bundle), ...retailTemplateVars(bundle, retail) };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;
   for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail);

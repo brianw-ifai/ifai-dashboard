@@ -110,18 +110,18 @@ export function FenderListingsTable() {
         </p>
       ) : null}
 
-      <div style={{ overflowX: "auto" }}>
+      <div className="table-scroll">
         <table className="table-sm">
           <thead>
             <tr>
               <th>Model / SKU</th>
               <th>Child ASIN</th>
               <th>Partner / Bundle</th>
-              <th>MAP</th>
-              <th>Offer</th>
-              <th>Leakage</th>
-              <th>Walmart</th>
-              <th>MF</th>
+              <th className="money">MAP</th>
+              <th className="money">Offer</th>
+              <th className="money">Amazon gap</th>
+              <th className="money">Walmart</th>
+              <th className="money">Musician&apos;s Friend</th>
               <th>Reviews</th>
               <th>Channels</th>
             </tr>
@@ -166,23 +166,25 @@ export function FenderListingsTable() {
                     )}
                   </td>
                   <td>{partner}</td>
-                  <td>{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
-                  <td style={leakageStyle(row.worst_leakage)}>
-                    {row.offer_price != null ? formatUsd(row.offer_price) : pendingLabel()}
+                  <td className="money">
+                    {row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}
                   </td>
-                  <td style={leakageStyle(row.worst_leakage)}>
-                    {row.worst_leakage != null
-                      ? formatUsd(row.worst_leakage, { signed: true })
-                      : pendingLabel()}
+                  <td className="money">
+                    {row.offer_price != null ? formatUsd(row.offer_price) : null}
                   </td>
-                  <td>
+                  <td className="money" style={leakageStyle(row.amz_leakage ?? null)}>
+                    {row.amz_leakage != null
+                      ? `Amazon gap ${formatUsd(row.amz_leakage, { signed: true })}`
+                      : null}
+                  </td>
+                  <td className="money">
                     {row.wmt_price != null ? (
                       <>
                         {formatUsd(row.wmt_price)}
                         {row.wmt_leakage != null ? (
                           <span style={leakageStyle(row.wmt_leakage)}>
                             {" "}
-                            ({formatUsd(row.wmt_leakage, { signed: true })})
+                            Walmart gap {formatUsd(row.wmt_leakage, { signed: true })}
                           </span>
                         ) : null}
                         {row.wmt_url ? (
@@ -194,24 +196,20 @@ export function FenderListingsTable() {
                           </>
                         ) : null}
                       </>
-                    ) : (
-                      "n/a"
-                    )}
+                    ) : null}
                   </td>
-                  <td>
+                  <td className="money">
                     {row.mf_price != null ? (
                       <>
                         {formatUsd(row.mf_price)}
                         {row.mf_leakage != null ? (
                           <span style={leakageStyle(row.mf_leakage)}>
                             {" "}
-                            ({formatUsd(row.mf_leakage, { signed: true })})
+                            Musician&apos;s Friend gap {formatUsd(row.mf_leakage, { signed: true })}
                           </span>
                         ) : null}
                       </>
-                    ) : (
-                      "n/a"
-                    )}
+                    ) : null}
                   </td>
                   <td>{row.reviews_count != null ? formatInt(row.reviews_count) : pendingLabel()}</td>
                   <td>{row.channels?.trim() || "n/a"}</td>

@@ -172,10 +172,19 @@ test.describe("drill-downs", () => {
 
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Strategy Roadmap");
-    await expect(page.locator(".ifai-open-hint")).toHaveCount(3);
+    const hints = page.locator(".ifai-open-hint");
+    await expect(hints).toHaveCount(3);
+    await expect(page.locator(".drilldown-desc")).not.toContainText("88%");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("95%");
+    await expect(page.locator(".drilldown-body")).not.toContainText("Sweetwater");
+    await expect(page.locator(".drilldown-body")).not.toContainText("Guitar Center");
 
-    await page.locator(".ifai-open-hint").first().click();
-    await expect(canvas.activeTab).toContainText("Catalog");
+    await hints.nth(0).click();
+    await expect(canvas.activeTab).toHaveText("MAP");
+
+    await canvas.openSpokeFromMap("Strategy Roadmap");
+    await page.locator(".ifai-open-hint").nth(1).click();
+    await expect(canvas.activeTab).toHaveText("Catalog Governance");
   });
 
   test("the spec sample states the live schema result", async ({ canvas, page }) => {

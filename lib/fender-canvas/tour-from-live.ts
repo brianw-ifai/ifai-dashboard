@@ -1,10 +1,19 @@
 import type { TourStep } from "@/lib/canvas-sdk/types";
-import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import {
+  headlineSentence,
+  headlineSurface,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
-export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
+export function buildLiveTourSteps(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead = { phase: "loading" },
+): TourStep[] {
   const { m, cats } = bundle;
   const beginner = cats.find((c) => c.category === "beginner");
+  const headline = headlineSentence(headlineSurface(retail));
 
   return [
     {
@@ -17,7 +26,7 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       category: "BRAND CORE",
       displays: [
         `${formatInt(m.catalog_skus)} monitored SKUs`,
-        `Buy Box: ${formatPct(m.bb_1p_pct)} Amazon 1P on ${formatInt(m.bb_total)} active offers`,
+        headline,
         `AI win rate ${formatPct(m.sim_win_pct)}; weakest is ${m.weakest_category ?? "n/a"} at ${formatPct(m.weakest_win_pct)}`,
       ],
       value: "One page tying Amazon listing problems and AI recommendations to revenue.",
@@ -105,11 +114,10 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       subtitle: "What happens at 30, 60, and 90 days",
       category: "ROADMAP",
       displays: [
-        `Baseline: Buy Box ${formatPct(m.bb_1p_pct)}, AI win ${formatPct(m.sim_win_pct)}`,
-        "Targets toward 95% Buy Box",
-        "Choose who does the work: IntoFocus or your team",
+        headline,
+        `AI win rate ${formatPct(m.sim_win_pct)}`,
       ],
-      value: "Follow a clear 90-day plan with targets, whichever team does the work.",
+      value: "Follow a 90-day plan from the current retail headline.",
     },
   ];
 }

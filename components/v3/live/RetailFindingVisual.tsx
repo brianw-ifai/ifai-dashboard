@@ -32,10 +32,14 @@ export function RetailFindingVisual({
         <span className="metric-card-label">{label}</span>
         <span className="metric-card-val">{count}</span>
         {extra ? <span className="metric-card-sub">{extra}</span> : null}
-        {showBar ? (
-          <span className="retail-coverage" aria-hidden="true">
-            <span className="retail-coverage-track">
+        {showBar && coverage ? (
+          <span className="retail-coverage">
+            <span className="retail-coverage-label">Audit coverage</span>
+            <span className="retail-coverage-track" aria-hidden="true">
               <span className="retail-coverage-fill" style={{ width: `${width}%` }} />
+            </span>
+            <span className="retail-coverage-note">
+              {formatInt(coverage.checked)} of {formatInt(coverage.total)} checked
             </span>
           </span>
         ) : null}

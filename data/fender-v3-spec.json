@@ -1,7 +1,7 @@
 {
   "spokes": {
     "hub": {
-      "badge": "PORTFOLIO CORE \u00b7 MASTER COMMAND",
+      "badge": "PORTFOLIO CORE · MASTER COMMAND",
       "title": "FMIC Portfolio Overview & Executive Briefing",
       "desc": "Overview of {catalog_skus} monitored electric SKUs. The division read lists {division_count} divisions.",
       "tabs": [
@@ -12,12 +12,12 @@
       "navLabel": "Overview",
       "next": "ecommerce",
       "tabTemplates": [
-        "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>What's driving Fender's commercial inflection point?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    Shoppers ask AI assistants what to buy before they land on a product page. The figures in this briefing come from the latest catalog, offer, simulation, and spec reads.\n    <br/><br/>\n    <strong>Buy Box Data Clarity ({catalog_skus} SKUs):</strong> {bb_total} SKUs ({active_offer_coverage_pct} of the catalog) show an active Amazon offer. {bb_no_offer} SKUs ({bb_no_offer_pct} of the catalog) have no Amazon offer tracked. Among those {bb_total} active listings:\n    <ul style=\"margin:6px 0 0 16px; padding:0;\">\n      <li><strong>{bb_1p_pct} ({bb_1p} of {bb_total}) Confirmed Amazon 1P Buy Box:</strong> Amazon itself holds the Buy Box on these active listings.</li>\n      <li><strong>{bb_3p_pct} ({bb_3p} of {bb_total}) Confirmed 3P:</strong> A third-party seller holds the Buy Box on these active listings.</li>\n      <li><strong>{bb_unharvested_pct} ({bb_unharvested} of {bb_total}) Seller Unknown:</strong> This read has no seller name for these offers.</li>\n    </ul>\n    <div style=\"margin-top:8px; padding:8px 10px; background:rgba(255,180,0,0.08); border:1px solid var(--warning-amber); border-radius:6px; font-size:11.5px;\">\n      \u26a0\ufe0f <strong>Seller data coverage :</strong> seller-level Buy Box data covers {bb_1p} of {catalog_skus} SKUs (about {seller_harvested_pct}).\n    </div>\n    <br/>\n    <strong>Fender's Commercial Selling Model Clarified:</strong>\n    <ul style=\"margin:4px 0 0 16px; padding:0;\">\n      <li><strong>1P Direct (Amazon Retail):</strong> Fender sells wholesale to Amazon (Vendor Central); Amazon owns and fulfills the inventory.</li>\n      <li><strong>Authorized 3P Distribution:</strong> Key power retailers (Austin Bazaar, Crazy Dave's, GearTree) hold authorized distribution agreements and Amazon Brand Registry access to sell curated bundles.</li>\n      <li><strong>Catalog Governance:</strong> We don't send cease-and-desist letters to Austin Bazaar. Instead, we nest their authorized bundles as variations under the official Fender parent ASIN, which pools their reviews onto the parent listing and secures the Amazon 'Overall Pick' badge.</li>\n    </ul>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">\n    <span>Master Portfolio Quick-Look ({catalog_skus} Monitored Electric SKUs)</span>\n    </div>\n  <div class=\"metric-grid-2\">\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Buy Box Retention (Active Offers Only)</span>\n      <div class=\"metric-card-val\" style=\"color:var(--danger-red);\">{bb_1p_pct}</div>\n      <span class=\"metric-card-sub\">{bb_1p} of {bb_total} active-offer SKUs; {bb_no_offer} of {catalog_skus} SKUs have no active Amazon offer</span>\n    </div>\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Enterprise Potential</span>\n      <div class=\"metric-card-val tone-success\">{enterprise_potential}</div>\n      <span class=\"metric-card-sub\">Annualized GMV estimate across FMIC</span>\n    </div>\n  </div>\n</div>\n",
+        "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\">\n    <span>What's driving Fender's commercial inflection point?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    Shoppers ask AI assistants what to buy before they land on a product page. The figures in this briefing come from the latest catalog, offer, simulation, and spec reads.\n    <br/><br/>\n    <strong>Retail health:</strong> {retail_headline} A withheld Featured Offer removes the one-click path shoppers and assistants use when they name a product someone can buy.\n    <br/><br/>\n    <strong>Active offers ({catalog_skus} monitored SKUs):</strong> {active_offer_clarity}\n    <br/><br/>\n    <strong>Fender's commercial selling model:</strong>\n    <ul style=\"margin:4px 0 0 16px; padding:0;\">\n      <li><strong>1P direct (Amazon Retail):</strong> Fender sells wholesale to Amazon (Vendor Central); Amazon owns and fulfills the inventory.</li>\n      <li><strong>Authorized 3P distribution:</strong> Austin Bazaar and GearTree are seller names stored on listings in this read. They sell curated bundles under Amazon Brand Registry.</li>\n      <li><strong>Catalog governance:</strong> Nest authorized bundles as variations under the official Fender parent ASIN, which pools their reviews onto the parent listing.</li>\n    </ul>\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">\n    <span>Master Portfolio Quick-Look ({catalog_skus} Monitored Electric SKUs)</span>\n  </div>\n  <div class=\"metric-grid-2\">\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Featured Offer</span>\n      <span class=\"metric-card-sub\">Retail health above is the live headline for this read.</span>\n    </div>\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Enterprise Potential</span>\n      <div class=\"metric-card-val tone-success\">{enterprise_potential}</div>\n      <span class=\"metric-card-sub\">Annualized GMV estimate across FMIC</span>\n    </div>\n  </div>\n</div>\n",
         "\n<div class=\"ceo-callout\" style=\"border-color:rgba(16, 185, 129, 0.4);\">\n  <div class=\"ceo-callout-header\" style=\"color:var(--success-text);\">\n    <span>How does the $680K pilot compare with enterprise value?</span>\n  </div>\n  <div class=\"ceo-callout-body\">\n    Fender is a $1B+ global enterprise. An annual lift of $680,000 is an attractive proof of concept, but it doesn't justify a top-tier enterprise advisory retainer ($20,000/month, or $240,000/year).\n    <br/><br/>\n    <strong>The Crucial Distinction:</strong>\n    <ul style=\"margin:4px 0 0 16px;\">\n      <li><strong>Phase 1 Quick-Win Lift ($680,000/yr):</strong> Covers the Phase 1 pilot scope (estimate) and fixes their immediate Buy Box and review-dilution problems.</li>\n      <li><strong>Full Enterprise Portfolio Scale ($38M to $62M GMV Impact):</strong> When listing architecture, MAP parity, and structured AEO schemas are deployed across Fender, Squier, Jackson, Gretsch, and EVH ({catalog_skus} monitored electric SKUs), the total enterprise upside is <strong>$38M to $62M annually</strong> ($50M midpoint).</li>\n    </ul>\n    <br/>\n    The enterprise multiple on an annual advisory retainer is an estimate, not a measured result.\n  </div>\n</div>\n\n<div class=\"content-box\" style=\"margin-top:12px;\">\n  <div class=\"content-box-title\">Enterprise GMV Growth Drivers</div>\n  <div class=\"metric-grid-2\">\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Phase 1 (estimate)</span>\n      <div class=\"metric-card-val tone-success\">{phase_one_lift} <span style=\"font-size:12px; color:var(--text-subtle);\">/ yr</span></div>\n      <span class=\"metric-card-sub\">Estimate: Buy Box recovery</span>\n    </div>\n    <div class=\"metric-card-sm\">\n      <span class=\"metric-card-label\">Full Enterprise Scale</span>\n      <div class=\"metric-card-val tone-accent\">+$50M <span style=\"font-size:12px; color:var(--text-subtle);\">Mid-Point</span></div>\n      <span class=\"metric-card-sub\">$38M to $62M Range Across {catalog_skus} Active SKUs</span>\n    </div>\n  </div>\n</div>\n"
       ]
     },
     "ecommerce": {
-      "badge": "CRITICAL SPOKE \u00b7 RETAIL HEALTH",
+      "badge": "CRITICAL SPOKE · RETAIL HEALTH",
       "title": "Portfolio Retail",
       "desc": "Suppressed Featured Offers, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
       "tabs": [
@@ -36,7 +36,7 @@
       ]
     },
     "aeo": {
-      "badge": "CRITICAL SPOKE \u00b7 AI SEARCH VISIBILITY",
+      "badge": "CRITICAL SPOKE · AI SEARCH VISIBILITY",
       "title": "AI Search Visibility, Citations & Simulations",
       "desc": "{sim_total} simulation calls. Fender/Squier won {sim_win_pct} of {sim_resolved} resolved answers ({sim_wins} wins, {sim_unclear} unclear, {sim_errors} errors). {sim_hallucinations} answers are flagged for a spec hallucination.",
       "tabs": [
@@ -53,7 +53,7 @@
       ]
     },
     "specs": {
-      "badge": "WATCH SPOKE \u00b7 AI READINESS",
+      "badge": "WATCH SPOKE · AI READINESS",
       "title": "AI Readiness: Product Specs & Schema.org",
       "desc": "Across {spec_checked} checked SKUs, site search found a fender.com product page for {fender_found_ratio} ({spec_fender_found_pct}). {spec_missing_additional_property} found pages are missing Schema.org additionalProperty. Amazon structured fields averaged {spec_avg_amazon_pct} complete.",
       "tabs": [
@@ -70,7 +70,7 @@
       ]
     },
     "competitors": {
-      "badge": "BENCHMARK SPOKE \u00b7 RADAR",
+      "badge": "BENCHMARK SPOKE · RADAR",
       "title": "Competitive Radar & Category SOV",
       "desc": "Share of voice from the latest simulation read, by category. The battlecard table lists each stored brand.",
       "tabs": [
@@ -86,7 +86,7 @@
       ]
     },
     "suggestions": {
-      "badge": "OPPORTUNITY SPOKE \u00b7 REVENUE LIFT",
+      "badge": "OPPORTUNITY SPOKE · REVENUE LIFT",
       "title": "Action Items & Commercial ROI",
       "desc": "Action items for listing hygiene and AI search visibility. Phase 1 pilot estimate: {phase_one_lift}. Full-enterprise GMV estimate: {enterprise_potential}.",
       "tabs": [
@@ -102,9 +102,9 @@
       ]
     },
     "roadmap": {
-      "badge": "STRATEGY SPOKE \u00b7 90 DAYS",
+      "badge": "STRATEGY SPOKE · 90 DAYS",
       "title": "Executive Portfolio Roadmap",
-      "desc": "Phased 30-60-90 Day execution timeline: improve AI Win Rate from the {sim_win_pct} baseline and restore Buy Box from the {bb_1p_pct} baseline toward 95%.",
+      "desc": "{retail_headline}",
       "tabs": [
         "30-60-90 Day Milestones",
         "Executive KPI Target Matrix",
@@ -113,7 +113,7 @@
       "navLabel": "90-Day Roadmap",
       "next": "aeo",
       "tabTemplates": [
-        "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">30-60-90 Day Milestones</div>\n  \n  <div class=\"action-card critical\">\n    <div class=\"action-head\">Phase 1: Days 1 to 30 (Retail Containment &amp; ASIN Consolidation)<span class=\"ifai-open-hint\" data-ifai-open=\"ecommerce\" data-ifai-tab=\"Catalog\">Open details \u2192</span></div>\n    <div class=\"action-details\">\n      \u2022 Harmonize the {map_violation_skus} MAP-violation SKUs in this read under Brand Registry parentage.<br/>\n      \u2022 Standardize bundle MAP policies with Austin Bazaar and GearTree.<br/>\n      \u2022 Inject missing Schema.org JSON-LD technical fields on fender.com.<br/>\n      \u2022 Monitor {catalog_skus} harvested electric SKUs via automated Keepa sync.\n    </div>\n    <div class=\"action-impact\">Target: improve Buy Box from the {bb_1p_pct} baseline toward 88%</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">Phase 2: Days 31 to 60 (Content Depth &amp; A+ Comparison Grids)<span class=\"ifai-open-hint\" data-ifai-open=\"specs\" data-ifai-tab=\"A+\">Open details \u2192</span></div>\n    <div class=\"action-details\">\n      \u2022 Publish comparison tables in Amazon A+ content where you want assistants to repeat your lineup.<br/>\n      \u2022 Launch DTC Shootout Hubs (Player II vs PRS SE, Acoustasonic vs Taylor).<br/>\n      \u2022 Standardize technical specifications across Sweetwater &amp; GC dealer feeds.\n    </div>\n    <div class=\"action-impact\">Target: Buy Box \u2794 92%</div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px; border-left-color:var(--success-green);\">\n    <div class=\"action-head\">Phase 3: Days 61 to 90 (Authority Scaling &amp; Community Citation)<span class=\"ifai-open-hint\" data-ifai-open=\"suggestions\" data-ifai-tab=\"ROI\">Open details \u2192</span></div>\n    <div class=\"action-details\">\n      \u2022 Launch verified Reddit /r/Guitar &amp; forum citation grounding.<br/>\n      \u2022 Monitor AEO crawl simulator results for prompt recovery.<br/>\n      \u2022 Achieve full Buy Box retention (95%) and unlock Amazon Overall Pick badges.\n    </div>\n    <div class=\"action-impact\">Target: Buy Box retention 95%. Estimates: +$680K pilot / +$50M enterprise</div>\n  </div>\n</div>\n"
+        "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">30-60-90 Day Milestones</div>\n  <div class=\"action-card critical\">\n    <div class=\"action-head\">Phase 1: Days 1 to 30 (MAP leakage)<span class=\"ifai-open-hint\" data-ifai-open=\"ecommerce\" data-ifai-tab=\"MAP\">Open details →</span></div>\n    <div class=\"action-details\">\n      • {map_read_line}<br/>\n      • Standardize bundle MAP policies with Austin Bazaar and GearTree.<br/>\n      • Inject missing Schema.org JSON-LD technical fields on fender.com.<br/>\n      • Monitor {catalog_skus} harvested electric SKUs.\n    </div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px;\">\n    <div class=\"action-head\">Phase 2: Days 31 to 60 (Catalog nesting)<span class=\"ifai-open-hint\" data-ifai-open=\"ecommerce\" data-ifai-tab=\"Catalog Governance\">Open details →</span></div>\n    <div class=\"action-details\">\n      • {bundle_read_line}<br/>\n      • Publish comparison tables in Amazon A+ content where you want assistants to repeat your lineup.<br/>\n      • Launch DTC Shootout Hubs (Player II vs PRS SE, Acoustasonic vs Taylor).\n    </div>\n  </div>\n\n  <div class=\"action-card\" style=\"margin-top:8px; border-left-color:var(--success-green);\">\n    <div class=\"action-head\">Phase 3: Days 61 to 90 (Authority and citation)<span class=\"ifai-open-hint\" data-ifai-open=\"suggestions\" data-ifai-tab=\"ROI\">Open details →</span></div>\n    <div class=\"action-details\">\n      • Launch verified Reddit /r/Guitar and forum citation grounding.<br/>\n      • Monitor AEO crawl simulator results for prompt recovery.<br/>\n      • The ROI tab states the pilot and enterprise figures as estimates.\n    </div>\n  </div>\n</div>\n"
       ]
     }
   }

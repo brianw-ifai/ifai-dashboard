@@ -67,19 +67,20 @@ export function buildFenderCanvasSpec(
   bundle: CanvasBundle | null,
   options: BuildCanvasSpecOptions = {},
 ) {
-  const metrics = bundle ? buildLiveMetrics(bundle) : FENDER_METRICS;
+  const retail = options.retail ?? { phase: "loading" as const };
+  const metrics = bundle ? buildLiveMetrics(bundle, retail) : FENDER_METRICS;
   const widgetList = bundle
     ? Object.values(metrics)
     : fenderWidgetMetrics;
 
   const m = bundle?.m;
   const ai = metrics.overallAiWinRate.value;
-  const headline = headlineSurface(options.retail ?? { phase: "loading" });
+  const headline = headlineSurface(retail);
   const beginner = metrics.beginnerAiWinRate.value;
 
   return defineCanvas({
     appearance: "iom",
-    commandCenter: bundle ? buildLiveCommandCenter(bundle, options.retail) : fenderCommandCenter,
+    commandCenter: bundle ? buildLiveCommandCenter(bundle, retail) : fenderCommandCenter,
     glossary: fenderGlossary,
     metricWidgets: {
       metrics: widgetList,
@@ -142,10 +143,10 @@ export function buildFenderCanvasSpec(
     ],
     badges: [],
     edges: STATIC_EDGES,
-    nodes: bundle ? buildLiveNodes(bundle, metrics, options.retail) : fenderStaticNodes,
-    spokes: bundle ? buildLiveSpokes(bundle, options.retail) : spokeData,
+    nodes: bundle ? buildLiveNodes(bundle, metrics, retail) : fenderStaticNodes,
+    spokes: bundle ? buildLiveSpokes(bundle, retail) : spokeData,
     focusTargets: FOCUS_TARGETS,
-    tour: bundle ? buildLiveTourSteps(bundle) : tourSteps,
+    tour: bundle ? buildLiveTourSteps(bundle, retail) : tourSteps,
     ...(options.userMenu
       ? { userMenu: options.userMenu, userEmail: options.userMenu.email }
       : {}),

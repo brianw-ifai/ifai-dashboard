@@ -1,5 +1,6 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   formatInt,
@@ -16,7 +17,54 @@ function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number)
   return "success" as const;
 }
 
-export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMetric> {
+function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
+  const base = {
+    id: "flagged-asins",
+    spokeId: "ecommerce" as const,
+    label: "MAP violations",
+    subTab: "MAP",
+    provenance: "live" as const,
+  };
+  if (retail.phase === "loading") {
+    return {
+      ...base,
+      value: "Loading",
+      detail: "The MAP listing read is still loading.",
+      tone: "warning",
+    };
+  }
+  if (retail.phase === "error") {
+    return {
+      ...base,
+      value: "Unavailable",
+      detail: "The MAP listing read did not succeed.",
+      tone: "warning",
+    };
+  }
+  const reading = retail.snapshot.mapLeakage;
+  if (reading.status === "unavailable" || reading.issueCount == null) {
+    return {
+      ...base,
+      value: "Unavailable",
+      detail: reading.missingMessage ?? "The MAP listing read did not succeed.",
+      tone: "warning",
+    };
+  }
+  return {
+    ...base,
+    value: formatInt(reading.issueCount),
+    detail:
+      reading.status === "incomplete"
+        ? "Listings below MAP in this partial listing read. This is not a final count."
+        : "Listings below MAP in this listing read",
+    tone: reading.issueCount > 0 ? "danger" : "success",
+  };
+}
+
+export function buildLiveMetrics(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead = { phase: "loading" },
+): Record<string, CanvasMetric> {
   const { m, cats } = bundle;
   const beginner = cats.find((c) => c.category === "beginner");
 
@@ -64,16 +112,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       subTab: "Retail Overview",
       provenance: "live",
     },
-    flaggedAsins: {
-      id: "flagged-asins",
-      spokeId: "ecommerce",
-      label: "Flagged ASINs",
-      value: formatInt(m.map_violation_skus),
-      detail: "Any channel below MAP",
-      tone: "danger",
-      subTab: "Retail Overview",
-      provenance: "live",
-    },
+    flaggedAsins: mapViolationsMetric(retail),
     strandedReviews: {
       id: "stranded-reviews",
       spokeId: "ecommerce",
@@ -219,12 +258,12 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
     dayNinetyBuyBoxTarget: {
       id: "day-90-buy-box-target",
       spokeId: "roadmap",
-      label: "Day 90 Buy Box Target",
-      value: "95%+",
-      detail: `Target · baseline ${formatPct(m.bb_1p_pct)}`,
+      label: "90-day plan",
+      value: "3 phases",
+      detail: "MAP, catalog nesting, and estimated lift",
       tone: "success",
-      subTab: "KPI Target",
-      provenance: "estimate",
+      subTab: "30-60-90",
+      provenance: "live",
     },
   };
 }

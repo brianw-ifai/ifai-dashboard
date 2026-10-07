@@ -5,11 +5,14 @@ import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import {
   channelPriceLookup,
+  listingChannelFacts,
   listingLabel,
   mapTabModel,
+  type ChannelFact,
   type ChannelPriceRow,
   type MapSourceRow,
   type MapTabModel,
+  type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
@@ -60,11 +63,42 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
 
 function columnCount(model: MapTabModel): number {
   return (
-    4 +
+    3 +
     Number(model.showAmazon) +
     Number(model.showWalmart) +
     Number(model.showMusiciansFriend) +
     model.extraChannels.length
+  );
+}
+
+function ChannelCell({
+  fact,
+  href,
+  linkClass,
+}: {
+  fact: ChannelFact | undefined;
+  href?: string | null;
+  linkClass?: string;
+}) {
+  if (!fact || (fact.price == null && fact.gap == null)) return <td className="money" />;
+  const below = fact.gap != null && fact.gap < 0;
+  return (
+    <td className="money">
+      {fact.price != null ? <span className="money">{formatUsd(fact.price)}</span> : null}
+      {fact.gap != null ? (
+        <span className="channel-gap" style={below ? { color: "var(--danger-red)" } : undefined}>
+          {fact.name} gap {formatUsd(fact.gap, { signed: true })}
+        </span>
+      ) : null}
+      {href ? (
+        <>
+          {" "}
+          <a className={linkClass ?? "listing-link channel-tag"} href={href} target="_blank" rel="noopener noreferrer">
+            {fact.name}
+          </a>
+        </>
+      ) : null}
+    </td>
   );
 }
 
@@ -173,11 +207,13 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
       name: channel.name,
       count: channel.count,
     })),
-    ...model.extraChannels.map((channel) => ({
-      key: channel.channel,
-      name: channel.name,
-      count: channel.count,
-    })),
+    ...model.extraChannels
+      .filter((channel) => channel.count > 0)
+      .map((channel) => ({
+        key: channel.channel,
+        name: channel.name,
+        count: channel.count,
+      })),
   ];
 
   return (
@@ -192,7 +228,7 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
             {summaryChannels.map((channel) => (
               <li key={channel.key}>
                 <strong>{channel.name}</strong> · {formatInt(channel.count)}{" "}
-                {channel.count === 1 ? "listing" : "listings"}
+                {channel.count === 1 ? "listing" : "listings"} below MAP
               </li>
             ))}
           </ul>
@@ -200,19 +236,20 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
         <div className="content-box-title" style={{ marginTop: 14 }}>
           Listings
         </div>
-        <div style={{ overflow: "auto", maxHeight: 520, marginTop: 12 }}>
+        <div className="table-scroll" style={{ maxHeight: 520, marginTop: 12 }}>
           <table className="table-sm">
             <thead>
               <tr>
                 <th>Listing</th>
                 <th>ASIN</th>
-                <th>MAP</th>
-                {model.showAmazon ? <th>Amazon</th> : null}
-                <th>Gap</th>
-                {model.showWalmart ? <th>Walmart</th> : null}
-                {model.showMusiciansFriend ? <th>Musician&apos;s Friend</th> : null}
+                <th className="money">MAP</th>
+                {model.showAmazon ? <th className="money">Amazon</th> : null}
+                {model.showWalmart ? <th className="money">Walmart</th> : null}
+                {model.showMusiciansFriend ? <th className="money">Musician&apos;s Friend</th> : null}
                 {model.extraChannels.map((channel) => (
-                  <th key={channel.channel}>{channel.name}</th>
+                  <th key={channel.channel} className="money">
+                    {channel.name}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -224,6 +261,9 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
               ) : (
                 rows.map((row) => {
                   const href = amazonHref(row.asin);
+                  const facts = new Map(
+                    listingChannelFacts(row, prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
+                  );
                   const walmartUrl = httpUrl(row.wmt_url);
                   return (
                     <tr key={row.asin}>
@@ -244,77 +284,35 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
                           <span className="asin-chip">{row.asin}</span>
                         )}
                       </td>
-                      <td>{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
-                      {model.showAmazon ? (
-                        <td>
-                          {row.offer_price != null ? formatUsd(row.offer_price) : pendingLabel()}
-                        </td>
-                      ) : null}
-                      <td style={{ color: "var(--danger-red)", fontWeight: 700 }}>
-                        {formatUsd(row.worst_leakage, { signed: true })}
+                      <td className="money">
+                        {row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}
                       </td>
+                      {model.showAmazon ? <ChannelCell fact={facts.get("amazon")} /> : null}
                       {model.showWalmart ? (
-                        <td>
-                          {row.wmt_price != null ? (
-                            <>
-                              {formatUsd(row.wmt_price)}
-                              {walmartUrl ? (
-                                <>
-                                  {" "}
-                                  <a
-                                    className="listing-link channel-tag channel-wmt"
-                                    href={walmartUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    Walmart
-                                  </a>
-                                </>
-                              ) : null}
-                            </>
-                          ) : null}
-                        </td>
+                        <ChannelCell
+                          fact={facts.get("walmart")}
+                          href={walmartUrl}
+                          linkClass="listing-link channel-tag channel-wmt"
+                        />
                       ) : null}
                       {model.showMusiciansFriend ? (
-                        <td>
-                          {row.mf_price != null ? (
-                            <>
-                              {formatUsd(row.mf_price)}
-                              {row.mf_leakage != null
-                                ? ` (${formatUsd(row.mf_leakage, { signed: true })})`
-                                : ""}
-                            </>
-                          ) : null}
-                        </td>
+                        <ChannelCell fact={facts.get("musicians-friend")} />
                       ) : null}
                       {model.extraChannels.map((channel) => {
-                        const cell = prices.get(row.asin)?.get(channel.channel);
-                        const channelHref = cell ? httpUrl(cell.url) : null;
+                        const cell: PricedChannelCell | undefined = prices
+                          .get(row.asin.trim())
+                          ?.get(channel.channel);
                         return (
-                          <td key={channel.channel}>
-                            {cell ? (
-                              <>
-                                {formatUsd(cell.price)}
-                                {channelHref ? (
-                                  <>
-                                    {" "}
-                                    <a
-                                      className={
-                                        channel.channel === "reverb"
-                                          ? "listing-link channel-tag channel-rev"
-                                          : "listing-link channel-tag"
-                                      }
-                                      href={channelHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      {channel.name}
-                                    </a>
-                                  </>
-                                ) : null}
-                              </>
-                            ) : null}
-                          </td>
+                          <ChannelCell
+                            key={channel.channel}
+                            fact={facts.get(channel.channel)}
+                            href={cell ? httpUrl(cell.url) : null}
+                            linkClass={
+                              channel.channel === "reverb"
+                                ? "listing-link channel-tag channel-rev"
+                                : "listing-link channel-tag"
+                            }
+                          />
                         );
                       })}
                     </tr>

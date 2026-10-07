@@ -102,6 +102,7 @@ export type CanvasRetailListingRow = {
   buybox_seller_name: string | null;
   map_price: number | null;
   offer_price: number | null;
+  amz_leakage?: number | null;
   worst_leakage: number | null;
   reviews_count: number | null;
   channels: string | null;
