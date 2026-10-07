@@ -124,7 +124,7 @@ export type CanvasMetric = {
   detail: string;
   tone?: NodeStatus;
   subTab?: string;
-  provenance?: "live" | "estimate";
+  provenance?: "live" | "estimate" | "recorded";
 };
 
 export type CanvasMetricWidgets = {

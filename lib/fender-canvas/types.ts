@@ -69,6 +69,7 @@ export type CanvasCompetitorSovRow = {
   category: string;
   competitor: string;
   wins: number | null;
+  category_resolved?: number | null;
   sov_pct: number | null;
 };
 
@@ -112,6 +113,9 @@ export type CanvasRetailListingRow = {
   wmt_url: string | null;
   mf_price: number | null;
   mf_leakage: number | null;
+  competitive_price_threshold_cents?: number | null;
+  featured_offer_withheld?: boolean | null;
+  competitive_offer_suppressed?: boolean | null;
 };
 
 export type CanvasSimulationRow = {

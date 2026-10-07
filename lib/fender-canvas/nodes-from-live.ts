@@ -81,7 +81,7 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       stats: [`${bb1p} 1P`, `${unharvestedPct} Unk`],
       meta: `${formatInt(m.bb_total)} active offers`,
       spokeId: "ecommerce",
-      subTab: "flagged",
+      subTab: "Retail Listings",
       tooltip: {
         title: "Buy Box (Active Offers)",
         desc: `Amazon 1P holds ${bb1p} of ${formatInt(m.bb_total)} active listings. The seller for ${formatInt(m.bb_unharvested)} listings is unknown; ${formatInt(m.bb_3p)} confirmed 3P.`,
@@ -283,15 +283,12 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       status: "success",
       title: "Action Items",
       titleSize: 14,
-      stats: [
-        `${metrics.prioritizedFixes.value} Actions`,
-        metrics.phaseOneLift.value,
-      ],
+      stats: [`${metrics.phaseOneLift.value} est.`, metrics.enterprisePotential.value],
       meta: metrics.enterprisePotential.value + " Enterprise",
       spokeId: "suggestions",
       tooltip: {
         title: "Action Items",
-        desc: `${metrics.prioritizedFixes.value} prioritized interventions. Phase 1 ${metrics.phaseOneLift.value}; enterprise ${metrics.enterprisePotential.value}.`,
+        desc: `Phase 1 estimate ${metrics.phaseOneLift.value}. Enterprise estimate ${metrics.enterprisePotential.value}.`,
       },
     },
     {
@@ -318,13 +315,16 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       status: "danger",
       variant: "hub",
       title: "Brand Portfolio",
-      stats: [`${formatInt(m.catalog_skus)} SKUs`, `${formatInt(m.division_count)} Divisions`],
+      stats: [
+        `${formatInt(m.catalog_skus)} SKUs`,
+        `${formatInt(bundle.divisions.length || m.division_count)} Divisions`,
+      ],
       logoSrc: "/image.png",
       meta: "Click for Master View",
       spokeId: "hub",
       tooltip: {
         title: "Brand Portfolio Overview",
-        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(m.division_count)} divisions. Open for executive briefing and division performance.`,
+        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for executive briefing and division performance.`,
       },
     },
   ];

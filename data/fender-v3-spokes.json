@@ -6,7 +6,7 @@
     "aeo:citation": { "x": 180, "y": 360 },
     "aeo:hallucination": { "x": 260, "y": 480 },
     "ecommerce": { "x": 1160, "y": 320 },
-    "ecommerce:flagged": { "x": 1360, "y": 200 },
+    "ecommerce:Retail Listings": { "x": 1360, "y": 200 },
     "ecommerce:catalog": { "x": 1420, "y": 360 },
     "ecommerce:map": { "x": 1340, "y": 480 },
     "specs": { "x": 440, "y": 680 },

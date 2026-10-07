@@ -487,7 +487,7 @@ export function GraphBubble({
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
   const headerSize = titleSize ?? (faceR >= 70 ? 14.5 : faceR >= 50 ? 13 : 12);
-  const statPillFont = IOM_STAT_PILL_FONT / faceScale;
+  const statPillFont = (PRIMARY_SPOKES.has(id) ? 13.5 : IOM_STAT_PILL_FONT) / faceScale;
   const statusClass = status !== "neutral" ? ` status-${status}` : "";
   const stateClass = `${selected ? " node-selected" : ""}${dimmed ? " node-dimmed" : ""}`;
 

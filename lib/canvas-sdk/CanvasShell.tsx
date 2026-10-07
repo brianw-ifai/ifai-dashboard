@@ -481,6 +481,7 @@ export function CanvasShell({ spec, children }: Props) {
     (spokeId: string, subTab?: string) => {
       const spoke = spec.spokes[spokeId];
       if (!spoke) return;
+      activeSpokeRef.current = spokeId;
       setActiveSpoke(spokeId);
       setPanelView("spoke");
       if (iom && panelLayout === "hidden") {
@@ -629,6 +630,7 @@ export function CanvasShell({ spec, children }: Props) {
   const showTooltip = useCallback(
     (evt: ReactMouseEvent, title: string, desc: string, hasMoreInfo = true) => {
       if (tourActiveRef.current && !tourSuspendedRef.current) return;
+      if (activeSpokeRef.current) return;
       const host = canvasBodyRef.current;
       if (!host) return;
       const hostRect = host.getBoundingClientRect();
@@ -665,6 +667,10 @@ export function CanvasShell({ spec, children }: Props) {
   const hideTooltip = useCallback(() => {
     setTooltipVisible(false);
   }, []);
+
+  useEffect(() => {
+    if (activeSpoke || panelView === "command") hideTooltip();
+  }, [activeSpoke, hideTooltip, panelView]);
 
   const showDefinitionTooltip = useCallback((target: Element) => {
     if (tourActiveRef.current && !tourSuspendedRef.current) return;

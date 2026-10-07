@@ -1,40 +1,31 @@
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 
-/** Plain-language priority queue. Numbers trace back to the spoke panels they link into. */
+/**
+ * Offline fallback when the canvas read has not loaded.
+ * Measured figures live in `buildLiveCommandCenter`. This copy does not state a count.
+ */
 export const fenderCommandCenter: CommandCenterSpec = {
   badge: "COMMAND CENTER · TODAY",
   title: "What do I need to worry about?",
-  desc: "The highest-value moves across the 3,430 monitored electric SKUs, ranked by what they cost you while they sit open.",
+  desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
   summary:
-    "Of 993 active Amazon offers, only 7.4% confirm Amazon as the seller. The other 92.6% still have no harvested seller data. AI assistants win for Fender on 73.3% of answered prompts, but beginner queries fall to 33.3%, and fender.com pages publish no machine-readable specs.",
+    "Offer coverage, seller mix, beginner share of voice, and spec hallucination flags load with the canvas read.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
     {
       id: "buybox-suppression",
-      title: "Only 7.4% of active Amazon offers confirm your Buy Box",
-      why: "The audit of 3,430 electric SKUs found 993 with an active Amazon offer. Amazon itself is the seller on 74 of those (7.4%). The remaining 919 (92.6%) have no seller data yet, so you cannot tell who owns the buy button. Fourteen listings are still flagged for bundle leakage with Austin Bazaar and GearTree.",
-      impact: "Restoring the buy button on the 14 flagged listings is the single fastest revenue recovery on this board.",
+      title: "Confirm who holds the buy button on active Amazon offers",
+      why: "The catalog read lists how many electric SKUs have an active Amazon offer, and how many of those confirm Amazon as the seller, a third-party seller, or no seller yet.",
       severity: "critical",
       spokeId: "ecommerce",
-      subTab: "Flagged ASINs",
+      subTab: "Retail Listings",
       defaultOwner: "intofocus",
-    },
-    {
-      id: "review-splintering",
-      title: "2,420 customer reviews are stranded on the wrong pages",
-      why: "Every time a partner lists a Strat bundled with a gig bag, they create a separate product page, and the reviews customers leave there never reach your main listing. Amazon hands its 'Overall Pick' badge to whoever has the most reviews, so that badge is currently going to PRS and Yamaha instead of you.",
-      impact: "Nesting partner bundles under your parent listings pools the reviews back without costing partners a single sale.",
-      severity: "critical",
-      spokeId: "ecommerce",
-      subTab: "Catalog",
-      defaultOwner: "client",
     },
     {
       id: "ai-spec-hallucination",
       title: "AI assistants are quoting specs you never published",
-      why: "ChatGPT, Claude, and Perplexity can't read specs out of marketing copy, so they scrape whatever a third-party bundle page claims. That is where the wrong fingerboard radius and the phantom Acoustasonic pickup configuration come from, and shoppers are being told those are your specs.",
-      impact: "Every corrected spec removes a reason for an AI engine to recommend a competitor instead.",
+      why: "The hallucination tab lists each root cause stored on the flagged simulation rows.",
       severity: "critical",
       spokeId: "aeo",
       subTab: "Hallucination",
@@ -42,9 +33,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "schema-coverage",
-      title: "fender.com pages publish no machine-readable specs",
-      why: "Site search found the fender.com product page only 29.2% of the time (21 of 72). Of the pages found, 0% include Schema.org additionalProperty fields such as fingerboard radius, pickup configuration, nut width, scale length, body wood, and fret count, so an AI engine has nothing authoritative to read.",
-      impact: "This is the groundwork that makes the spec-hallucination fixes stick permanently.",
+      title: "fender.com pages are missing machine-readable spec fields",
+      why: "The spec read shows how often a fender.com page was found and how many of those pages are missing additionalProperty. The Schema tab lists the missing-field rows.",
       severity: "high",
       spokeId: "specs",
       subTab: "Schema",
@@ -53,8 +43,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "map-leakage",
       title: "Discounted bundles are dragging your prices down everywhere",
-      why: "A partner bundles a $849 Strat with a $15 gig bag and lists the pair at $808. Pricing bots on Walmart and Reverb see that number and match it within hours, and Amazon then reads those cheaper listings as a reason to suppress your buy button. One bundle sets off the whole chain.",
-      impact: "Amazon shows an average discount of $77.58 across 118 active-offer SKUs. Walmart has 8 listings at -$38, and Reverb has 11 at -$55.",
+      why: "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.",
+      impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
       severity: "high",
       spokeId: "ecommerce",
       subTab: "MAP",
@@ -62,9 +52,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "midrange-losses",
-      title: "You lose head-to-head recommendations at $600–$1,200",
-      why: "Simulations put Yamaha at 66.7% share of voice in the beginner category, and Taylor and PRS tied at 15.4% each in acoustics. Fender still leads acoustics at 61.5% and amps at 100% of 9 resolved prompts, but the beginner gap is 50 points.",
-      impact: "This is the bracket where recovered visibility converts fastest.",
+      title: "Beginner share of voice is in the competitor read",
+      why: "Yamaha and Fender/Squier shares for the beginner category come from the competitor share-of-voice rows, not from a saved sentence.",
       severity: "high",
       spokeId: "competitors",
       subTab: "Battlecards",
@@ -72,8 +61,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "aplus-tables",
-      title: "14 catalog lines still need an A+ comparison matrix",
-      why: "Amazon's A+ comparison tables are parsed directly by Rufus and by the frontier AI models. The recommended 4-column matrix (Squier Classic Vibe, Player II, American Performer, American Pro II) is how you define the step up yourself. Amazon product fields are already 93.3% complete; fender.com structured specs are the gap.",
+      title: "A+ comparison tables are how assistants read your lineup",
+      why: "Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

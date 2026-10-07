@@ -1,9 +1,19 @@
 import type { ReactNode } from "react";
+import { catalogConsolidationHtml } from "@/components/v3/catalog-consolidation";
+import { CompetitorSovIntro } from "@/components/v3/live/CompetitorSovIntro";
 import { FenderCategorySovPanel } from "@/components/v3/live/FenderCategorySovPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
+import { FenderHallucinationPanel } from "@/components/v3/live/FenderHallucinationPanel";
 import { FenderListingsTable } from "@/components/v3/live/FenderListingsTable";
+import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
+import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { FenderSimulationsPanel } from "@/components/v3/live/FenderSimulationsPanel";
 import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
+import {
+  AplusExplanation,
+  FenderSpecSummary,
+  SchemaExplanation,
+} from "@/components/v3/live/FenderSpecNarratives";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -34,40 +44,36 @@ const TAB_OVERRIDES: Partial<
         <FenderListingsTable />
       </>
     ),
+    1: () => <MapChannelPanel />,
+    2: () => <SuppressedListingsPanel />,
+    3: () => htmlBlock(catalogConsolidationHtml),
   },
   aeo: {
     1: () => <FenderSimulationsPanel />,
+    2: () => <FenderHallucinationPanel />,
   },
   specs: {
-    0: (bundle, vars) => {
-      const tpl = spokeData.specs.render(0);
-      return (
-        <>
-          {typeof tpl === "string" ? htmlBlock(bindCopy(tpl, vars)) : tpl}
-          <FenderSpecPanel missing={bundle.missing} />
-        </>
-      );
-    },
-    1: (bundle, vars) => {
-      const tpl = spokeData.specs.render(1);
-      return (
-        <>
-          {typeof tpl === "string" ? htmlBlock(bindCopy(tpl, vars)) : tpl}
-          <FenderSpecPanel missing={bundle.missing} />
-        </>
-      );
-    },
+    0: (bundle) => (
+      <>
+        <FenderSpecSummary bundle={bundle} />
+        <FenderSpecPanel missing={bundle.missing} />
+      </>
+    ),
+    1: (bundle) => (
+      <>
+        <SchemaExplanation />
+        <FenderSpecPanel missing={bundle.missing} />
+      </>
+    ),
+    2: () => <AplusExplanation />,
   },
   competitors: {
-    0: (bundle, vars) => {
-      const tpl = spokeData.competitors.render(0);
-      return (
-        <>
-          {typeof tpl === "string" ? htmlBlock(bindCopy(tpl, vars)) : tpl}
-          <FenderCategorySovPanel categories={bundle.cats} sov={bundle.sov} />
-        </>
-      );
-    },
+    0: (bundle) => (
+      <>
+        <CompetitorSovIntro />
+        <FenderCategorySovPanel categories={bundle.cats} sov={bundle.sov} />
+      </>
+    ),
   },
 };
 

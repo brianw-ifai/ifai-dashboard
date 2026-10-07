@@ -5,18 +5,25 @@ export class Canvas {
   constructor(readonly page: Page) {}
 
   async open() {
+    // The guest flag the canvas reads is document.cookie. Set it before navigation
+    // so the login card does not cover the map.
+    await this.page.context().addCookies([
+      { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
+    ]);
     await this.page.goto("/dashboard");
     const skipLogin = this.page.getByRole("button", { name: "Skip Login" });
     if (await skipLogin.isVisible().catch(() => false)) {
       await skipLogin.click();
       await expect(this.page.locator(".graph-node").first()).toBeVisible();
     }
-    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toBeVisible();
+    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
   }
 
   /** Opens a spoke from the map column layout (panel starts hidden on IOM). */
   async openSpokeFromMap(titleFragment: string) {
-    await this.page.locator(".graph-node").filter({ hasText: titleFragment }).click();
+    // Spoke titles are drawn as separate SVG lines, so the DOM text has no space.
+    const pattern = new RegExp(titleFragment.trim().split(/\s+/).join("\\s*"), "i");
+    await this.page.locator(".graph-node").filter({ hasText: pattern }).click({ force: true });
     await expect(this.page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(this.panel).toBeVisible();
   }

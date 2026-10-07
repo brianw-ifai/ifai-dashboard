@@ -10,11 +10,12 @@ import graphLayout from "@/data/fender-v3-spokes.json";
 import type { TourStep } from "@/lib/canvas-sdk/types";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { defineCanvas } from "@/lib/canvas-sdk/types";
+import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { formatInt } from "@/lib/fender-canvas/format";
 
 const FOCUS_TARGETS = graphLayout.focusTargets as Record<string, { x: number; y: number }>;
 const tourSteps = staticTourSteps as TourStep[];
@@ -76,7 +77,7 @@ export function buildFenderCanvasSpec(
 
   return defineCanvas({
     appearance: "iom",
-    commandCenter: fenderCommandCenter,
+    commandCenter: bundle ? buildLiveCommandCenter(bundle) : fenderCommandCenter,
     glossary: fenderGlossary,
     metricWidgets: {
       metrics: widgetList,
@@ -99,7 +100,7 @@ export function buildFenderCanvasSpec(
         tone: "danger",
         icon: "pulse",
         spokeId: "ecommerce",
-        subTab: "flagged",
+        subTab: "Retail Listings",
         label: (
           <>
             Buy Box (Active Offers): <strong>{bb} 1P</strong> ({m ? formatInt(m.bb_1p) : "n/a"} of{" "}

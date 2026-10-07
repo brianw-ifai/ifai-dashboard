@@ -24,6 +24,19 @@ function withSession(response: NextResponse, session: NextResponse) {
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Playwright starts `next dev` with this set. Production never honors it.
+  // Skip the client first so a missing Supabase URL does not crash the page.
+  const bypass =
+    process.env.E2E_AUTH_BYPASS === "1" && process.env.NODE_ENV !== "production";
+  if (bypass) return supabaseResponse;
+
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  ) {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -48,11 +61,6 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);
-
-  // Playwright starts `next dev` with this set. Production never honors it.
-  const bypass =
-    process.env.E2E_AUTH_BYPASS === "1" && process.env.NODE_ENV !== "production";
-  if (bypass) return supabaseResponse;
 
   const { pathname } = request.nextUrl;
 

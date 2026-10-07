@@ -1,4 +1,5 @@
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
+import { SUPPRESSED_LISTING_COLUMNS } from "@/lib/fender-canvas/suppressed-listings";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 export async function loadCanvas(): Promise<CanvasBundle> {
@@ -51,6 +52,79 @@ export function listingsQuery(
   if (filter?.violationsOnly) q = q.eq("is_map_violation", true);
   if (filter?.bundlesOnly) q = q.eq("is_bundle", true);
   return q;
+}
+
+/** Other retailers' stored prices. One row per listing per channel. */
+export function listingChannelPricesQuery(page = 0, size = 1000) {
+  const supabase = getCanvasSupabase();
+  return supabase
+    .from("canvas_listing_channel_price")
+    .select("asin,channel,price,url,checked_at")
+    .order("channel")
+    .order("asin")
+    .range(page * size, page * size + size - 1);
+}
+
+/**
+ * One existing row, so a missing Competitive External Price column stays a normal
+ * listing read instead of a filtered request for a column the view does not have yet.
+ */
+export async function competitivePriceColumnProbe(): Promise<{
+  present: boolean;
+  error: { message: string } | null;
+}> {
+  const supabase = getCanvasSupabase();
+  const { data, error } = await supabase.from("canvas_retail_listings").select("*").limit(1);
+  if (error) return { present: false, error };
+  const sample = (data ?? [])[0] as Record<string, unknown> | undefined;
+  return { present: sample != null && "competitive_price_threshold_cents" in sample, error: null };
+}
+
+/** Listings whose stored offer is above the Competitive External Price with no Featured Offer. */
+export function suppressedListingsQuery(page = 0, size = 1000) {
+  const supabase = getCanvasSupabase();
+  return supabase
+    .from("canvas_retail_listings")
+    .select(SUPPRESSED_LISTING_COLUMNS, { count: "exact" })
+    .eq("competitive_offer_suppressed", true)
+    .order("asin")
+    .range(page * size, page * size + size - 1);
+}
+
+/** Positive Competitive External Price values already written. Zero means the reading is not stored yet. */
+export function competitivePriceReadingCountQuery() {
+  const supabase = getCanvasSupabase();
+  return supabase
+    .from("canvas_retail_listings")
+    .select("asin", { count: "exact", head: true })
+    .gt("competitive_price_threshold_cents", 0);
+}
+
+/** Flagged simulation rows, including stored root_cause text. Pages through the read. */
+export async function hallucinationCauseRowsQuery() {
+  const supabase = getCanvasSupabase();
+  const pageSize = 1000;
+  const rows: Array<{
+    root_cause: string | null;
+    engine: string | null;
+    category: string | null;
+    prompt: string | null;
+  }> = [];
+
+  for (let page = 0; page < 20; page += 1) {
+    const from = page * pageSize;
+    const { data, error } = await supabase
+      .from("canvas_ai_simulations")
+      .select("root_cause,engine,category,prompt")
+      .eq("hallucination_flag", true)
+      .range(from, from + pageSize - 1);
+    if (error) return { data: rows, error };
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+
+  return { data: rows, error: null };
 }
 
 export function simulationsQuery(category?: string, page = 0, size = 50) {
