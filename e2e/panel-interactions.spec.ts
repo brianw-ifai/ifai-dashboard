@@ -114,24 +114,28 @@ test.describe("drill-downs", () => {
   }) => {
     await canvas.openPriority("active Amazon offers");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
-      "Retail Listings",
-      "MAP",
+      "Retail Overview",
       "Suppressed Listings",
-      "Catalog Consolidation & Brand Registry Governance",
+      "MAP",
+      "Catalog Governance",
     ]);
 
-    await expect(canvas.activeTab).toHaveText("Retail Listings");
-    await expect(page.getByText("Retail Listings Drill-Down")).toBeVisible();
+    await expect(canvas.activeTab).toHaveText("Retail Overview");
+    await expect(page.getByRole("button", { name: "Explore all listings" })).toBeVisible();
+    await expect(page.locator(".retail-listings-table")).toHaveCount(0);
+    await expect(page.locator(".suppressed-listings")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Explore all listings" }).click();
+    await expect(page.locator(".retail-listings-table")).toBeVisible();
     await expect(page.locator(".segmented-btn", { hasText: "All" })).toBeVisible();
     await expect(page.locator(".segmented-btn", { hasText: "MAP violations only" })).toBeVisible();
     await expect(page.locator(".segmented-btn", { hasText: "Bundles only" })).toBeVisible();
-    await expect(page.locator(".suppressed-listings")).toHaveCount(0);
 
-    await canvas.openTab("Catalog Consolidation");
-    const catalog = page.locator(".drilldown-body");
-    await expect(catalog).toContainText(
-      "Catalog rows are not shown until they come from the database.",
-    );
+    await canvas.openTab("Catalog Governance");
+    const catalog = page.locator(".catalog-governance");
+    await expect(catalog).toContainText("not the full catalog");
+    await expect(catalog).not.toContainText("listings below MAP");
+    await expect(catalog).not.toContainText("Average price gap");
     await expect(catalog).not.toContainText("$808");
     await expect(catalog).not.toContainText("8 Listings");
     await expect(catalog).not.toContainText("11 Listings");
@@ -154,9 +158,10 @@ test.describe("drill-downs", () => {
     await expect(list).not.toContainText("Sweetwater");
     await expect(body).not.toContainText("$808.00");
 
-    const unavailable = list.getByText("The reading is not available.");
     const count = list.locator(".suppressed-count");
-    await expect(unavailable.or(count)).toBeVisible();
+    await expect(count).toBeVisible();
+    await expect(list.getByText("Loading qualifying listings…")).toHaveCount(0);
+    await expect(list.getByText(/not a final count|not been stored|could not be loaded/)).toBeVisible();
     if (await count.isVisible()) {
       const badge = Number((await count.innerText()).replace(/,/g, ""));
       const empty = await list.getByText("No listing in this reading").count();
@@ -220,7 +225,7 @@ test.describe("glossary", () => {
       expect(definition?.length ?? 0).toBeGreaterThan(20);
       await expect(term).not.toHaveAttribute("title");
     }
-    await expect(terms.filter({ hasText: "Buy Box" }).first()).toBeVisible();
+    await expect(terms.filter({ hasText: "Featured Offer" }).first()).toBeVisible();
   });
 
   /* The command center is React-rendered; mutating it would fight reconciliation. */
@@ -238,7 +243,7 @@ test.describe("glossary", () => {
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
-    await expect(page.locator(".drilldown-body")).toContainText("Buy Box");
+    await expect(page.locator(".drilldown-body")).toContainText("Featured Offer");
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
@@ -246,7 +251,7 @@ test.describe("glossary", () => {
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");
-    await canvas.openTab("Retail Listings");
+    await canvas.openTab("Retail Overview");
     await expect(page.locator(".ifai-term")).toHaveCount(before);
   });
 });

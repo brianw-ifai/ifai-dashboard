@@ -51,7 +51,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       value: formatPct(m.bb_1p_pct),
       detail: `${formatInt(m.bb_1p)} 1P vs ${formatInt(m.bb_3p)} 3P`,
       tone: toneFromPct(m.bb_1p_pct, 15, 40),
-      subTab: "Retail Listings",
+      subTab: "Retail Overview",
       provenance: "live",
     },
     sellerDataCoverage: {
@@ -61,7 +61,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       value: formatInt(m.seller_harvested),
       detail: `${formatPct(m.seller_harvested_pct)} of catalog`,
       tone: toneFromPct(m.seller_harvested_pct, 10, 40),
-      subTab: "Retail Listings",
+      subTab: "Retail Overview",
       provenance: "live",
     },
     flaggedAsins: {
@@ -71,7 +71,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       value: formatInt(m.map_violation_skus),
       detail: "Any channel below MAP",
       tone: "danger",
-      subTab: "Retail Listings",
+      subTab: "Retail Overview",
       provenance: "live",
     },
     strandedReviews: {

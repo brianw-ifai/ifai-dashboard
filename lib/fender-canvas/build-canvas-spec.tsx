@@ -13,6 +13,7 @@ import { defineCanvas } from "@/lib/canvas-sdk/types";
 import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { formatInt } from "@/lib/fender-canvas/format";
@@ -44,6 +45,7 @@ export type BuildCanvasSpecOptions = {
   viewerId?: string;
   headerSlot?: ReactNode;
   metricStorageSuffix?: string;
+  retail?: RetailCanvasRead;
 };
 
 function viewerStorageScope(viewerId?: string) {
@@ -100,7 +102,7 @@ export function buildFenderCanvasSpec(
         tone: "danger",
         icon: "pulse",
         spokeId: "ecommerce",
-        subTab: "Retail Listings",
+        subTab: "Retail Overview",
         label: (
           <>
             Buy Box (Active Offers): <strong>{bb} 1P</strong> ({m ? formatInt(m.bb_1p) : "n/a"} of{" "}
@@ -145,8 +147,8 @@ export function buildFenderCanvasSpec(
     ],
     badges: [],
     edges: STATIC_EDGES,
-    nodes: bundle ? buildLiveNodes(bundle, metrics) : fenderStaticNodes,
-    spokes: bundle ? buildLiveSpokes(bundle) : spokeData,
+    nodes: bundle ? buildLiveNodes(bundle, metrics, options.retail) : fenderStaticNodes,
+    spokes: bundle ? buildLiveSpokes(bundle, options.retail) : spokeData,
     focusTargets: FOCUS_TARGETS,
     tour: bundle ? buildLiveTourSteps(bundle) : tourSteps,
     ...(options.userMenu

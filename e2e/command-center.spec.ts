@@ -73,7 +73,7 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["active Amazon offers", "Retail Listings"],
+    ["active Amazon offers", "Retail Overview"],
     ["AI assistants are quoting specs", "Hallucination"],
     ["machine-readable spec", "Schema"],
     ["Discounted bundles are dragging", "MAP"],

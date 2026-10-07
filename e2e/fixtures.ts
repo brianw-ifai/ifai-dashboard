@@ -28,10 +28,11 @@ export class Canvas {
     await expect(this.panel).toBeVisible();
   }
 
-  /** Reload and wait for the panel back, for "does this survive a refresh" checks. */
+  /** Reload and wait for the canvas. A spoke in the URL reopens that spoke. */
   async reload() {
     await this.page.reload();
-    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
+    await expect(this.page.locator(".ifai-canvas")).toBeVisible();
+    await expect(this.page.locator(".graph-node").first()).toBeVisible();
   }
 
   get panel() {

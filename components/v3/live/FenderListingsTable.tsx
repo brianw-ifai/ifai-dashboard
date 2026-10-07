@@ -11,6 +11,21 @@ type Filter = {
   bundlesOnly?: boolean;
 };
 
+function amazonHref(asin: string): string | null {
+  return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
+}
+
+function httpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function leakageStyle(value: number | null) {
   if (value == null) return {};
   if (value < 0) return { color: "var(--danger-red)" };
@@ -48,9 +63,9 @@ export function FenderListingsTable() {
   const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
   return (
-    <div className="content-box" style={{ marginTop: 12 }}>
+    <div className="content-box retail-listings-table" style={{ marginTop: 12 }}>
       <div className="content-box-title">
-        <span>Retail Listings Drill-Down</span>
+        <span>All listings</span>
         {total != null ? (
           <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
         ) : null}
@@ -90,7 +105,9 @@ export function FenderListingsTable() {
       </div>
 
       {error ? (
-        <p style={{ color: "var(--danger-red)", fontSize: 12 }}>{error}</p>
+        <p style={{ color: "var(--danger-red)", fontSize: 12 }}>
+          The listing read could not be loaded. {error}
+        </p>
       ) : null}
 
       <div style={{ overflowX: "auto" }}>
@@ -115,21 +132,38 @@ export function FenderListingsTable() {
                 <td colSpan={10}>Loading listings…</td>
               </tr>
             ) : null}
-            {!loading && rows.length === 0 ? (
+            {!loading && !error && rows.length === 0 ? (
               <tr>
-                <td colSpan={10}>n/a</td>
+                <td colSpan={10}>No listings match this filter.</td>
+              </tr>
+            ) : null}
+            {error && rows.length === 0 ? (
+              <tr>
+                <td colSpan={10}>The listing read could not be loaded.</td>
               </tr>
             ) : null}
             {rows.map((row) => {
-              const label = row.model_name?.trim() || row.title?.trim() || "n/a";
+              const label = row.model_name?.trim() || row.title?.trim() || "Listing";
               const partner = row.bundle_name ?? row.buybox_seller_name ?? "n/a";
+              const href = httpUrl(row.product_url) ?? amazonHref(row.asin);
               return (
                 <tr key={row.asin}>
                   <td>
                     <strong>{label}</strong>
                   </td>
                   <td>
-                    <span className="asin-chip">{row.asin}</span>
+                    {href ? (
+                      <a
+                        className="listing-link channel-tag channel-amz"
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span className="asin-chip">{row.asin}</span>
+                      </a>
+                    ) : (
+                      <span className="asin-chip">{row.asin}</span>
+                    )}
                   </td>
                   <td>{partner}</td>
                   <td>{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>

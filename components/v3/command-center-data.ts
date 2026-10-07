@@ -19,7 +19,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
       why: "The catalog read lists how many electric SKUs have an active Amazon offer, and how many of those confirm Amazon as the seller, a third-party seller, or no seller yet.",
       severity: "critical",
       spokeId: "ecommerce",
-      subTab: "Retail Listings",
+      subTab: "Retail Overview",
       defaultOwner: "intofocus",
     },
     {

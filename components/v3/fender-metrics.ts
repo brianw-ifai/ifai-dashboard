@@ -33,7 +33,7 @@ export const FENDER_METRICS = {
     value: "See read",
     detail: "Amazon 1P share of active offers",
     tone: "danger",
-    subTab: "Retail Listings",
+    subTab: "Retail Overview",
     provenance: "live",
   },
   sellerDataCoverage: {
@@ -43,7 +43,7 @@ export const FENDER_METRICS = {
     value: "See read",
     detail: "Seller rows in the catalog read",
     tone: "warning",
-    subTab: "Retail Listings",
+    subTab: "Retail Overview",
     provenance: "live",
   },
   flaggedAsins: {
@@ -53,7 +53,7 @@ export const FENDER_METRICS = {
     value: "Unavailable",
     detail: "The live retail read is not available.",
     tone: "danger",
-    subTab: "Retail Listings",
+    subTab: "Retail Overview",
     provenance: "live",
   },
   strandedReviews: {

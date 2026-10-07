@@ -35,7 +35,7 @@ export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec 
         why: `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs. ${formatInt(m.bb_total)} have an active Amazon offer. Amazon is the seller on ${formatInt(m.bb_1p)} of those (${formatPct(m.bb_1p_pct)}). A third-party seller is confirmed on ${formatInt(m.bb_3p)} (${formatPct(m.bb_3p_pct)}). The seller is unknown on ${formatInt(m.bb_unharvested)} (${formatPct(m.bb_unharvested_pct)}).`,
         severity: "critical",
         spokeId: "ecommerce",
-        subTab: "Retail Listings",
+        subTab: "Retail Overview",
         defaultOwner: "intofocus",
       },
       {

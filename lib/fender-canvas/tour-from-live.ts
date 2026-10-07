@@ -1,6 +1,6 @@
 import type { TourStep } from "@/lib/canvas-sdk/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { formatInt, formatPct, formatUsd } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 
 export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
   const { m, cats } = bundle;
@@ -27,15 +27,14 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       targetX: 1160,
       targetY: 320,
       radius: 125,
-      title: "Amazon & Retail Health",
-      subtitle: "Buy Box, price leaks, and partner bundles",
+      title: "Portfolio Retail",
+      subtitle: "Featured Offer, MAP, and catalog nesting",
       category: "RETAIL HEALTH",
       displays: [
-        `${formatPct(m.bb_1p_pct)} of ${formatInt(m.bb_total)} active offers confirm Amazon 1P`,
-        `${formatInt(m.map_violation_skus)} MAP violation SKUs across channels`,
-        `MAP drift: Amazon ${formatUsd(m.amz_avg_drift, { signed: true })} average on ${formatInt(m.amz_below_map)} listings`,
+        "Suppressed Featured Offers, MAP leakage, and unnested bundles",
+        "A partial reading keeps its count and says what is still missing",
       ],
-      value: "Win back the Buy Box (target 95%) by working with partners, not sending legal threats.",
+      value: "These catalog and retail issues change what an assistant can recommend and what a shopper can buy.",
     },
     {
       nodeId: "aeo",

@@ -13,10 +13,9 @@ import {
   suppressionList,
   type SuppressionReading,
 } from "@/lib/fender-canvas/suppressed-listings";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
 const PAGE_SIZE = 1000;
-
-const UNAVAILABLE = "The reading is not available.";
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -60,7 +59,20 @@ function explanation() {
   );
 }
 
-export function SuppressedListingsPanel() {
+function ReadingNote({ read }: { read: RetailCanvasRead }) {
+  if (read.phase === "loading") {
+    return <p className="retail-missing">Loading the retail reading…</p>;
+  }
+  if (read.phase === "error") {
+    return <p className="retail-missing">The retail read could not be loaded.</p>;
+  }
+  const reading = read.snapshot.suppressedListings;
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  if (!showMissing || !reading.missingMessage) return null;
+  return <p className="retail-missing">{reading.missingMessage}</p>;
+}
+
+export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
   const [state, setState] = useState<
     "loading" | "unavailable" | { rows: SuppressionReading[] }
   >("loading");
@@ -88,38 +100,40 @@ export function SuppressedListingsPanel() {
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">
           <span>Suppressed Listings</span>
-          {rows ? (
-            <span className="tag-badge tag-danger suppressed-count">{formatInt(rows.length)}</span>
+          {read.phase === "ready" && read.snapshot.suppressedListings.issueCount != null ? (
+            <span className="tag-badge tag-danger suppressed-count">
+              {formatInt(read.snapshot.suppressedListings.issueCount)}
+            </span>
           ) : null}
         </div>
+        <ReadingNote read={read} />
         {state === "loading" ? (
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)", margin: "8px 0 0" }}>
-            Loading the reading…
-          </p>
+          <p className="retail-missing">Loading qualifying listings…</p>
         ) : null}
         {state === "unavailable" ? (
-          <p style={{ fontSize: 12.5, lineHeight: 1.5, margin: "8px 0 0" }}>{UNAVAILABLE}</p>
+          <p className="retail-missing">The qualifying rows could not be loaded.</p>
         ) : null}
         {rows ? (
           <>
             <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "8px 0" }}>
-              The gap is the new Amazon offer, including shipping, minus the Competitive External
-              Price. The count is the number of listings this read returned.
+              Source fields: offer price, Competitive External Price, and Featured Offer withheld.
+              The gap is the offer, including shipping, minus that external price.
             </p>
             <div style={{ overflowX: "auto" }}>
               <table className="table-sm">
                 <thead>
                   <tr>
                     <th>Listing</th>
-                    <th>Amazon offer</th>
-                    <th>Benchmark</th>
+                    <th>Offer price</th>
+                    <th>Competitive External Price</th>
+                    <th>Featured Offer withheld</th>
                     <th>Above benchmark</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>
+                      <td colSpan={5}>
                         No listing in this reading is above the Competitive External Price with the
                         Featured Offer withheld.
                       </td>
@@ -152,6 +166,7 @@ export function SuppressedListingsPanel() {
                               ? formatUsd(row.competitive_price_threshold_cents / 100)
                               : ""}
                           </td>
+                          <td>{row.featured_offer_withheld === true ? "Yes" : "No"}</td>
                           <td style={{ color: "var(--danger-red)", fontWeight: 700 }}>
                             {formatUsd(gap, { signed: true })}
                           </td>

@@ -19,15 +19,14 @@
     "targetX": 1160,
     "targetY": 320,
     "radius": 125,
-    "title": "Amazon & Retail Health",
-    "subtitle": "Buy Box, price leaks, and partner bundles",
+    "title": "Portfolio Retail",
+    "subtitle": "Featured Offer, MAP, and catalog nesting",
     "category": "RETAIL HEALTH",
     "displays": [
-      "Amazon 1P, third-party, and unknown sellers load with the offer read",
-      "MAP listings load on the MAP tab",
-      "Partner bundle rows load with the retail read"
+      "Suppressed Featured Offers, MAP leakage, and unnested bundles",
+      "A partial reading keeps its count and says what is still missing"
     ],
-    "value": "Win back the Buy Box (target 95%) by working with partners, not sending legal threats."
+    "value": "These catalog and retail issues change what an assistant can recommend and what a shopper can buy."
   },
   {
     "nodeId": "aeo",

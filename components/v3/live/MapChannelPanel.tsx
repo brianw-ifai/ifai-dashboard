@@ -11,6 +11,7 @@ import {
   type MapSourceRow,
   type MapTabModel,
 } from "@/lib/fender-canvas/map-channels";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
 const PAGE_SIZE = 1000;
 
@@ -67,6 +68,41 @@ function columnCount(model: MapTabModel): number {
   );
 }
 
+function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
+  if (read.phase === "loading") {
+    return <p className="retail-missing">Loading the retail reading…</p>;
+  }
+  if (read.phase === "error") {
+    return <p className="retail-missing">The retail read could not be loaded.</p>;
+  }
+  const reading = read.snapshot.mapLeakage;
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  const gap = reading.detail?.averageLeakage ?? null;
+  return (
+    <>
+      <div className="metric-grid-2" style={{ marginTop: 8 }}>
+        <div className="metric-card-sm">
+          <span className="metric-card-label">Listings below MAP</span>
+          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
+            {reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount)}
+          </div>
+          <span className="metric-card-sub">Stored channel leakage below MAP</span>
+        </div>
+        <div className="metric-card-sm">
+          <span className="metric-card-label">Average price gap</span>
+          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
+            {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
+          </div>
+          <span className="metric-card-sub">Price gap, not revenue</span>
+        </div>
+      </div>
+      {showMissing && reading.missingMessage ? (
+        <p className="retail-missing">{reading.missingMessage}</p>
+      ) : null}
+    </>
+  );
+}
+
 function mapDefinition() {
   return (
     <div className="ceo-callout">
@@ -81,7 +117,7 @@ function mapDefinition() {
   );
 }
 
-export function MapChannelPanel() {
+export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
   const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
   const [failed, setFailed] = useState(false);
@@ -109,9 +145,8 @@ export function MapChannelPanel() {
         {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
-          <p style={{ fontSize: 12.5, lineHeight: 1.5, margin: "12px 0 0" }}>
-            Below-MAP rows are not available.
-          </p>
+          <MapReadingSummary read={read} />
+          <p className="retail-missing">Below-MAP rows are not available.</p>
         </div>
       </>
     );
@@ -123,7 +158,8 @@ export function MapChannelPanel() {
         {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>Loading MAP rows…</p>
+          <MapReadingSummary read={read} />
+          <p className="retail-missing">Loading MAP rows…</p>
         </div>
       </>
     );
@@ -150,24 +186,7 @@ export function MapChannelPanel() {
 
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">Summary</div>
-        <div className="metric-grid-2" style={{ marginTop: 8 }}>
-          <div className="metric-card-sm">
-            <span className="metric-card-label">Listings under MAP</span>
-            <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-              {formatInt(model.count)}
-            </div>
-            <span className="metric-card-sub">Rows returned by this read</span>
-          </div>
-          <div className="metric-card-sm">
-            <span className="metric-card-label">Gap</span>
-            <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-              {formatUsd(model.averageGap, { signed: true })}
-            </div>
-            <span className="metric-card-sub">
-              Average worst leakage · {formatUsd(model.combinedGap, { signed: true })} combined
-            </span>
-          </div>
-        </div>
+        <MapReadingSummary read={read} />
         {summaryChannels.length ? (
           <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
             {summaryChannels.map((channel) => (
