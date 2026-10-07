@@ -40,6 +40,7 @@ const build = spawnSync(
     `--define:process.env.NEXT_PUBLIC_SUPABASE_URL=${JSON.stringify(supabaseUrl)}`,
     `--define:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY=${JSON.stringify(supabaseKey)}`,
     `--define:process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${JSON.stringify(supabaseKey)}`,
+    `--define:process.env.__NEXT_ROUTER_BASEPATH=""`,
   ],
   { cwd: root, stdio: "inherit" },
 );
@@ -54,10 +55,6 @@ function dataUri(filePath, mime) {
 const assets = {
   "/icon.png": dataUri(join(root, "public/icon.png"), "image/png"),
   "/image.png": dataUri(join(root, "public/image.png"), "image/png"),
-  "/intofocus-ai-logo-stacked-full-color.png": dataUri(
-    join(root, "public/intofocus-ai-logo-stacked-full-color.png"),
-    "image/png",
-  ),
   "/fonts/inter-latin-wght-normal.woff2": dataUri(
     join(root, "public/fonts/inter-latin-wght-normal.woff2"),
     "font/woff2",

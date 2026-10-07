@@ -60,12 +60,6 @@ function GraphStage({ spec }: { spec: CanvasSpec }) {
   const hub = spec.nodes?.find((node) => node.variant === "hub");
   const cx = hub?.x ?? 800;
   const cy = hub?.y ?? 500;
-  // Swirl occupies the upper mark; pin that center on the hub and clip the wordmark off.
-  const swirlWidth = 720;
-  const imgW = swirlWidth / 0.366;
-  const imgH = imgW * (4500 / 8000);
-  const imgX = cx - imgW / 2;
-  const imgY = cy - imgH * 0.4436;
 
   return (
     <g className="graph-stage" pointerEvents="none">
@@ -78,16 +72,6 @@ function GraphStage({ spec }: { spec: CanvasSpec }) {
         <ellipse cx={cx} cy={cy} rx={980} ry={680} fill="url(#iomStageCoreLight)" />
         <ellipse cx={cx - 560} cy={cy - 350} rx={720} ry={540} fill="url(#iomStageBlueLight)" />
         <ellipse cx={cx + 560} cy={cy + 350} rx={800} ry={580} fill="url(#iomStageLilacLight)" />
-      </g>
-      <g clipPath="url(#iomWatermarkClip)">
-        <image
-          href="/intofocus-ai-logo-stacked-full-color.png"
-          x={imgX}
-          y={imgY}
-          width={imgW}
-          height={imgH}
-          opacity={0.13}
-        />
       </g>
     </g>
   );
@@ -567,14 +551,6 @@ export function CanvasGraph({
               <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.16" />
               <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
             </radialGradient>
-            <clipPath id="iomWatermarkClip">
-              <rect
-                x={(spec.nodes?.find((node) => node.variant === "hub")?.x ?? 800) - 400}
-                y={(spec.nodes?.find((node) => node.variant === "hub")?.y ?? 500) - 300}
-                width={800}
-                height={580}
-              />
-            </clipPath>
           </defs>
           <GraphStage spec={spec} />
       </svg>
