@@ -72,7 +72,7 @@ test.describe("prompt watchlist", () => {
 
 test.describe("collapsible explanations", () => {
   test("an explanation can be hidden and stays hidden", async ({ canvas, page }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
 
     const toggle = page.locator(".ceo-callout-toggle").first();
     const body = page.locator(".ceo-callout-body").first();
@@ -84,7 +84,7 @@ test.describe("collapsible explanations", () => {
     await expect(page.locator(".ceo-callout-header").first()).toBeVisible();
 
     await canvas.reload();
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
     await expect(page.locator(".ceo-callout-body").first()).toBeHidden();
 
     await page.locator(".ceo-callout-toggle").first().click();
@@ -112,7 +112,7 @@ test.describe("drill-downs", () => {
     canvas,
     page,
   }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Retail Overview",
       "Suppressed Listings",
@@ -146,7 +146,7 @@ test.describe("drill-downs", () => {
   });
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
     await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
@@ -215,7 +215,7 @@ test.describe("drill-downs", () => {
 
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);
@@ -239,7 +239,7 @@ test.describe("glossary", () => {
   });
 
   test("marking does not corrupt the surrounding copy", async ({ canvas, page }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
@@ -247,7 +247,7 @@ test.describe("glossary", () => {
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");

@@ -11,12 +11,12 @@ import type { TourStep } from "@/lib/canvas-sdk/types";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { defineCanvas } from "@/lib/canvas-sdk/types";
 import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
+import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { formatInt } from "@/lib/fender-canvas/format";
 
 const FOCUS_TARGETS = graphLayout.focusTargets as Record<string, { x: number; y: number }>;
 const tourSteps = staticTourSteps as TourStep[];
@@ -73,13 +73,13 @@ export function buildFenderCanvasSpec(
     : fenderWidgetMetrics;
 
   const m = bundle?.m;
-  const bb = metrics.buyBoxRetention.value;
   const ai = metrics.overallAiWinRate.value;
+  const headline = headlineSurface(options.retail ?? { phase: "loading" });
   const beginner = metrics.beginnerAiWinRate.value;
 
   return defineCanvas({
     appearance: "iom",
-    commandCenter: bundle ? buildLiveCommandCenter(bundle) : fenderCommandCenter,
+    commandCenter: bundle ? buildLiveCommandCenter(bundle, options.retail) : fenderCommandCenter,
     glossary: fenderGlossary,
     metricWidgets: {
       metrics: widgetList,
@@ -102,13 +102,8 @@ export function buildFenderCanvasSpec(
         tone: "danger",
         icon: "pulse",
         spokeId: "ecommerce",
-        subTab: "Retail Overview",
-        label: (
-          <>
-            Buy Box (Active Offers): <strong>{bb} 1P</strong> ({m ? formatInt(m.bb_1p) : "n/a"} of{" "}
-            {m ? formatInt(m.bb_total) : "n/a"} active)
-          </>
-        ),
+        subTab: headline.tab,
+        label: headlineSentence(headline),
       },
       {
         id: "aeo",

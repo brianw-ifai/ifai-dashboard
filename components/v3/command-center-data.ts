@@ -9,14 +9,14 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
   summary:
-    "Offer coverage, seller mix, beginner share of voice, and spec hallucination flags load with the canvas read.",
+    "The retail headline, beginner share of voice, and spec hallucination flags load with the canvas read.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
     {
       id: "buybox-suppression",
-      title: "Confirm who holds the buy button on active Amazon offers",
-      why: "The catalog read lists how many electric SKUs have an active Amazon offer, and how many of those confirm Amazon as the seller, a third-party seller, or no seller yet.",
+      title: "The retail headline loads with the catalog read",
+      why: "Suppressed Featured Offers, MAP leakage, and unnested bundles are ranked from the stored retail read. The count and any missing coverage appear when that read finishes.",
       severity: "critical",
       spokeId: "ecommerce",
       subTab: "Retail Overview",

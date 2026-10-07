@@ -5,6 +5,8 @@ import { tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 import {
   catalogBubble,
   headlineBubble,
+  headlineSentence,
+  headlineSurface,
   mapBubble,
   RETAIL_PANEL_TABS,
   retailBubbleFaces,
@@ -136,6 +138,33 @@ test("a higher unfinished reading is not replaced by a later count", () => {
   const face = headlineBubble(source);
   assert.equal(face.subTab, "Suppressed Listings");
   assert.doesNotMatch(face.stats.join(" "), /2 listings/);
+});
+
+test("the shared headline keeps the count, the missing message, and the command-center tab", () => {
+  const source = findings();
+  const surface = headlineSurface({ phase: "ready", snapshot: { ...source, headline: null } });
+  assert.equal(surface.label, "Suppressed Listings");
+  assert.equal(surface.countLabel, "1 listing");
+  assert.equal(surface.missingMessage, source.suppressedListings.missingMessage);
+  assert.equal(surface.tab, "Suppressed Listings");
+  assert.equal(surface.commandTab, "Retail Overview");
+  const sentence = headlineSentence(surface);
+  assert.match(sentence, /1 listing/);
+  assert.ok(sentence.includes(source.suppressedListings.missingMessage ?? ""));
+  assert.doesNotMatch(sentence, FORBIDDEN);
+
+  const mapHeadline = headlineSurface({
+    phase: "ready",
+    snapshot: {
+      ...findings({
+        suppressedListings: suppressedListingsFinding([suppressed(false)]),
+      }),
+      headline: null,
+    },
+  });
+  assert.equal(mapHeadline.label, "MAP");
+  assert.equal(mapHeadline.commandTab, "MAP");
+  assert.equal(mapHeadline.tab, "MAP");
 });
 
 test("loading and error faces do not invent a count", () => {

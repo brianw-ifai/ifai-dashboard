@@ -1,2 +1,2 @@
-/** Flip to `true` to show header metric tickers (Buy Box, AI win rate, lift, etc.). */
-export const SHOW_HEADER_TICKERS = false;
+/** Header tickers, including the retail headline. */
+export const SHOW_HEADER_TICKERS = true;

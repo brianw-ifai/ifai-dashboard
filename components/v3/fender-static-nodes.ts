@@ -196,11 +196,11 @@ export const fenderStaticNodes: CanvasNode[] = [
       title: "Strategy Roadmap",
       titleSize: 14,
       stats: ["90 Days", "3 Phases"],
-      meta: "Buy Box & AI Search Visibility",
+      meta: retailFaces.main.stats[0] ?? "Retail reading",
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: "A phased 30-60-90 day plan. Buy Box and AI win baselines load with the canvas read, with a target toward 95% Buy Box retention.",
+        desc: retailFaces.main.tooltip.desc,
       },
     },
     {

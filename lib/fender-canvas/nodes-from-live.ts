@@ -3,6 +3,8 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import {
+  headlineSentence,
+  headlineSurface,
   retailBubbleFaces,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
@@ -20,7 +22,7 @@ export function buildLiveNodes(
   const acoustics = cats.find((c) => c.category === "acoustics");
   const amps = cats.find((c) => c.category === "amps");
 
-  const bb1p = metrics.buyBoxRetention.value;
+  const headline = headlineSurface(retail);
   const simWin = metrics.overallAiWinRate.value;
   const beginnerWin = metrics.beginnerAiWinRate.value;
 
@@ -269,11 +271,11 @@ export function buildLiveNodes(
       title: "Strategy Roadmap",
       titleSize: 14,
       stats: ["90 Days", "3 Phases"],
-      meta: "Buy Box & AI Search Visibility",
+      meta: headline.countLabel ? `${headline.label}: ${headline.countLabel}` : headline.label,
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: `Baselines: Buy Box ${bb1p}, AI win ${simWin}. Day 90 Buy Box target ${metrics.dayNinetyBuyBoxTarget.value}.`,
+        desc: headlineSentence(headline),
       },
     },
     {

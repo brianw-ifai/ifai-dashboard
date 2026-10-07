@@ -88,6 +88,61 @@ function face(
   };
 }
 
+export type HeadlineSurface = {
+  label: string;
+  /** Formatted issue count, such as "45 listings". Null when this reading was never stored. */
+  countLabel: string | null;
+  /** Set for an incomplete or unavailable reading. Null when the reading is complete. */
+  missingMessage: string | null;
+  /** The finding's own tab. */
+  tab: string;
+  /** Retail Overview while the headline is Suppressed Listings. Otherwise the finding's tab. */
+  commandTab: string;
+};
+
+export function headlineSurface(read: RetailCanvasRead): HeadlineSurface {
+  if (read.phase !== "ready") {
+    return {
+      label: "Retail reading",
+      countLabel: null,
+      missingMessage:
+        read.phase === "loading"
+          ? "The retail headline is still loading from the stored catalog and offer read."
+          : "The retail read could not be loaded from the stored catalog.",
+      tab: RETAIL_OVERVIEW_TAB,
+      commandTab: RETAIL_OVERVIEW_TAB,
+    };
+  }
+
+  const headline = selectRetailHeadline(read.snapshot);
+  if (!headline) {
+    return {
+      label: "Portfolio Retail",
+      countLabel: "0 listings",
+      missingMessage: null,
+      tab: RETAIL_OVERVIEW_TAB,
+      commandTab: RETAIL_OVERVIEW_TAB,
+    };
+  }
+
+  const noun = headline.findingId === "unnested_bundles" ? "bundle" : "listing";
+  const unfinished =
+    headline.reading.status === "incomplete" || headline.reading.status === "unavailable";
+  return {
+    label: headline.label,
+    countLabel: countPhrase(headline.reading, noun),
+    missingMessage: unfinished ? headline.reading.missingMessage : null,
+    tab: headline.label,
+    commandTab:
+      headline.findingId === "suppressed_listings" ? RETAIL_OVERVIEW_TAB : headline.label,
+  };
+}
+
+export function headlineSentence(surface: HeadlineSurface): string {
+  const lead = surface.countLabel ? `${surface.label}: ${surface.countLabel}` : surface.label;
+  return surface.missingMessage ? `${lead}. ${surface.missingMessage}` : `${lead}.`;
+}
+
 export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleFace {
   const headline = selectRetailHeadline(findings);
   if (!headline) {
