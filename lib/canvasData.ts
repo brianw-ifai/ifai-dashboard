@@ -54,6 +54,17 @@ export function listingsQuery(
   return q;
 }
 
+/** Other retailers' stored prices. One row per listing per channel. */
+export function listingChannelPricesQuery(page = 0, size = 1000) {
+  const supabase = getCanvasSupabase();
+  return supabase
+    .from("canvas_listing_channel_price")
+    .select("asin,channel,price,url,checked_at")
+    .order("channel")
+    .order("asin")
+    .range(page * size, page * size + size - 1);
+}
+
 /**
  * One existing row, so a missing Competitive External Price column stays a normal
  * listing read instead of a filtered request for a column the view does not have yet.
