@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listingsQuery } from "@/lib/canvasData";
+import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import {
+  channelPriceLookup,
   listingLabel,
   mapTabModel,
+  type ChannelPriceRow,
   type MapSourceRow,
+  type MapTabModel,
 } from "@/lib/fender-canvas/map-channels";
 
 const PAGE_SIZE = 1000;
@@ -38,6 +41,32 @@ async function loadMapRows(): Promise<MapSourceRow[]> {
   throw new Error("Below-MAP rows are not available.");
 }
 
+async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
+  try {
+    const rows: ChannelPriceRow[] = [];
+    for (let page = 0; page < 20; page += 1) {
+      const { data, error } = await listingChannelPricesQuery(page, PAGE_SIZE);
+      if (error) return page === 0 ? [] : rows;
+      const batch = (data ?? []) as ChannelPriceRow[];
+      rows.push(...batch);
+      if (batch.length < PAGE_SIZE) return rows;
+    }
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+function columnCount(model: MapTabModel): number {
+  return (
+    4 +
+    Number(model.showAmazon) +
+    Number(model.showWalmart) +
+    Number(model.showMusiciansFriend) +
+    model.extraChannels.length
+  );
+}
+
 function mapDefinition() {
   return (
     <div className="ceo-callout">
@@ -54,13 +83,17 @@ function mapDefinition() {
 
 export function MapChannelPanel() {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
+  const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    loadMapRows()
-      .then((next) => {
-        if (!cancelled) setRows(next);
+    Promise.all([loadMapRows(), loadChannelPrices()])
+      .then(([nextRows, nextPrices]) => {
+        if (!cancelled) {
+          setRows(nextRows);
+          setChannelPrices(nextPrices);
+        }
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -96,7 +129,20 @@ export function MapChannelPanel() {
     );
   }
 
-  const model = mapTabModel(rows);
+  const model = mapTabModel(rows, channelPrices);
+  const prices = channelPriceLookup(channelPrices);
+  const summaryChannels = [
+    ...model.channels.map((channel) => ({
+      key: channel.name,
+      name: channel.name,
+      count: channel.count,
+    })),
+    ...model.extraChannels.map((channel) => ({
+      key: channel.channel,
+      name: channel.name,
+      count: channel.count,
+    })),
+  ];
 
   return (
     <>
@@ -122,10 +168,10 @@ export function MapChannelPanel() {
             </span>
           </div>
         </div>
-        {model.channels.length ? (
+        {summaryChannels.length ? (
           <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
-            {model.channels.map((channel) => (
-              <li key={channel.name}>
+            {summaryChannels.map((channel) => (
+              <li key={channel.key}>
                 <strong>{channel.name}</strong> · {formatInt(channel.count)}{" "}
                 {channel.count === 1 ? "listing" : "listings"}
               </li>
@@ -146,12 +192,15 @@ export function MapChannelPanel() {
                 <th>Gap</th>
                 {model.showWalmart ? <th>Walmart</th> : null}
                 {model.showMusiciansFriend ? <th>Musician&apos;s Friend</th> : null}
+                {model.extraChannels.map((channel) => (
+                  <th key={channel.channel}>{channel.name}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={4}>No active offers are under MAP.</td>
+                  <td colSpan={columnCount(model)}>No active offers are under MAP.</td>
                 </tr>
               ) : (
                 rows.map((row) => {
@@ -219,6 +268,36 @@ export function MapChannelPanel() {
                           ) : null}
                         </td>
                       ) : null}
+                      {model.extraChannels.map((channel) => {
+                        const cell = prices.get(row.asin)?.get(channel.channel);
+                        const channelHref = cell ? httpUrl(cell.url) : null;
+                        return (
+                          <td key={channel.channel}>
+                            {cell ? (
+                              <>
+                                {formatUsd(cell.price)}
+                                {channelHref ? (
+                                  <>
+                                    {" "}
+                                    <a
+                                      className={
+                                        channel.channel === "reverb"
+                                          ? "listing-link channel-tag channel-rev"
+                                          : "listing-link channel-tag"
+                                      }
+                                      href={channelHref}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {channel.name}
+                                    </a>
+                                  </>
+                                ) : null}
+                              </>
+                            ) : null}
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })
