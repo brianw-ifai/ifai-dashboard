@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display } from "next/font/google";
+import { publicAssetPath } from "@/lib/public-asset";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -15,10 +16,10 @@ export const metadata: Metadata = {
   description: "IntoFocus AI visibility dashboard",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png" },
+      { url: publicAssetPath("/favicon.ico"), sizes: "any" },
+      { url: publicAssetPath("/icon.png"), type: "image/png" },
     ],
-    apple: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: publicAssetPath("/icon.png"), type: "image/png" }],
   },
 };
 

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { login, signUp, type AuthState } from "@/app/auth/actions";
 import { enterGuestDashboard } from "@/app/auth/guest-actions";
+import { publicAssetPath } from "@/lib/public-asset";
 
 /** Set true to show “New here? Sign up” on the login form. `/signup` and `signUp` stay wired. */
 const SHOW_LOGIN_SIGNUP_LINK = false;
@@ -150,7 +151,13 @@ export function AuthFormCard({
           <span className="auth-bubble-aura" />
           <span className="auth-bubble-orbit" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.png" alt="" className="auth-bubble-logo" width={46} height={46} />
+          <img
+            src={publicAssetPath("/icon.png")}
+            alt=""
+            className="auth-bubble-logo"
+            width={46}
+            height={46}
+          />
         </div>
         <div className="auth-bubble-panel">{fields}</div>
       </div>

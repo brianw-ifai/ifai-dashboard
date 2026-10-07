@@ -25,6 +25,7 @@ import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
 import { useCanvasUrlApply } from "@/lib/canvas-sdk/useCanvasUrlApply";
 import { useCanvasUrlSync } from "@/lib/canvas-sdk/useCanvasUrlSync";
+import { publicAssetPath } from "@/lib/public-asset";
 import {
   ChevronLeft,
   Compass,
@@ -1030,7 +1031,7 @@ export function CanvasShell({ spec, children }: Props) {
               aria-label="Back to map overview"
             >
               <img
-                src={spec.brand.logoSrc ?? "/icon.png"}
+                src={publicAssetPath(spec.brand.logoSrc ?? "/icon.png")}
                 alt=""
                 className="brand-logo-icon"
                 aria-hidden
