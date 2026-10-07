@@ -39,9 +39,7 @@ const build = spawnSync(
     "--external:/fonts/*",
     `--define:process.env.NEXT_PUBLIC_SUPABASE_URL=${JSON.stringify(supabaseUrl)}`,
     `--define:process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY=${JSON.stringify(supabaseKey)}`,
-    `--define:process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${JSON.stringify(supabaseKey)}`,
-    `--define:process.env.__NEXT_ROUTER_BASEPATH=""`,
-  ],
+    `--define:process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${JSON.stringify(supabaseKey)}`,  ],
   { cwd: root, stdio: "inherit" },
 );
 
