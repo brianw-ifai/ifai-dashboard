@@ -160,7 +160,6 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
 
   const noun = headline.findingId === "unnested_bundles" ? "bundle" : "listing";
   const count = countPhrase(headline.reading, noun);
-  const coverage = coveragePill(headline.reading);
   const tooltip =
     headline.reading.missingMessage ??
     `${headline.label} is the current retail headline.`;
@@ -168,7 +167,6 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
   return {
     title: "Portfolio Retail",
     stats: [headline.label, ...(count ? [count] : [])],
-    meta: coverage ?? undefined,
     status: tone(headline.reading),
     subTab: headline.label,
     tooltip: { title: headline.label, desc: tooltip },

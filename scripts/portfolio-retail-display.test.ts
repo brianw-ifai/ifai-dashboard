@@ -84,16 +84,16 @@ test("panel tab labels keep the reading slugs", () => {
   assert.equal(tabSlug("Retail Overview"), "retail-overview");
 });
 
-test("the headline bubble uses selectRetailHeadline, the issue count, and the coverage line", () => {
+test("the headline bubble shows the finding and the issue count only", () => {
   const source = findings();
   const headline = selectRetailHeadline(source);
   const face = headlineBubble(source);
   assert.equal(headline?.label, "Suppressed Listings");
   assert.equal(face.subTab, headline?.label);
-  assert.equal(face.stats[0], "Suppressed Listings");
-  assert.match(face.stats[1] ?? "", /^1 listing$/);
-  assert.equal(face.meta, shortCoverageLine(source.suppressedListings.missingMessage));
-  assert.ok(source.suppressedListings.missingMessage?.includes(face.meta ?? ""));
+  assert.deepEqual(face.stats, ["Suppressed Listings", "1 listing"]);
+  assert.equal(face.meta, undefined);
+  assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
+  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
   assert.doesNotMatch(visible(face), /incomplete|unavailable/i);
   assert.doesNotMatch(visible(face), FORBIDDEN);
 });

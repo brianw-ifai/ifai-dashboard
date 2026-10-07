@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type {
   AmazonSpecGap,
@@ -11,6 +13,19 @@ import type {
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
 const PAGE = 20;
+
+const BUNDLE_COLUMNS: RetailColumn[] = [
+  { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120 },
+  { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
+  { id: "parent", name: "Parent ASIN", label: "Parent ASIN", width: 128, minWidth: 108, className: "asin-col" },
+  { id: "why", name: "Why it is here", label: "Why it is here", width: 280, minWidth: 140 },
+];
+
+const SPEC_COLUMNS: RetailColumn[] = [
+  { id: "listing", name: "Listing", label: "Listing", width: 240, minWidth: 120 },
+  { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
+  { id: "missing", name: "Missing Amazon fields", label: "Missing Amazon fields", width: 320, minWidth: 160 },
+];
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -99,16 +114,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
   const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <>
-      <div style={{ overflowX: "auto" }}>
-        <table className="table-sm">
-          <thead>
-            <tr>
-              <th>Listing</th>
-              <th>ASIN</th>
-              <th>Parent ASIN</th>
-              <th>Why it is here</th>
-            </tr>
-          </thead>
+      <ResizableTable tableId="catalog-bundles" columns={BUNDLE_COLUMNS}>
           <tbody>
             {slice.length === 0 ? (
               <tr>
@@ -126,17 +132,16 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
                       </>
                     ) : null}
                   </td>
-                  <td>
+                  <td className="asin-col">
                     <AsinLink asin={row.asin} href={httpUrl(row.productUrl) ?? amazonHref(row.asin)} />
                   </td>
-                  <td>{row.parentAsin ?? "None stored"}</td>
+                  <td className="asin-col">{row.parentAsin ?? "None stored"}</td>
                   <td>{reasonCopy(row)}</td>
                 </tr>
               ))
             )}
           </tbody>
-        </table>
-      </div>
+      </ResizableTable>
       <Pager page={page} total={rows.length} onPage={setPage} />
     </>
   );
@@ -147,15 +152,7 @@ function SpecRows({ rows }: { rows: AmazonSpecGap[] }) {
   const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <>
-      <div style={{ overflowX: "auto" }}>
-        <table className="table-sm">
-          <thead>
-            <tr>
-              <th>Listing</th>
-              <th>ASIN</th>
-              <th>Missing Amazon fields</th>
-            </tr>
-          </thead>
+      <ResizableTable tableId="catalog-specs" columns={SPEC_COLUMNS}>
           <tbody>
             {slice.length === 0 ? (
               <tr>
@@ -167,7 +164,7 @@ function SpecRows({ rows }: { rows: AmazonSpecGap[] }) {
                   <td>
                     <strong>{row.modelOrTitle ?? "Listing"}</strong>
                   </td>
-                  <td>
+                  <td className="asin-col">
                     <AsinLink asin={row.asin} href={amazonHref(row.asin)} />
                   </td>
                   <td>{row.missingFields.join("; ")}</td>
@@ -175,8 +172,7 @@ function SpecRows({ rows }: { rows: AmazonSpecGap[] }) {
               ))
             )}
           </tbody>
-        </table>
-      </div>
+      </ResizableTable>
       <Pager page={page} total={rows.length} onPage={setPage} />
     </>
   );
@@ -202,9 +198,7 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
           <span>What is catalog governance?</span>
         </div>
         <div className="ceo-callout-body">
-          Bundle listings that are not nested under a parent <DefinedTerm term="ASIN" /> keep their
-          reviews on a separate page. Nesting keeps those reviews on the parent listing. This bundle
-          group is the retail read, not the full catalog.
+          <DefinedCopy text={CATALOG_GOVERNANCE_EXPLAINER} />
         </div>
       </div>
 

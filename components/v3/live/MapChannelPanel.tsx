@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import {
@@ -15,6 +16,7 @@ import {
   type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 
 const PAGE_SIZE = 1000;
 
@@ -61,45 +63,55 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
   }
 }
 
-function columnCount(model: MapTabModel): number {
-  return (
-    3 +
-    Number(model.showAmazon) +
-    Number(model.showWalmart) +
-    Number(model.showMusiciansFriend) +
-    model.extraChannels.length
-  );
-}
-
-function ChannelCell({
-  fact,
-  href,
-  linkClass,
-}: {
-  fact: ChannelFact | undefined;
-  href?: string | null;
-  linkClass?: string;
-}) {
-  if (!fact || (fact.price == null && fact.gap == null)) return <td className="money" />;
+function ChannelCell({ fact, href }: { fact: ChannelFact | undefined; href?: string | null }) {
+  if (!fact || (fact.price == null && fact.gap == null)) return <td className="money channel-fact" />;
   const below = fact.gap != null && fact.gap < 0;
+  const price = fact.price != null ? formatUsd(fact.price) : null;
   return (
-    <td className="money">
-      {fact.price != null ? <span className="money">{formatUsd(fact.price)}</span> : null}
+    <td className="money channel-fact">
+      {price != null && href ? (
+        <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`${fact.name} price ${price}`}>
+          {price}
+        </a>
+      ) : null}
+      {price != null && !href ? <span>{price}</span> : null}
       {fact.gap != null ? (
         <span className="channel-gap" style={below ? { color: "var(--danger-red)" } : undefined}>
-          {fact.name} gap {formatUsd(fact.gap, { signed: true })}
+          {formatUsd(fact.gap, { signed: true })}
         </span>
-      ) : null}
-      {href ? (
-        <>
-          {" "}
-          <a className={linkClass ?? "listing-link channel-tag"} href={href} target="_blank" rel="noopener noreferrer">
-            {fact.name}
-          </a>
-        </>
       ) : null}
     </td>
   );
+}
+
+function mapColumns(model: MapTabModel): RetailColumn[] {
+  const money = (id: string, name: string, width = 164): RetailColumn => ({
+    id,
+    name,
+    label: name,
+    width,
+    minWidth: 148,
+    className: "money",
+  });
+  const columns: RetailColumn[] = [
+    {
+      id: "listing",
+      name: "Listing",
+      label: "Listing",
+      width: MAP_LISTING_COLUMN_WIDTH,
+      minWidth: 96,
+      className: "listing-col",
+    },
+    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
+    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money" },
+  ];
+  if (model.showAmazon) columns.push(money("amazon", "Amazon"));
+  if (model.showWalmart) columns.push(money("walmart", "Walmart"));
+  if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend", 176));
+  for (const channel of model.extraChannels) {
+    columns.push(money(channel.channel, channel.name));
+  }
+  return columns;
 }
 
 function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
@@ -201,6 +213,7 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
 
   const model = mapTabModel(rows, channelPrices);
   const prices = channelPriceLookup(channelPrices);
+  const columns = mapColumns(model);
   const summaryChannels = [
     ...model.channels.map((channel) => ({
       key: channel.name,
@@ -236,27 +249,12 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
         <div className="content-box-title" style={{ marginTop: 14 }}>
           Listings
         </div>
-        <div className="table-scroll" style={{ maxHeight: 520, marginTop: 12 }}>
-          <table className="table-sm">
-            <thead>
-              <tr>
-                <th>Listing</th>
-                <th>ASIN</th>
-                <th className="money">MAP</th>
-                {model.showAmazon ? <th className="money">Amazon</th> : null}
-                {model.showWalmart ? <th className="money">Walmart</th> : null}
-                {model.showMusiciansFriend ? <th className="money">Musician&apos;s Friend</th> : null}
-                {model.extraChannels.map((channel) => (
-                  <th key={channel.channel} className="money">
-                    {channel.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
+        <div style={{ marginTop: 12 }}>
+          <ResizableTable tableId="map-listings" columns={columns} freezeHeader maxHeight={520}>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columnCount(model)}>No active offers are under MAP.</td>
+                  <td colSpan={columns.length}>No active offers are under MAP.</td>
                 </tr>
               ) : (
                 rows.map((row) => {
@@ -267,10 +265,12 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
                   const walmartUrl = httpUrl(row.wmt_url);
                   return (
                     <tr key={row.asin}>
-                      <td>
-                        <strong>{listingLabel(row)}</strong>
+                      <td className="listing-col">
+                        <span className="listing-title-scroll">
+                          <strong>{listingLabel(row)}</strong>
+                        </span>
                       </td>
-                      <td>
+                      <td className="asin-col">
                         {href ? (
                           <a
                             className="listing-link"
@@ -289,11 +289,7 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
                       </td>
                       {model.showAmazon ? <ChannelCell fact={facts.get("amazon")} /> : null}
                       {model.showWalmart ? (
-                        <ChannelCell
-                          fact={facts.get("walmart")}
-                          href={walmartUrl}
-                          linkClass="listing-link channel-tag channel-wmt"
-                        />
+                        <ChannelCell fact={facts.get("walmart")} href={walmartUrl} />
                       ) : null}
                       {model.showMusiciansFriend ? (
                         <ChannelCell fact={facts.get("musicians-friend")} />
@@ -307,11 +303,6 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
                             key={channel.channel}
                             fact={facts.get(channel.channel)}
                             href={cell ? httpUrl(cell.url) : null}
-                            linkClass={
-                              channel.channel === "reverb"
-                                ? "listing-link channel-tag channel-rev"
-                                : "listing-link channel-tag"
-                            }
                           />
                         );
                       })}
@@ -320,7 +311,7 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
                 })
               )}
             </tbody>
-          </table>
+          </ResizableTable>
         </div>
       </div>
     </>

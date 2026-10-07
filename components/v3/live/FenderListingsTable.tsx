@@ -1,9 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingsQuery } from "@/lib/canvasData";
 import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
+
+const EXPLORE_COLUMNS: RetailColumn[] = [
+  { id: "model", name: "Model / SKU", label: "Model / SKU", width: 200, minWidth: 120 },
+  { id: "asin", name: "Child ASIN", label: "Child ASIN", width: 124, minWidth: 108, className: "asin-col" },
+  { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 150, minWidth: 100 },
+  { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money" },
+  { id: "offer", name: "Offer", label: "Offer", width: 104, minWidth: 88, className: "money" },
+  { id: "amazon-gap", name: "Amazon gap", label: "Amazon gap", width: 120, minWidth: 96, className: "money" },
+  { id: "walmart", name: "Walmart", label: "Walmart", width: 180, minWidth: 120, className: "money" },
+  { id: "mf", name: "Musician's Friend", label: "Musician's Friend", width: 200, minWidth: 140, className: "money" },
+  { id: "reviews", name: "Reviews", label: "Reviews", width: 90, minWidth: 72 },
+  { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80 },
+];
 
 type Filter = {
   status?: string;
@@ -110,22 +124,7 @@ export function FenderListingsTable() {
         </p>
       ) : null}
 
-      <div className="table-scroll">
-        <table className="table-sm">
-          <thead>
-            <tr>
-              <th>Model / SKU</th>
-              <th>Child ASIN</th>
-              <th>Partner / Bundle</th>
-              <th className="money">MAP</th>
-              <th className="money">Offer</th>
-              <th className="money">Amazon gap</th>
-              <th className="money">Walmart</th>
-              <th className="money">Musician&apos;s Friend</th>
-              <th>Reviews</th>
-              <th>Channels</th>
-            </tr>
-          </thead>
+      <ResizableTable tableId="explore-listings" columns={EXPLORE_COLUMNS}>
           <tbody>
             {loading && rows.length === 0 ? (
               <tr>
@@ -151,7 +150,7 @@ export function FenderListingsTable() {
                   <td>
                     <strong>{label}</strong>
                   </td>
-                  <td>
+                  <td className="asin-col">
                     {href ? (
                       <a
                         className="listing-link channel-tag channel-amz"
@@ -217,8 +216,7 @@ export function FenderListingsTable() {
               );
             })}
           </tbody>
-        </table>
-      </div>
+      </ResizableTable>
 
       <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
         <button

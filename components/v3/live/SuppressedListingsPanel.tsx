@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import {
   competitivePriceReadingCountQuery,
   competitivePriceColumnProbe,
@@ -16,6 +17,34 @@ import {
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
 const PAGE_SIZE = 1000;
+
+const SUPPRESSED_COLUMNS: RetailColumn[] = [
+  { id: "listing", name: "Listing", label: "Listing", width: 240, minWidth: 140 },
+  { id: "offer", name: "Offer price", label: "Offer price", width: 120, minWidth: 100, className: "money" },
+  {
+    id: "benchmark",
+    name: "Competitive External Price",
+    label: "Competitive External Price",
+    width: 200,
+    minWidth: 140,
+    className: "money",
+  },
+  {
+    id: "withheld",
+    name: "Featured Offer withheld",
+    label: "Featured Offer withheld",
+    width: 120,
+    minWidth: 88,
+  },
+  {
+    id: "gap",
+    name: "Above benchmark",
+    label: "Above benchmark",
+    width: 140,
+    minWidth: 110,
+    className: "money",
+  },
+];
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -119,17 +148,7 @@ export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
               Source fields: offer price, Competitive External Price, and Featured Offer withheld.
               The gap is the offer, including shipping, minus that external price.
             </p>
-            <div className="table-scroll">
-              <table className="table-sm">
-                <thead>
-                  <tr>
-                    <th>Listing</th>
-                    <th className="money">Offer price</th>
-                    <th className="money">Competitive External Price</th>
-                    <th>Featured Offer withheld</th>
-                    <th className="money">Above benchmark</th>
-                  </tr>
-                </thead>
+            <ResizableTable tableId="suppressed-listings" columns={SUPPRESSED_COLUMNS}>
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
@@ -147,18 +166,20 @@ export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
                           <td>
                             <strong>{listingLabel(row)}</strong>
                             <br />
-                            {href ? (
-                              <a
-                                className="listing-link channel-tag channel-amz"
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
+                            <span className="asin-line">
+                              {href ? (
+                                <a
+                                  className="listing-link channel-tag channel-amz"
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <span className="asin-chip">{row.asin}</span>
+                                </a>
+                              ) : (
                                 <span className="asin-chip">{row.asin}</span>
-                              </a>
-                            ) : (
-                              <span className="asin-chip">{row.asin}</span>
-                            )}
+                              )}
+                            </span>
                           </td>
                           <td className="money">{formatUsd(row.offer_price)}</td>
                           <td className="money">
@@ -175,8 +196,7 @@ export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
                     })
                   )}
                 </tbody>
-              </table>
-            </div>
+            </ResizableTable>
           </>
         ) : null}
       </div>
