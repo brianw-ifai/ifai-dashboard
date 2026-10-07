@@ -72,7 +72,7 @@ test.describe("prompt watchlist", () => {
 
 test.describe("collapsible explanations", () => {
   test("an explanation can be hidden and stays hidden", async ({ canvas, page }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
 
     const toggle = page.locator(".ceo-callout-toggle").first();
     const body = page.locator(".ceo-callout-body").first();
@@ -84,7 +84,7 @@ test.describe("collapsible explanations", () => {
     await expect(page.locator(".ceo-callout-header").first()).toBeVisible();
 
     await canvas.reload();
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
     await expect(page.locator(".ceo-callout-body").first()).toBeHidden();
 
     await page.locator(".ceo-callout-toggle").first().click();
@@ -112,7 +112,7 @@ test.describe("drill-downs", () => {
     canvas,
     page,
   }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Retail Listings",
       "MAP",
@@ -142,7 +142,7 @@ test.describe("drill-downs", () => {
   });
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
     await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
@@ -174,39 +174,43 @@ test.describe("drill-downs", () => {
   });
 
   test("the spec sample states the live schema result", async ({ canvas, page }) => {
-    await canvas.openPriority("machine-readable specs");
+    await canvas.openPriority("machine-readable spec");
     await canvas.openTab("Readiness");
-    await expect(page.locator(".drilldown-desc")).toContainText("29.2%");
+    await expect(page.locator(".drilldown-desc")).toContainText("additionalProperty");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("29.2%");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("7 of 22");
     await expect(page.locator(".drilldown-body")).toContainText("additionalProperty");
+    await expect(page.locator(".drilldown-body")).not.toContainText("14 catalog");
   });
 
-  test("competitive rows name the live leader and link to the evidence", async ({
-    canvas,
-    page,
-  }) => {
-    await canvas.openPriority("head-to-head recommendations");
+  test("the hallucination tab lists stored root causes", async ({ canvas, page }) => {
+    await canvas.openPriority("AI assistants are quoting specs");
+    await expect(canvas.activeTab).toContainText("Hallucination");
+    await expect(page.locator(".drilldown-body")).toContainText("flagged answers");
+    await expect(page.locator(".drilldown-body")).not.toContainText("Dual Humbucker");
+    await expect(page.locator(".drilldown-body")).not.toContainText("12-Inch");
+    await expect(page.locator(".drilldown-body")).not.toContainText("2 of 6");
+  });
+
+  test("competitive rows use the share-of-voice read", async ({ canvas, page }) => {
+    await canvas.openPriority("Beginner share of voice");
 
     const headers = await page.locator(".table-sm th").allInnerTexts();
-    expect(headers.some((h) => /leader brand/i.test(h))).toBe(true);
-    expect(headers.some((h) => /fender sov/i.test(h))).toBe(true);
+    expect(headers.some((h) => /fender win/i.test(h))).toBe(true);
+    expect(headers.some((h) => /top competitor/i.test(h))).toBe(true);
 
-    const leaders = await page.locator("tr.ifai-row-link td:nth-child(2)").allInnerTexts();
-    expect(leaders.map((name) => name.trim())).toEqual([
-      "PRS",
-      "Yamaha",
-      "Fender/Squier",
-      "Yamaha",
-      "Fender/Squier",
-    ]);
-
-    await page.locator("tr.ifai-row-link").first().click();
-    await expect(canvas.activeTab).toContainText("Simulations");
+    const body = page.locator(".drilldown-body");
+    await expect(body).toContainText("Yamaha");
+    await expect(body).toContainText("Fender/Squier");
+    await expect(body).not.toContainText("16.7%");
+    await expect(body).not.toContainText("15.4%");
+    await expect(body).not.toContainText("50-point");
   });
 });
 
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);
@@ -221,6 +225,7 @@ test.describe("glossary", () => {
 
   /* The command center is React-rendered; mutating it would fight reconciliation. */
   test("the walker leaves React-rendered content alone", async ({ canvas, page }) => {
+    await canvas.openCommandCenter();
     await expect(page.locator(".command-center .ifai-term")).toHaveCount(0);
 
     const item = canvas.priorities.first();
@@ -229,7 +234,7 @@ test.describe("glossary", () => {
   });
 
   test("marking does not corrupt the surrounding copy", async ({ canvas, page }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
@@ -237,7 +242,7 @@ test.describe("glossary", () => {
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");

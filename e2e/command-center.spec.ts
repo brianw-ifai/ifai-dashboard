@@ -6,7 +6,13 @@ test.describe("command center", () => {
   test("opens from the priorities control", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toBeVisible();
-    await expect(canvas.priorities).toHaveCount(7);
+    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.commandCenter).not.toContainText("3,430");
+    await expect(canvas.commandCenter).not.toContainText("993");
+    await expect(canvas.commandCenter).not.toContainText("7.4%");
+    await expect(canvas.commandCenter).not.toContainText("16.7%");
+    await expect(canvas.commandCenter).not.toContainText("Fourteen");
+    await expect(canvas.commandCenter).not.toContainText("14 catalog");
     await expect(canvas.page.locator(".drilldown-title")).toContainText(
       "What do I need to worry about?",
     );
@@ -15,7 +21,7 @@ test.describe("command center", () => {
   test("every priority explains why it is top of the list", async ({ canvas }) => {
     await canvas.openCommandCenter();
     const whys = canvas.page.locator(".cc-why p");
-    await expect(whys).toHaveCount(7);
+    await expect(whys).toHaveCount(6);
     for (const text of await whys.allInnerTexts()) {
       expect(text.trim().length).toBeGreaterThan(40);
     }
@@ -24,28 +30,28 @@ test.describe("command center", () => {
   test("counts reflect the queue", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     const quadrants = page.locator(".cc-quadrant");
-    await expect(quadrants.nth(1)).toContainText("7");
-    await expect(quadrants.nth(0)).toContainText("3"); // critical
-
-    await canvas.priority("7.4% of active Amazon offers").locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(6);
     await expect(quadrants.nth(1)).toContainText("6");
+    await expect(quadrants.nth(0)).toContainText("2"); // critical
+
+    await canvas.priority("active Amazon offers").locator(".cc-done-btn").click();
+    await expect(canvas.priorities).toHaveCount(5);
+    await expect(quadrants.nth(1)).toContainText("5");
     await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
   });
 
   test("a cleared item can be reopened", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await canvas.priorities.first().locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(5);
 
     await page.locator(".cc-cleared summary").click();
     await page.locator(".cc-undo-btn").first().click();
-    await expect(canvas.priorities).toHaveCount(7);
+    await expect(canvas.priorities).toHaveCount(6);
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
     await canvas.openCommandCenter();
-    const item = canvas.priority("7.4% of active Amazon offers");
+    const item = canvas.priority("active Amazon offers");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -54,7 +60,7 @@ test.describe("command center", () => {
     await canvas.reload();
     await canvas.openCommandCenter();
     await expect(
-      canvas.priority("7.4% of active Amazon offers").locator(".cc-owner-btn.active"),
+      canvas.priority("active Amazon offers").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -67,13 +73,12 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["7.4% of active Amazon offers", "Retail Listings"],
-    ["customer reviews are stranded", "Catalog"],
+    ["active Amazon offers", "Retail Listings"],
     ["AI assistants are quoting specs", "Hallucination"],
-    ["machine-readable specs", "Schema"],
+    ["machine-readable spec", "Schema"],
     ["Discounted bundles are dragging", "MAP"],
-    ["head-to-head recommendations", "Battlecards"],
-    ["A+ comparison matrix", "A+"],
+    ["Beginner share of voice", "Battlecards"],
+    ["A+ comparison tables", "A+"],
   ] as const;
 
   for (const [title, tab] of routes) {
@@ -84,9 +89,9 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
-    await canvas.openPriority("7.4% of active Amazon offers");
+    await canvas.openPriority("active Amazon offers");
     await canvas.backToPriorities();
-    await expect(canvas.priorities).toHaveCount(7);
+    await expect(canvas.priorities).toHaveCount(6);
   });
 
   test("the header Priorities button reopens the queue from a spoke", async ({

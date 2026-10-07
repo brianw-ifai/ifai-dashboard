@@ -1,4 +1,5 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
+import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   formatInt,
@@ -28,7 +29,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       spokeId: "hub",
       label: "Monitored Electric SKUs",
       value: formatInt(m.catalog_skus),
-      detail: `${formatInt(m.catalog_bundles)} bundles · ${formatInt(m.division_count)} divisions`,
+      detail: `${formatInt(m.catalog_bundles)} bundles · ${formatInt(bundle.divisions.length || m.division_count)} divisions`,
       tone: "neutral",
       subTab: "Brand Divisions",
       provenance: "live",
@@ -156,9 +157,9 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
     missingSchemaFields: {
       id: "missing-schema-fields",
       spokeId: "specs",
-      label: "Missing Schema.org Spec Fields",
+      label: "Pages Missing additionalProperty",
       value: formatInt(m.spec_missing_additional_property),
-      detail: "fender.com pages missing additionalProperty",
+      detail: "fender.com pages in the spec read",
       tone: "warning",
       subTab: "Schema.org",
       provenance: "live",
@@ -168,7 +169,9 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       spokeId: "competitors",
       label: "Beginner Category SOV Gap",
       value: `${formatInt(m.weakest_sov_gap_pts)} pts`,
-      detail: `vs ${m.weakest_top_competitor ?? pendingLabel()} in ${m.weakest_category ?? pendingLabel()}`,
+      detail:
+        beginnerSovLine(bundle.sov) ??
+        `vs ${m.weakest_top_competitor ?? pendingLabel()} in ${m.weakest_category ?? pendingLabel()}`,
       tone: "danger",
       subTab: "Battlecards",
       provenance: "live",
@@ -187,8 +190,8 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       id: "prioritized-fixes",
       spokeId: "suggestions",
       label: "Prioritized Action Items",
-      value: "18",
-      detail: "Ranked by recovery and visibility impact",
+      value: "Estimates",
+      detail: "Revenue figures on this spoke are estimates",
       tone: "warning",
       subTab: "Priority Matrix",
       provenance: "estimate",
@@ -198,7 +201,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       spokeId: "suggestions",
       label: "Recoverable Revenue",
       value: "+$680K",
-      detail: "Phase 1 annual · 14 pilot ASINs",
+      detail: "Phase 1 annual estimate",
       tone: "success",
       subTab: "ROI",
       provenance: "estimate",
@@ -208,7 +211,7 @@ export function buildLiveMetrics(bundle: CanvasBundle): Record<string, CanvasMet
       spokeId: "suggestions",
       label: "Enterprise GMV Potential",
       value: "+$38M to $62M",
-      detail: "Annual · full portfolio",
+      detail: "Annual estimate · full portfolio",
       tone: "success",
       subTab: "ROI",
       provenance: "estimate",

@@ -100,6 +100,33 @@ export function competitivePriceReadingCountQuery() {
     .gt("competitive_price_threshold_cents", 0);
 }
 
+/** Flagged simulation rows, including stored root_cause text. Pages through the read. */
+export async function hallucinationCauseRowsQuery() {
+  const supabase = getCanvasSupabase();
+  const pageSize = 1000;
+  const rows: Array<{
+    root_cause: string | null;
+    engine: string | null;
+    category: string | null;
+    prompt: string | null;
+  }> = [];
+
+  for (let page = 0; page < 20; page += 1) {
+    const from = page * pageSize;
+    const { data, error } = await supabase
+      .from("canvas_ai_simulations")
+      .select("root_cause,engine,category,prompt")
+      .eq("hallucination_flag", true)
+      .range(from, from + pageSize - 1);
+    if (error) return { data: rows, error };
+    const batch = data ?? [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+
+  return { data: rows, error: null };
+}
+
 export function simulationsQuery(category?: string, page = 0, size = 50) {
   const supabase = getCanvasSupabase();
   let q = supabase

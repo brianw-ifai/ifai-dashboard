@@ -69,6 +69,7 @@ export type CanvasCompetitorSovRow = {
   category: string;
   competitor: string;
   wins: number | null;
+  category_resolved?: number | null;
   sov_pct: number | null;
 };
 

@@ -24,9 +24,6 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
   const beginner = catRow(cats, "beginner");
   const weakestLabel = m.weakest_category ? titleCaseCategory(m.weakest_category) : pendingLabel();
 
-  const bundleReviews =
-    m.bundle_reviews == null ? pendingLabel() : formatInt(m.bundle_reviews);
-
   const noOfferPct =
     m.catalog_skus != null && m.bb_no_offer != null && Number(m.catalog_skus) > 0
       ? (Number(m.bb_no_offer) / Number(m.catalog_skus)) * 100
@@ -35,7 +32,7 @@ export function buildTemplateVars(bundle: CanvasBundle): Record<string, string> 
   const vars: Record<string, string> = {
     catalog_skus: formatInt(m.catalog_skus),
     catalog_bundles: formatInt(m.catalog_bundles),
-    division_count: formatInt(m.division_count),
+    division_count: formatInt(bundle.divisions.length > 0 ? bundle.divisions.length : m.division_count),
     bb_total: formatInt(m.bb_total),
     bb_1p: formatInt(m.bb_1p),
     bb_3p: formatInt(m.bb_3p),
