@@ -5,7 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { DashboardAuthView } from "@/components/dashboard/DashboardAuthView";
 import { FenderBrandCanvas } from "@/components/v3/FenderBrandCanvas";
 import { createClient } from "@/lib/supabase/client";
-import { GUEST_DASHBOARD_COOKIE } from "@/lib/auth/guest-dashboard.constants";
+import {
+  DASHBOARD_LOGIN_REQUIRED,
+  GUEST_DASHBOARD_COOKIE,
+} from "@/lib/auth/guest-dashboard.constants";
 
 function readGuestCookie(): boolean {
   if (typeof document === "undefined") return false;
@@ -37,13 +40,16 @@ export function HomeCanvasDynamic() {
     };
   }, []);
 
-  if (!ready) return null;
+  if (DASHBOARD_LOGIN_REQUIRED && !ready) return null;
 
-  if (sessionEmail) {
-    return <FenderBrandCanvas userMenu={{ email: sessionEmail }} viewerId={sessionEmail} />;
+  if (!DASHBOARD_LOGIN_REQUIRED || sessionEmail || guest) {
+    return (
+      <FenderBrandCanvas
+        userMenu={sessionEmail ? { email: sessionEmail } : undefined}
+        viewerId={sessionEmail ?? undefined}
+      />
+    );
   }
-
-  if (guest) return <FenderBrandCanvas />;
 
   return <DashboardAuthView mode="login" next={next} />;
 }

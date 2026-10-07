@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { DashboardAuthView } from "../components/dashboard/DashboardAuthView";
 import { FenderBrandCanvas } from "../components/v3/FenderBrandCanvas";
-import { GUEST_DASHBOARD_COOKIE } from "../lib/auth/guest-dashboard.constants";
+import {
+  DASHBOARD_LOGIN_REQUIRED,
+  GUEST_DASHBOARD_COOKIE,
+} from "../lib/auth/guest-dashboard.constants";
 
 function readGuestAccess(): boolean {
   try {
@@ -24,13 +27,13 @@ function StandaloneFenderApp() {
     return () => window.removeEventListener("ifai-guest-dashboard", onGuest);
   }, []);
 
-  if (!ready) return null;
+  if (DASHBOARD_LOGIN_REQUIRED && !ready) return null;
 
-  if (!guest) {
-    return <DashboardAuthView mode="login" />;
+  if (!DASHBOARD_LOGIN_REQUIRED || guest) {
+    return <FenderBrandCanvas />;
   }
 
-  return <FenderBrandCanvas />;
+  return <DashboardAuthView mode="login" />;
 }
 
 const root = document.getElementById("root");
