@@ -2,7 +2,6 @@
 
 import type { MouseEvent } from "react";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
-import { publicAssetPath } from "@/lib/public-asset";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
 const IOM_STAT_PILL_FONT = 10;
@@ -362,7 +361,7 @@ function CenteredFace({
         {logoSrc ? (
           <image
             className="hub-logo"
-            href={publicAssetPath(logoSrc)}
+            href={logoSrc}
             x={-60}
             y={-72}
             width={120}
