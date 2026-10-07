@@ -124,7 +124,7 @@ export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
   const rows = typeof state === "object" ? state.rows : null;
 
   return (
-    <div className="suppressed-listings">
+    <div className="suppressed-listings retail-surface">
       {explanation()}
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">

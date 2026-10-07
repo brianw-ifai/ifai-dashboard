@@ -89,7 +89,7 @@ test("the headline bubble shows the finding and the issue count only", () => {
   const headline = selectRetailHeadline(source);
   const face = headlineBubble(source);
   assert.equal(headline?.label, "Suppressed Listings");
-  assert.equal(face.subTab, headline?.label);
+  assert.equal(face.subTab, "Retail Overview");
   assert.deepEqual(face.stats, ["Suppressed Listings", "1 listing"]);
   assert.equal(face.meta, undefined);
   assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
@@ -136,7 +136,8 @@ test("a higher unfinished reading is not replaced by a later count", () => {
     mapLeakage: mapLeakageFinding([mapRow(-4), mapRow(-6)]),
   });
   const face = headlineBubble(source);
-  assert.equal(face.subTab, "Suppressed Listings");
+  assert.equal(face.subTab, "Retail Overview");
+  assert.equal(face.stats[0], "Suppressed Listings");
   assert.doesNotMatch(face.stats.join(" "), /2 listings/);
 });
 

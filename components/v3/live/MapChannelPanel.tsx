@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
@@ -9,7 +10,6 @@ import {
   listingChannelFacts,
   listingLabel,
   mapTabModel,
-  type ChannelFact,
   type ChannelPriceRow,
   type MapSourceRow,
   type MapTabModel,
@@ -63,25 +63,8 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
   }
 }
 
-function ChannelCell({ fact, href }: { fact: ChannelFact | undefined; href?: string | null }) {
-  if (!fact || (fact.price == null && fact.gap == null)) return <td className="money channel-fact" />;
-  const below = fact.gap != null && fact.gap < 0;
-  const price = fact.price != null ? formatUsd(fact.price) : null;
-  return (
-    <td className="money channel-fact">
-      {price != null && href ? (
-        <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer" aria-label={`${fact.name} price ${price}`}>
-          {price}
-        </a>
-      ) : null}
-      {price != null && !href ? <span>{price}</span> : null}
-      {fact.gap != null ? (
-        <span className="channel-gap" style={below ? { color: "var(--danger-red)" } : undefined}>
-          {formatUsd(fact.gap, { signed: true })}
-        </span>
-      ) : null}
-    </td>
-  );
+function RetailSurface({ children }: { children: ReactNode }) {
+  return <div className="retail-surface">{children}</div>;
 }
 
 function mapColumns(model: MapTabModel): RetailColumn[] {
@@ -187,27 +170,27 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
 
   if (failed) {
     return (
-      <>
+      <RetailSurface>
         {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
           <p className="retail-missing">Below-MAP rows are not available.</p>
         </div>
-      </>
+      </RetailSurface>
     );
   }
 
   if (!rows) {
     return (
-      <>
+      <RetailSurface>
         {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
           <p className="retail-missing">Loading MAP rows…</p>
         </div>
-      </>
+      </RetailSurface>
     );
   }
 
@@ -230,7 +213,7 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
   ];
 
   return (
-    <>
+    <RetailSurface>
       {mapDefinition()}
 
       <div className="content-box" style={{ marginTop: 12 }}>
@@ -287,19 +270,19 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
                       <td className="money">
                         {row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}
                       </td>
-                      {model.showAmazon ? <ChannelCell fact={facts.get("amazon")} /> : null}
+                      {model.showAmazon ? <ChannelPriceCell fact={facts.get("amazon")} /> : null}
                       {model.showWalmart ? (
-                        <ChannelCell fact={facts.get("walmart")} href={walmartUrl} />
+                        <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} />
                       ) : null}
                       {model.showMusiciansFriend ? (
-                        <ChannelCell fact={facts.get("musicians-friend")} />
+                        <ChannelPriceCell fact={facts.get("musicians-friend")} />
                       ) : null}
                       {model.extraChannels.map((channel) => {
                         const cell: PricedChannelCell | undefined = prices
                           .get(row.asin.trim())
                           ?.get(channel.channel);
                         return (
-                          <ChannelCell
+                          <ChannelPriceCell
                             key={channel.channel}
                             fact={facts.get(channel.channel)}
                             href={cell ? httpUrl(cell.url) : null}
@@ -314,6 +297,6 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
           </ResizableTable>
         </div>
       </div>
-    </>
+    </RetailSurface>
   );
 }

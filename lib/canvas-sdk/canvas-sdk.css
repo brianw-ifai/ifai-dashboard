@@ -3225,7 +3225,7 @@
     }
 
     /* Portfolio cards stay on the dark surface in both themes. */
-    .ifai-canvas.theme-iom .table-freeze-head .resizable-th {
+    .ifai-canvas.theme-iom:not(.light-theme) .table-freeze-head .resizable-th {
       background: rgba(12, 28, 47, 0.98);
       color: #94a3b8;
     }

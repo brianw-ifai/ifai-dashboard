@@ -192,7 +192,7 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
   const gaps = specs.detail?.gaps ?? [];
 
   return (
-    <div className="catalog-governance">
+    <div className="catalog-governance retail-surface">
       <div className="ceo-callout">
         <div className="ceo-callout-header">
           <span>What is catalog governance?</span>

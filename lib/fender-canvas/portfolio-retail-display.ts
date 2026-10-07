@@ -151,6 +151,7 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
       stats: ["0 listings"],
       meta: "Stored zeros",
       status: "success",
+      subTab: RETAIL_OVERVIEW_TAB,
       tooltip: {
         title: "Portfolio Retail",
         desc: "Suppressed Featured Offers, MAP leakage, and unnested bundles are each a stored zero.",
@@ -168,7 +169,7 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
     title: "Portfolio Retail",
     stats: [headline.label, ...(count ? [count] : [])],
     status: tone(headline.reading),
-    subTab: headline.label,
+    subTab: RETAIL_OVERVIEW_TAB,
     tooltip: { title: headline.label, desc: tooltip },
   };
 }
@@ -238,7 +239,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "loading") {
     const desc = "The retail reading is still loading.";
     return {
-      main: waitingFace("Portfolio Retail", undefined, ["Loading"], desc),
+      main: waitingFace("Portfolio Retail", RETAIL_OVERVIEW_TAB, ["Loading"], desc),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
@@ -248,7 +249,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "error") {
     const desc = "The retail read could not be loaded.";
     return {
-      main: waitingFace("Portfolio Retail", undefined, ["Read failed"], desc),
+      main: waitingFace("Portfolio Retail", RETAIL_OVERVIEW_TAB, ["Read failed"], desc),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),

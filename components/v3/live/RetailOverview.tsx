@@ -59,7 +59,7 @@ function Findings({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
 
 export function RetailOverview({ read }: { read: RetailCanvasRead }) {
   return (
-    <div className="retail-health">
+    <div className="retail-health retail-surface">
       <div className="ceo-callout">
         <div className="ceo-callout-header">
           <span>How do these retail findings change AI search?</span>
