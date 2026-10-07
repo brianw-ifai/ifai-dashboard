@@ -12,6 +12,10 @@ type Props = CanvasUserMenu & {
   lightTheme?: boolean;
   onThemeToggle?: () => void;
   showThemeToggle?: boolean;
+  menuOpen?: boolean;
+  onMenuOpenChange?: (open: boolean) => void;
+  profileOpen?: boolean;
+  onProfileOpenChange?: (open: boolean) => void;
 };
 
 function emailLocalPart(email: string) {
@@ -31,15 +35,39 @@ export function UserMenuDropdown({
   lightTheme = false,
   onThemeToggle,
   showThemeToggle = false,
+  menuOpen: menuOpenControlled,
+  onMenuOpenChange,
+  profileOpen: profileOpenControlled,
+  onProfileOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [openUncontrolled, setOpenUncontrolled] = useState(false);
+  const [profileOpenUncontrolled, setProfileOpenUncontrolled] = useState(false);
+  const open = menuOpenControlled ?? openUncontrolled;
+  const profileOpen = profileOpenControlled ?? profileOpenUncontrolled;
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const label = displayName?.trim() || emailLocalPart(email);
 
-  const closeMenu = useCallback(() => setOpen(false), []);
-  const closeProfile = useCallback(() => setProfileOpen(false), []);
+  const setOpen = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof value === "function" ? value(open) : value;
+      onMenuOpenChange?.(next);
+      if (menuOpenControlled === undefined) setOpenUncontrolled(next);
+    },
+    [menuOpenControlled, onMenuOpenChange, open],
+  );
+
+  const setProfileOpen = useCallback(
+    (value: boolean | ((prev: boolean) => boolean)) => {
+      const next = typeof value === "function" ? value(profileOpen) : value;
+      onProfileOpenChange?.(next);
+      if (profileOpenControlled === undefined) setProfileOpenUncontrolled(next);
+    },
+    [onProfileOpenChange, profileOpen, profileOpenControlled],
+  );
+
+  const closeMenu = useCallback(() => setOpen(false), [setOpen]);
+  const closeProfile = useCallback(() => setProfileOpen(false), [setProfileOpen]);
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +103,7 @@ export function UserMenuDropdown({
         aria-haspopup="menu"
         aria-controls={menuId}
         title={email}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => setOpen(!open)}
       >
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

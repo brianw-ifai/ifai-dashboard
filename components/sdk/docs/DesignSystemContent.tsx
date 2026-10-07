@@ -105,7 +105,7 @@ export function DesignSystemContent() {
       <p className="sdk-docs-lede">
         Every creative element the SDK uses to display data — fonts, tokens, bubbles, pills, edges,
         topology, KPI cards, tables, and chrome — rendered from the same primitives as{" "}
-        <a href="/">the home canvas</a>. There are no bar, line, or pie chart components; quantitative data
+        <a href="/dashboard">the client canvas</a>. There are no bar, line, or pie chart components; quantitative data
         lives in the graph, metric cards, tables, and progress bars below.
       </p>
 

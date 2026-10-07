@@ -5,13 +5,13 @@ export class Canvas {
   constructor(readonly page: Page) {}
 
   async open() {
-    await this.page.goto("/");
+    await this.page.goto("/dashboard");
     const skipLogin = this.page.getByRole("button", { name: "Skip Login" });
     if (await skipLogin.isVisible().catch(() => false)) {
       await skipLogin.click();
+      await expect(this.page.locator(".graph-node").first()).toBeVisible();
     }
-    await expect(this.page.locator(".ifai-canvas")).toBeVisible();
-    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
+    await expect(this.page.locator(".ifai-canvas.panel-hidden")).toBeVisible();
   }
 
   /** Opens a spoke from the map column layout (panel starts hidden on IOM). */

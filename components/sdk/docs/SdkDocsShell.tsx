@@ -159,9 +159,9 @@ export function SdkDocsShell({ children }: { children: ReactNode }) {
               aria-label="Filter documentation"
             />
           </div>
-          <a className="sdk-docs-header-link" href="/">
+          <a className="sdk-docs-header-link" href="/dashboard">
             <ExternalLink size={12} />
-            Home canvas
+            Client dashboard
           </a>
         </div>
       </header>

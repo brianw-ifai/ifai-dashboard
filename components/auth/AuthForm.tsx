@@ -101,7 +101,7 @@ function AuthFormFields({
       {mode === "signup" ? (
         <p className="auth-form-footer">
           Already have an account?{" "}
-          <Link href={next ? `/?next=${encodeURIComponent(next)}` : "/"}>
+          <Link href={next ? `/dashboard?next=${encodeURIComponent(next)}` : "/dashboard"}>
             Log in
           </Link>
         </p>

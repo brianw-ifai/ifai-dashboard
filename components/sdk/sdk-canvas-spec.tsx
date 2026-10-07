@@ -43,7 +43,7 @@ export const sdkCanvasSpec = defineCanvas({
     logoSrc: "/icon.png",
     badge: "Developer Preview",
   },
-  headerActions: [{ label: "Open home", href: "/" }],
+  headerActions: [{ label: "Open dashboard", href: "/dashboard" }],
   filters: [
     { value: "all", label: "Entire SDK surface", target: "overview" },
     { value: "shell", label: "Shell chrome (header, HUD, theme)", target: "shell" },

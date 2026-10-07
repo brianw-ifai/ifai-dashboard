@@ -18,8 +18,8 @@ const STASH_PATHS = [
 ];
 
 const PAGE_SWAP = [
-  ["app/(canvas)/page.tsx", "app/(canvas)/page.dynamic.tsx"],
-  ["app/(canvas)/page.static.tsx", "app/(canvas)/page.tsx"],
+  ["app/(canvas)/dashboard/page.tsx", "app/(canvas)/dashboard/page.dynamic.tsx"],
+  ["app/(canvas)/dashboard/page.static.tsx", "app/(canvas)/dashboard/page.tsx"],
 ];
 
 const ACTION_SHIMS = [
@@ -83,8 +83,8 @@ if (mode === "stash") {
   }
 } else if (mode === "restore") {
   const RESTORE_PAGE = [
-    ["app/(canvas)/page.tsx", "app/(canvas)/page.static.tsx"],
-    ["app/(canvas)/page.dynamic.tsx", "app/(canvas)/page.tsx"],
+    ["app/(canvas)/dashboard/page.tsx", "app/(canvas)/dashboard/page.static.tsx"],
+    ["app/(canvas)/dashboard/page.dynamic.tsx", "app/(canvas)/dashboard/page.tsx"],
   ];
   // If only the static swap ran, page.dynamic.tsx may not exist.
   for (const [fromRel, toRel] of RESTORE_PAGE) {

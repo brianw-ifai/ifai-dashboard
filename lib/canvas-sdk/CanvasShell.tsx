@@ -23,6 +23,8 @@ import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
 import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
+import { useCanvasUrlApply } from "@/lib/canvas-sdk/useCanvasUrlApply";
+import { useCanvasUrlSync } from "@/lib/canvas-sdk/useCanvasUrlSync";
 import {
   ChevronLeft,
   Compass,
@@ -173,6 +175,8 @@ export function CanvasShell({ spec, children }: Props) {
     !iom && commandCenter?.openByDefault ? "command" : "spoke",
   );
   const [windowWidth, setWindowWidth] = useState(0);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   /* These refs exist so the document-level pointer/key listeners can read the
      latest values without being re-registered on every change. They are written
@@ -896,6 +900,53 @@ export function CanvasShell({ spec, children }: Props) {
     setPanelLayout("wide");
   }
 
+  const clearDeepLinkView = useCallback(() => {
+    if (panelViewRef.current === "command") setPanelView("spoke");
+    if (!activeSpokeRef.current) return;
+    if (iom) {
+      hidePanel();
+      setActiveSpoke(null);
+      frameOverview();
+      return;
+    }
+    closeDrilldown();
+  }, [closeDrilldown, frameOverview, hidePanel, iom]);
+
+  const applyCanvasUrl = useCanvasUrlApply({
+    spec,
+    commandCenter,
+    iom,
+    focusNode,
+    enterTour,
+    suspendTour,
+    openCommandCenter,
+    clearDeepLinkView,
+    setPanelLayout,
+    setUserMenuOpen,
+    setProfileOpen,
+  });
+
+  const spokeIds = useMemo(() => Object.keys(spec.spokes), [spec.spokes]);
+  const urlSpoke = activeSpoke ? spec.spokes[activeSpoke] : null;
+
+  useCanvasUrlSync({
+    spokeIds,
+    enabled: true,
+    snapshot: {
+      spokeId: activeSpoke,
+      activeTab,
+      tabLabels: urlSpoke?.tabs ?? [],
+      panelView,
+      panelLayout,
+      tourActive,
+      tourStep,
+      tourSuspended,
+      menuOpen: userMenuOpen,
+      profileOpen,
+    },
+    onApplyFromUrl: applyCanvasUrl,
+  });
+
   const spoke = activeSpoke ? spec.spokes[activeSpoke] : null;
   const currentTour = tourSteps[tourStep];
   const spokeBody = spoke ? spoke.render(activeTab) : null;
@@ -1094,6 +1145,10 @@ export function CanvasShell({ spec, children }: Props) {
                 lightTheme={lightTheme}
                 showThemeToggle={showThemeToggle}
                 onThemeToggle={() => setLightTheme((value) => !value)}
+                menuOpen={userMenuOpen}
+                onMenuOpenChange={setUserMenuOpen}
+                profileOpen={profileOpen}
+                onProfileOpenChange={setProfileOpen}
               />
             ) : showThemeToggle ? (
               <button

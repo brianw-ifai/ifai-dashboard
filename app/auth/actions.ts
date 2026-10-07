@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import { safeNextPath } from "@/lib/auth/paths";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,7 +36,7 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     options: { emailRedirectTo: `${origin}/auth/confirm` },
   });
   if (error) return { error: error.message };
-  if (data.session) redirect("/");
+  if (data.session) redirect(DASHBOARD_PATH);
   return {
     notice: `Check ${email} for a confirmation link. After you open it, log in with the same password.`,
   };
@@ -44,5 +45,5 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/");
+  redirect(DASHBOARD_PATH);
 }

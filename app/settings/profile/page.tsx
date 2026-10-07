@@ -4,7 +4,7 @@ import { commandSessionToUserMenu, getCommandSession } from "@/lib/command/sessi
 
 export default async function ProfileSettingsPage() {
   const session = await getCommandSession();
-  if (!session) redirect("/?next=/settings/profile");
+  if (!session) redirect("/dashboard?profile=1");
 
   const menu = commandSessionToUserMenu(session);
 

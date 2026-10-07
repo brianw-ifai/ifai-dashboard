@@ -8,7 +8,7 @@ export function GetStartedContent() {
       <p className="sdk-docs-eyebrow">Get started</p>
       <h1 id="overview">Build intelligence canvases from a spec</h1>
       <p className="sdk-docs-lede">
-        The kernel behind the Fender map at <a href="/">the home page</a>. Pass a <code>CanvasSpec</code> and
+        The kernel behind the Fender map at <a href="/dashboard">the client dashboard</a>. Pass a <code>CanvasSpec</code> and
         you get chrome, camera, graph, drilldown, and tour — or wrap any other component in the same
         shell.
       </p>

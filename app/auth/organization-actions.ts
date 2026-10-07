@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import {
   ACTIVE_ORGANIZATION_SETTINGS_KEY,
   membershipForOrganization,
@@ -11,13 +12,13 @@ import { createClient, getAuthUserId } from "@/lib/supabase/server";
 
 export async function setActiveOrganization(formData: FormData) {
   const userId = await getAuthUserId();
-  if (!userId) redirect("/");
+  if (!userId) redirect(DASHBOARD_PATH);
 
   const organizationId = String(formData.get("organizationId") ?? "").trim();
   if (!organizationId) return;
 
   const session = await getCommandSession();
-  if (!session) redirect("/");
+  if (!session) redirect(DASHBOARD_PATH);
 
   const membership = membershipForOrganization(session.memberships, organizationId);
   if (!membership || membership.organization.isPlatformOrg) return;
@@ -35,6 +36,6 @@ export async function setActiveOrganization(formData: FormData) {
 
   if (error) return;
 
-  revalidatePath("/");
+  revalidatePath(DASHBOARD_PATH);
   revalidatePath("/settings/profile");
 }

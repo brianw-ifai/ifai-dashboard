@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DashboardAuthView } from "@/components/dashboard/DashboardAuthView";
 import { FenderBrandCanvas } from "@/components/v3/FenderBrandCanvas";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +13,8 @@ function readGuestCookie(): boolean {
 }
 
 export function HomeCanvasDynamic() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? undefined;
   const [ready, setReady] = useState(false);
   const [guest, setGuest] = useState(false);
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
@@ -42,5 +45,5 @@ export function HomeCanvasDynamic() {
 
   if (guest) return <FenderBrandCanvas />;
 
-  return <DashboardAuthView mode="login" />;
+  return <DashboardAuthView mode="login" next={next} />;
 }

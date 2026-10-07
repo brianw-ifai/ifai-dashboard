@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { DASHBOARD_PATH } from "@/lib/auth/dashboard-path";
 import {
   GUEST_DASHBOARD_COOKIE,
   guestDashboardCookieOptions,
@@ -10,5 +11,5 @@ import {
 export async function enterGuestDashboard(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(GUEST_DASHBOARD_COOKIE, "1", guestDashboardCookieOptions);
-  redirect("/");
+  redirect(DASHBOARD_PATH);
 }
