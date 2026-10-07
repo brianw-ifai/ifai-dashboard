@@ -119,15 +119,15 @@ export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
               Source fields: offer price, Competitive External Price, and Featured Offer withheld.
               The gap is the offer, including shipping, minus that external price.
             </p>
-            <div style={{ overflowX: "auto" }}>
+            <div className="table-scroll">
               <table className="table-sm">
                 <thead>
                   <tr>
                     <th>Listing</th>
-                    <th>Offer price</th>
-                    <th>Competitive External Price</th>
+                    <th className="money">Offer price</th>
+                    <th className="money">Competitive External Price</th>
                     <th>Featured Offer withheld</th>
-                    <th>Above benchmark</th>
+                    <th className="money">Above benchmark</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -160,14 +160,14 @@ export function SuppressedListingsPanel({ read }: { read: RetailCanvasRead }) {
                               <span className="asin-chip">{row.asin}</span>
                             )}
                           </td>
-                          <td>{formatUsd(row.offer_price)}</td>
-                          <td>
+                          <td className="money">{formatUsd(row.offer_price)}</td>
+                          <td className="money">
                             {row.competitive_price_threshold_cents != null
                               ? formatUsd(row.competitive_price_threshold_cents / 100)
                               : ""}
                           </td>
                           <td>{row.featured_offer_withheld === true ? "Yes" : "No"}</td>
-                          <td style={{ color: "var(--danger-red)", fontWeight: 700 }}>
+                          <td className="money" style={{ color: "var(--danger-red)", fontWeight: 700 }}>
                             {formatUsd(gap, { signed: true })}
                           </td>
                         </tr>
