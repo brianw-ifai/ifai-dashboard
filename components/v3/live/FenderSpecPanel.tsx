@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { specRowsQuery } from "@/lib/canvasData";
+import { useEffect, useState } from "react";
+import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
+import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
 import {
   specFenderFoundLabel,
   specModelTitle,
@@ -10,34 +11,23 @@ import {
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
 
-export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }) {
-  const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
-  const [page, setPage] = useState(0);
-  const [total, setTotal] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const pageSize = 50;
+const MISSING_PAGE_DESC =
+  "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data, count } = await specRowsQuery(page, pageSize);
-    setRows((data ?? []) as CanvasSpecReadinessRow[]);
-    setTotal(count ?? null);
-    setLoading(false);
-  }, [page]);
+/** The list opens on the two heaviest fields. The control reveals the rest. */
+const MISSING_FIELD_PREVIEW = 2;
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const topMissing = missing.slice(0, 8);
-  const maxCount = topMissing.reduce((m, r) => Math.max(m, r.sku_count ?? 0), 0) || 1;
+function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const maxCount = missing.reduce((max, row) => Math.max(max, row.sku_count ?? 0), 0) || 1;
+  const shown = showAll ? missing : missing.slice(0, MISSING_FIELD_PREVIEW);
+  const rest = missing.length - MISSING_FIELD_PREVIEW;
 
   return (
-    <>
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Top missing schema fields</div>
-        {topMissing.map((row) => (
+    <div className="content-box" style={{ marginTop: 12 }}>
+      <div className="content-box-title">Top missing schema fields</div>
+      <div id="spec-missing-fields">
+        {shown.map((row) => (
           <div key={`${row.source}-${row.field}`} style={{ marginBottom: 6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
               <span>
@@ -54,14 +44,112 @@ export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }
           </div>
         ))}
       </div>
+      {rest > 0 ? (
+        <button
+          type="button"
+          className="segmented-btn"
+          aria-expanded={showAll}
+          aria-controls="spec-missing-fields"
+          data-spec-missing-fields-toggle={showAll ? "all" : "preview"}
+          onClick={() => setShowAll((value) => !value)}
+        >
+          {showAll ? "Show fewer fields" : `Show all ${formatInt(missing.length)} fields`}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
-      <div className="content-box" style={{ marginTop: 12 }}>
+export function FenderSpecPanel({
+  missing,
+  catalogReadiness = false,
+  missingPagesOnly = false,
+}: {
+  missing: CanvasSpecMissingRow[];
+  /** AI Readiness passes this. Any other caller gets the Machine Readability gap list. */
+  catalogReadiness?: boolean;
+  missingPagesOnly?: boolean;
+}) {
+  if (!catalogReadiness) return <SchemaAdditionalPropertyList />;
+  return <CatalogSpecReadiness missing={missing} missingPagesOnly={missingPagesOnly} />;
+}
+
+function CatalogSpecReadiness({
+  missing,
+  missingPagesOnly,
+}: {
+  missing: CanvasSpecMissingRow[];
+  missingPagesOnly: boolean;
+}) {
+  const queryMissingPages =
+    specRowsFilter(true, missingPagesOnly)?.missingFenderPage === true;
+  const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [seenFilter, setSeenFilter] = useState(queryMissingPages);
+  const pageSize = 50;
+
+  if (seenFilter !== queryMissingPages) {
+    setSeenFilter(queryMissingPages);
+    setPage(0);
+    setRows([]);
+    setTotal(null);
+    setLoading(true);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    void specRowsQuery(
+      page,
+      pageSize,
+      queryMissingPages ? { missingFenderPage: true } : undefined,
+    ).then(
+      ({ data, count }) => {
+        if (cancelled) return;
+        setRows((data ?? []) as CanvasSpecReadinessRow[]);
+        setTotal(count ?? null);
+        setLoading(false);
+      },
+      () => {
+        if (cancelled) return;
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [page, queryMissingPages]);
+
+  const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+
+  return (
+    <>
+      <MissingFieldList missing={missing} />
+
+      <div className="content-box" style={{ marginTop: 12 }} id="spec-readiness-by-asin">
         <div className="content-box-title">
           <span>Spec readiness by ASIN</span>
           {total != null ? (
             <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
           ) : null}
         </div>
+        {queryMissingPages ? (
+          <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "8px 0" }}>
+            A{" "}
+            <span
+              className="ifai-term"
+              data-ifai-tooltip-title="missing page"
+              data-ifai-tooltip-desc={MISSING_PAGE_DESC}
+              tabIndex={0}
+              aria-label={`missing page: ${MISSING_PAGE_DESC}`}
+            >
+              missing page
+            </span>{" "}
+            means this check did not resolve a fender.com address. It is not proof the product is
+            absent from fender.com.
+          </p>
+        ) : null}
         <div style={{ overflowX: "auto" }}>
           <table className="table-sm">
             <thead>
@@ -77,6 +165,15 @@ export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }
               {loading && rows.length === 0 ? (
                 <tr>
                   <td colSpan={5}>Loading…</td>
+                </tr>
+              ) : null}
+              {!loading && rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    {queryMissingPages
+                      ? "No checked SKUs in this read are missing a stored fender.com page."
+                      : "No spec rows in this read."}
+                  </td>
                 </tr>
               ) : null}
               {rows.map((row) => {

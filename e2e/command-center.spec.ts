@@ -77,7 +77,7 @@ test.describe("command center", () => {
   const routes = [
     ["Suppressed Listings", "Retail Overview"],
     ["AI assistants are quoting specs", "Hallucination"],
-    ["machine-readable spec", "Schema"],
+    ["machine-readable spec", "Machine Readability"],
     ["below MAP", "MAP"],
     ["Beginner share of voice", "Battlecards"],
     ["A+ comparison tables", "A+"],

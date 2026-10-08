@@ -58,9 +58,9 @@
       "title": "AI Readiness: Product Specs & Schema.org",
       "desc": "Across {spec_checked} checked SKUs, site search found a fender.com product page for {fender_found_ratio} ({spec_fender_found_pct}). {spec_missing_additional_property} found pages are missing Schema.org additionalProperty.",
       "tabs": [
-        "Catalog Readiness & Executive Guide",
-        "Machine-Readable Schema.org JSON-LD Audit",
-        "Amazon A+ Comparison Matrix Blueprint"
+        "AI Readiness",
+        "Machine Readability",
+        "Amazon A+ Matrix"
       ],
       "navLabel": "AI Readiness",
       "next": "suggestions",

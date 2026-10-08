@@ -34,6 +34,9 @@ export function tabSlug(label: string): string {
 /** Slugs already copied from an earlier tab title. They still open that tab. */
 const TAB_SLUG_ALIASES: Record<string, string> = {
   "executive-briefing-buy-box-coverage": "executive-briefing",
+  "catalog-readiness-executive-guide": "ai-readiness",
+  "machine-readable-schema-org-json-ld-audit": "machine-readability",
+  "amazon-a-comparison-matrix-blueprint": "amazon-a-matrix",
 };
 
 export function tabIndexFromSlug(tabs: string[], slug: string | null): number {

@@ -6,7 +6,6 @@ import { ResizableTable, type RetailColumn } from "@/components/v3/live/Resizabl
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type {
-  AmazonSpecGap,
   RetailReading,
   UnnestedBundleOpportunity,
 } from "@/lib/fender-canvas/portfolio-retail";
@@ -19,12 +18,6 @@ const BUNDLE_COLUMNS: RetailColumn[] = [
   { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
   { id: "parent", name: "Parent ASIN", label: "Parent ASIN", width: 128, minWidth: 108, className: "asin-col" },
   { id: "why", name: "Why it is here", label: "Why it is here", width: 280, minWidth: 140 },
-];
-
-const SPEC_COLUMNS: RetailColumn[] = [
-  { id: "listing", name: "Listing", label: "Listing", width: 240, minWidth: 120 },
-  { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
-  { id: "missing", name: "Missing Amazon fields", label: "Missing Amazon fields", width: 320, minWidth: 160 },
 ];
 
 function amazonHref(asin: string): string | null {
@@ -147,34 +140,28 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
   );
 }
 
-function SpecRows({ rows }: { rows: AmazonSpecGap[] }) {
-  const [page, setPage] = useState(0);
-  const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
+function AmazonSpecGapCount({ reading }: { reading: RetailReading<unknown> }) {
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  const count = reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount);
   return (
-    <>
-      <ResizableTable tableId="catalog-specs" columns={SPEC_COLUMNS}>
-          <tbody>
-            {slice.length === 0 ? (
-              <tr>
-                <td colSpan={3}>No checked listing is missing an Amazon spec field.</td>
-              </tr>
-            ) : (
-              slice.map((row) => (
-                <tr key={row.asin}>
-                  <td>
-                    <strong>{row.modelOrTitle ?? "Listing"}</strong>
-                  </td>
-                  <td className="asin-col">
-                    <AsinLink asin={row.asin} href={amazonHref(row.asin)} />
-                  </td>
-                  <td>{row.missingFields.join("; ")}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-      </ResizableTable>
-      <Pager page={page} total={rows.length} onPage={setPage} />
-    </>
+    <div className="content-box">
+      <button
+        type="button"
+        className="retail-finding-hit"
+        data-ifai-open="specs"
+        data-ifai-tab="AI Readiness"
+        data-spec-open="ai-readiness"
+        aria-label={`${count} checked listings with a missing Amazon spec field. Opens AI Readiness.`}
+      >
+        <span className="metric-card-label">Checked listings with a missing Amazon spec field</span>
+        <span className="metric-card-val" data-amazon-spec-gap-count={reading.issueCount ?? ""}>
+          {count}
+        </span>
+      </button>
+      {showMissing && reading.missingMessage ? (
+        <p className="retail-missing">{reading.missingMessage}</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -189,7 +176,6 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
   const bundles = read.snapshot.unnestedBundles;
   const specs = read.snapshot.amazonSpecGaps;
   const opportunities = bundles.detail?.opportunities ?? [];
-  const gaps = specs.detail?.gaps ?? [];
 
   return (
     <div className="catalog-governance retail-surface">
@@ -213,20 +199,7 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
         {bundles.detail ? <BundleRows rows={opportunities} /> : null}
       </div>
 
-      <div className="content-box">
-        <div className="content-box-title">
-          <span>Missing Amazon spec fields</span>
-        </div>
-        <CountLine
-          reading={specs}
-          noun={
-            specs.detail
-              ? `Checked listings with a missing Amazon spec field, out of ${formatInt(specs.detail.checked)} checked`
-              : "Checked listings with a missing Amazon spec field"
-          }
-        />
-        {specs.detail ? <SpecRows rows={gaps} /> : null}
-      </div>
+      <AmazonSpecGapCount reading={specs} />
     </div>
   );
 }
