@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { specRowsQuery } from "@/lib/canvasData";
+import { useEffect, useState } from "react";
+import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
 import {
   specFenderFoundLabel,
   specModelTitle,
@@ -10,24 +10,58 @@ import {
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
 
-export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }) {
+const MISSING_PAGE_DESC =
+  "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
+
+export function FenderSpecPanel({
+  missing,
+  catalogReadiness = false,
+  missingPagesOnly = false,
+}: {
+  missing: CanvasSpecMissingRow[];
+  /** Catalog Readiness passes this. Schema.org leaves it off and stays unfiltered. */
+  catalogReadiness?: boolean;
+  missingPagesOnly?: boolean;
+}) {
+  const queryMissingPages =
+    specRowsFilter(catalogReadiness, missingPagesOnly)?.missingFenderPage === true;
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [seenFilter, setSeenFilter] = useState(queryMissingPages);
   const pageSize = 50;
 
-  const load = useCallback(async () => {
+  if (seenFilter !== queryMissingPages) {
+    setSeenFilter(queryMissingPages);
+    setPage(0);
+    setRows([]);
+    setTotal(null);
     setLoading(true);
-    const { data, count } = await specRowsQuery(page, pageSize);
-    setRows((data ?? []) as CanvasSpecReadinessRow[]);
-    setTotal(count ?? null);
-    setLoading(false);
-  }, [page]);
+  }
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    void specRowsQuery(
+      page,
+      pageSize,
+      queryMissingPages ? { missingFenderPage: true } : undefined,
+    ).then(
+      ({ data, count }) => {
+        if (cancelled) return;
+        setRows((data ?? []) as CanvasSpecReadinessRow[]);
+        setTotal(count ?? null);
+        setLoading(false);
+      },
+      () => {
+        if (cancelled) return;
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [page, queryMissingPages]);
 
   const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const topMissing = missing.slice(0, 8);
@@ -55,13 +89,29 @@ export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }
         ))}
       </div>
 
-      <div className="content-box" style={{ marginTop: 12 }}>
+      <div className="content-box" style={{ marginTop: 12 }} id="spec-readiness-by-asin">
         <div className="content-box-title">
           <span>Spec readiness by ASIN</span>
           {total != null ? (
             <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
           ) : null}
         </div>
+        {queryMissingPages ? (
+          <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "8px 0" }}>
+            A{" "}
+            <span
+              className="ifai-term"
+              data-ifai-tooltip-title="missing page"
+              data-ifai-tooltip-desc={MISSING_PAGE_DESC}
+              tabIndex={0}
+              aria-label={`missing page: ${MISSING_PAGE_DESC}`}
+            >
+              missing page
+            </span>{" "}
+            means this check did not resolve a fender.com address. It is not proof the product is
+            absent from fender.com.
+          </p>
+        ) : null}
         <div style={{ overflowX: "auto" }}>
           <table className="table-sm">
             <thead>
@@ -77,6 +127,15 @@ export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }
               {loading && rows.length === 0 ? (
                 <tr>
                   <td colSpan={5}>Loading…</td>
+                </tr>
+              ) : null}
+              {!loading && rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    {queryMissingPages
+                      ? "No checked SKUs in this read are missing a stored fender.com page."
+                      : "No spec rows in this read."}
+                  </td>
                 </tr>
               ) : null}
               {rows.map((row) => {

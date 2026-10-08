@@ -1,8 +1,23 @@
+"use client";
+
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 
-export function FenderSpecSummary({ bundle }: { bundle: CanvasBundle }) {
+export type MissingPageControl = {
+  active: boolean;
+  onToggle: () => void;
+  onClear: () => void;
+};
+
+export function FenderSpecSummary({
+  bundle,
+  missingPageControl,
+}: {
+  bundle: CanvasBundle;
+  missingPageControl?: MissingPageControl;
+}) {
   const { m } = bundle;
+  const foundResult = `${formatPct(m.spec_fender_found_pct)} (${formatRatio(m.spec_fender_found, m.spec_checked)})`;
   return (
     <div className="content-box">
       <div className="content-box-title">Spec read</div>
@@ -21,7 +36,33 @@ export function FenderSpecSummary({ bundle }: { bundle: CanvasBundle }) {
           <tr>
             <td>fender.com page found</td>
             <td>
-              {formatPct(m.spec_fender_found_pct)} ({formatRatio(m.spec_fender_found, m.spec_checked)})
+              {missingPageControl ? (
+                <span className="segmented-control" style={{ flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className={`segmented-btn${missingPageControl.active ? " active" : ""}`}
+                    style={{ whiteSpace: "nowrap" }}
+                    aria-pressed={missingPageControl.active}
+                    aria-controls="spec-readiness-by-asin"
+                    data-spec-filter="missing-fender-page"
+                    onClick={missingPageControl.onToggle}
+                  >
+                    {foundResult}
+                  </button>
+                  {missingPageControl.active ? (
+                    <button
+                      type="button"
+                      className="segmented-btn"
+                      data-spec-filter="clear"
+                      onClick={missingPageControl.onClear}
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </span>
+              ) : (
+                foundResult
+              )}
             </td>
           </tr>
           <tr>

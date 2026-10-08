@@ -8,12 +8,9 @@ import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { FenderSimulationsPanel } from "@/components/v3/live/FenderSimulationsPanel";
+import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
 import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
-import {
-  AplusExplanation,
-  FenderSpecSummary,
-  SchemaExplanation,
-} from "@/components/v3/live/FenderSpecNarratives";
+import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/FenderSpecNarratives";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -57,12 +54,7 @@ const TAB_OVERRIDES: Partial<
     2: () => <FenderHallucinationPanel />,
   },
   specs: {
-    0: (bundle) => (
-      <>
-        <FenderSpecSummary bundle={bundle} />
-        <FenderSpecPanel missing={bundle.missing} />
-      </>
-    ),
+    0: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
     1: (bundle) => (
       <>
         <SchemaExplanation />
