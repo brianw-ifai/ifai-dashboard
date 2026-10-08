@@ -17,7 +17,7 @@ const checkedAtFormat = new Intl.DateTimeFormat("en-US", {
 });
 
 /**
- * Listings with no stored Walmart price are missing from the below-MAP count.
+ * Listings with no stored Walmart price are missing from this channel's count.
  * A missing price is not a price of zero.
  */
 export function walmartMissingPriceNote(missing: number | null): string | null {
@@ -41,9 +41,10 @@ export function musiciansFriendCheckNote(
   return `Last checked ${checkedAtFormat.format(then)}.`;
 }
 
+/** What this read stored for one channel. A below-MAP count would need Fender's MAP file. */
 export function channelSummaryText(count: number, note: string | null): string {
   const noun = count === 1 ? "listing" : "listings";
-  const lead = `${formatInt(count)} ${noun} below MAP`;
+  const lead = `${formatInt(count)} ${noun} with a stored price`;
   return note ? `${lead}. ${note}` : lead;
 }
 

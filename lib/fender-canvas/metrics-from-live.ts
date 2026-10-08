@@ -1,12 +1,12 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
+import { FENDER_MAP_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
   formatInt,
   formatPct,
   formatRatio,
-  formatUsd,
   pendingLabel,
 } from "@/lib/fender-canvas/format";
 
@@ -17,47 +17,43 @@ function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number)
   return "success" as const;
 }
 
-function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
+/** The widget waits on Fender's MAP file. Amazon's stored list price is not a substitute. */
+function belowMapMetric(retail: RetailCanvasRead): CanvasMetric {
   const base = {
     id: "flagged-asins",
     spokeId: "ecommerce" as const,
-    label: "MAP violations",
+    label: "Listings below MAP",
     subTab: "MAP",
     provenance: "live" as const,
+    tone: "warning" as const,
   };
   if (retail.phase === "loading") {
-    return {
-      ...base,
-      value: "Loading",
-      detail: "The MAP listing read is still loading.",
-      tone: "warning",
-    };
+    return { ...base, value: "Loading", detail: "The MAP listing read is still loading." };
   }
   if (retail.phase === "error") {
-    return {
-      ...base,
-      value: "Unavailable",
-      detail: "The MAP listing read did not succeed.",
-      tone: "warning",
-    };
-  }
-  const reading = retail.snapshot.mapLeakage;
-  if (reading.status === "unavailable" || reading.issueCount == null) {
-    return {
-      ...base,
-      value: "Unavailable",
-      detail: reading.missingMessage ?? "The MAP listing read did not succeed.",
-      tone: "warning",
-    };
+    return { ...base, value: "Unavailable", detail: "The MAP listing read did not succeed." };
   }
   return {
     ...base,
-    value: formatInt(reading.issueCount),
+    value: "Not stored",
+    detail: retail.snapshot.mapPrices.missingMessage ?? FENDER_MAP_NOT_STORED,
+  };
+}
+
+/** Same wait: an average gap from Amazon's list price is not an average gap below MAP. */
+function belowMapGapMetric(retail: RetailCanvasRead): CanvasMetric {
+  return {
+    id: "amazon-map-drift",
+    spokeId: "ecommerce",
+    label: "Average gap below MAP",
+    value: "Not stored",
     detail:
-      reading.status === "incomplete"
-        ? "Listings below MAP in this partial listing read. This is not a final count."
-        : "Listings below MAP in this listing read",
-    tone: reading.issueCount > 0 ? "danger" : "success",
+      retail.phase === "ready"
+        ? (retail.snapshot.mapPrices.missingMessage ?? FENDER_MAP_NOT_STORED)
+        : FENDER_MAP_NOT_STORED,
+    tone: "warning",
+    subTab: "MAP",
+    provenance: "live",
   };
 }
 
@@ -112,7 +108,7 @@ export function buildLiveMetrics(
       subTab: "Retail Overview",
       provenance: "live",
     },
-    flaggedAsins: mapViolationsMetric(retail),
+    flaggedAsins: belowMapMetric(retail),
     strandedReviews: {
       id: "stranded-reviews",
       spokeId: "ecommerce",
@@ -123,16 +119,7 @@ export function buildLiveMetrics(
       subTab: "Catalog",
       provenance: "live",
     },
-    amazonMapDrift: {
-      id: "amazon-map-drift",
-      spokeId: "ecommerce",
-      label: "Average Amazon Price Drift",
-      value: formatUsd(m.amz_avg_drift, { signed: true }),
-      detail: `Across ${formatInt(m.amz_below_map)} ASINs below MAP on Amazon`,
-      tone: "danger",
-      subTab: "MAP",
-      provenance: "live",
-    },
+    amazonMapDrift: belowMapGapMetric(retail),
     overallAiWinRate: {
       id: "overall-ai-win-rate",
       spokeId: "aeo",

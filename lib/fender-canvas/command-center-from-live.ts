@@ -6,23 +6,20 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
+import { AMAZON_LIST_PRICE_IS_NOT_MAP } from "@/lib/fender-canvas/portfolio-retail";
 import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 const MAP_CHANNEL_WHY =
-  "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.";
-
-/** The MAP tab shows this sentence while the reading is unfinished or missing. */
-function mapMissingSentence(retail: RetailCanvasRead): string | null {
-  if (retail.phase !== "ready") return null;
-  const reading = retail.snapshot.mapLeakage;
-  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
-  return showMissing ? reading.missingMessage : null;
-}
+  "Send Fender's MAP file and every stored retailer price gets a verdict. Until then the MAP tab lists the prices this read stored: Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel, and any other retailer appears only when a stored price exists for it.";
 
 function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
   const title = mapReadLine(retail).replace(/\.$/, "");
-  return { title, why: mapMissingSentence(retail) ?? MAP_CHANNEL_WHY };
+  const why =
+    retail.phase === "ready"
+      ? `${AMAZON_LIST_PRICE_IS_NOT_MAP} ${MAP_CHANNEL_WHY}`
+      : MAP_CHANNEL_WHY;
+  return { title, why };
 }
 
 /** Command center copy from the canvas reads. Unsourced counts are omitted. */
@@ -89,7 +86,7 @@ export function buildLiveCommandCenter(
         id: "map-leakage",
         title: mapItem.title,
         why: mapItem.why,
-        impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
+        impact: "The listing rows are the stored retailer prices from the latest retail listing read.",
         severity: "high",
         spokeId: "ecommerce",
         subTab: "MAP",

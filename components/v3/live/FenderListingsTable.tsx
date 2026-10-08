@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
-import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
+import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import { listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
 import {
   channelDisplayName,
@@ -23,7 +23,7 @@ const PREFERRED_EXTRAS = ["sweetwater", "reverb"];
 
 type Filter = {
   status?: string;
-  violationsOnly?: boolean;
+  offAmazonPriceOnly?: boolean;
   bundlesOnly?: boolean;
 };
 
@@ -63,7 +63,10 @@ function extraChannels(prices: ChannelPriceRow[]): { channel: string; name: stri
     .map((channel) => ({ channel, name: channelDisplayName(channel) }));
 }
 
-function exploreColumns(extras: { channel: string; name: string }[]): RetailColumn[] {
+function exploreColumns(
+  extras: { channel: string; name: string }[],
+  showAmazonListPrice: boolean,
+): RetailColumn[] {
   return [
     {
       id: "listing",
@@ -75,7 +78,7 @@ function exploreColumns(extras: { channel: string; name: string }[]): RetailColu
     },
     { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
     { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 150, minWidth: 100 },
-    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money" },
+    ...(showAmazonListPrice ? [moneyColumn("amazon-list-price", "Amazon list price")] : []),
     moneyColumn("amazon", "Amazon"),
     moneyColumn("walmart", "Walmart"),
     moneyColumn("musicians-friend", "Musician's Friend", 176),
@@ -92,13 +95,9 @@ function asMapRow(row: CanvasRetailListingRow): MapSourceRow {
     title: row.title,
     map_price: row.map_price,
     offer_price: row.offer_price,
-    amz_leakage: row.amz_leakage ?? null,
-    worst_leakage: row.worst_leakage,
     wmt_price: row.wmt_price,
-    wmt_leakage: row.wmt_leakage,
     wmt_url: row.wmt_url,
     mf_price: row.mf_price,
-    mf_leakage: row.mf_leakage,
   };
 }
 
@@ -156,7 +155,8 @@ export function FenderListingsTable() {
   }, []);
 
   const extras = extraChannels(channelPrices);
-  const columns = exploreColumns(extras);
+  const showAmazonListPrice = rows.some((row) => (row.map_price ?? 0) > 0);
+  const columns = exploreColumns(extras, showAmazonListPrice);
   const prices = channelPriceLookup(channelPrices);
   const pages = total != null ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : 1;
 
@@ -172,7 +172,7 @@ export function FenderListingsTable() {
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
         <button
           type="button"
-          className={`segmented-btn${!filter.violationsOnly && !filter.bundlesOnly ? " active" : ""}`}
+          className={`segmented-btn${!filter.offAmazonPriceOnly && !filter.bundlesOnly ? " active" : ""}`}
           onClick={() => {
             setPage(0);
             setFilter({});
@@ -182,13 +182,13 @@ export function FenderListingsTable() {
         </button>
         <button
           type="button"
-          className={`segmented-btn${filter.violationsOnly ? " active" : ""}`}
+          className={`segmented-btn${filter.offAmazonPriceOnly ? " active" : ""}`}
           onClick={() => {
             setPage(0);
-            setFilter({ violationsOnly: true });
+            setFilter({ offAmazonPriceOnly: true });
           }}
         >
-          MAP violations only
+          Priced away from Amazon
         </button>
         <button
           type="button"
@@ -255,7 +255,11 @@ export function FenderListingsTable() {
                   )}
                 </td>
                 <td>{partner}</td>
-                <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
+                {showAmazonListPrice ? (
+                  <td className="money channel-fact">
+                    {(row.map_price ?? 0) > 0 ? formatUsd(row.map_price) : null}
+                  </td>
+                ) : null}
                 <ChannelPriceCell fact={facts.get("amazon")} />
                 <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} />
                 <ChannelPriceCell fact={facts.get("musicians-friend")} />

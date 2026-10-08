@@ -14,13 +14,14 @@ import {
   suppressedBubble,
 } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import {
-  mapLeakageFinding,
+  FENDER_MAP_NOT_STORED,
+  mapPriceFinding,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
   suppressedListingsFinding,
   unnestedBundlesFinding,
   type CatalogBundleRow,
-  type MapLeakageRow,
+  type MapPriceRow,
   type PortfolioRetailFindings,
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
@@ -35,14 +36,8 @@ function suppressed(withheld: boolean | null, price = 200): SuppressionSupportRo
   };
 }
 
-function mapRow(leak: number | null): MapLeakageRow {
-  return {
-    map_price: 100,
-    offer_price: 80,
-    amz_leakage: leak,
-    wmt_leakage: null,
-    mf_leakage: null,
-  };
+function mapRow(listPrice: number | null): MapPriceRow {
+  return { asin: "B000000001", map_price: listPrice };
 }
 
 function bundle(asin: string, parent: string | null): CatalogBundleRow {
@@ -60,7 +55,7 @@ function bundle(asin: string, parent: string | null): CatalogBundleRow {
 function findings(partial: Partial<PortfolioRetailFindings> = {}): PortfolioRetailFindings {
   return {
     suppressedListings: suppressedListingsFinding([suppressed(true), suppressed(null)]),
-    mapLeakage: mapLeakageFinding([mapRow(-12.5), mapRow(4)]),
+    mapPrices: mapPriceFinding([mapRow(749.99), mapRow(null)]),
     unnestedBundles: unnestedBundlesFinding([bundle("B000000001", null), bundle("B000000002", "B000000099")]),
     amazonSpecGaps: { status: "unavailable", issueCount: null, missingMessage: "Amazon spec-field readings have not been stored.", detail: null },
     ...partial,
@@ -112,13 +107,16 @@ test("a stored zero stays zero and an unavailable reading names what is missing"
   assert.equal(missingFace.stats.join(" "), shortCoverageLine(missing.missingMessage));
 });
 
-test("MAP shows the violation count and the price gap, and catalog does not repeat it", () => {
+test("the MAP satellite names the missing MAP file and shows no count or gap", () => {
   const source = findings();
-  const map = mapBubble(source.mapLeakage);
-  assert.match(map.stats[0] ?? "", /1 below MAP/);
-  assert.match(map.stats.join(" "), /-\$12\.50 gap/);
-  assert.match(map.tooltip.desc, /price gap, not a revenue estimate/i);
+  const map = mapBubble(source.mapPrices);
+  assert.equal(map.title, "MAP Prices");
+  assert.deepEqual(map.stats, [FENDER_MAP_NOT_STORED]);
+  assert.equal(map.status, "warning");
   assert.equal(map.subTab, "MAP");
+  assert.match(map.tooltip.desc, /copied from Keepa/);
+  assert.doesNotMatch(visible(map), /\$|749\.99|gap/);
+  assert.doesNotMatch(visible(map), /\d+ below MAP/);
 
   const catalog = catalogBubble(source.unnestedBundles);
   assert.match(catalog.stats[0] ?? "", /1 bundle/);
@@ -133,7 +131,7 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
 test("a higher unfinished reading is not replaced by a later count", () => {
   const source = findings({
     suppressedListings: suppressedListingsFinding(null),
-    mapLeakage: mapLeakageFinding([mapRow(-4), mapRow(-6)]),
+    mapPrices: mapPriceFinding([mapRow(100), mapRow(200)]),
   });
   const face = headlineBubble(source);
   assert.equal(face.subTab, "Retail Overview");

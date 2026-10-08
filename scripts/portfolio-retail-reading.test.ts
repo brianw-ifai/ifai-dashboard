@@ -6,13 +6,11 @@ function row(overrides: Partial<MapSourceRow> & Pick<MapSourceRow, "asin">): Map
   return {
     model_name: overrides.asin,
     title: null,
-    map_price: 100,
+    map_price: null,
     offer_price: 80,
-    worst_leakage: -20,
     wmt_price: null,
     wmt_url: null,
     mf_price: null,
-    mf_leakage: null,
     ...overrides,
   };
 }
@@ -22,14 +20,12 @@ test("channels appear only when this read stored a price", () => {
     row({
       asin: "B000000001",
       offer_price: 80,
-      worst_leakage: -20,
       wmt_price: 77.5,
       wmt_url: "https://www.walmart.com/ip/1",
       mf_price: 79,
-      mf_leakage: -21,
     }),
-    row({ asin: "B000000002", offer_price: 90, worst_leakage: -10, wmt_url: "https://www.walmart.com/ip/skip" }),
-    row({ asin: "B000000003", offer_price: 70, worst_leakage: -30, wmt_price: 65 }),
+    row({ asin: "B000000002", offer_price: 90, wmt_url: "https://www.walmart.com/ip/skip" }),
+    row({ asin: "B000000003", offer_price: 70, wmt_price: 65 }),
   ]);
 
   assert.equal(model.count, 3);
@@ -37,27 +33,25 @@ test("channels appear only when this read stored a price", () => {
     model.channels.map((channel) => channel.name),
     ["Amazon", "Walmart", "Musician's Friend"],
   );
+  assert.equal(model.channels[0]?.count, 3);
   assert.equal(model.channels[1]?.count, 2);
   assert.equal(model.channels[2]?.count, 1);
   assert.equal(model.showWalmart, true);
   assert.equal(model.showMusiciansFriend, true);
-  assert.equal(model.combinedGap, -60);
-  assert.equal(model.averageGap, -20);
+  assert.equal(model.showAmazonListPrice, false);
 });
 
 test("Amazon-only rows do not invent Walmart or Musician's Friend", () => {
-  const model = mapTabModel([row({ asin: "B000000004", offer_price: 40, map_price: 50, worst_leakage: -10 })]);
+  const model = mapTabModel([row({ asin: "B000000004", offer_price: 40, map_price: 50 })]);
   assert.deepEqual(model.channels.map((channel) => channel.name), ["Amazon"]);
   assert.equal(model.showWalmart, false);
   assert.equal(model.showMusiciansFriend, false);
+  assert.equal(model.showAmazonListPrice, true);
 });
 
 test("a listing that is no longer returned is not counted", () => {
-  const first = mapTabModel([
-    row({ asin: "B000000001" }),
-    row({ asin: "B000000009", worst_leakage: -30 }),
-  ]);
-  const next = mapTabModel([row({ asin: "B000000009", worst_leakage: -30 })]);
+  const first = mapTabModel([row({ asin: "B000000001" }), row({ asin: "B000000009" })]);
+  const next = mapTabModel([row({ asin: "B000000009" })]);
   assert.equal(first.count, 2);
   assert.equal(next.count, 1);
 });
@@ -138,9 +132,9 @@ test("a stored price shows that channel and does not invent the other", () => {
 test("a later channel appears from inserted rows, after sweetwater and reverb", () => {
   const model = mapTabModel(
     [
-      row({ asin: "B000000001", offer_price: null, worst_leakage: null }),
-      row({ asin: "B000000002", offer_price: null, worst_leakage: null }),
-      row({ asin: "B000000003", offer_price: null, worst_leakage: null }),
+      row({ asin: "B000000001", offer_price: null }),
+      row({ asin: "B000000002", offer_price: null }),
+      row({ asin: "B000000003", offer_price: null }),
     ],
     [
       {
@@ -185,29 +179,26 @@ test("a later channel appears from inserted rows, after sweetwater and reverb", 
   assert.equal(model.count, 3);
 });
 
-test("a stored price at or above MAP is not a channel count", () => {
+test("every stored price is a channel count, whatever the stored list price says", () => {
   const model = mapTabModel([
     row({
       asin: "B000000001",
       map_price: 100,
       offer_price: 100,
-      amz_leakage: 0,
       wmt_price: 110,
-      wmt_leakage: 10,
       mf_price: 90,
-      mf_leakage: -10,
     }),
   ]);
   assert.deepEqual(
     model.channels.map((channel) => channel.name),
-    ["Musician's Friend"],
+    ["Amazon", "Walmart", "Musician's Friend"],
   );
   assert.equal(model.channels[0]?.count, 1);
   assert.equal(model.showAmazon, true);
   assert.equal(model.showWalmart, true);
 });
 
-test("a channel price with no listing MAP is not counted and does not invent a price", () => {
+test("a channel price on a listing outside the read does not invent a row", () => {
   const model = mapTabModel([], [
     {
       asin: "B000000009",
@@ -221,25 +212,22 @@ test("a channel price with no listing MAP is not counted and does not invent a p
   assert.deepEqual(model.channels, []);
 });
 
-test("B0CMW1YK74 keeps the Amazon gap and the Musician's Friend gap apart", () => {
+test("B0CMW1YK74 shows its stored prices and no gap against the stored list price", () => {
   const source = row({
     asin: "B0CMW1YK74",
     map_price: 2497.99,
     offer_price: 2049.99,
-    amz_leakage: -448,
-    worst_leakage: -858,
     mf_price: 1639.99,
-    mf_leakage: -858,
   });
   const facts = listingChannelFacts(source);
   const amazon = facts.find((fact) => fact.name === "Amazon");
   const musiciansFriend = facts.find((fact) => fact.name === "Musician's Friend");
+
   assert.equal(amazon?.price, 2049.99);
-  assert.equal(amazon?.gap, -448);
   assert.equal(musiciansFriend?.price, 1639.99);
-  assert.equal(musiciansFriend?.gap, -858);
   assert.equal(facts.some((fact) => fact.name === "Walmart"), false);
-  assert.notEqual(amazon?.gap, source.worst_leakage);
+  assert.equal(facts.every((fact) => !("gap" in fact)), true);
+  assert.deepEqual(Object.keys(amazon ?? {}).sort(), ["key", "name", "price"]);
 
   const model = mapTabModel([source]);
   assert.deepEqual(
@@ -247,4 +235,27 @@ test("B0CMW1YK74 keeps the Amazon gap and the Musician's Friend gap apart", () =
     ["Amazon", "Musician's Friend"],
   );
   assert.equal(model.showWalmart, false);
+});
+
+test("B0HJDFP2XS keeps its Musician's Friend price and loses the list-price gap", () => {
+  const source = row({
+    asin: "B0HJDFP2XS",
+    map_price: 749.99,
+    offer_price: 599.99,
+    mf_price: 599.99,
+  });
+  const facts = listingChannelFacts(source);
+  const musiciansFriend = facts.find((fact) => fact.name === "Musician's Friend");
+
+  assert.equal(musiciansFriend?.price, 599.99);
+  assert.equal(facts.every((fact) => !("gap" in fact)), true);
+  assert.deepEqual(
+    facts.map((fact) => fact.name),
+    ["Amazon", "Musician's Friend"],
+  );
+  assert.equal(
+    JSON.stringify(facts).includes("-150"),
+    false,
+    "599.99 under a 749.99 list price is not a MAP gap",
+  );
 });

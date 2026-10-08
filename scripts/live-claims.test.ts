@@ -7,6 +7,10 @@ import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-cau
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { activeOfferClarity } from "../lib/fender-canvas/offer-clarity.ts";
 import { headlineSentence, headlineSurface } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import {
+  AMAZON_LIST_PRICE_IS_NOT_MAP,
+  FENDER_MAP_NOT_STORED,
+} from "../lib/fender-canvas/portfolio-retail.ts";
 import { bundleReadLine, mapReadLine } from "../lib/fender-canvas/retail-copy.ts";
 import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
 import type { CanvasBundle } from "../lib/fender-canvas/types.ts";
@@ -112,11 +116,11 @@ function retailReady(): RetailCanvasRead {
         missingMessage: null,
         detail: null,
       },
-      mapLeakage: {
-        status: "available_with_issues",
-        issueCount: 555,
-        missingMessage: null,
-        detail: null,
+      mapPrices: {
+        status: "unavailable",
+        issueCount: null,
+        missingMessage: FENDER_MAP_NOT_STORED,
+        detail: { population: 1036, amazonListPrices: 0 },
       },
       unnestedBundles: {
         status: "available_with_issues",
@@ -182,27 +186,23 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   assert.doesNotMatch(text, /3,430|993|7\.4%|16\.7%|Fourteen|14 catalog|2,420|fingerboard|dual humbucker/i);
   assert.doesNotMatch(text, /discounted bundles are dragging/i);
   assert.equal(spec.items.length, 6);
-  assert.equal(map?.title, "555 listings are below MAP in this listing read");
+  assert.equal(map?.title, "Fender MAP prices have not been stored");
   assert.equal(map?.subTab, "MAP");
-  assert.match(map?.why ?? "", /Open the MAP tab/);
+  assert.match(map?.why ?? "", /Send Fender's MAP file/);
   assert.doesNotMatch(map?.why ?? "", /not a final count/);
 });
 
-test("command center MAP item repeats the MAP tab's partial reading", () => {
+test("the command-center MAP item states no count and no list-price gap", () => {
   const retail = retailReady();
-  if (retail.phase !== "ready") throw new Error("expected a ready retail read");
-  const missingMessage =
-    "MAP leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
-  retail.snapshot.mapLeakage = {
-    status: "incomplete",
-    issueCount: 12,
-    missingMessage,
-    detail: null,
-  };
   const map = buildLiveCommandCenter(bundle(), retail).items.find((item) => item.id === "map-leakage");
-  assert.equal(map?.title, "12 listings are below MAP in this listing read");
-  assert.equal(map?.why, missingMessage);
-  assert.doesNotMatch(`${map?.title} ${map?.why}`, /discounted bundle/i);
+  const text = `${map?.title} ${map?.why} ${map?.impact}`;
+
+  assert.equal(map?.title, "Fender MAP prices have not been stored");
+  assert.ok(map?.why.startsWith(AMAZON_LIST_PRICE_IS_NOT_MAP));
+  // No count and no money: the only "below MAP" left is the sentence saying there is no verdict.
+  assert.doesNotMatch(text, /\d+\s+listings?\s+(?:is|are)\s+below/);
+  assert.doesNotMatch(text, /\$/);
+  assert.doesNotMatch(text, /466|749\.99|discounted bundle/i);
 });
 
 test("hub offer arithmetic does not pair the 1P count with the harvested percentage", () => {
@@ -226,16 +226,24 @@ test("hub offer arithmetic does not pair the 1P count with the harvested percent
   assert.match(text, /Featured Offer/);
 });
 
-test("the MAP violations widget follows the listing read", () => {
-  const ready = buildLiveMetrics(bundle(), retailReady()).flaggedAsins;
-  assert.equal(ready.label, "MAP violations");
-  assert.equal(ready.value, "555");
-  assert.equal(ready.subTab, "MAP");
-  assert.doesNotMatch(ready.detail, /48/);
+test("the below-MAP widgets wait on Fender's MAP file", () => {
+  const metrics = buildLiveMetrics(bundle(), retailReady());
+  const count = metrics.flaggedAsins;
+  const gap = metrics.amazonMapDrift;
+
+  assert.equal(count.label, "Listings below MAP");
+  assert.equal(count.value, "Not stored");
+  assert.equal(count.detail, FENDER_MAP_NOT_STORED);
+  assert.equal(count.subTab, "MAP");
+  assert.doesNotMatch(count.value, /533|466|\d/);
+
+  assert.equal(gap.label, "Average gap below MAP");
+  assert.equal(gap.value, "Not stored");
+  assert.equal(gap.detail, FENDER_MAP_NOT_STORED);
+  assert.doesNotMatch(`${gap.value} ${gap.detail}`, /\$|-10|455|25/);
 
   const failed = buildLiveMetrics(bundle(), { phase: "error" }).flaggedAsins;
   assert.equal(failed.value, "Unavailable");
-  assert.doesNotMatch(failed.value, /533/);
   assert.match(failed.detail, /did not succeed/);
 });
 
@@ -249,7 +257,7 @@ test("the guided tour uses the same retail headline as the ticker", () => {
   assert.ok(roadmap?.displays.includes(headline));
   const text = [...(hub?.displays ?? []), ...(roadmap?.displays ?? []), roadmap?.value ?? ""].join(" ");
   assert.doesNotMatch(text, /Buy Box:|95% Buy Box|6\.5%/);
-  assert.equal(mapReadLine(retail), "555 listings are below MAP in this listing read.");
+  assert.equal(mapReadLine(retail), FENDER_MAP_NOT_STORED);
   assert.equal(bundleReadLine(retail), "12 bundles have no usable parent ASIN in this listing read.");
   assert.match(mapReadLine({ phase: "error" }), /does not state a MAP count/);
 });

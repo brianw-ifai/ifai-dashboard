@@ -37,19 +37,25 @@ export async function loadCanvas(): Promise<CanvasBundle> {
   };
 }
 
+/**
+ * Retail listings for the panel tables.
+ * `offAmazonPriceOnly` keeps rows with a stored Walmart or Musician's Friend price above zero.
+ * There is no below-MAP filter: `is_map_violation` compares a retailer price with Amazon's own
+ * stored list price, which is not Fender's minimum advertised price.
+ */
 export function listingsQuery(
   page = 0,
   size = 50,
-  filter?: { status?: string; violationsOnly?: boolean; bundlesOnly?: boolean },
+  filter?: { status?: string; offAmazonPriceOnly?: boolean; bundlesOnly?: boolean },
 ) {
   const supabase = getCanvasSupabase();
   let q = supabase
     .from("canvas_retail_listings")
     .select("*", { count: "exact" })
-    .order("worst_leakage", { ascending: true, nullsFirst: false })
+    .order("asin")
     .range(page * size, page * size + size - 1);
   if (filter?.status) q = q.eq("buybox_status", filter.status);
-  if (filter?.violationsOnly) q = q.eq("is_map_violation", true);
+  if (filter?.offAmazonPriceOnly) q = q.or("wmt_price.gt.0,mf_price.gt.0");
   if (filter?.bundlesOnly) q = q.eq("is_bundle", true);
   return q;
 }

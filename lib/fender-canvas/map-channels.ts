@@ -1,27 +1,27 @@
-/** MAP tab model from `public.canvas_retail_listings` and `public.canvas_listing_channel_price`. */
+/**
+ * MAP tab model from `public.canvas_retail_listings` and `public.canvas_listing_channel_price`.
+ *
+ * Stored retailer prices only. The stored `map_price` is Amazon's list price from Keepa, so this
+ * model never subtracts it from a retailer price: that difference is not a MAP gap.
+ */
 
 export type MapSourceRow = {
   asin: string;
   model_name: string | null;
   title: string | null;
+  /** Amazon's stored list price, copied from Keepa. Not a MAP, and not a gap input. */
   map_price: number | null;
   offer_price: number | null;
-  /** Stored Amazon leakage. The worst gap across channels is not this number. */
-  amz_leakage?: number | null;
-  worst_leakage: number | null;
   wmt_price: number | null;
-  wmt_leakage?: number | null;
   wmt_url: string | null;
   mf_price: number | null;
-  mf_leakage: number | null;
 };
 
-/** One channel's stored price and the gap that price produced. */
+/** One channel's stored price on one listing. */
 export type ChannelFact = {
   key: string;
   name: string;
-  price: number | null;
-  gap: number | null;
+  price: number;
 };
 
 /** One stored retailer price from `public.canvas_listing_channel_price`. */
@@ -33,6 +33,7 @@ export type ChannelPriceRow = {
   checked_at: string | null;
 };
 
+/** Listings on which this read stored a price for that channel. Not a below-MAP count. */
 export type MapChannelSummary = {
   name: "Amazon" | "Walmart" | "Musician's Friend";
   count: number;
@@ -47,13 +48,13 @@ export type MapExtraChannel = {
 
 export type MapTabModel = {
   count: number;
-  averageGap: number | null;
-  combinedGap: number | null;
   channels: MapChannelSummary[];
   extraChannels: MapExtraChannel[];
   showAmazon: boolean;
   showWalmart: boolean;
   showMusiciansFriend: boolean;
+  /** Amazon's stored list price column. Off until this read stored one above zero. */
+  showAmazonListPrice: boolean;
 };
 
 export type PricedChannelCell = {
@@ -109,27 +110,9 @@ function channelSort(a: MapExtraChannel, b: MapExtraChannel): number {
   return a.channel.localeCompare(b.channel);
 }
 
-function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-/** Stored leakage wins. Otherwise the gap is the stored shelf price minus stored MAP. */
-function channelGap(leakage: unknown, price: unknown, mapPrice: unknown): number | null {
-  const leak = finite(leakage);
-  if (leak != null) return roundMoney(leak);
-  const shelf = storedPrice(price);
-  const map = storedPrice(mapPrice);
-  if (shelf == null || map == null) return null;
-  return roundMoney(shelf - map);
-}
-
-function belowMap(gap: number | null): boolean {
-  return gap != null && gap < 0;
-}
-
 /**
- * Stored price and gap for each channel on one listing.
- * A channel with no stored price and no stored leakage is omitted.
+ * The stored price for each channel on one listing.
+ * A channel with no stored price above zero is omitted, so a missing price stays blank.
  */
 export function listingChannelFacts(
   row: MapSourceRow,
@@ -137,33 +120,20 @@ export function listingChannelFacts(
 ): ChannelFact[] {
   const facts: ChannelFact[] = [];
   const amazonPrice = storedPrice(row.offer_price);
-  const amazonGap = channelGap(row.amz_leakage, row.offer_price, row.map_price);
-  if (amazonPrice != null || amazonGap != null) {
-    facts.push({ key: "amazon", name: "Amazon", price: amazonPrice, gap: amazonGap });
+  if (amazonPrice != null) {
+    facts.push({ key: "amazon", name: "Amazon", price: amazonPrice });
   }
   const walmartPrice = storedPrice(row.wmt_price);
-  const walmartGap = channelGap(row.wmt_leakage, row.wmt_price, row.map_price);
-  if (walmartPrice != null || walmartGap != null) {
-    facts.push({ key: "walmart", name: "Walmart", price: walmartPrice, gap: walmartGap });
+  if (walmartPrice != null) {
+    facts.push({ key: "walmart", name: "Walmart", price: walmartPrice });
   }
   const musiciansFriendPrice = storedPrice(row.mf_price);
-  const musiciansFriendGap = channelGap(row.mf_leakage, row.mf_price, row.map_price);
-  if (musiciansFriendPrice != null || musiciansFriendGap != null) {
-    facts.push({
-      key: "musicians-friend",
-      name: "Musician's Friend",
-      price: musiciansFriendPrice,
-      gap: musiciansFriendGap,
-    });
+  if (musiciansFriendPrice != null) {
+    facts.push({ key: "musicians-friend", name: "Musician's Friend", price: musiciansFriendPrice });
   }
   if (extras) {
     for (const [channel, cell] of extras) {
-      facts.push({
-        key: channel,
-        name: channelDisplayName(channel),
-        price: cell.price,
-        gap: channelGap(null, cell.price, row.map_price),
-      });
+      facts.push({ key: channel, name: channelDisplayName(channel), price: cell.price });
     }
   }
   return facts;
@@ -197,30 +167,28 @@ const FIXED_CHANNELS = [
 ] as const;
 
 /**
- * Channel counts are listings below MAP on that channel.
- * A stored price that is at or above MAP is not a count.
+ * Channel counts are the listings on which this read stored a price for that channel.
+ * No count says a retailer is below MAP: that needs Fender's MAP file.
  * A channel with no stored price on a returned listing is omitted.
  */
 export function mapTabModel(rows: MapSourceRow[], channelPrices: ChannelPriceRow[] = []): MapTabModel {
   const prices = channelPriceLookup(channelPrices);
-  const below = new Map<string, number>();
-  const present = new Set<string>();
+  const priced = new Map<string, number>();
   const extraOrder: string[] = [];
 
   for (const row of rows) {
     const facts = listingChannelFacts(row, prices.get(row.asin.trim()));
     for (const fact of facts) {
-      if (!present.has(fact.key) && !FIXED_CHANNELS.some((channel) => channel.key === fact.key)) {
+      if (!priced.has(fact.key) && !FIXED_CHANNELS.some((channel) => channel.key === fact.key)) {
         extraOrder.push(fact.key);
       }
-      present.add(fact.key);
-      if (belowMap(fact.gap)) below.set(fact.key, (below.get(fact.key) ?? 0) + 1);
+      priced.set(fact.key, (priced.get(fact.key) ?? 0) + 1);
     }
   }
 
   const channels: MapChannelSummary[] = [];
   for (const channel of FIXED_CHANNELS) {
-    const count = below.get(channel.key) ?? 0;
+    const count = priced.get(channel.key) ?? 0;
     if (count > 0) channels.push({ name: channel.name, count });
   }
 
@@ -228,24 +196,18 @@ export function mapTabModel(rows: MapSourceRow[], channelPrices: ChannelPriceRow
     .map((channel) => ({
       channel,
       name: channelDisplayName(channel),
-      count: below.get(channel) ?? 0,
+      count: priced.get(channel) ?? 0,
     }))
     .sort(channelSort);
 
-  const gaps = rows
-    .map((row) => finite(row.worst_leakage))
-    .filter((gap): gap is number => gap != null);
-  const combinedGap = gaps.reduce((sum, gap) => sum + gap, 0);
-
   return {
     count: rows.length,
-    averageGap: gaps.length ? combinedGap / gaps.length : null,
-    combinedGap: gaps.length ? combinedGap : null,
     channels,
     extraChannels,
-    showAmazon: present.has("amazon"),
-    showWalmart: present.has("walmart"),
-    showMusiciansFriend: present.has("musicians-friend"),
+    showAmazon: (priced.get("amazon") ?? 0) > 0,
+    showWalmart: (priced.get("walmart") ?? 0) > 0,
+    showMusiciansFriend: (priced.get("musicians-friend") ?? 0) > 0,
+    showAmazonListPrice: rows.some((row) => storedPrice(row.map_price) != null),
   };
 }
 

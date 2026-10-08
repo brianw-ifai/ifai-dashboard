@@ -9,7 +9,9 @@ export const fenderGlossary: Record<string, string> = {
     "The one-click Add to Cart button on an Amazon listing, also called the Buy Box. Amazon withholds it when the offer, including shipping, is above a benchmark from outside Amazon, even if the price is at MAP.",
   "Competitive External Price":
     "The lowest price Amazon recently found for this product outside its store. Amazon does not name that retailer. An offer above it, including shipping, can lose the Featured Offer even at MAP.",
-  MAP: "Minimum Advertised Price: the lowest price a retail partner has agreed to display publicly. Partners get around it by bundling a cheap accessory and discounting the pair.",
+  MAP: "Minimum Advertised Price: the lowest price a retail partner has agreed to display publicly. Fender sets it, so no reading here can name a below-MAP listing until Fender's MAP prices are stored.",
+  "Amazon list price":
+    "The list price Amazon shows on a product page, copied from Keepa. Amazon sets it, not Fender, so a retailer price under it is not below MAP.",
   "Brand Registry":
     "Amazon's brand-owner program. It lets Fender control its own listings and fold partner bundles in as variations of the official product.",
   "Schema.org":

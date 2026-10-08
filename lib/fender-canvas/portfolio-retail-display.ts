@@ -4,11 +4,12 @@
  */
 
 import type { NodeStatus } from "../canvas-sdk/types";
-import { formatInt, formatUsd } from "./format";
+import { formatInt } from "./format";
 import {
+  AMAZON_LIST_PRICE_IS_NOT_MAP,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
-  type MapLeakageDetail,
+  type MapPriceDetail,
   type PortfolioRetailFindings,
   type PortfolioRetailSnapshot,
   type RetailReading,
@@ -154,7 +155,7 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
       subTab: RETAIL_OVERVIEW_TAB,
       tooltip: {
         title: "Portfolio Retail",
-        desc: "Suppressed Featured Offers, MAP leakage, and unnested bundles are each a stored zero.",
+        desc: "Suppressed Featured Offers, MAP prices, and unnested bundles are each a stored zero.",
       },
     };
   }
@@ -187,23 +188,17 @@ export function suppressedBubble(reading: RetailReading<unknown>): RetailBubbleF
   );
 }
 
-export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): RetailBubbleFace {
-  const count = countPhrase(reading, "below MAP", "below MAP");
-  const gap =
-    reading.detail?.averageLeakage != null
-      ? `${formatUsd(reading.detail.averageLeakage, { signed: true })} gap`
-      : null;
+/** No count and no gap: a below-MAP verdict needs Fender's MAP file, not Amazon's list price. */
+export function mapBubble(reading: RetailReading<MapPriceDetail | null>): RetailBubbleFace {
   const coverage = coveragePill(reading);
-  const gapNote =
-    reading.detail?.averageLeakage != null
-      ? `Average worst stored price gap ${formatUsd(reading.detail.averageLeakage, { signed: true })}. This is a price gap, not a revenue estimate.`
-      : null;
-  const tooltip = [gapNote, reading.missingMessage].filter(Boolean).join(" ");
+  const tooltip = [reading.missingMessage, AMAZON_LIST_PRICE_IS_NOT_MAP]
+    .filter(Boolean)
+    .join(" ");
   return face(
-    "MAP Leakage",
+    "MAP Prices",
     reading,
-    [...(count ? [count] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
-    tooltip || "MAP leakage uses stored channel prices only.",
+    coverage ? [coverage] : [],
+    tooltip,
     "MAP",
   );
 }
@@ -241,7 +236,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: waitingFace("Portfolio Retail", RETAIL_OVERVIEW_TAB, ["Loading"], desc),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
-      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
+      map: waitingFace("MAP Prices", "MAP", ["Loading"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
     };
   }
@@ -251,7 +246,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     return {
       main: waitingFace("Portfolio Retail", RETAIL_OVERVIEW_TAB, ["Read failed"], desc),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
-      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
+      map: waitingFace("MAP Prices", "MAP", ["Read failed"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),
     };
   }
@@ -260,7 +255,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   return {
     main: headlineBubble(snapshot),
     suppressed: suppressedBubble(snapshot.suppressedListings),
-    map: mapBubble(snapshot.mapLeakage),
+    map: mapBubble(snapshot.mapPrices),
     catalog: catalogBubble(snapshot.unnestedBundles),
   };
 }

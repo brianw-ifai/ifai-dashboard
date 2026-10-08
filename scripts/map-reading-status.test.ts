@@ -34,7 +34,7 @@ test("Musician's Friend states the last check only after 26 hours", () => {
   );
 });
 
-test("channel lines keep the below-MAP count and add only the Walmart and Musician's Friend notes", () => {
+test("channel lines count stored prices, not below-MAP listings", () => {
   const walmart = channelReadingNote("Walmart", { walmartMissing: 3 });
   const friend = channelReadingNote("Musician's Friend", {
     walmartMissing: 3,
@@ -48,20 +48,22 @@ test("channel lines keep the below-MAP count and add only the Walmart and Musici
   });
   assert.equal(
     channelSummaryText(2, walmart),
-    "2 listings below MAP. 3 listings in this read have no stored Walmart price, so they are missing from this count and are not counted as zero.",
+    "2 listings with a stored price. 3 listings in this read have no stored Walmart price, so they are missing from this count and are not counted as zero.",
   );
-  assert.match(channelSummaryText(1, friend), /^1 listing below MAP\. Last checked /);
-  assert.equal(channelSummaryText(4, fresh), "4 listings below MAP");
+  assert.match(channelSummaryText(1, friend), /^1 listing with a stored price\. Last checked /);
+  assert.equal(channelSummaryText(4, fresh), "4 listings with a stored price");
+  assert.doesNotMatch(channelSummaryText(4, fresh), /below MAP/);
   assert.equal(channelReadingNote("Amazon", { walmartMissing: 3 }), null);
   assert.equal(channelReadingNote("Sweetwater", { walmartMissing: 3 }), null);
 });
 
-test("a channel cell prints the signed gap and does not name it Amazon gap", () => {
+test("a channel cell prints a stored price and draws no gap", () => {
   const source = readFileSync(
     new URL("../components/v3/live/ChannelPriceCell.tsx", import.meta.url),
     "utf8",
   );
   assert.doesNotMatch(source, /Amazon gap/);
-  assert.match(source, /danger-red/);
-  assert.match(source, /gap < 0/);
+  assert.doesNotMatch(source, /danger-red/);
+  assert.doesNotMatch(source, /fact\.gap|channel-gap/);
+  assert.match(source, /formatUsd\(fact\.price\)/);
 });

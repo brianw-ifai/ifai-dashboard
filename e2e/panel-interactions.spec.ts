@@ -93,30 +93,49 @@ test.describe("collapsible explanations", () => {
 });
 
 test.describe("drill-downs", () => {
-  test("MAP tab holds the summary and does not revive the old channel story", async ({ canvas, page }) => {
-    await canvas.openPriority("below MAP");
+  test("MAP tab states that Fender MAP prices are not stored and shows no gap", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.openPriority("Fender MAP prices");
     await expect(canvas.activeTab).toContainText("MAP");
 
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Minimum Advertised Price");
     await expect(body).toContainText("Summary");
-    await expect(body).toContainText("no stored Walmart price");
-    await expect(body).toContainText("not counted as zero");
+    await expect(body).toContainText("Fender MAP prices have not been stored");
+    await expect(body).toContainText("copied from Keepa");
+    await expect(body).toContainText("with a stored price");
+    await expect(body).not.toContainText("listings below MAP");
+    await expect(body).not.toContainText("Average price gap");
     await expect(body).not.toContainText("Discounted bundles");
     await expect(body).not.toContainText("Amazon gap");
-    const proving = page.locator("tr", { hasText: "B0CMW1YK74" });
+
+    // The two rows that used to wear a gap against Amazon's stored list price.
+    const proving = page.locator("tr", { hasText: "B0HJDFP2XS" });
     await expect(proving).toBeVisible();
-    await expect(proving.locator(".channel-gap")).toHaveCount(2);
-    const gapColors = await proving.locator(".channel-gap").evaluateAll((nodes) =>
-      nodes.map((node) => (node as HTMLElement).style.color),
-    );
-    expect(gapColors).toEqual(["var(--danger-red)", "var(--danger-red)"]);
-    await expect(body).not.toContainText("$808.00");
+    await expect(proving).toContainText("$599.99");
+    await expect(proving).not.toContainText("-$150");
+    await expect(page.locator("tr", { hasText: "B0CMW1YK74" })).not.toContainText("-$");
+    await expect(page.locator(".channel-gap")).toHaveCount(0);
+
     await expect(body).not.toContainText("Reverb");
     await expect(body).not.toContainText("Sweetwater");
     await expect(body).not.toContainText("Featured Offer withheld");
     await expect(body).not.toContainText("Prices at MAP");
     await expect(page.locator(".map-channel-row")).toHaveCount(0);
+  });
+
+  test("no MAP tab column header calls the stored list price MAP", async ({ canvas, page }) => {
+    await canvas.openPriority("Fender MAP prices");
+    const headers = await page.locator(".drilldown-body table th").allInnerTexts();
+    const trimmed = headers.map((header) => header.replace(/\s+/g, " ").trim());
+
+    expect(trimmed).toContain("Musician's Friend");
+    expect(trimmed).not.toContain("MAP");
+    for (const header of trimmed) {
+      expect(header === "MAP" || /^MAP\b/.test(header)).toBe(false);
+    }
   });
 
   test("portfolio retail keeps listings, MAP, suppressed rows, and catalog apart", async ({
@@ -139,7 +158,7 @@ test.describe("drill-downs", () => {
     await page.getByRole("button", { name: "Explore all listings" }).click();
     await expect(page.locator(".retail-listings-table")).toBeVisible();
     await expect(page.locator(".segmented-btn", { hasText: "All" })).toBeVisible();
-    await expect(page.locator(".segmented-btn", { hasText: "MAP violations only" })).toBeVisible();
+    await expect(page.locator(".segmented-btn", { hasText: "Priced away from Amazon" })).toBeVisible();
     await expect(page.locator(".segmented-btn", { hasText: "Bundles only" })).toBeVisible();
 
     await canvas.openTab("Catalog Governance");

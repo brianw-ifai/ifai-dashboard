@@ -50,15 +50,22 @@ export type RetailHeadline = {
 
 const SUPPRESSED_UNAVAILABLE =
   "Suppressed Featured Offer readings have not been stored.";
-const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
+
+/** The only honest MAP sentence until Fender's own MAP file is stored. */
+export const FENDER_MAP_NOT_STORED = "Fender MAP prices have not been stored.";
+
+/** Why no stored column can stand in for that file. */
+export const AMAZON_LIST_PRICE_IS_NOT_MAP =
+  "The stored list price is Amazon's own, copied from Keepa, so a retailer price under it is not below MAP.";
+
+const MAP_READ_FAILED = "The MAP listing read did not succeed.";
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 
 export const RETAIL_SUPPRESSION_COLUMNS =
   "asin,offer_price,competitive_price_threshold_cents,featured_offer_withheld";
 
-export const RETAIL_MAP_LEAKAGE_COLUMNS =
-  "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage";
+export const RETAIL_MAP_PRICE_COLUMNS = "asin,map_price";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
   "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle";
@@ -174,108 +181,42 @@ export function suppressedListingsFinding(
   };
 }
 
-export type MapLeakageRow = {
+export type MapPriceRow = {
+  asin: string | null;
+  /** Amazon's list price, copied from Keepa. It is not Fender's minimum advertised price. */
   map_price: number | string | null;
-  offer_price: number | string | null;
-  amz_leakage: number | string | null;
-  wmt_leakage: number | string | null;
-  mf_leakage: number | string | null;
 };
 
-export type MapLeakageDetail = {
-  violations: number;
-  decided: number;
-  undecided: number;
+export type MapPriceDetail = {
+  /** Listings in this read. */
   population: number;
-  /** Mean of each violation's worst stored channel leakage, in dollars. Null when no leakage is stored. Not a revenue estimate. */
-  averageLeakage: number | null;
+  /** Listings carrying a stored Amazon list price. A list price is not a MAP, so this is not a below-MAP count. */
+  amazonListPrices: number;
 };
 
-function channelLeakages(row: MapLeakageRow): number[] {
-  return [row.amz_leakage, row.wmt_leakage, row.mf_leakage]
-    .map((value) => finite(value))
-    .filter((value): value is number => value != null);
+function storedPrice(value: unknown): number | null {
+  const price = finite(value);
+  if (price == null || price <= 0) return null;
+  return price;
 }
 
-function worstStoredLeakage(row: MapLeakageRow): number | null {
-  const values = channelLeakages(row);
-  if (!values.length) return null;
-  return Math.min(...values);
-}
-
-function isMapViolation(row: MapLeakageRow): boolean {
-  return channelLeakages(row).some((value) => value < 0);
-}
-
-function mapRowUndecided(row: MapLeakageRow): boolean {
-  if (channelLeakages(row).length > 0) return false;
-  return finite(row.offer_price) != null || finite(row.map_price) != null;
-}
-
-function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-/** Current MAP violations from stored channel leakage. Bundle fields are not an input. */
-export function mapLeakageFinding(
-  rows: MapLeakageRow[] | null,
-  options?: { truncated?: boolean },
-): RetailReading<MapLeakageDetail | null> {
-  if (rows == null) return unavailable(MAP_UNAVAILABLE);
-
-  const population = rows.length;
-  const violations = rows.filter(isMapViolation);
-  const undecided = rows.filter(mapRowUndecided).length;
-  const decided = rows.filter((row) => channelLeakages(row).length > 0).length;
-  const averageLeakage =
-    violations.length === 0
-      ? null
-      : roundMoney(
-          violations.reduce((sum, row) => sum + (worstStoredLeakage(row) ?? 0), 0) / violations.length,
-        );
-  const detail: MapLeakageDetail = {
-    violations: violations.length,
-    decided,
-    undecided,
-    population,
-    averageLeakage,
-  };
-
-  if (population === 0 && !options?.truncated) {
-    return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
-  }
-
-  if (decided === 0 && undecided === 0 && !options?.truncated) return unavailable(MAP_UNAVAILABLE);
-
-  if (options?.truncated || undecided > 0) {
-    const known =
-      violations.length === 0
-        ? "No below-MAP listing is confirmed in the stored rows."
-        : `${countLabel(violations.length)} stored ${violations.length === 1 ? "listing is" : "listings are"} below MAP.`;
-    const gaps =
-      undecided > 0
-        ? ` ${countLabel(undecided)} ${undecided === 1 ? "listing has" : "listings have"} a price and no stored MAP comparison, so ${undecided === 1 ? "it is" : "they are"} missing from this count and ${undecided === 1 ? "is" : "are"} not counted as zero.`
-        : "";
-    const stopped = options?.truncated
-      ? " The read stopped before every listing was loaded."
-      : "";
-    return {
-      status: "incomplete",
-      issueCount: violations.length,
-      missingMessage: `MAP leakage is stored for ${countLabel(decided)} of ${countLabel(population)} listings. ${known}${gaps}${stopped} This is not a final count.`,
-      detail,
-    };
-  }
-
-  if (violations.length === 0) {
-    return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
-  }
+/**
+ * Fender's own MAP file decides which retailer prices are below MAP. No stored column carries
+ * it: `map_price` is Amazon's list price from Keepa, and the stored leakage columns are gaps
+ * against that list price. Neither can name a MAP violation, so this reading stays unavailable
+ * and reports only what the listing read does hold.
+ */
+export function mapPriceFinding(rows: MapPriceRow[] | null): RetailReading<MapPriceDetail | null> {
+  if (rows == null) return unavailable(MAP_READ_FAILED);
 
   return {
-    status: "available_with_issues",
-    issueCount: violations.length,
-    missingMessage: null,
-    detail,
+    status: "unavailable",
+    issueCount: null,
+    missingMessage: FENDER_MAP_NOT_STORED,
+    detail: {
+      population: rows.length,
+      amazonListPrices: rows.filter((row) => storedPrice(row.map_price) != null).length,
+    },
   };
 }
 
@@ -493,7 +434,7 @@ export function amazonSpecGapsFinding(
 
 export type PortfolioRetailFindings = {
   suppressedListings: RetailReading<SuppressionDetail | null>;
-  mapLeakage: RetailReading<MapLeakageDetail | null>;
+  mapPrices: RetailReading<MapPriceDetail | null>;
   unnestedBundles: RetailReading<UnnestedBundleDetail | null>;
   amazonSpecGaps: RetailReading<AmazonSpecGapDetail | null>;
 };
@@ -506,7 +447,7 @@ export type PortfolioRetailFindings = {
 export function selectRetailHeadline(findings: PortfolioRetailFindings): RetailHeadline | null {
   const readings: Record<RetailFindingId, RetailReading<unknown>> = {
     suppressed_listings: findings.suppressedListings,
-    map_leakage: findings.mapLeakage,
+    map_leakage: findings.mapPrices,
     unnested_bundles: findings.unnestedBundles,
   };
 
@@ -561,7 +502,7 @@ export async function readPages<T>(
 
 export type RetailQuerySource = {
   suppressionRows: () => Promise<PagedRows<SuppressionSupportRow>>;
-  mapRows: () => Promise<PagedRows<MapLeakageRow>>;
+  mapRows: () => Promise<PagedRows<MapPriceRow>>;
   catalogRows: () => Promise<PagedRows<CatalogBundleRow>>;
   catalogBundleCount: () => Promise<number | null>;
   specRows: () => Promise<PagedRows<AmazonSpecRow>>;
@@ -586,9 +527,7 @@ export async function loadPortfolioRetailSnapshot(
     suppressedListings: suppressedListingsFinding(suppression.ok ? suppression.rows : null, {
       truncated: suppression.ok ? suppression.truncated : false,
     }),
-    mapLeakage: mapLeakageFinding(mapRows.ok ? mapRows.rows : null, {
-      truncated: mapRows.ok ? mapRows.truncated : false,
-    }),
+    mapPrices: mapPriceFinding(mapRows.ok ? mapRows.rows : null),
     unnestedBundles: unnestedBundlesFinding(catalog.ok ? catalog.rows : null, {
       truncated: catalog.ok ? catalog.truncated : false,
       catalogBundleCount,

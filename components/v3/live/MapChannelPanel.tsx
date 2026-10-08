@@ -9,7 +9,7 @@ import {
   listingsQuery,
   retailListingHeadCountQuery,
 } from "@/lib/canvasData";
-import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
+import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
   channelPriceLookup,
   listingChannelFacts,
@@ -24,6 +24,10 @@ import {
   channelReadingNote,
   channelSummaryText,
 } from "@/lib/fender-canvas/map-reading-status";
+import {
+  AMAZON_LIST_PRICE_IS_NOT_MAP,
+  FENDER_MAP_NOT_STORED,
+} from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
@@ -45,16 +49,17 @@ function httpUrl(value: string | null): string | null {
   }
 }
 
+/** Listings this read priced away from Amazon. They are the rows a MAP file would be compared against. */
 async function loadMapRows(): Promise<MapSourceRow[]> {
   const rows: MapSourceRow[] = [];
   for (let page = 0; page < 20; page += 1) {
-    const { data, error } = await listingsQuery(page, PAGE_SIZE, { violationsOnly: true });
+    const { data, error } = await listingsQuery(page, PAGE_SIZE, { offAmazonPriceOnly: true });
     if (error) throw error;
     const batch = (data ?? []) as MapSourceRow[];
     rows.push(...batch);
     if (batch.length < PAGE_SIZE) return rows;
   }
-  throw new Error("Below-MAP rows are not available.");
+  throw new Error("Stored retailer prices are not available.");
 }
 
 /** Listings in the retail read with no Walmart price above zero. Null when the count cannot be read. */
@@ -110,8 +115,8 @@ function mapColumns(model: MapTabModel): RetailColumn[] {
       className: "listing-col",
     },
     { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
-    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money" },
   ];
+  if (model.showAmazonListPrice) columns.push(money("amazon-list-price", "Amazon list price"));
   if (model.showAmazon) columns.push(money("amazon", "Amazon"));
   if (model.showWalmart) columns.push(money("walmart", "Walmart"));
   if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend", 176));
@@ -128,32 +133,29 @@ function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;
   }
-  const reading = read.snapshot.mapLeakage;
-  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
-  const gap = reading.detail?.averageLeakage ?? null;
+  const reading = read.snapshot.mapPrices;
+  const listings = reading.detail?.population ?? null;
   return (
     <>
       <div className="metric-grid-2" style={{ marginTop: 8 }}>
         <div className="metric-card-sm">
           <span className="metric-card-label">Listings below MAP</span>
-          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-            {reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount)}
-          </div>
-          <span className="metric-card-sub">Stored channel leakage below MAP</span>
+          <div className="metric-card-val">Not stored</div>
+          <span className="metric-card-sub">
+            {reading.missingMessage ?? FENDER_MAP_NOT_STORED}
+          </span>
         </div>
         <div className="metric-card-sm">
-          <span className="metric-card-label">Average price gap</span>
-          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-            {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
+          <span className="metric-card-label">Listings in this read</span>
+          <div className="metric-card-val">
+            {listings == null ? "Not stored" : formatInt(listings)}
           </div>
-          <span className="metric-card-sub">Price gap, not revenue</span>
+          <span className="metric-card-sub">Stored retailer prices, with no MAP to compare</span>
         </div>
       </div>
-      {showMissing && reading.missingMessage ? (
-        <p className="retail-missing">
-          <DefinedCopy text={reading.missingMessage} />
-        </p>
-      ) : null}
+      <p className="retail-missing">
+        <DefinedCopy text={AMAZON_LIST_PRICE_IS_NOT_MAP} />
+      </p>
     </>
   );
 }
@@ -162,13 +164,16 @@ function mapDefinition() {
   return (
     <div className="ceo-callout">
       <div className="ceo-callout-header">
-        <span>What is MAP?</span>
+        <span>What is MAP, and why is there no count yet?</span>
       </div>
       <div className="ceo-callout-body">
         <strong>
           <DefinedTerm term="MAP" />
         </strong>{" "}
         (Minimum Advertised Price) is the lowest price a retail partner agrees to display publicly.
+        Fender sets those prices, and this read does not have them yet, so no listing here is called
+        below MAP. The table is the retailer prices the read did store. Send the MAP file and every
+        one of these prices gets a verdict.
       </div>
     </div>
   );
@@ -211,7 +216,7 @@ export function MapChannelPanel({
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
-          <p className="retail-missing">Below-MAP rows are not available.</p>
+          <p className="retail-missing">Stored retailer prices are not available.</p>
         </div>
       </RetailSurface>
     );
@@ -224,7 +229,7 @@ export function MapChannelPanel({
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
-          <p className="retail-missing">Loading MAP rows…</p>
+          <p className="retail-missing">Loading stored retailer prices…</p>
         </div>
       </RetailSurface>
     );
@@ -282,7 +287,9 @@ export function MapChannelPanel({
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length}>No active offers are under MAP.</td>
+                  <td colSpan={columns.length}>
+                    This read stored no retailer price away from Amazon.
+                  </td>
                 </tr>
               ) : (
                 rows.map((row) => {
@@ -312,9 +319,13 @@ export function MapChannelPanel({
                           <span className="asin-chip">{row.asin}</span>
                         )}
                       </td>
-                      <td className="money">
-                        {row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}
-                      </td>
+                      {model.showAmazonListPrice ? (
+                        <td className="money channel-fact">
+                          {row.map_price != null && row.map_price > 0
+                            ? formatUsd(row.map_price)
+                            : null}
+                        </td>
+                      ) : null}
                       {model.showAmazon ? <ChannelPriceCell fact={facts.get("amazon")} /> : null}
                       {model.showWalmart ? (
                         <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} />

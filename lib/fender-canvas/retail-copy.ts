@@ -5,7 +5,10 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
-import type { RetailReading } from "@/lib/fender-canvas/portfolio-retail";
+import {
+  FENDER_MAP_NOT_STORED,
+  type RetailReading,
+} from "@/lib/fender-canvas/portfolio-retail";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 function countLine(
@@ -23,15 +26,18 @@ function countLine(
   return phrase(reading.issueCount);
 }
 
+/**
+ * The MAP line every plan and queue repeats. It states no count: Amazon's stored list price
+ * cannot decide a below-MAP listing, so the plan waits on Fender's MAP file.
+ */
 export function mapReadLine(read: RetailCanvasRead): string {
-  const reading = read.phase === "ready" ? read.snapshot.mapLeakage : null;
-  return countLine(
-    read,
-    reading,
-    (count) =>
-      `${formatInt(count)} ${count === 1 ? "listing is" : "listings are"} below MAP in this listing read.`,
-    "The MAP listing read did not succeed, so this plan does not state a MAP count.",
-  );
+  if (read.phase === "loading") {
+    return "The listing read is still loading, so this plan does not state a MAP count.";
+  }
+  if (read.phase === "error") {
+    return "The MAP listing read did not succeed, so this plan does not state a MAP count.";
+  }
+  return read.snapshot.mapPrices.missingMessage ?? FENDER_MAP_NOT_STORED;
 }
 
 export function bundleReadLine(read: RetailCanvasRead): string {

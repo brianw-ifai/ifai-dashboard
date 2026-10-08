@@ -3,7 +3,10 @@
 import { formatUsd } from "@/lib/fender-canvas/format";
 import type { ChannelFact } from "@/lib/fender-canvas/map-channels";
 
-/** Price and signed gap on one line. A missing price stays blank. */
+/**
+ * One stored retailer price. A missing price stays blank.
+ * No gap is drawn here: the stored list price is Amazon's, so a difference from it is not a MAP gap.
+ */
 export function ChannelPriceCell({
   fact,
   href,
@@ -11,12 +14,11 @@ export function ChannelPriceCell({
   fact: ChannelFact | undefined;
   href?: string | null;
 }) {
-  if (!fact || (fact.price == null && fact.gap == null)) return <td className="money channel-fact" />;
-  const below = fact.gap != null && fact.gap < 0;
-  const price = fact.price != null ? formatUsd(fact.price) : null;
+  if (!fact) return <td className="money channel-fact" />;
+  const price = formatUsd(fact.price);
   return (
     <td className="money channel-fact">
-      {price != null && href ? (
+      {href ? (
         <a
           className="listing-link"
           href={href}
@@ -26,13 +28,9 @@ export function ChannelPriceCell({
         >
           {price}
         </a>
-      ) : null}
-      {price != null && !href ? <span>{price}</span> : null}
-      {fact.gap != null ? (
-        <span className="channel-gap" style={below ? { color: "var(--danger-red)" } : undefined}>
-          {formatUsd(fact.gap, { signed: true })}
-        </span>
-      ) : null}
+      ) : (
+        <span>{price}</span>
+      )}
     </td>
   );
 }

@@ -87,7 +87,7 @@ function wrapSpoke(
     ...(id === "ecommerce"
       ? {
           title: "Portfolio Retail",
-          desc: "Suppressed Featured Offers, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
+          desc: "Suppressed Featured Offers, stored retailer prices, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
         }
       : {}),

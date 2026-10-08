@@ -4,11 +4,11 @@ import {
   readPages,
   RETAIL_AMAZON_SPEC_COLUMNS,
   RETAIL_CATALOG_GOVERNANCE_COLUMNS,
-  RETAIL_MAP_LEAKAGE_COLUMNS,
+  RETAIL_MAP_PRICE_COLUMNS,
   RETAIL_SUPPRESSION_COLUMNS,
   type AmazonSpecRow,
   type CatalogBundleRow,
-  type MapLeakageRow,
+  type MapPriceRow,
   type PortfolioRetailSnapshot,
   type RetailQuerySource,
   type SuppressionSupportRow,
@@ -31,12 +31,15 @@ export function retailSuppressionRowsQuery(page = 0, size = PAGE_SIZE) {
     .range(page * size, page * size + size - 1);
 }
 
-/** MAP prices and stored channel leakage. Bundle and seller columns are not selected. */
-export function retailMapLeakageRowsQuery(page = 0, size = PAGE_SIZE) {
+/**
+ * The listing population a MAP file would be compared against, plus Amazon's stored list price.
+ * The leakage columns are not selected: they are gaps against that list price, not against MAP.
+ */
+export function retailMapPriceRowsQuery(page = 0, size = PAGE_SIZE) {
   const supabase = getCanvasSupabase();
   return supabase
     .from("canvas_retail_listings")
-    .select(RETAIL_MAP_LEAKAGE_COLUMNS)
+    .select(RETAIL_MAP_PRICE_COLUMNS)
     .order("asin")
     .range(page * size, page * size + size - 1);
 }
@@ -80,7 +83,7 @@ export function supabaseRetailQuerySource(): RetailQuerySource {
         retailSuppressionRowsQuery(page, size) as PromiseLike<PageResult<SuppressionSupportRow>>,
       ),
     mapRows: () =>
-      readPages((page, size) => retailMapLeakageRowsQuery(page, size) as PromiseLike<PageResult<MapLeakageRow>>),
+      readPages((page, size) => retailMapPriceRowsQuery(page, size) as PromiseLike<PageResult<MapPriceRow>>),
     catalogRows: () =>
       readPages((page, size) =>
         retailCatalogGovernanceRowsQuery(page, size) as PromiseLike<PageResult<CatalogBundleRow>>,

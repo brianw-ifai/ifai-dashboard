@@ -4,14 +4,15 @@ import { test } from "node:test";
 import { tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 import {
   amazonSpecGapsFinding,
+  FENDER_MAP_NOT_STORED,
   FENDER_RETAIL_HEADLINE_RANK,
   loadPortfolioRetailSnapshot,
-  mapLeakageFinding,
+  mapPriceFinding,
   readPages,
   RETAIL_AMAZON_SPEC_COLUMNS,
   RETAIL_CATALOG_GOVERNANCE_COLUMNS,
   RETAIL_FINDING_LABELS,
-  RETAIL_MAP_LEAKAGE_COLUMNS,
+  RETAIL_MAP_PRICE_COLUMNS,
   RETAIL_SUPPRESSION_COLUMNS,
   selectRetailHeadline,
   suppressedListingsFinding,
@@ -19,8 +20,10 @@ import {
   usableParentAsin,
   type AmazonSpecRow,
   type CatalogBundleRow,
-  type MapLeakageRow,
+  type MapPriceDetail,
+  type MapPriceRow,
   type PortfolioRetailFindings,
+  type RetailReading,
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 
@@ -33,15 +36,13 @@ function suppression(overrides: Partial<SuppressionSupportRow> = {}): Suppressio
   };
 }
 
-function mapRow(overrides: Partial<MapLeakageRow> = {}): MapLeakageRow {
-  return {
-    map_price: 100,
-    offer_price: 80,
-    amz_leakage: -20,
-    wmt_leakage: null,
-    mf_leakage: null,
-    ...overrides,
-  };
+function mapRow(overrides: Partial<MapPriceRow> = {}): MapPriceRow {
+  return { asin: "B000000001", map_price: null, ...overrides };
+}
+
+/** What the MAP reading becomes once Fender MAP prices are stored and nothing is below them. */
+function mapZero(): RetailReading<MapPriceDetail | null> {
+  return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail: null };
 }
 
 function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "asin">): CatalogBundleRow {
@@ -60,13 +61,12 @@ function findings(overrides: Partial<PortfolioRetailFindings> = {}): PortfolioRe
   const zero = suppressedListingsFinding([
     suppression({ featured_offer_withheld: false, competitive_price_threshold_cents: 100 }),
   ]);
-  const mapZero = mapLeakageFinding([mapRow({ amz_leakage: 0, offer_price: 100 })]);
   const bundlesZero = unnestedBundlesFinding([
     bundle({ asin: "B000000001", parent_asin: "B0000000ZZ" }),
   ]);
   return {
     suppressedListings: zero,
-    mapLeakage: mapZero,
+    mapPrices: mapZero(),
     unnestedBundles: bundlesZero,
     amazonSpecGaps: amazonSpecGapsFinding([
       { asin: "B000000001", title: "Strat", amazon_checked: true, amazon_missing_fields: "" },
@@ -133,52 +133,43 @@ test("a finished suppression audit with issues is available", () => {
   assert.equal(reading.detail?.audited, reading.detail?.population);
 });
 
-test("MAP violations are stored leakage below zero, and a missing price is not zero", () => {
-  const reading = mapLeakageFinding([
-    mapRow({ amz_leakage: -20, wmt_leakage: -30, mf_leakage: null }),
-    mapRow({ amz_leakage: 5, wmt_leakage: null, mf_leakage: null }),
-    mapRow({ map_price: null, offer_price: 40, amz_leakage: null, wmt_leakage: null, mf_leakage: null }),
-    mapRow({ amz_leakage: "0", wmt_leakage: null }),
+test("the MAP reading states no count, whatever Amazon's stored list price says", () => {
+  const reading = mapPriceFinding([
+    mapRow({ asin: "B0HJDFP2XS", map_price: 749.99 }),
+    mapRow({ asin: "B0CMW1YK74", map_price: 2497.99 }),
+    mapRow({ asin: "B000000003", map_price: null }),
   ]);
 
-  assert.equal(reading.status, "incomplete");
-  assert.equal(reading.issueCount, 1);
-  assert.equal(reading.detail?.violations, 1);
-  assert.equal(reading.detail?.undecided, 1);
-  assert.equal(reading.detail?.averageLeakage, -30);
-  assert.match(reading.missingMessage ?? "", /not counted as zero/);
-  assert.doesNotMatch(reading.missingMessage ?? "", /partner-led|Buy Box/i);
+  assert.equal(reading.status, "unavailable");
+  assert.equal(reading.issueCount, null);
+  assert.equal(reading.missingMessage, FENDER_MAP_NOT_STORED);
+  assert.equal(reading.detail?.population, 3);
+  assert.equal(reading.detail?.amazonListPrices, 2);
+  assert.doesNotMatch(reading.missingMessage ?? "", /\d/);
 });
 
-test("MAP average leakage is omitted when no violation stores a leakage", () => {
-  const reading = mapLeakageFinding([
-    mapRow({ amz_leakage: 0, offer_price: 100, map_price: 100 }),
-    mapRow({ amz_leakage: 4, wmt_leakage: 2, mf_leakage: null }),
+test("a stored list price never becomes a below-MAP count", () => {
+  const everyRowPriced = mapPriceFinding([
+    mapRow({ map_price: 100 }),
+    mapRow({ map_price: "250.50" }),
   ]);
-  assert.equal(reading.status, "available_with_zero");
-  assert.equal(reading.issueCount, 0);
-  assert.equal(reading.detail?.averageLeakage, null);
-});
+  assert.equal(everyRowPriced.status, "unavailable");
+  assert.equal(everyRowPriced.issueCount, null);
+  assert.equal(everyRowPriced.detail?.amazonListPrices, 2);
 
-test("MAP ignores bundle membership and does not invent an impact", () => {
-  const withBundleFlag = mapLeakageFinding([
-    mapRow({ amz_leakage: -10, wmt_leakage: -4 }),
-    mapRow({ amz_leakage: -2 }),
-  ]);
-  assert.equal(withBundleFlag.status, "available_with_issues");
-  assert.equal(withBundleFlag.issueCount, 2);
-  assert.equal(withBundleFlag.detail?.averageLeakage, -6);
+  const zeroAndBlank = mapPriceFinding([mapRow({ map_price: 0 }), mapRow({ map_price: "" })]);
+  assert.equal(zeroAndBlank.detail?.amazonListPrices, 0);
+  assert.equal(zeroAndBlank.detail?.population, 2);
 
-  const absent = mapLeakageFinding(null);
-  assert.equal(absent.status, "unavailable");
-  assert.equal(absent.issueCount, null);
-  assert.equal(absent.detail, null);
+  const emptyRead = mapPriceFinding([]);
+  assert.equal(emptyRead.status, "unavailable");
+  assert.equal(emptyRead.detail?.population, 0);
 
-  const neverStored = mapLeakageFinding([
-    mapRow({ map_price: null, offer_price: null, amz_leakage: null, wmt_leakage: null, mf_leakage: null }),
-  ]);
-  assert.equal(neverStored.status, "unavailable");
-  assert.equal(neverStored.issueCount, null);
+  const failed = mapPriceFinding(null);
+  assert.equal(failed.status, "unavailable");
+  assert.equal(failed.issueCount, null);
+  assert.equal(failed.detail, null);
+  assert.match(failed.missingMessage ?? "", /did not succeed/);
 });
 
 test("a bundle with a usable parent is not an unnested opportunity", () => {
@@ -311,7 +302,7 @@ test("headline rank prefers suppressed Featured Offers, then MAP, then unnested 
   const selected = selectRetailHeadline(
     findings({
       suppressedListings: suppressedListingsFinding([suppression(), suppression({ featured_offer_withheld: false })]),
-      mapLeakage: mapLeakageFinding([mapRow()]),
+      mapPrices: mapPriceFinding([mapRow()]),
       unnestedBundles: unnestedBundlesFinding([bundle({ asin: "B000000009" })]),
     }),
   );
@@ -325,13 +316,14 @@ test("headline rank prefers suppressed Featured Offers, then MAP, then unnested 
 test("a confirmed zero is skipped and the next finding is used", () => {
   const selected = selectRetailHeadline(
     findings({
-      mapLeakage: mapLeakageFinding([mapRow({ amz_leakage: -12 })]),
+      mapPrices: mapPriceFinding([mapRow()]),
       unnestedBundles: unnestedBundlesFinding([bundle({ asin: "B000000009" })]),
     }),
   );
   assert.equal(selected?.findingId, "map_leakage");
   assert.equal(selected?.tabSlug, "map");
   assert.equal(selected?.label, RETAIL_FINDING_LABELS.map_leakage);
+  assert.equal(selected?.reading.missingMessage, FENDER_MAP_NOT_STORED);
 
   const bundles = selectRetailHeadline(
     findings({
@@ -351,7 +343,7 @@ test("a missing top reading is returned and does not fall through", () => {
   const absent = selectRetailHeadline(
     findings({
       suppressedListings: suppressedListingsFinding(null),
-      mapLeakage: mapLeakageFinding([mapRow()]),
+      mapPrices: mapPriceFinding([mapRow()]),
       unnestedBundles: unnestedBundlesFinding([bundle({ asin: "B000000009" })]),
     }),
   );
@@ -366,7 +358,7 @@ test("a missing top reading is returned and does not fall through", () => {
         suppression({ featured_offer_withheld: null }),
         suppression({ featured_offer_withheld: false, competitive_price_threshold_cents: 100 }),
       ]),
-      mapLeakage: mapLeakageFinding([mapRow({ amz_leakage: -50 })]),
+      mapPrices: mapPriceFinding([mapRow()]),
     }),
   );
   assert.equal(partial?.findingId, "suppressed_listings");
@@ -375,7 +367,7 @@ test("a missing top reading is returned and does not fall through", () => {
 
   const mapMissing = selectRetailHeadline(
     findings({
-      mapLeakage: mapLeakageFinding(null),
+      mapPrices: mapPriceFinding(null),
       unnestedBundles: unnestedBundlesFinding([bundle({ asin: "B000000009" })]),
     }),
   );
@@ -400,8 +392,9 @@ test("headline selection ignores 1P share, active listings, and unknown sellers"
 test("query columns stay on the stored finding fields", () => {
   assert.match(RETAIL_SUPPRESSION_COLUMNS, /competitive_price_threshold_cents/);
   assert.match(RETAIL_SUPPRESSION_COLUMNS, /featured_offer_withheld/);
-  assert.match(RETAIL_MAP_LEAKAGE_COLUMNS, /amz_leakage/);
-  assert.doesNotMatch(RETAIL_MAP_LEAKAGE_COLUMNS, /is_bundle|parent_asin|buybox/);
+  assert.match(RETAIL_MAP_PRICE_COLUMNS, /map_price/);
+  assert.doesNotMatch(RETAIL_MAP_PRICE_COLUMNS, /leakage|is_map_violation/);
+  assert.doesNotMatch(RETAIL_MAP_PRICE_COLUMNS, /is_bundle|parent_asin|buybox/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /parent_asin/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /bundle_name/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /product_url/);
@@ -413,7 +406,7 @@ test("query columns stay on the stored finding fields", () => {
 test("a failed page read is unavailable and a stored page zero stays zero", async () => {
   const failed = await loadPortfolioRetailSnapshot({
     suppressionRows: async () => ({ ok: false }),
-    mapRows: async () => ({ ok: true, rows: [mapRow({ amz_leakage: -5 })], truncated: false }),
+    mapRows: async () => ({ ok: true, rows: [mapRow({ map_price: 100 })], truncated: false }),
     catalogRows: async () => ({ ok: true, rows: [bundle({ asin: "B000000009" })], truncated: false }),
     catalogBundleCount: async () => 941,
     specRows: async () => ({ ok: false }),
@@ -440,10 +433,10 @@ test("a failed page read is unavailable and a stored page zero stays zero", asyn
     }),
   });
   assert.equal(storedZero.suppressedListings.status, "available_with_zero");
-  assert.equal(storedZero.mapLeakage.status, "available_with_zero");
-  assert.equal(storedZero.mapLeakage.issueCount, 0);
+  assert.equal(storedZero.mapPrices.status, "unavailable");
+  assert.equal(storedZero.mapPrices.issueCount, null);
   assert.equal(storedZero.unnestedBundles.status, "available_with_zero");
-  assert.equal(storedZero.headline, null);
+  assert.equal(storedZero.headline?.findingId, "map_leakage");
   assert.equal(storedZero.amazonSpecGaps.status, "available_with_issues");
   assert.equal(storedZero.amazonSpecGaps.issueCount, 1);
 });
