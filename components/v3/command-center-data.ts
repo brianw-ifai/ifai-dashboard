@@ -34,7 +34,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "schema-coverage",
       title: "fender.com pages are missing machine-readable spec fields",
-      why: "The spec read shows how often a fender.com page was found and how many of those pages are missing additionalProperty. The Schema tab lists the missing-field rows.",
+      why: "The spec read shows how often a fender.com page was found and how many of those pages are missing additionalProperty. The Schema tab lists the found pages whose stored missing fields include additionalProperty.",
       severity: "high",
       spokeId: "specs",
       subTab: "Schema",

@@ -87,6 +87,23 @@ export function FenderSpecSummary({
   );
 }
 
+const ADDITIONAL_PROPERTY_DESC =
+  "The Schema.org field that can carry neck, pickup, and hardware specs. When it is missing from a found page, an assistant has no spec block to read there.";
+
+export function AdditionalPropertyTerm() {
+  return (
+    <span
+      className="ifai-term"
+      data-ifai-tooltip-title="additionalProperty"
+      data-ifai-tooltip-desc={ADDITIONAL_PROPERTY_DESC}
+      tabIndex={0}
+      aria-label={`additionalProperty: ${ADDITIONAL_PROPERTY_DESC}`}
+    >
+      additionalProperty
+    </span>
+  );
+}
+
 export function SchemaExplanation() {
   return (
     <div className="ceo-callout">
@@ -95,9 +112,9 @@ export function SchemaExplanation() {
       </div>
       <div className="ceo-callout-body">
         When people visit fender.com, they read marketing copy. AI crawlers need a machine-readable
-        block, Schema.org JSON-LD, to take a spec as a fact. additionalProperty is the part of that
-        block that can carry neck, pickup, and hardware specs. The rows below are the missing fields
-        in the latest spec read.
+        block, Schema.org JSON-LD, to take a spec as a fact. <AdditionalPropertyTerm /> is the part
+        of that block that can carry neck, pickup, and hardware specs. The list below is the found
+        pages whose stored missing-field text includes <AdditionalPropertyTerm />.
       </div>
     </div>
   );

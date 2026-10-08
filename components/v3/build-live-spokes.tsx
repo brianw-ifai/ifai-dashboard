@@ -9,8 +9,8 @@ import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { FenderSimulationsPanel } from "@/components/v3/live/FenderSimulationsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
-import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
 import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/FenderSpecNarratives";
+import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -55,10 +55,10 @@ const TAB_OVERRIDES: Partial<
   },
   specs: {
     0: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
-    1: (bundle) => (
+    1: () => (
       <>
         <SchemaExplanation />
-        <FenderSpecPanel missing={bundle.missing} />
+        <SchemaAdditionalPropertyList />
       </>
     ),
     2: () => <AplusExplanation />,

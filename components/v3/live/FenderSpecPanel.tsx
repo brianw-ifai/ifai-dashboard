@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
 import {
   specFenderFoundLabel,
@@ -19,12 +20,23 @@ export function FenderSpecPanel({
   missingPagesOnly = false,
 }: {
   missing: CanvasSpecMissingRow[];
-  /** Catalog Readiness passes this. Schema.org leaves it off and stays unfiltered. */
+  /** Catalog Readiness passes this. Any other caller gets the Schema.org gap list. */
   catalogReadiness?: boolean;
   missingPagesOnly?: boolean;
 }) {
+  if (!catalogReadiness) return <SchemaAdditionalPropertyList />;
+  return <CatalogSpecReadiness missing={missing} missingPagesOnly={missingPagesOnly} />;
+}
+
+function CatalogSpecReadiness({
+  missing,
+  missingPagesOnly,
+}: {
+  missing: CanvasSpecMissingRow[];
+  missingPagesOnly: boolean;
+}) {
   const queryMissingPages =
-    specRowsFilter(catalogReadiness, missingPagesOnly)?.missingFenderPage === true;
+    specRowsFilter(true, missingPagesOnly)?.missingFenderPage === true;
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);

@@ -108,9 +108,9 @@ The MAP glossary says partners get around MAP by bundling a cheap accessory and 
 | Screen | Words Fender sees | Table and column | Writer | Status |
 | --- | --- | --- | --- | --- |
 | Unnested bundles | **49**. "Bundles in this retail read with no usable parent ASIN." Then: "This read includes 414 of 941 bundle listings. 49 of the included listings have no usable parent ASIN. This is not a final count." | `is_bundle`, `parent_asin`. A parent can nest the bundle only when it is a different 10-character ASIN. All 49 are missing a parent ASIN. The table also shows listing name, bundle name, ASIN, and product URL when one is stored. | `catalog_harvester` is the named catalog job. | partial reading |
-| Missing Amazon spec fields | **435**. "Checked listings with a missing Amazon spec field, out of 925 checked." | `canvas_spec_readiness.amazon_checked` and `amazon_missing_fields`, from the latest `command.fmic_spec_readiness` row per ASIN. Fields are split on semicolons. 925 latest rows, all with `amazon_checked` true, none unchecked inside that set. | `spec_readiness` | partial reading |
+| Checked listings with a missing Amazon spec field | The live `amazonSpecGaps` issue count. The count opens Catalog Readiness. This tab does not list the rows. | `canvas_spec_readiness.amazon_checked` and `amazon_missing_fields`, from the latest `command.fmic_spec_readiness` row per ASIN. Fields are split on semicolons. The panel reads `amazonSpecGaps.issueCount`. At the source-map read that count was 435 of 925 checked rows, all with `amazon_checked` true. | `spec_readiness` | partial reading |
 
-The 435 is a stored list of checked listings with at least one missing Amazon field. It is not a final catalog count. The spec job has not wrapped, and 666 of the 925 latest rows were checked more than 26 hours before this read. The other catalog rows have no spec row. They are not in the 435, and they are not zeros.
+The count is the stored list of checked listings with at least one missing Amazon field. It is not a final catalog count, and Catalog Governance does not repeat the rows. Those rows stay on Catalog Readiness. The spec job has not wrapped, and 666 of the 925 latest rows were checked more than 26 hours before this read. The other catalog rows have no spec row. They are not in that count, and they are not zeros.
 
 The callout says a stronger unified review record does not guarantee a higher rank or an AI recommendation. That is explanation, not a measured rank change.
 
@@ -167,7 +167,7 @@ Status of the 13.3% findability share: **partial reading**. Status of the 802 un
 
 ### Catalog Readiness and Schema.org tabs
 
-Both tabs show the same spec table under different callouts. Catalog Readiness opens with the spec summary. Schema.org opens with the explanation of JSON-LD and `additionalProperty`.
+Catalog Readiness keeps the spec summary, the fender.com page found control, the top missing schema fields chart, and Spec readiness by ASIN. Schema.org keeps the explanation of JSON-LD and `additionalProperty`. It lists found pages whose stored `fender_missing_fields` text includes `additionalProperty`. A row without that stored gap does not appear. The row count on that list is the live query count. Schema.org does not show the ASIN table or the top missing schema fields chart.
 
 | Spec summary row | Words Fender sees | Column | Status |
 | --- | --- | --- | --- |
@@ -177,7 +177,7 @@ Both tabs show the same spec table under different callouts. Catalog Readiness o
 | fender.com completeness when a page is found | 87.5% | `fender_completeness_pct` where `fender_found` | partial reading |
 | Found pages missing additionalProperty | 123 | `fender_missing_fields` | confirmed issue |
 
-**Top missing schema fields** is the first eight rows of `public.canvas_spec_missing_fields`, ordered by `sku_count`. Amazon fields come from `amazon_missing_fields`. The fender field is counted only on rows with `fender_found` true.
+**Top missing schema fields** is on Catalog Readiness. It is the first eight rows of `public.canvas_spec_missing_fields`, ordered by `sku_count`. Amazon fields come from `amazon_missing_fields`. The fender field is counted only on rows with `fender_found` true. Schema.org does not show this chart.
 
 | Field | Source | SKUs |
 | --- | --- | --- |
@@ -192,16 +192,16 @@ Both tabs show the same spec table under different callouts. Catalog Readiness o
 
 Status of these eight counts: **partial reading**, because they are frequencies inside the same unfinished spec read.
 
-**Spec readiness by ASIN** says **925 rows**. The ASIN cell shows `asin`.
+**Spec readiness by ASIN** is on Catalog Readiness. At the source-map read it said **925 rows**. Schema.org does not show this table. The ASIN cell shows `asin`.
 
 | Column Fender sees | What the cell reads | What is stored | Status |
 | --- | --- | --- | --- |
-| Model | `model_name` | The view has `title`, not `model_name`. Every cell says **n/a**. | not measured |
+| Model | `title` | The view column is `title`. A blank title stays blank. | partial reading |
 | Amazon completeness | `amazon_completeness_pct` | That column, formatted as a percent. | partial reading |
-| fender.com found | `fender_page_found` | The view column is `fender_found`. The cell does not read it, so every row says **No**. | not measured |
+| fender.com found | `fender_found` | True is Yes, false is No, and a null flag stays blank. | partial reading |
 | Missing Amazon fields | `amazon_missing_fields`, split on `;` | That column. Empty becomes "Pending data". | partial reading |
 
-The column of **No** values is not a stored zero of fender.com pages. The summary above the table is the reading that uses `fender_found`.
+A **No** in this table is a stored `fender_found` false. It is not proof the product is absent from fender.com. A null flag stays blank and is not in the missing-page filter.
 
 ### A+ tab
 

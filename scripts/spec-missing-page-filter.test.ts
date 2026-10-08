@@ -162,6 +162,23 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(catalog, forbidden);
 
   assert.match(spokes, /<CatalogReadinessSpec bundle=\{bundle\} \/>/);
-  assert.match(spokes, /<FenderSpecPanel missing=\{bundle\.missing\} \/>/);
+  assert.match(spokes, /<SchemaExplanation \/>/);
+  assert.match(spokes, /<SchemaAdditionalPropertyList \/>/);
+  assert.doesNotMatch(spokes, /<FenderSpecPanel/);
   assert.doesNotMatch(spokes, forbidden);
+
+  const schemaList = read("components/v3/live/SchemaAdditionalPropertyList.tsx");
+  const governance = read("components/v3/live/CatalogGovernancePanel.tsx");
+  assert.doesNotMatch(schemaList, /Spec readiness by ASIN/);
+  assert.doesNotMatch(schemaList, /Top missing schema fields/);
+  assert.doesNotMatch(schemaList, /\stitle=/);
+  assert.doesNotMatch(schemaList, forbidden);
+  assert.match(schemaList, /data-schema-gap-count=\{total\}/);
+  assert.match(governance, /data-ifai-open="specs"/);
+  assert.match(governance, /data-ifai-tab="Catalog Readiness"/);
+  assert.match(governance, /Unnested bundles/);
+  assert.doesNotMatch(governance, /catalog-specs/);
+  assert.doesNotMatch(governance, /Missing Amazon spec fields/);
+  assert.doesNotMatch(governance, /\b435\b/);
+  assert.doesNotMatch(governance, /\stitle=/);
 });
