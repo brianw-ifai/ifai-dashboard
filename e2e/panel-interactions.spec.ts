@@ -119,23 +119,32 @@ test.describe("drill-downs", () => {
     await expect(page.locator("tr", { hasText: "B0CMW1YK74" })).not.toContainText("-$");
     await expect(page.locator(".channel-gap")).toHaveCount(0);
 
-    await expect(body).not.toContainText("Reverb");
-    await expect(body).not.toContainText("Sweetwater");
     await expect(body).not.toContainText("Featured Offer withheld");
     await expect(body).not.toContainText("Prices at MAP");
     await expect(page.locator(".map-channel-row")).toHaveCount(0);
   });
 
-  test("no MAP tab column header calls the stored list price MAP", async ({ canvas, page }) => {
+  /* Headers are upper-cased in CSS, so compare on the accessible name, not the painted text.
+     "Sweetwater" and "Reverb" both appear inside stored product titles, so only a column or a
+     channel summary line proves one of those retailers is on the tab. */
+  test("MAP tab columns name the channel, never the stored list price", async ({ canvas, page }) => {
     await canvas.openPriority("Fender MAP prices");
-    const headers = await page.locator(".drilldown-body table th").allInnerTexts();
-    const trimmed = headers.map((header) => header.replace(/\s+/g, " ").trim());
+    await expect(page.locator(".drilldown-body table th").first()).toBeVisible();
+    const headers = (await page.locator(".drilldown-body table th").allTextContents()).map(
+      (header) => header.replace(/\s+/g, " ").trim(),
+    );
 
-    expect(trimmed).toContain("Musician's Friend");
-    expect(trimmed).not.toContain("MAP");
-    for (const header of trimmed) {
-      expect(header === "MAP" || /^MAP\b/.test(header)).toBe(false);
-    }
+    expect(headers).toContain("Amazon");
+    expect(headers).toContain("Musician's Friend");
+    expect(headers).not.toContain("MAP");
+    expect(headers).not.toContain("Amazon list price");
+    expect(headers).not.toContain("Sweetwater");
+    expect(headers).not.toContain("Reverb");
+
+    const summary = await page.locator(".drilldown-body .tour-card-list li").allTextContents();
+    expect(summary.some((line) => line.startsWith("Sweetwater"))).toBe(false);
+    expect(summary.some((line) => line.startsWith("Reverb"))).toBe(false);
+    expect(summary.some((line) => /^Amazon · \d/.test(line.replace(/\s+/g, " ")))).toBe(true);
   });
 
   test("portfolio retail keeps listings, MAP, suppressed rows, and catalog apart", async ({

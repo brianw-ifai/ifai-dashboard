@@ -4,7 +4,7 @@ test.describe("configurable metric widgets", () => {
   test("starts with three decision signals and spoke-derived categories", async ({ page }) => {
     const widgets = page.locator(".canvas-metric-widget");
     await expect(widgets).toHaveCount(3);
-    await expect(widgets.nth(0)).toContainText("Featured Offers Suppressed");
+    await expect(widgets.nth(0)).toContainText("Listings below MAP");
     await expect(widgets.nth(1)).toContainText("Confirmed Spec Hallucinations");
     await expect(widgets.nth(2)).toContainText("Recoverable Revenue");
 

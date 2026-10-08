@@ -146,11 +146,13 @@ function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
           </span>
         </div>
         <div className="metric-card-sm">
-          <span className="metric-card-label">Listings in this read</span>
+          <span className="metric-card-label">Listings a MAP file would cover</span>
           <div className="metric-card-val">
             {listings == null ? "Not stored" : formatInt(listings)}
           </div>
-          <span className="metric-card-sub">Stored retailer prices, with no MAP to compare</span>
+          <span className="metric-card-sub">
+            Every listing in the retail read. The table below is the ones priced away from Amazon.
+          </span>
         </div>
       </div>
       <p className="retail-missing">
