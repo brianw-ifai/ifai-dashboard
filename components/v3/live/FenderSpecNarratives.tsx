@@ -69,9 +69,10 @@ export function AplusExplanation() {
         <span>What is Amazon A+ content, and why does it win AI queries?</span>
       </div>
       <div className="ceo-callout-body">
-        Amazon A+ content is the enhanced modules on a product page: graphics, diagrams, and
-        comparison charts. When a comparison table is present, Amazon&apos;s shopping assistant and
-        other AI models can read the columns and use your lineup to explain the step up.
+        Comparison tables have not been measured. A+ Content is the enhanced modules on a product
+        page: graphics, diagrams, and comparison charts. When a comparison table is on the page,
+        Amazon&apos;s shopping assistant and other AI models can read the columns and repeat how
+        your lineup steps up.
       </div>
     </div>
   );

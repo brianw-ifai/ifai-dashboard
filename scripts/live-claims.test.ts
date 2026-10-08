@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { beginnerSovLine } from "../lib/fender-canvas/beginner-sov.ts";
 import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from-live.ts";
+import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
 import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-causes.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { activeOfferClarity } from "../lib/fender-canvas/offer-clarity.ts";
@@ -132,6 +133,36 @@ function retailReady(): RetailCanvasRead {
     },
   };
 }
+
+test("A+ tables do not borrow Amazon attribute completeness", () => {
+  const retail = retailReady();
+  const metrics = buildLiveMetrics(bundle(), retail);
+  const nodes = buildLiveNodes(bundle(), metrics, retail);
+  const satellite = nodes.find((node) => node.id === "sat-tables");
+  const readiness = nodes.find((node) => node.id === "spoke-specs");
+  assert.ok(satellite);
+  assert.ok(readiness);
+  assert.deepEqual(satellite.stats, ["Not measured yet"]);
+  assert.equal(satellite.title, "A+ Tables");
+  const satelliteText = [satellite.meta, satellite.tooltip.title, satellite.tooltip.desc, ...satellite.stats]
+    .filter(Boolean)
+    .join(" ");
+  assert.match(satelliteText, /Comparison tables have not been measured/);
+  assert.doesNotMatch(satelliteText, /91\.8%|%/);
+  assert.doesNotMatch(satelliteText, /\d/);
+
+  assert.match(readiness.stats.join(" "), /91\.8%/);
+  assert.equal(metrics.machineReadableSpecs.value, "91.8%");
+  assert.equal(metrics.machineReadableSpecs.detail, "Amazon attribute completeness");
+
+  const item = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "aplus-tables");
+  assert.ok(item);
+  const itemText = [item.title, item.why, item.impact].filter(Boolean).join(" ");
+  assert.match(itemText, /comparison tables have not been measured/i);
+  assert.doesNotMatch(itemText, /91\.8%|%/);
+  assert.doesNotMatch(itemText, /\d/);
+  assert.doesNotMatch(itemText, /Fender/);
+});
 
 test("command center uses the retail headline and drops unsourced claims", () => {
   const retail = retailReady();
