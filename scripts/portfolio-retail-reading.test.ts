@@ -221,6 +221,48 @@ test("a channel price with no listing MAP is not counted and does not invent a p
   assert.deepEqual(model.channels, []);
 });
 
+test("B0HJDFP2XS keeps the Musician's Friend price and does not invent a MAP gap", () => {
+  const facts = listingChannelFacts(
+    row({
+      asin: "B0HJDFP2XS",
+      map_price: null,
+      offer_price: 599.99,
+      amz_leakage: null,
+      worst_leakage: null,
+      mf_price: 599.99,
+      mf_leakage: null,
+    }),
+  );
+  const musiciansFriend = facts.find((fact) => fact.name === "Musician's Friend");
+  assert.equal(musiciansFriend?.price, 599.99);
+  assert.equal(musiciansFriend?.gap, null);
+  assert.equal(
+    facts.every((fact) => fact.gap == null),
+    true,
+  );
+});
+
+test("B0DYKZ4MJG keeps the Walmart price and does not invent a MAP gap", () => {
+  const facts = listingChannelFacts(
+    row({
+      asin: "B0DYKZ4MJG",
+      map_price: null,
+      offer_price: 287.93,
+      amz_leakage: null,
+      worst_leakage: null,
+      wmt_price: 220.14,
+      wmt_leakage: null,
+    }),
+  );
+  const walmart = facts.find((fact) => fact.name === "Walmart");
+  assert.equal(walmart?.price, 220.14);
+  assert.equal(walmart?.gap, null);
+  assert.equal(
+    facts.some((fact) => fact.gap != null),
+    false,
+  );
+});
+
 test("B0CMW1YK74 keeps the Amazon gap and the Musician's Friend gap apart", () => {
   const source = row({
     asin: "B0CMW1YK74",

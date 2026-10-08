@@ -51,6 +51,9 @@ export type RetailHeadline = {
 const SUPPRESSED_UNAVAILABLE =
   "Suppressed Featured Offer readings have not been stored.";
 const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
+
+/** Shown when the retail read has rows and none of them store a MAP price. */
+export const MAP_PRICES_NOT_STORED = "Fender MAP prices have not been stored.";
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 
@@ -216,6 +219,13 @@ function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+/** A stored MAP price is a positive number. Null, zero, and a list price are not MAP. */
+function storedMapPrice(value: unknown): number | null {
+  const price = finite(value);
+  if (price == null || price <= 0) return null;
+  return price;
+}
+
 /** Current MAP violations from stored channel leakage. Bundle fields are not an input. */
 export function mapLeakageFinding(
   rows: MapLeakageRow[] | null,
@@ -224,6 +234,14 @@ export function mapLeakageFinding(
   if (rows == null) return unavailable(MAP_UNAVAILABLE);
 
   const population = rows.length;
+  if (population > 0 && !rows.some((row) => storedMapPrice(row.map_price) != null)) {
+    return {
+      status: "unavailable",
+      issueCount: null,
+      missingMessage: MAP_PRICES_NOT_STORED,
+      detail: null,
+    };
+  }
   const violations = rows.filter(isMapViolation);
   const undecided = rows.filter(mapRowUndecided).length;
   const decided = rows.filter((row) => channelLeakages(row).length > 0).length;

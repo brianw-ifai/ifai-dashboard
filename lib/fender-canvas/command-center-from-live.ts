@@ -6,11 +6,15 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
+import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 const MAP_CHANNEL_WHY =
   "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.";
+
+const MAP_PRICES_NOT_STORED_WHY =
+  "Fender MAP prices have not been stored. Amazon, Walmart, and Musician's Friend prices still show when a price is stored for that channel. A missing price stays blank.";
 
 /** The MAP tab shows this sentence while the reading is unfinished or missing. */
 function mapMissingSentence(retail: RetailCanvasRead): string | null {
@@ -21,6 +25,9 @@ function mapMissingSentence(retail: RetailCanvasRead): string | null {
 }
 
 function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
+  if (retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED) {
+    return { title: MAP_PRICES_NOT_STORED, why: MAP_PRICES_NOT_STORED_WHY };
+  }
   const title = mapReadLine(retail).replace(/\.$/, "");
   return { title, why: mapMissingSentence(retail) ?? MAP_CHANNEL_WHY };
 }

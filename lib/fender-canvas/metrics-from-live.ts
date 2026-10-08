@@ -1,5 +1,6 @@
 import type { CanvasMetric } from "@/lib/canvas-sdk/types";
 import { beginnerSovLine } from "@/lib/fender-canvas/beginner-sov";
+import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import {
@@ -123,16 +124,28 @@ export function buildLiveMetrics(
       subTab: "Catalog",
       provenance: "live",
     },
-    amazonMapDrift: {
-      id: "amazon-map-drift",
-      spokeId: "ecommerce",
-      label: "Average Amazon Price Drift",
-      value: formatUsd(m.amz_avg_drift, { signed: true }),
-      detail: `Across ${formatInt(m.amz_below_map)} ASINs below MAP on Amazon`,
-      tone: "danger",
-      subTab: "MAP",
-      provenance: "live",
-    },
+    amazonMapDrift:
+      retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED
+        ? {
+            id: "amazon-map-drift",
+            spokeId: "ecommerce",
+            label: "Average Amazon Price Drift",
+            value: "Not stored",
+            detail: MAP_PRICES_NOT_STORED,
+            tone: "warning",
+            subTab: "MAP",
+            provenance: "live",
+          }
+        : {
+            id: "amazon-map-drift",
+            spokeId: "ecommerce",
+            label: "Average Amazon Price Drift",
+            value: formatUsd(m.amz_avg_drift, { signed: true }),
+            detail: `Across ${formatInt(m.amz_below_map)} ASINs below MAP on Amazon`,
+            tone: "danger",
+            subTab: "MAP",
+            provenance: "live",
+          },
     overallAiWinRate: {
       id: "overall-ai-win-rate",
       spokeId: "aeo",

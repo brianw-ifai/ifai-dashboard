@@ -179,6 +179,33 @@ test("MAP ignores bundle membership and does not invent an impact", () => {
   ]);
   assert.equal(neverStored.status, "unavailable");
   assert.equal(neverStored.issueCount, null);
+  assert.equal(neverStored.missingMessage, "Fender MAP prices have not been stored.");
+});
+
+test("an empty MAP price is not zero listings below MAP", () => {
+  const reading = mapLeakageFinding([
+    mapRow({
+      map_price: null,
+      offer_price: 599.99,
+      amz_leakage: null,
+      wmt_leakage: null,
+      mf_leakage: null,
+    }),
+    mapRow({
+      map_price: null,
+      offer_price: 287.93,
+      amz_leakage: null,
+      wmt_leakage: null,
+      mf_leakage: null,
+    }),
+    mapRow({ map_price: 0, offer_price: 10, amz_leakage: -10, wmt_leakage: null, mf_leakage: null }),
+  ]);
+
+  assert.equal(reading.status, "unavailable");
+  assert.equal(reading.issueCount, null);
+  assert.equal(reading.detail, null);
+  assert.equal(reading.missingMessage, "Fender MAP prices have not been stored.");
+  assert.doesNotMatch(reading.missingMessage ?? "", /\d|below MAP|gap/);
 });
 
 test("a bundle with a usable parent is not an unnested opportunity", () => {

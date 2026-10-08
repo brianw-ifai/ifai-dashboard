@@ -14,6 +14,7 @@ import {
   suppressedBubble,
 } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import {
+  MAP_PRICES_NOT_STORED,
   mapLeakageFinding,
   RETAIL_FINDING_LABELS,
   selectRetailHeadline,
@@ -128,6 +129,19 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
     "Bundle listings that are not nested under a parent ASIN. Nesting keeps their reviews on the parent listing.",
   );
   assert.equal(catalog.subTab, "Catalog Governance");
+});
+
+test("MAP satellite names missing prices and does not count or average a gap", () => {
+  const reading = mapLeakageFinding([
+    { ...mapRow(null), map_price: null, offer_price: 599.99, amz_leakage: null },
+    { ...mapRow(null), map_price: null, offer_price: 287.93, amz_leakage: null },
+  ]);
+  const map = mapBubble(reading);
+  const text = visible(map);
+  assert.equal(reading.missingMessage, MAP_PRICES_NOT_STORED);
+  assert.match(text, /Fender MAP prices have not been stored/);
+  assert.equal(map.subTab, "MAP");
+  assert.doesNotMatch(text, /below MAP|gap|\$|\d/);
 });
 
 test("a higher unfinished reading is not replaced by a later count", () => {
