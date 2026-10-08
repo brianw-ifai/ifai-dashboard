@@ -54,6 +54,20 @@ export function listingsQuery(
   return q;
 }
 
+/**
+ * Head count of the retail listing read.
+ * `storedWalmartPrice` keeps rows whose Walmart price is greater than zero.
+ * A null or non-positive price is not in that count.
+ */
+export function retailListingHeadCountQuery(options?: { storedWalmartPrice?: boolean }) {
+  const supabase = getCanvasSupabase();
+  let query = supabase
+    .from("canvas_retail_listings")
+    .select("asin", { count: "exact", head: true });
+  if (options?.storedWalmartPrice) query = query.gt("wmt_price", 0);
+  return query;
+}
+
 /** Other retailers' stored prices. One row per listing per channel. */
 export function listingChannelPricesQuery(page = 0, size = 1000) {
   const supabase = getCanvasSupabase();

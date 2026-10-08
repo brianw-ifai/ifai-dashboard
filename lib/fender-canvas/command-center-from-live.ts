@@ -6,7 +6,24 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
+import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
+
+const MAP_CHANNEL_WHY =
+  "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.";
+
+/** The MAP tab shows this sentence while the reading is unfinished or missing. */
+function mapMissingSentence(retail: RetailCanvasRead): string | null {
+  if (retail.phase !== "ready") return null;
+  const reading = retail.snapshot.mapLeakage;
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  return showMissing ? reading.missingMessage : null;
+}
+
+function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
+  const title = mapReadLine(retail).replace(/\.$/, "");
+  return { title, why: mapMissingSentence(retail) ?? MAP_CHANNEL_WHY };
+}
 
 /** Command center copy from the canvas reads. Unsourced counts are omitted. */
 export function buildLiveCommandCenter(
@@ -18,6 +35,7 @@ export function buildLiveCommandCenter(
   const sovLine = beginnerSovLine(bundle.sov);
   const sovWhy = beginnerSovWhy(bundle.sov);
   const headline = headlineSurface(retail);
+  const mapItem = mapPriority(retail);
 
   const summaryParts = [
     headlineSentence(headline),
@@ -69,8 +87,8 @@ export function buildLiveCommandCenter(
       },
       {
         id: "map-leakage",
-        title: "Discounted bundles are dragging your prices down everywhere",
-        why: "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.",
+        title: mapItem.title,
+        why: mapItem.why,
         impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
         severity: "high",
         spokeId: "ecommerce",

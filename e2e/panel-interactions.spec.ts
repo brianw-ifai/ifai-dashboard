@@ -94,12 +94,23 @@ test.describe("collapsible explanations", () => {
 
 test.describe("drill-downs", () => {
   test("MAP tab holds the summary and does not revive the old channel story", async ({ canvas, page }) => {
-    await canvas.openPriority("Discounted bundles are dragging");
+    await canvas.openPriority("below MAP");
     await expect(canvas.activeTab).toContainText("MAP");
 
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Minimum Advertised Price");
     await expect(body).toContainText("Summary");
+    await expect(body).toContainText("no stored Walmart price");
+    await expect(body).toContainText("not counted as zero");
+    await expect(body).not.toContainText("Discounted bundles");
+    await expect(body).not.toContainText("Amazon gap");
+    const proving = page.locator("tr", { hasText: "B0CMW1YK74" });
+    await expect(proving).toBeVisible();
+    await expect(proving.locator(".channel-gap")).toHaveCount(2);
+    const gapColors = await proving.locator(".channel-gap").evaluateAll((nodes) =>
+      nodes.map((node) => (node as HTMLElement).style.color),
+    );
+    expect(gapColors).toEqual(["var(--danger-red)", "var(--danger-red)"]);
     await expect(body).not.toContainText("$808.00");
     await expect(body).not.toContainText("Reverb");
     await expect(body).not.toContainText("Sweetwater");

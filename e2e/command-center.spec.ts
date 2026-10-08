@@ -13,6 +13,8 @@ test.describe("command center", () => {
     await expect(canvas.commandCenter).not.toContainText("16.7%");
     await expect(canvas.commandCenter).not.toContainText("Fourteen");
     await expect(canvas.commandCenter).not.toContainText("14 catalog");
+    await expect(canvas.commandCenter).not.toContainText("Discounted bundles");
+    await expect(canvas.commandCenter).toContainText("below MAP");
     await expect(canvas.page.locator(".drilldown-title")).toContainText(
       "What do I need to worry about?",
     );
@@ -76,7 +78,7 @@ test.describe("command center", () => {
     ["Suppressed Listings", "Retail Overview"],
     ["AI assistants are quoting specs", "Hallucination"],
     ["machine-readable spec", "Schema"],
-    ["Discounted bundles are dragging", "MAP"],
+    ["below MAP", "MAP"],
     ["Beginner share of voice", "Battlecards"],
     ["A+ comparison tables", "A+"],
   ] as const;
