@@ -14,13 +14,59 @@ import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
 const MISSING_PAGE_DESC =
   "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
 
+/** The list opens on the two heaviest fields. The control reveals the rest. */
+const MISSING_FIELD_PREVIEW = 2;
+
+function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const maxCount = missing.reduce((max, row) => Math.max(max, row.sku_count ?? 0), 0) || 1;
+  const shown = showAll ? missing : missing.slice(0, MISSING_FIELD_PREVIEW);
+  const rest = missing.length - MISSING_FIELD_PREVIEW;
+
+  return (
+    <div className="content-box" style={{ marginTop: 12 }}>
+      <div className="content-box-title">Top missing schema fields</div>
+      <div id="spec-missing-fields">
+        {shown.map((row) => (
+          <div key={`${row.source}-${row.field}`} style={{ marginBottom: 6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+              <span>
+                {row.field} ({row.source ?? "n/a"})
+              </span>
+              <span>{formatInt(row.sku_count)} SKUs</span>
+            </div>
+            <div className="readiness-progress-bar">
+              <div
+                className="readiness-progress-fill"
+                style={{ width: `${((row.sku_count ?? 0) / maxCount) * 100}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      {rest > 0 ? (
+        <button
+          type="button"
+          className="segmented-btn"
+          aria-expanded={showAll}
+          aria-controls="spec-missing-fields"
+          data-spec-missing-fields-toggle={showAll ? "all" : "preview"}
+          onClick={() => setShowAll((value) => !value)}
+        >
+          {showAll ? "Show fewer fields" : `Show all ${formatInt(missing.length)} fields`}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function FenderSpecPanel({
   missing,
   catalogReadiness = false,
   missingPagesOnly = false,
 }: {
   missing: CanvasSpecMissingRow[];
-  /** Catalog Readiness passes this. Any other caller gets the Schema.org gap list. */
+  /** AI Readiness passes this. Any other caller gets the Machine Readability gap list. */
   catalogReadiness?: boolean;
   missingPagesOnly?: boolean;
 }) {
@@ -76,30 +122,10 @@ function CatalogSpecReadiness({
   }, [page, queryMissingPages]);
 
   const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const topMissing = missing.slice(0, 8);
-  const maxCount = topMissing.reduce((m, r) => Math.max(m, r.sku_count ?? 0), 0) || 1;
 
   return (
     <>
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Top missing schema fields</div>
-        {topMissing.map((row) => (
-          <div key={`${row.source}-${row.field}`} style={{ marginBottom: 6 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-              <span>
-                {row.field} ({row.source ?? "n/a"})
-              </span>
-              <span>{formatInt(row.sku_count)} SKUs</span>
-            </div>
-            <div className="readiness-progress-bar">
-              <div
-                className="readiness-progress-fill"
-                style={{ width: `${((row.sku_count ?? 0) / maxCount) * 100}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      <MissingFieldList missing={missing} />
 
       <div className="content-box" style={{ marginTop: 12 }} id="spec-readiness-by-asin">
         <div className="content-box-title">

@@ -179,7 +179,7 @@ AI Readiness keeps the spec summary, the fender.com page found control, the top 
 | fender.com completeness when a page is found | 87.5% | `fender_completeness_pct` where `fender_found` | partial reading |
 | Found pages missing additionalProperty | 123 | `fender_missing_fields` | confirmed issue |
 
-**Top missing schema fields** is on AI Readiness. It is the first eight rows of `public.canvas_spec_missing_fields`, ordered by `sku_count`. Amazon fields come from `amazon_missing_fields`. The fender field is counted only on rows with `fender_found` true. Machine Readability does not show this chart.
+**Top missing schema fields** is on AI Readiness. It is `public.canvas_spec_missing_fields`, ordered by `sku_count`. The list opens on the first two rows, and a control reveals the rest. Amazon fields come from `amazon_missing_fields`. The fender field is counted only on rows with `fender_found` true. Machine Readability does not show this chart.
 
 | Field | Source | SKUs |
 | --- | --- | --- |
@@ -192,7 +192,7 @@ AI Readiness keeps the spec summary, the fender.com page found control, the top 
 | fretboard_material_type | amazon | 41 |
 | guitar_pickup_configuration | amazon | 38 |
 
-Status of these eight counts: **partial reading**, because they are frequencies inside the same unfinished spec read.
+Status of these counts: **partial reading**, because they are frequencies inside the same unfinished spec read.
 
 **Spec readiness by ASIN** is on AI Readiness. At the source-map read it said **925 rows**. Machine Readability does not show this table. The ASIN cell shows `asin`.
 

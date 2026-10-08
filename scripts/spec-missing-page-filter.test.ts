@@ -154,6 +154,11 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.match(panel, /data-ifai-tooltip-title="missing page"/);
   assert.match(panel, /data-ifai-tooltip-desc=\{MISSING_PAGE_DESC\}/);
   assert.match(panel, /className="ifai-term"/);
+  // The missing-field list opens on two rows and keeps the full list behind a control.
+  assert.match(panel, /MISSING_FIELD_PREVIEW = 2/);
+  assert.match(panel, /missing\.slice\(0, MISSING_FIELD_PREVIEW\)/);
+  assert.match(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
+  assert.doesNotMatch(panel, /slice\(0, 8\)/);
   assert.doesNotMatch(panel, /\stitle=/);
   assert.doesNotMatch(panel, forbidden);
 

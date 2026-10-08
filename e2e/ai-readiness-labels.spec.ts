@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Canvas } from "./fixtures";
-import { mockCanvasRead } from "./spec-read-mock";
+import { MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
 
 /**
  * The AI Readiness bubble, its two satellites, and its three tabs share one set
- * of names, and a link copied from an earlier tab title still opens the same tab.
+ * of names. A link copied from an earlier tab title still opens the same tab,
+ * and the missing-field list on the first tab opens on two rows.
  */
 
 const TAB_NAMES = ["AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
@@ -17,6 +18,14 @@ function mapNode(page: Page, title: string) {
     .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .join("\\s*");
   return page.locator(".graph-node").filter({ hasText: new RegExp(escaped, "i") });
+}
+
+async function openFirstTab(page: Page) {
+  const canvas = new Canvas(page);
+  await canvas.open();
+  await canvas.openSpokeFromMap("AI Readiness");
+  await canvas.openTab("AI Readiness");
+  return canvas;
 }
 
 test("the bubble, its satellites, and its tabs share one set of names", async ({ page }) => {
@@ -71,4 +80,23 @@ test("a link copied from an earlier tab title still opens the same tab", async (
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(canvas.activeTab).toHaveText(tab);
   }
+});
+
+test("the first tab opens on two missing fields and reveals the rest", async ({ page }) => {
+  await mockCanvasRead(page);
+  await openFirstTab(page);
+
+  const fields = page.locator("#spec-missing-fields > div");
+  await expect(fields).toHaveCount(2);
+  await expect(fields.first()).toContainText("scale_length");
+
+  const reveal = page.locator("[data-spec-missing-fields-toggle]");
+  await expect(reveal).toHaveText(`Show all ${MISSING_FIELD_ROWS.length} fields`);
+  await reveal.click();
+  await expect(fields).toHaveCount(MISSING_FIELD_ROWS.length);
+  await expect(fields.last()).toContainText("pickup_configuration");
+
+  await expect(reveal).toHaveText("Show fewer fields");
+  await reveal.click();
+  await expect(fields).toHaveCount(2);
 });
