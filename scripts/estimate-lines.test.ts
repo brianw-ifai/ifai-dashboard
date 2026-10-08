@@ -77,6 +77,17 @@ test("Commercial Sizing does not paste the live headline into the $680,000 estim
   );
 });
 
+test("client copy does not discuss IntoFocus fees or retainers", () => {
+  const raw = readFileSync(new URL("data/fender-v3-spec.json", root), "utf8");
+  assert.equal(/retainer/i.test(raw), false);
+  assert.equal(raw.includes("$20,000/month"), false);
+  assert.equal(raw.includes("$240,000"), false);
+  assert.equal(raw.includes("20K/mo"), false);
+  assert.equal(raw.includes("208x"), false);
+  assert.equal(raw.includes("2.8x"), false);
+  assert.equal(raw.includes("Service Fee"), false);
+});
+
 test("the first Action Item says Featured Offer", () => {
   const actions = bound(spec.spokes.suggestions.tabTemplates[0] as string);
   const first = actions.split("action-card")[1]?.split("action-card")[0] ?? "";
