@@ -144,7 +144,13 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
 
   assert.match(narrative, /spec_fender_found_pct/);
   assert.match(narrative, /data-spec-filter="missing-fender-page"/);
-  assert.match(narrative, /data-spec-filter="clear"/);
+  // One pill, no Clear button, and the toggle word is on it before the first click.
+  assert.doesNotMatch(narrative, /data-spec-filter="clear"/);
+  assert.doesNotMatch(narrative, /Clear/);
+  assert.match(narrative, /control\.active \? "Hide" : "Show"/);
+  assert.doesNotMatch(narrative, /content-box-title/);
+  assert.match(narrative, /<th>Metric<\/th>/);
+  assert.match(narrative, /<th>Result<\/th>/);
   assert.doesNotMatch(narrative, /\stitle=/);
   assert.doesNotMatch(narrative, forbidden);
 

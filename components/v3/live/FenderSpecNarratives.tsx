@@ -6,8 +6,35 @@ import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 export type MissingPageControl = {
   active: boolean;
   onToggle: () => void;
-  onClear: () => void;
 };
+
+/** One pill in the result cell. It states the live reading and what a click does. */
+function MissingPageTogglePill({
+  control,
+  foundResult,
+}: {
+  control: MissingPageControl;
+  foundResult: string;
+}) {
+  const action = control.active ? "Hide" : "Show";
+  const explanation = control.active
+    ? "Hide this filter and show every row again."
+    : "Show only the checked SKUs with no stored fender.com page.";
+  return (
+    <button
+      type="button"
+      className={`spec-found-pill${control.active ? " active" : ""}`}
+      aria-pressed={control.active}
+      aria-controls="spec-readiness-by-asin"
+      aria-label={`fender.com page found ${foundResult}. ${explanation}`}
+      data-spec-filter="missing-fender-page"
+      onClick={control.onToggle}
+    >
+      <span className="spec-found-pill-reading">{foundResult}</span>
+      <span className="spec-found-pill-action">{action}</span>
+    </button>
+  );
+}
 
 export function FenderSpecSummary({
   bundle,
@@ -19,8 +46,7 @@ export function FenderSpecSummary({
   const { m } = bundle;
   const foundResult = `${formatPct(m.spec_fender_found_pct)} (${formatRatio(m.spec_fender_found, m.spec_checked)})`;
   return (
-    <div className="content-box">
-      <div className="content-box-title">Spec read</div>
+    <div className="content-box spec-summary">
       <table className="table-sm">
         <thead>
           <tr>
@@ -37,29 +63,10 @@ export function FenderSpecSummary({
             <td>fender.com page found</td>
             <td>
               {missingPageControl ? (
-                <span className="segmented-control" style={{ flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    className={`segmented-btn${missingPageControl.active ? " active" : ""}`}
-                    style={{ whiteSpace: "nowrap" }}
-                    aria-pressed={missingPageControl.active}
-                    aria-controls="spec-readiness-by-asin"
-                    data-spec-filter="missing-fender-page"
-                    onClick={missingPageControl.onToggle}
-                  >
-                    {foundResult}
-                  </button>
-                  {missingPageControl.active ? (
-                    <button
-                      type="button"
-                      className="segmented-btn"
-                      data-spec-filter="clear"
-                      onClick={missingPageControl.onClear}
-                    >
-                      Clear
-                    </button>
-                  ) : null}
-                </span>
+                <MissingPageTogglePill
+                  control={missingPageControl}
+                  foundResult={foundResult}
+                />
               ) : (
                 foundResult
               )}

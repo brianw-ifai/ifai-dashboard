@@ -1,11 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Canvas } from "./fixtures";
-import { MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
+import { FOUND_RESULT, MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
 
 /**
  * The AI Readiness bubble, its two satellites, and its three tabs share one set
  * of names. A link copied from an earlier tab title still opens the same tab,
- * and the missing-field list on the first tab opens on two rows.
+ * and the two controls on the first tab read as controls before they are used.
  */
 
 const TAB_NAMES = ["AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
@@ -99,4 +99,42 @@ test("the first tab opens on two missing fields and reveals the rest", async ({ 
   await expect(reveal).toHaveText("Show fewer fields");
   await reveal.click();
   await expect(fields).toHaveCount(2);
+});
+
+test("the page found control is one pill whose row matches the other readings", async ({ page }) => {
+  await mockCanvasRead(page);
+  await openFirstTab(page);
+
+  const summary = page.locator(".spec-summary");
+  await expect(summary.locator(".content-box-title")).toHaveCount(0);
+  await expect(summary.locator("th")).toHaveText(["Metric", "Result"]);
+
+  const pill = summary.locator(".spec-found-pill");
+  await expect(pill).toHaveCount(1);
+  await expect(pill).toContainText(FOUND_RESULT);
+  await expect(pill).toContainText("Show");
+  await expect(page.getByRole("button", { name: "Clear", exact: true })).toHaveCount(0);
+
+  // The pill row is no taller than the plain readings around it.
+  const heights = await summary
+    .locator("tbody tr")
+    .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().height)));
+  expect(heights.length).toBe(5);
+  expect(new Set(heights).size).toBe(1);
+
+  const catalog = page.locator("#spec-readiness-by-asin");
+  await pill.click();
+  await expect(pill).toContainText(FOUND_RESULT);
+  await expect(pill).toContainText("Hide");
+  await expect(pill).toHaveAttribute("aria-pressed", "true");
+  await expect(catalog).toContainText("B00MISSING");
+  await expect(catalog).not.toContainText("B00FOUND01");
+  await expect(catalog).not.toContainText("B00NULLFLG");
+  await expect(catalog).toContainText("missing page");
+
+  await pill.click();
+  await expect(pill).toContainText("Show");
+  await expect(pill).toHaveAttribute("aria-pressed", "false");
+  await expect(catalog).toContainText("B00FOUND01");
+  await expect(catalog).toContainText("B00NULLFLG");
 });

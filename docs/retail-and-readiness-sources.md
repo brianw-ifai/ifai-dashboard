@@ -169,12 +169,12 @@ Status of the 13.3% findability share: **partial reading**. Status of the 802 un
 
 ### AI Readiness and Machine Readability tabs
 
-AI Readiness keeps the spec summary, the fender.com page found control, the top missing schema fields chart, and Spec readiness by ASIN. Machine Readability keeps the explanation of JSON-LD and `additionalProperty`. It lists found pages whose stored `fender_missing_fields` text includes `additionalProperty`. A row without that stored gap does not appear. The row count on that list is the live query count. Machine Readability does not show the ASIN table or the top missing schema fields chart.
+AI Readiness keeps the spec summary, the fender.com page found control, the top missing schema fields chart, and Spec readiness by ASIN. The summary table has no heading above its Metric and Result columns. Machine Readability keeps the explanation of JSON-LD and `additionalProperty`. It lists found pages whose stored `fender_missing_fields` text includes `additionalProperty`. A row without that stored gap does not appear. The row count on that list is the live query count. Machine Readability does not show the ASIN table or the top missing schema fields chart.
 
 | Spec summary row | Words Fender sees | Column | Status |
 | --- | --- | --- | --- |
 | SKUs checked | 925 | Count of latest spec rows | partial reading |
-| fender.com page found | 13.3% (123 of 925) | `fender_found` | partial reading |
+| fender.com page found | 13.3% (123 of 925) on one pill, with Show or Hide beside it | `fender_found` | partial reading |
 | Amazon attribute completeness | 91.6% | `amazon_completeness_pct` | partial reading |
 | fender.com completeness when a page is found | 87.5% | `fender_completeness_pct` where `fender_found` | partial reading |
 | Found pages missing additionalProperty | 123 | `fender_missing_fields` | confirmed issue |

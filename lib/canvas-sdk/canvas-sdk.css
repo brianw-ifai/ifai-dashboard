@@ -2258,6 +2258,49 @@
       border-radius: 3px;
     }
 
+    /* One row height for every reading in the spec summary, so the toggle pill
+       in the result cell does not stand taller than the rows around it. */
+    .spec-summary .table-sm td {
+      height: 36px;
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+
+    .spec-found-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 11px;
+      line-height: 1.2;
+      white-space: nowrap;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-button);
+      cursor: pointer;
+    }
+
+    .spec-found-pill:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-main);
+    }
+
+    .spec-found-pill.active,
+    .spec-found-pill.active:hover {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+      color: #ffffff;
+    }
+
+    .spec-found-pill-action {
+      padding-left: 8px;
+      border-left: 1px solid currentcolor;
+      opacity: 0.75;
+    }
+
     .segmented-control {
       display: flex;
       background: var(--bg-card);
