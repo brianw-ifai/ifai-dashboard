@@ -3,6 +3,8 @@
  * No React here. components/dashboard-v2/table/DataTable.tsx calls these.
  */
 
+import type { LabelKind } from "../reading/labels";
+
 export type ColumnType =
   | "text"
   | "number"
@@ -23,6 +25,15 @@ export type ColumnDef = {
   sortable?: boolean;
   /** Fixed choices for enum and status columns. Derived from the rows when absent. */
   options?: string[];
+  /**
+   * Rank order for an enum column's sort (for example high, medium, low). A value not in the
+   * list sorts after the listed ones, alphabetically.
+   */
+  order?: string[];
+  /** Label kind in reading/labels.ts; cells and filter options show the label, never the code. */
+  labelKind?: LabelKind;
+  /** Keep the collapsed cell to one line; the full text lives in the expanded row. */
+  truncate?: boolean;
 };
 
 export type RowStatus = "complete" | "partial" | "unavailable";
@@ -325,7 +336,20 @@ export function keyOf<R extends TableRow>(row: R, rowKey: RowKey<R>): string {
 export type SortOptions<R extends TableRow> = {
   type?: ColumnType;
   rowKey?: RowKey<R>;
+  /** Rank order for enum values; see ColumnDef.order. */
+  order?: string[];
 };
+
+function rankCompare(a: unknown, b: unknown, order: string[]): number | null {
+  const x = toText(a);
+  const y = toText(b);
+  if (x === null || y === null) return null;
+  const ix = order.indexOf(x);
+  const iy = order.indexOf(y);
+  const rx = ix === -1 ? order.length : ix;
+  const ry = iy === -1 ? order.length : iy;
+  return rx !== ry ? rx - ry : textCompare(x, y);
+}
 
 /**
  * Sorts a copy of the rows by one column. Missing values go last in both
@@ -357,11 +381,29 @@ export function sortRows<R extends TableRow>(
     if (aMissing && bMissing) return tieBreak(a, b);
     if (aMissing) return 1;
     if (bMissing) return -1;
-    const cmp = compareValues(av, bv, type);
+    const cmp = options.order ? rankCompare(av, bv, options.order) : compareValues(av, bv, type);
     if (cmp === null || cmp === 0) return tieBreak(a, b);
     return cmp * sign;
   });
   return copy;
+}
+
+/**
+ * Sorts by several keys in order: the first key decides, the next breaks its ties, and so on.
+ * Missing values go last for each key. Used for default orders such as suppressed first, then
+ * price gap descending.
+ */
+export function sortRowsMulti<R extends TableRow>(rows: R[], sorts: SortState[], columns: ColumnDef[], rowKey?: RowKey<R>): R[] {
+  const active = sorts.filter((s) => s.direction !== null);
+  if (active.length === 0) return [...rows];
+  // Stable sort from the last key to the first gives the first key priority.
+  let out = [...rows];
+  for (let i = active.length - 1; i >= 0; i -= 1) {
+    const sort = active[i];
+    const column = columns.find((c) => c.key === sort.key);
+    out = sortRows(out, sort.key, sort.direction, { type: column?.type, rowKey: i === active.length - 1 ? rowKey : undefined, order: column?.order });
+  }
+  return out;
 }
 
 /** Guesses a column type from the first present value, for callers without a column def. */
@@ -390,15 +432,26 @@ export function buildView<R extends TableRow>(
   rows: R[],
   columns: ColumnDef[],
   filters: FilterState,
-  sort: SortState | null,
+  sort: SortState | SortState[] | null,
   rowKey: RowKey<R>,
 ): TableView<R> {
   const filtered = applyFilters(rows, filters);
-  const column = sort ? columns.find((c) => c.key === sort.key) : undefined;
-  const sorted = sort
-    ? sortRows(filtered, sort.key, sort.direction, { type: column?.type, rowKey })
-    : filtered;
+  let sorted: R[];
+  if (Array.isArray(sort)) {
+    sorted = sortRowsMulti(filtered, sort, columns, rowKey);
+  } else if (sort) {
+    const column = columns.find((c) => c.key === sort.key);
+    sorted = sortRows(filtered, sort.key, sort.direction, { type: column?.type, rowKey, order: column?.order });
+  } else {
+    sorted = filtered;
+  }
   return { rows: sorted, matched: sorted.length, total: rows.length };
+}
+
+/** "3,604 of 3,604 listings", with digit grouping. */
+export function countLine(matched: number, total: number, noun: string): string {
+  const fmt = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+  return `${fmt.format(matched)} of ${fmt.format(total)} ${noun}`;
 }
 
 /** The badge tone for a row status. */

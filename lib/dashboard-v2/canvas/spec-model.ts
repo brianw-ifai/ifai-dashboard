@@ -32,6 +32,7 @@ import { SELLER_MIX_ID, SELLER_READ_COVERAGE_ID } from "../selectors/seller-mix"
 import { SPEC_ADDITIONAL_PROPERTY_ID, SPEC_AMAZON_COMPLETENESS_ID, SPEC_PAGE_FOUND_ID } from "../selectors/spec-readiness";
 import { CATEGORY_SHARE_ID } from "../selectors/weakest-category";
 import { WRONG_SPEC_FLAGS_ID } from "../selectors/wrong-spec-flags";
+import { buildFirstViews, firstViewStrings, markFigure, type FirstViews } from "./first-views";
 
 /**
  * The plain-data half of the dashboard v2 canvas spec: nodes, edges, focus targets, spoke
@@ -139,7 +140,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "Executive readings",
       desc: "The five executive outputs with their coverage, and when each source was last read.",
       tourTitle: "Brand Portfolio",
-      tabs: ["Readings"],
+      tabs: ["Overview", "Read more", "Sources"],
       next: "aeo",
       x: 800,
       y: 500,
@@ -155,7 +156,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "AI answers",
       desc: "How often AI assistants name the brand when a shopper asks, by category and by engine, and the answers that state a wrong spec.",
       tourTitle: "AI Search Visibility",
-      tabs: ["Answers"],
+      tabs: ["Overview", "Answers", "Wrong specs", "Read more"],
       next: "ecommerce",
       x: 440,
       y: 320,
@@ -172,7 +173,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "Featured Offer",
       desc: "Who holds the Featured Offer on each active listing, where Amazon withholds it above its outside benchmark, and the outside prices on file.",
       tourTitle: "Portfolio Retail",
-      tabs: ["Listings"],
+      tabs: ["Overview", "Listings", "Suppressed", "Outside prices", "Read more"],
       next: "specs",
       x: 1160,
       y: 320,
@@ -189,7 +190,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "Product data",
       desc: "Whether the brand's product data is ready for AI engines to read: brand pages found, additionalProperty blocks, and Amazon field completeness.",
       tourTitle: "Product Readiness",
-      tabs: ["Pages"],
+      tabs: ["Overview", "Pages", "Read more"],
       next: "competitors",
       x: 440,
       y: 680,
@@ -206,7 +207,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "Share by category",
       desc: "The brand's answer share against the top rival in each prompt category, with the resolved answers each share rests on.",
       tourTitle: "Competitive Radar",
-      tabs: ["Categories"],
+      tabs: ["Overview", "Categories", "Read more"],
       next: "suggestions",
       x: 1160,
       y: 680,
@@ -223,7 +224,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "Next steps",
       desc: "Stored actions, each tied to the reading that raised it, with its owner and status.",
       tourTitle: "Action Items",
-      tabs: ["Action Items"],
+      tabs: ["Overview", "Read more"],
       next: "money",
       x: 800,
       y: 180,
@@ -240,7 +241,7 @@ export function spokeDefs(all: AllSelections): SpokeDef[] {
       badge: "Money as a formula",
       desc: "The price gap on suppressed listings, and the uplift estimates with the inputs each formula needs.",
       tourTitle: "Estimates",
-      tabs: ["Estimates"],
+      tabs: ["Overview", "Price gap lines", "Read more"],
       next: "hub",
       x: 800,
       y: 820,
@@ -480,6 +481,8 @@ export type SpecModel = {
   legend: CanvasLegendItem[];
   /** "Readings as of <oldest> (oldest source)". */
   headerText: string;
+  /** Chart data for every first view, from the same readings the figures use. */
+  firstViews: FirstViews;
   /** Which registry ids each surface element is bound to, for the surfaces test. */
   bindings: {
     nodes: Record<string, string[]>;
@@ -694,7 +697,7 @@ export function buildSpecModel(all: AllSelections): SpecModel {
       id: `metric-${id}`,
       spokeId: spokeFor(all, id),
       label: name(id),
-      value: formatReading(reading, registry?.unit),
+      value: markFigure(reading, registry),
       detail: coverageLine(reading),
       tone: statusOf(all, id),
       subTab: spokes.find((s) => s.id === spokeFor(all, id))?.tabs[0],
@@ -744,13 +747,14 @@ export function buildSpecModel(all: AllSelections): SpecModel {
     tickers,
     legend,
     headerText: headerText(all),
+    firstViews: buildFirstViews(all, execIds),
     bindings,
   };
 }
 
 /** Every visible string in the model, by surface, for the surfaces test. */
 export function surfaceStrings(model: SpecModel): Record<string, string[]> {
-  const out: Record<string, string[]> = { nodes: [], commandCenter: [], tour: [], metrics: [], tickers: [], cards: [], header: [] };
+  const out: Record<string, string[]> = { nodes: [], commandCenter: [], tour: [], metrics: [], tickers: [], cards: [], header: [], firstViews: [] };
   for (const n of model.nodes) out.nodes.push(n.title, ...n.stats, n.meta ?? "", n.tooltip.title, n.tooltip.desc);
   const cc = model.commandCenter;
   out.commandCenter.push(cc.title, cc.desc, cc.summary ?? "", cc.badge ?? "");
@@ -760,6 +764,7 @@ export function surfaceStrings(model: SpecModel): Record<string, string[]> {
   for (const t of model.tickers) out.tickers.push(t.label);
   for (const list of Object.values(model.cards)) for (const c of list) out.cards.push(c.label, c.value, c.sub);
   out.header.push(model.headerText, model.brand.name, model.brand.subtitle);
+  out.firstViews.push(...firstViewStrings(model.firstViews));
   for (const key of Object.keys(out)) out[key] = out[key].filter(Boolean);
   return out;
 }

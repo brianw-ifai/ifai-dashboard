@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { labelFor } from "@/lib/dashboard-v2/reading/labels";
 import { formatCell } from "@/lib/dashboard-v2/table/format-cell";
 import {
   buildView,
   countActiveFilters,
+  countLine,
   distinctValues,
   emptyFilterFor,
   filterKindFor,
@@ -18,7 +20,6 @@ import {
   type ColumnFilter,
   type FilterState,
   type RowKey,
-  type SortDirection,
   type SortState,
   type TableRow,
 } from "@/lib/dashboard-v2/table/table-model";
@@ -29,10 +30,20 @@ export type DataTableProps<R extends TableRow> = {
   rowKey: RowKey<R>;
   /** Rendered under a row when the reader expands it. */
   renderExpanded?: (row: R) => ReactNode;
-  initialSort?: { key: string; direction: Exclude<SortDirection, null> };
+  /** One sort, or several keys where the first decides and the next break its ties. */
+  initialSort?: SortState | SortState[];
   /** Text before the count, for example "listings". Defaults to "rows". */
   noun?: string;
 };
+
+/** The text a cell shows: the label for a coded column, otherwise the typed format. */
+export function cellText(value: unknown, column: ColumnDef): string {
+  if (column.labelKind && value !== null && value !== undefined && value !== "") {
+    if (Array.isArray(value)) return value.map((v) => labelFor(column.labelKind as NonNullable<ColumnDef["labelKind"]>, String(v))).join(", ");
+    return labelFor(column.labelKind, String(value));
+  }
+  return formatCell(value, column.type);
+}
 
 const scopedStyle = `
 .dv2-table-wrap { display: grid; gap: 8px; }
@@ -53,6 +64,9 @@ const scopedStyle = `
 }
 .dv2-expanded-cell { background: var(--bg-card); }
 .dv2-table-actions { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.dv2-table tbody tr.dv2-row td { white-space: nowrap; }
+.dv2-table td.dv2-cell-truncate { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.dv2-table-scroll { overflow-x: auto; max-width: 100%; }
 `;
 
 function FilterCell({
@@ -66,6 +80,7 @@ function FilterCell({
   filter: ColumnFilter;
   onChange: (next: ColumnFilter) => void;
 }) {
+  const optionText = (choice: string) => (column.labelKind ? labelFor(column.labelKind, choice) : choice);
   const kind = filterKindFor(column.type);
   const label = column.label;
   const numberOrNull = (s: string) => (s.trim() === "" ? null : Number(s));
@@ -104,7 +119,7 @@ function FilterCell({
       >
         {choices.map((choice) => (
           <option key={choice} value={choice}>
-            {choice}
+            {filter.kind === "status" ? labelFor("reading_status", choice) : optionText(choice)}
           </option>
         ))}
       </select>
@@ -181,7 +196,7 @@ export function DataTable<R extends TableRow>({
   initialSort,
   noun = "rows",
 }: DataTableProps<R>) {
-  const [sort, setSort] = useState<SortState | null>(initialSort ?? null);
+  const [sort, setSort] = useState<SortState | SortState[] | null>(initialSort ?? null);
   const [filters, setFilters] = useState<FilterState>({});
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
@@ -198,10 +213,12 @@ export function DataTable<R extends TableRow>({
   const canExpand = typeof renderExpanded === "function";
   const colCount = columns.length + (canExpand ? 1 : 0);
 
+  const currentSort: SortState | null = Array.isArray(sort) ? (sort[0] ?? null) : sort;
   const toggleSort = (column: ColumnDef) => {
     if (!isSortable(column)) return;
     setSort((current) => {
-      const direction = nextSortDirection(current?.key === column.key ? current.direction : null);
+      const single = Array.isArray(current) ? (current[0] ?? null) : current;
+      const direction = nextSortDirection(single?.key === column.key ? single.direction : null);
       return direction === null ? null : { key: column.key, direction };
     });
   };
@@ -220,16 +237,16 @@ export function DataTable<R extends TableRow>({
   };
 
   const sortLabel = (column: ColumnDef): string => {
-    if (sort?.key !== column.key || !sort.direction) return `Sort by ${column.label}`;
-    return sort.direction === "asc" ? `${column.label}, sorted ascending` : `${column.label}, sorted descending`;
+    if (currentSort?.key !== column.key || !currentSort.direction) return `Sort by ${column.label}`;
+    return currentSort.direction === "asc" ? `${column.label}, sorted ascending` : `${column.label}, sorted descending`;
   };
 
   return (
     <div className="dv2-table-wrap">
       <style>{scopedStyle}</style>
       <div className="dv2-table-actions">
-        <span className="dv2-table-count" aria-live="polite">
-          {view.matched} of {view.total} {noun}
+        <span className="dv2-table-count" aria-live="polite" data-testid="table-count">
+          {countLine(view.matched, view.total, noun)}
         </span>
         {activeFilters > 0 ? (
           <button type="button" className="segmented-btn" onClick={() => setFilters({})}>
@@ -237,12 +254,13 @@ export function DataTable<R extends TableRow>({
           </button>
         ) : null}
       </div>
+      <div className="dv2-table-scroll">
       <table className="table-sm dv2-table">
         <thead>
           <tr>
             {canExpand ? <th aria-label="Details" /> : null}
             {columns.map((column) => {
-              const dir = sort?.key === column.key ? sort.direction : null;
+              const dir = currentSort?.key === column.key ? currentSort.direction : null;
               return (
                 <th key={column.key} aria-sort={dir === "asc" ? "ascending" : dir === "desc" ? "descending" : "none"}>
                   {isSortable(column) ? (
@@ -282,7 +300,7 @@ export function DataTable<R extends TableRow>({
             const isOpen = expanded.has(key);
             const status = row[STATUS_KEY];
             return [
-              <tr key={key} data-row-status={status ?? undefined}>
+              <tr key={key} className="dv2-row" data-row-status={status ?? undefined} data-row-key={key}>
                 {canExpand ? (
                   <td>
                     <button
@@ -298,15 +316,19 @@ export function DataTable<R extends TableRow>({
                 ) : null}
                 {columns.map((column) => {
                   const value = row[column.key];
-                  const text = formatCell(value, column.type);
+                  const text = cellText(value, column);
                   if (column.type === "status") {
                     return (
-                      <td key={column.key}>
+                      <td key={column.key} data-col={column.key}>
                         <span className={`tag-badge tag-${statusTone(String(value ?? ""))}`}>{text}</span>
                       </td>
                     );
                   }
-                  return <td key={column.key}>{text}</td>;
+                  return (
+                    <td key={column.key} data-col={column.key} className={column.truncate ? "dv2-cell-truncate" : undefined}>
+                      {text}
+                    </td>
+                  );
                 })}
               </tr>,
               isOpen && canExpand ? (
@@ -320,8 +342,9 @@ export function DataTable<R extends TableRow>({
           })}
         </tbody>
       </table>
+      </div>
       {view.matched === 0 ? (
-        <div className="ifai-filter-empty" role="status">
+        <div className="ifai-filter-empty" role="status" data-testid="table-empty">
           <p>No rows match these filters.</p>
           <button type="button" className="segmented-btn" onClick={() => setFilters({})}>
             Clear filters

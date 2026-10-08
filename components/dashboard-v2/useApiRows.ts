@@ -28,20 +28,44 @@ type ApiBody<T> = {
 
 const LOADING: RemoteRows<never> = { status: "loading", rows: [], error: null, fetchedAt: null, pages: 0 };
 
+/** A page that fails with a server error is retried this many more times before the read is unavailable. */
+export const PAGE_RETRIES = 2;
+const RETRY_DELAY_MS = 800;
+
+type PageAnswer<T> = { response: Response; body: ApiBody<T> | null };
+
+async function fetchPage<T>(url: string, signal?: AbortSignal): Promise<PageAnswer<T>> {
+  const response = await fetch(url, { signal, cache: "no-store" });
+  let body: ApiBody<T> | null = null;
+  try {
+    body = (await response.json()) as ApiBody<T>;
+  } catch {
+    body = null;
+  }
+  return { response, body };
+}
+
+/** Fetches one page, retrying a 5xx or an unreadable body a couple of times (a statement timeout on a busy read is transient). */
+async function fetchPageWithRetry<T>(url: string, signal?: AbortSignal): Promise<PageAnswer<T>> {
+  let last: PageAnswer<T> | null = null;
+  for (let attempt = 0; attempt <= PAGE_RETRIES; attempt += 1) {
+    last = await fetchPage<T>(url, signal);
+    const retryable = last.response.status >= 500 || !last.body;
+    if (!retryable || attempt === PAGE_RETRIES || signal?.aborted) return last;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+  }
+  return last as PageAnswer<T>;
+}
+
 export async function fetchAllPages<T>(path: string, signal?: AbortSignal): Promise<RemoteRows<T>> {
   const rows: T[] = [];
   let page: number | null = 0;
   let pages = 0;
   let fetchedAt: string | null = null;
   while (page !== null) {
-    const url = `${path}${path.includes("?") ? "&" : "?"}page=${page}`;
-    const response = await fetch(url, { signal, cache: "no-store" });
-    let body: ApiBody<T> | null = null;
-    try {
-      body = (await response.json()) as ApiBody<T>;
-    } catch {
-      body = null;
-    }
+    const url: string = `${path}${path.includes("?") ? "&" : "?"}page=${page}`;
+    const answer: PageAnswer<T> = await fetchPageWithRetry<T>(url, signal);
+    const { response, body } = answer;
     if (!response.ok || !body || !body.ok) {
       const message = body?.error || `The server answered with status ${response.status}.`;
       return { status: "error", rows: [], error: message, fetchedAt: body?.asOf ?? null, pages };

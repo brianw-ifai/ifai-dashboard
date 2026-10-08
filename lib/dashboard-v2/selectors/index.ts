@@ -12,7 +12,7 @@ import { registryRow, toRegistryRow, type MetricReading } from "./common";
 import { selectEcommerceToAiLink, type EcommerceToAiLink } from "./ecommerce-to-ai-link";
 import { selectEngineSplit, type EngineSplit } from "./engine-split";
 import { selectEstimates, type Estimate } from "./estimate";
-import { selectFeaturedOfferPresent, selectFeaturedOfferSuppressed } from "./featured-offer";
+import { selectFeaturedOfferPresent, selectFeaturedOfferStates, selectFeaturedOfferSuppressed, type FeaturedOfferStates } from "./featured-offer";
 import { selectFreshness, type Freshness } from "./freshness";
 import { selectMapBelow } from "./map-below";
 import { selectPriceGapAboveBenchmark, type PriceGap } from "./price-gap";
@@ -57,6 +57,8 @@ export type AllSelections = {
   sellerMix: SellerMix;
   featuredPresent: MetricReading;
   featuredSuppressed: MetricReading;
+  /** The Featured Offer states the retail first view stacks. */
+  offerStates: FeaturedOfferStates;
   mapBelow: MetricReading;
   channelCoverage: ChannelPriceCoverage;
   bundleShare: MetricReading;
@@ -81,6 +83,7 @@ export function selectAll(bundle: SandboxBundle, listings?: ListingCurrentRow[])
   const sellerMix = selectSellerMix(bundle);
   const featuredPresent = selectFeaturedOfferPresent(bundle);
   const featuredSuppressed = selectFeaturedOfferSuppressed(bundle);
+  const offerStates = selectFeaturedOfferStates(bundle);
   const mapBelow = selectMapBelow(bundle);
   const channelCoverage = selectChannelPriceCoverage(bundle);
   const bundleShare = selectBundleShare(bundle);
@@ -134,6 +137,7 @@ export function selectAll(bundle: SandboxBundle, listings?: ListingCurrentRow[])
     sellerMix,
     featuredPresent,
     featuredSuppressed,
+    offerStates,
     mapBelow,
     channelCoverage,
     bundleShare,
@@ -207,6 +211,11 @@ export function allFormattedStrings(all: AllSelections): string[] {
   }
   for (const e of all.engineSplit.engines) out.push(e.label, formatReading(e.reading), figureText(e.reading));
   for (const c of all.sellerMix.classes) out.push(c.label, formatReading(c.reading, "count"), figureText(c.reading, "count"));
+  for (const r of Object.values(all.offerStates)) out.push(formatReading(r, "count"), figureText(r, "count"), coverageLine(r));
+  out.push(formatReading(all.spec.additionalPropertyPresent), figureText(all.spec.additionalPropertyPresent));
+  if (all.spec.additionalPropertyPresent.status !== "unavailable") {
+    out.push(formatInt(all.spec.additionalPropertyPresent.value.numerator), formatInt(all.spec.additionalPropertyPresent.value.denominator));
+  }
   for (const c of all.channelCoverage.channels) out.push(c.label, formatReading(c.reading), figureText(c.reading));
 
   for (const e of all.estimates) {
@@ -220,7 +229,7 @@ export function allFormattedStrings(all: AllSelections): string[] {
   if (all.priceGap.linesTotal !== null) out.push(formatUsd(all.priceGap.linesTotal));
 
   for (const row of all.actions.rows) out.push(row.title, row.owner, row.status, row.severity ?? "", formatAsOf(row.created_at));
-  for (const c of [...all.actions.byOwner, ...all.actions.byStatus]) out.push(c.key, formatInt(c.count));
+  for (const c of [...all.actions.byOwner, ...all.actions.byStatus, ...all.actions.bySeverity]) out.push(c.key, formatInt(c.count));
   out.push(formatInt(all.actions.open.length), formatInt(all.actions.rows.length));
 
   for (const s of all.freshness.sources) {

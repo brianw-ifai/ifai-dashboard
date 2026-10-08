@@ -1,4 +1,5 @@
 import { isPartialCoverage, rate, unavailable } from "../reading/build";
+import { labelForAnyKind } from "../reading/labels";
 import type { Coverage, Reading, RegistryRow, RegistryUnit, ThresholdRule } from "../reading/types";
 import type {
   MetricRegistryRow,
@@ -191,20 +192,7 @@ export function compositeReading(
   return { status: partial ? "partial" : "complete", value: text, coverage, registryId };
 }
 
-/** Human labels for stored channel and engine codes. Labels only, never figures. */
-export const CODE_LABELS: Record<string, string> = {
-  walmart: "Walmart",
-  musiciansfriend: "Musician's Friend",
-  amazon: "Amazon",
-  chatgpt: "ChatGPT",
-  gemini: "Gemini",
-  perplexity: "Perplexity",
-  amazon_retail: "Amazon Retail",
-  third_party: "third-party seller",
-  not_read: "not yet read",
-  no_offer: "no offer to hold",
-};
-
+/** Human labels for stored codes come from the one label map in reading/labels.ts. */
 export function codeLabel(code: string): string {
-  return CODE_LABELS[code] ?? code;
+  return labelForAnyKind(code);
 }

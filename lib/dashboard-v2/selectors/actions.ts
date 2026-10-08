@@ -17,7 +17,11 @@ export type Actions = {
   open: ActionItemRow[];
   byOwner: ActionCount[];
   byStatus: ActionCount[];
+  /** Open actions by severity; a row with no severity counts under the key "not_set". */
+  bySeverity: ActionCount[];
 };
+
+export const NO_SEVERITY_KEY = "not_set";
 
 function countBy(rows: ActionItemRow[], pickKey: (row: ActionItemRow) => string): ActionCount[] {
   const counts = new Map<string, number>();
@@ -42,6 +46,7 @@ export function selectActions(bundle: SandboxBundle): Actions {
       open: [],
       byOwner: [],
       byStatus: [],
+      bySeverity: [],
     };
   }
   const rows = bundle.actions.rows;
@@ -55,5 +60,6 @@ export function selectActions(bundle: SandboxBundle): Actions {
     open,
     byOwner: countBy(open, (r) => r.owner),
     byStatus: countBy(rows, (r) => r.status),
+    bySeverity: countBy(open, (r) => r.severity ?? NO_SEVERITY_KEY),
   };
 }

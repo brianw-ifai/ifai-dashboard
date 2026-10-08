@@ -29,7 +29,7 @@ type SpecTableRow = Record<string, unknown> & {
 
 const COLUMNS: ColumnDef[] = [
   { key: "asin", label: "ASIN", type: "text" },
-  { key: "title", label: "Title", type: "text" },
+  { key: "title", label: "Title", type: "text", truncate: true },
   { key: "category", label: "Category", type: "enum" },
   { key: "amazon_checked", label: "Amazon checked", type: "boolean" },
   { key: "amazon_completeness_pct", label: "Amazon fields filled", type: "percent" },
@@ -73,24 +73,27 @@ export function SpecTable({ ctx }: { ctx: SpokeRenderContext }) {
           initialSort={{ key: "read_at", direction: "desc" }}
           renderExpanded={(row) => (
             <Explainer
-              bundle={ctx.bundle}
-              registryId={row.brand_site_page_found ? SPEC_ADDITIONAL_PROPERTY_ID : SPEC_PAGE_FOUND_ID}
-              asOf={row.read_at}
-              runId={row.reading_run_id}
-              facts={[
-                {
-                  label: "Brand page",
-                  value: row.brand_site_url ? (
-                    <a href={row.brand_site_url} target="_blank" rel="noreferrer">
-                      {row.brand_site_url}
-                    </a>
-                  ) : (
-                    "no page found"
-                  ),
-                },
-                { label: "Amazon fields missing", value: row.amazon_missing_fields?.length ? row.amazon_missing_fields.join(", ") : "none" },
-                { label: "Brand page facts missing", value: row.brand_site_missing_fields?.length ? row.brand_site_missing_fields.join(", ") : "none" },
-              ]}
+              all={ctx.all}
+              target={{
+                registryId: row.brand_site_page_found ? SPEC_ADDITIONAL_PROPERTY_ID : SPEC_PAGE_FOUND_ID,
+                asOf: row.read_at,
+                runId: row.reading_run_id,
+                facts: [
+                  { label: "Title", value: row.title ?? "no title stored" },
+                  {
+                    label: "Brand page",
+                    value: row.brand_site_url ? (
+                      <a href={row.brand_site_url} target="_blank" rel="noreferrer">
+                        {row.brand_site_url}
+                      </a>
+                    ) : (
+                      "no page found"
+                    ),
+                  },
+                  { label: "Amazon fields missing", value: row.amazon_missing_fields?.length ? row.amazon_missing_fields.join(", ") : "none" },
+                  { label: "Brand page facts missing", value: row.brand_site_missing_fields?.length ? row.brand_site_missing_fields.join(", ") : "none" },
+                ],
+              }}
             />
           )}
         />
