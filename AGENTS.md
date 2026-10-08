@@ -40,3 +40,11 @@ Keep this section **outside** the Next.js block above. Cursor agents also load `
 ## Implementation priority
 
 Prefer clarity of the ecommerce ↔ AEO story and evidence trails over generic analytics chrome. Every headline metric should have a path to source assumptions and raw inputs.
+
+## Client commercial terms
+
+The client portal never discusses IntoFocus fees, retainers, monthly charges, or whether the brand's estimated lift justifies IntoFocus's price. Do not show a service-fee multiple.
+
+## Parked follow-up
+
+Phase 1 and full-enterprise dollar figures stay labeled as analyst estimates. Opening each figure to its inputs and formula is a later pass. Do not invent that formula, and do not hold other fixes for it.

@@ -75,6 +75,8 @@ Don't bring back the retired labels Brand AEO, Brand Fixes, Spec Readiness, Sugg
 
 **Figures.** Keep numbers in the source files above, not in documentation. Label analyst estimates and targets at the point of use ("est.", "analyst estimate", "not yet measured"), and give a rate's sample or denominator next to it.
 
+**IntoFocus fees.** Client-facing copy never mentions IntoFocus fees, retainers, monthly charges, or whether the estimated lift justifies IntoFocus's price. Do not show a service-fee multiple. Opening an estimate to its inputs is a later pass. Until then, label the figure as an analyst estimate and do not invent the formula.
+
 **Tests.** End-to-end specs select some elements by visible text. When you rename a visible label, update the matching specs in `e2e/`.
 
 ## Authoring panel content
