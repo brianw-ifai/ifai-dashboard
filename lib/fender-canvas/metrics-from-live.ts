@@ -180,7 +180,7 @@ export function buildLiveMetrics(
       value: formatPct(m.spec_fender_found_pct),
       detail: formatRatio(m.spec_fender_found, m.spec_checked),
       tone: toneFromPct(m.spec_fender_found_pct, 25, 50),
-      subTab: "Catalog Readiness",
+      subTab: "AI Readiness",
       provenance: "live",
     },
     machineReadableSpecs: {
@@ -190,7 +190,7 @@ export function buildLiveMetrics(
       value: formatPct(m.spec_avg_amazon_pct),
       detail: "Amazon attribute completeness",
       tone: toneFromPct(m.spec_avg_amazon_pct, 85, 92),
-      subTab: "Schema.org",
+      subTab: "Machine Readability",
       provenance: "live",
     },
     missingSchemaFields: {
@@ -200,7 +200,7 @@ export function buildLiveMetrics(
       value: formatInt(m.spec_missing_additional_property),
       detail: "fender.com pages in the spec read",
       tone: "warning",
-      subTab: "Schema.org",
+      subTab: "Machine Readability",
       provenance: "live",
     },
     beginnerSovGap: {

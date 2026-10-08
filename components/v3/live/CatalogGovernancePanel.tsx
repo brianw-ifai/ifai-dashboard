@@ -149,9 +149,9 @@ function AmazonSpecGapCount({ reading }: { reading: RetailReading<unknown> }) {
         type="button"
         className="retail-finding-hit"
         data-ifai-open="specs"
-        data-ifai-tab="Catalog Readiness"
-        data-spec-open="catalog-readiness"
-        aria-label={`${count} checked listings with a missing Amazon spec field. Opens Catalog Readiness.`}
+        data-ifai-tab="AI Readiness"
+        data-spec-open="ai-readiness"
+        aria-label={`${count} checked listings with a missing Amazon spec field. Opens AI Readiness.`}
       >
         <span className="metric-card-label">Checked listings with a missing Amazon spec field</span>
         <span className="metric-card-val" data-amazon-spec-gap-count={reading.issueCount ?? ""}>

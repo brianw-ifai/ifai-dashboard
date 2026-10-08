@@ -143,7 +143,7 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   assert.ok(satellite);
   assert.ok(readiness);
   assert.deepEqual(satellite.stats, ["Not measured yet"]);
-  assert.equal(satellite.title, "A+ Tables");
+  assert.equal(satellite.title, "Amazon A+ Matrix");
   const satelliteText = [satellite.meta, satellite.tooltip.title, satellite.tooltip.desc, ...satellite.stats]
     .filter(Boolean)
     .join(" ");

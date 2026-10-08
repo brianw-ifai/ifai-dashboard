@@ -11,7 +11,7 @@ A second check at 2026-10-07 23:44:22 UTC still showed 1,030 retail rows, 47 sup
 ## What is in this map
 
 - The Portfolio Retail bubble, its three satellites (Suppressed Listings, MAP Leakage, Catalog Governance), and its four tabs.
-- The AI Readiness bubble, the Schema.org satellite, the A+ Tables satellite, and its three tabs.
+- The AI Readiness bubble, the Machine Readability satellite, the Amazon A+ Matrix satellite, and its three tabs.
 - The command-center items and metric widgets that open those hubs.
 - The freshness line, because it sits on the canvas while those hubs are open.
 
@@ -108,9 +108,9 @@ The MAP glossary says partners get around MAP by bundling a cheap accessory and 
 | Screen | Words Fender sees | Table and column | Writer | Status |
 | --- | --- | --- | --- | --- |
 | Unnested bundles | **49**. "Bundles in this retail read with no usable parent ASIN." Then: "This read includes 414 of 941 bundle listings. 49 of the included listings have no usable parent ASIN. This is not a final count." | `is_bundle`, `parent_asin`. A parent can nest the bundle only when it is a different 10-character ASIN. All 49 are missing a parent ASIN. The table also shows listing name, bundle name, ASIN, and product URL when one is stored. | `catalog_harvester` is the named catalog job. | partial reading |
-| Checked listings with a missing Amazon spec field | The live `amazonSpecGaps` issue count. The count opens Catalog Readiness. This tab does not list the rows. | `canvas_spec_readiness.amazon_checked` and `amazon_missing_fields`, from the latest `command.fmic_spec_readiness` row per ASIN. Fields are split on semicolons. The panel reads `amazonSpecGaps.issueCount`. At the source-map read that count was 435 of 925 checked rows, all with `amazon_checked` true. | `spec_readiness` | partial reading |
+| Checked listings with a missing Amazon spec field | The live `amazonSpecGaps` issue count. The count opens AI Readiness. This tab does not list the rows. | `canvas_spec_readiness.amazon_checked` and `amazon_missing_fields`, from the latest `command.fmic_spec_readiness` row per ASIN. Fields are split on semicolons. The panel reads `amazonSpecGaps.issueCount`. At the source-map read that count was 435 of 925 checked rows, all with `amazon_checked` true. | `spec_readiness` | partial reading |
 
-The count is the stored list of checked listings with at least one missing Amazon field. It is not a final catalog count, and Catalog Governance does not repeat the rows. Those rows stay on Catalog Readiness. The spec job has not wrapped, and 666 of the 925 latest rows were checked more than 26 hours before this read. The other catalog rows have no spec row. They are not in that count, and they are not zeros.
+The count is the stored list of checked listings with at least one missing Amazon field. It is not a final catalog count, and Catalog Governance does not repeat the rows. Those rows stay on AI Readiness. The spec job has not wrapped, and 666 of the 925 latest rows were checked more than 26 hours before this read. The other catalog rows have no spec row. They are not in that count, and they are not zeros.
 
 The callout says a stronger unified review record does not guarantee a higher rank or an AI recommendation. That is explanation, not a measured rank change.
 
@@ -136,9 +136,11 @@ The panel description Fender sees:
 
 Tabs:
 
-1. **Catalog Readiness & Executive Guide**
-2. **Machine-Readable Schema.org JSON-LD Audit**
-3. **Amazon A+ Comparison Matrix Blueprint**
+1. **AI Readiness**
+2. **Machine Readability**
+3. **Amazon A+ Matrix**
+
+The bubble, its two satellites, and these three tabs carry the same three names. Links copied from the earlier tab titles (`catalog-readiness-executive-guide`, `machine-readable-schema-org-json-ld-audit`, and `amazon-a-comparison-matrix-blueprint`) still open the renamed tabs.
 
 Spec rows are the latest row per ASIN in `command.fmic_spec_readiness` (`canvas_private.spec_latest`, exposed as `public.canvas_spec_readiness`). This read found **1,772** stored spec rows and **925** distinct ASINs. Newest check: 2026-10-07 23:01:30 UTC. Oldest latest-row check: 2026-10-02 06:04:01 UTC. **259** of the 925 were checked in the 26 hours before this read. **666** are older than that.
 
@@ -150,12 +152,12 @@ The writer is the job `spec_readiness`. It last ran at 2026-10-07 23:01:30 UTC, 
 | --- | --- | --- | --- | --- |
 | AI Readiness bubble | **13.3% Found**, **91.6% Amazon specs**, meta **925 SKUs checked** | `fender_found` and `amazon_completeness_pct` on the 925 latest rows. The percent is 123 found of 925. The 91.6% is the average Amazon completeness, rounded to one decimal. | `spec_readiness` | partial reading |
 | AI Readiness bubble, tooltip | "fender.com findability 13.3%. Amazon structured completeness 91.6% on average." | Same columns. | `spec_readiness` | partial reading |
-| Schema.org satellite | **123 missing additionalProperty** and **925 checked** | `fender_found` and `fender_missing_fields` containing `additionalProperty`. All 123 found pages have that field in the missing list. | `spec_readiness` | confirmed issue |
-| Schema.org satellite, tooltip | "13.3% of audited SKUs have a fender.com page (123 of 925). 123 pages lack additionalProperty specs." | Same columns. The 802 unresolved URLs are not in the 123. | `spec_readiness` | partial reading |
-| A+ Tables satellite | **91.6% Amazon** and **925 checked**. Meta: "Amazon field completeness". Tooltip: "Amazon product attribute completeness averages 91.6% across 925 SKUs in the spec audit." | `amazon_completeness_pct`. This is Amazon attribute completeness. | `spec_readiness` | partial reading |
+| Machine Readability satellite | **123 missing additionalProperty** and **925 checked** | `fender_found` and `fender_missing_fields` containing `additionalProperty`. All 123 found pages have that field in the missing list. | `spec_readiness` | confirmed issue |
+| Machine Readability satellite, tooltip | "13.3% of audited SKUs have a fender.com page (123 of 925). 123 pages lack additionalProperty specs." | Same columns. The 802 unresolved URLs are not in the 123. | `spec_readiness` | partial reading |
+| Amazon A+ Matrix satellite | **91.6% Amazon** and **925 checked**. Meta: "Amazon field completeness". Tooltip: "Amazon product attribute completeness averages 91.6% across 925 SKUs in the spec audit." | `amazon_completeness_pct`. This is Amazon attribute completeness. | `spec_readiness` | partial reading |
 | A+ comparison tables | The satellite does not show a comparison-table count. The A+ tab and the command-center item describe comparison tables and do not state a number. | No A+ column exists on `command.fmic_spec_readiness` or on the canvas spec views. | No job collects A+ comparison tables. | not measured |
 
-The 91.6% on the A+ Tables satellite is the Amazon attribute average. It is not a reading of comparison-table presence, module count, or A+ presence. Those are not measured.
+The 91.6% on the Amazon A+ Matrix satellite is the Amazon attribute average. It is not a reading of comparison-table presence, module count, or A+ presence. Those are not measured.
 
 ### Why the 13.3% is not proof of missing pages
 
@@ -165,9 +167,9 @@ Status of the 13.3% findability share: **partial reading**. Status of the 802 un
 
 `fender.com completeness when a page is found` is **87.5%**. That is the average of `fender_completeness_pct` on the 123 found pages only. The 802 are not in that average and are not zeros. The checks that feed the average span 2026-10-02 through 2026-10-07. Status: **partial reading**.
 
-### Catalog Readiness and Schema.org tabs
+### AI Readiness and Machine Readability tabs
 
-Catalog Readiness keeps the spec summary, the fender.com page found control, the top missing schema fields chart, and Spec readiness by ASIN. Schema.org keeps the explanation of JSON-LD and `additionalProperty`. It lists found pages whose stored `fender_missing_fields` text includes `additionalProperty`. A row without that stored gap does not appear. The row count on that list is the live query count. Schema.org does not show the ASIN table or the top missing schema fields chart.
+AI Readiness keeps the spec summary, the fender.com page found control, the top missing schema fields chart, and Spec readiness by ASIN. Machine Readability keeps the explanation of JSON-LD and `additionalProperty`. It lists found pages whose stored `fender_missing_fields` text includes `additionalProperty`. A row without that stored gap does not appear. The row count on that list is the live query count. Machine Readability does not show the ASIN table or the top missing schema fields chart.
 
 | Spec summary row | Words Fender sees | Column | Status |
 | --- | --- | --- | --- |
@@ -177,7 +179,7 @@ Catalog Readiness keeps the spec summary, the fender.com page found control, the
 | fender.com completeness when a page is found | 87.5% | `fender_completeness_pct` where `fender_found` | partial reading |
 | Found pages missing additionalProperty | 123 | `fender_missing_fields` | confirmed issue |
 
-**Top missing schema fields** is on Catalog Readiness. It is the first eight rows of `public.canvas_spec_missing_fields`, ordered by `sku_count`. Amazon fields come from `amazon_missing_fields`. The fender field is counted only on rows with `fender_found` true. Schema.org does not show this chart.
+**Top missing schema fields** is on AI Readiness. It is the first eight rows of `public.canvas_spec_missing_fields`, ordered by `sku_count`. Amazon fields come from `amazon_missing_fields`. The fender field is counted only on rows with `fender_found` true. Machine Readability does not show this chart.
 
 | Field | Source | SKUs |
 | --- | --- | --- |
@@ -192,7 +194,7 @@ Catalog Readiness keeps the spec summary, the fender.com page found control, the
 
 Status of these eight counts: **partial reading**, because they are frequencies inside the same unfinished spec read.
 
-**Spec readiness by ASIN** is on Catalog Readiness. At the source-map read it said **925 rows**. Schema.org does not show this table. The ASIN cell shows `asin`.
+**Spec readiness by ASIN** is on AI Readiness. At the source-map read it said **925 rows**. Machine Readability does not show this table. The ASIN cell shows `asin`.
 
 | Column Fender sees | What the cell reads | What is stored | Status |
 | --- | --- | --- | --- |
@@ -203,7 +205,7 @@ Status of these eight counts: **partial reading**, because they are frequencies 
 
 A **No** in this table is a stored `fender_found` false. It is not proof the product is absent from fender.com. A null flag stays blank and is not in the missing-page filter.
 
-### A+ tab
+### Amazon A+ Matrix tab
 
 The tab is the explanation of Amazon A+ content: enhanced modules, and comparison tables that an assistant can read. It does not show a module count, a comparison-table count, a page URL, or a checked time.
 
@@ -221,17 +223,17 @@ Do not apply these. They are the columns still missing. Put them on `command.fmi
 | `aplus_page_url` | text, null | The page that was checked. |
 | `aplus_checked_at` | timestamptz, null | When that check ran. |
 
-No job writes these today. Until one does, the A+ tab and the A+ Tables satellite have no comparison-table count to show. The Amazon completeness percent stays a separate reading.
+No job writes these today. Until one does, the Amazon A+ Matrix tab and satellite have no comparison-table count to show. The Amazon completeness percent stays a separate reading.
 
 ### Widgets that open AI Readiness
 
 | Widget | Words Fender sees | Opens | Table and column | Writer | Status |
 | --- | --- | --- | --- | --- | --- |
-| fender.com Product Findability | **13.3%**. "123 of 925". | Catalog Readiness | `fender_found` | `spec_readiness` | partial reading |
-| Machine-Readable Spec Coverage | **91.6%**. "Amazon attribute completeness". | Schema.org tab | `amazon_completeness_pct` | `spec_readiness` | partial reading |
-| Pages Missing additionalProperty | **123**. "fender.com pages in the spec read". | Schema.org tab | `fender_missing_fields` | `spec_readiness` | confirmed issue |
+| fender.com Product Findability | **13.3%**. "123 of 925". | AI Readiness | `fender_found` | `spec_readiness` | partial reading |
+| Machine-Readable Spec Coverage | **91.6%**. "Amazon attribute completeness". | Machine Readability tab | `amazon_completeness_pct` | `spec_readiness` | partial reading |
+| Pages Missing additionalProperty | **123**. "fender.com pages in the spec read". | Machine Readability tab | `fender_missing_fields` | `spec_readiness` | confirmed issue |
 
-The 91.6% widget opens the Schema.org tab and shows Amazon attribute completeness. It is not the Schema.org `additionalProperty` count. That count is the separate widget, 123.
+The 91.6% widget opens the Machine Readability tab and shows Amazon attribute completeness. It is not the Schema.org `additionalProperty` count. That count is the separate widget, 123.
 
 ## Command center items that open these hubs
 
@@ -242,9 +244,9 @@ The 3,599 is `count(*)` on `command.fmic_electric_catalog`. The 13 is the number
 | Item | Words Fender sees | Opens | Source | Status |
 | --- | --- | --- | --- | --- |
 | Retail headline | **Suppressed Listings: 47 listings**, plus the 1,009 of 1,030 sentence. | Retail Overview | The suppressed reading above. | partial reading |
-| Schema | **fender.com pages are missing machine-readable spec fields.** "Site search found a fender.com page for 123 of 925 checked SKUs (13.3%). additionalProperty is missing on 123 of the found pages, so an assistant still has no spec block to read there." | Schema.org tab | `fender_found`, `fender_missing_fields`. The 123 missing fields are a confirmed issue on the found pages. The 13.3% share is the partial findability reading. | `spec_readiness` | partial reading |
+| Schema | **fender.com pages are missing machine-readable spec fields.** "Site search found a fender.com page for 123 of 925 checked SKUs (13.3%). additionalProperty is missing on 123 of the found pages, so an assistant still has no spec block to read there." | Machine Readability tab | `fender_found`, `fender_missing_fields`. The 123 missing fields are a confirmed issue on the found pages. The 13.3% share is the partial findability reading. | `spec_readiness` | partial reading |
 | MAP | **Discounted bundles are dragging your prices down everywhere.** The body tells the reader to open the MAP tab and does not state the 532. | MAP | The title is not a stored bundle-to-price measurement. The measured leakage is the MAP tab's 532. | not measured |
-| A+ | **A+ comparison tables are how assistants read your lineup.** No count. | A+ tab | No A+ columns. | not measured |
+| A+ | **A+ comparison tables are how assistants read your lineup.** No count. | Amazon A+ Matrix tab | No A+ columns. | not measured |
 
 ## Freshness line
 

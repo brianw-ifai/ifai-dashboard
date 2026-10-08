@@ -175,7 +175,7 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(schemaList, forbidden);
   assert.match(schemaList, /data-schema-gap-count=\{total\}/);
   assert.match(governance, /data-ifai-open="specs"/);
-  assert.match(governance, /data-ifai-tab="Catalog Readiness"/);
+  assert.match(governance, /data-ifai-tab="AI Readiness"/);
   assert.match(governance, /Unnested bundles/);
   assert.doesNotMatch(governance, /catalog-specs/);
   assert.doesNotMatch(governance, /Missing Amazon spec fields/);

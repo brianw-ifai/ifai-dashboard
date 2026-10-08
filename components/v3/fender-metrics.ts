@@ -123,7 +123,7 @@ export const FENDER_METRICS = {
     value: "29.2%",
     detail: "21 of 72 pages found",
     tone: "danger",
-    subTab: "Catalog Readiness",
+    subTab: "AI Readiness",
     provenance: "live",
   },
   machineReadableSpecs: {
@@ -133,7 +133,7 @@ export const FENDER_METRICS = {
     value: "0%",
     detail: "additionalProperty absent on found pages",
     tone: "danger",
-    subTab: "Schema.org",
+    subTab: "Machine Readability",
     provenance: "live",
   },
   missingSchemaFields: {
@@ -141,9 +141,9 @@ export const FENDER_METRICS = {
     spokeId: "specs",
     label: "Missing Schema.org Spec Fields",
     value: "See read",
-    detail: "Missing-field rows are on the Schema tab",
+    detail: "Missing-field rows are on the Machine Readability tab",
     tone: "warning",
-    subTab: "Schema.org",
+    subTab: "Machine Readability",
     provenance: "live",
   },
   beginnerSovGap: {
