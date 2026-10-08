@@ -43,11 +43,11 @@
       "meaning": "AI answer share split by ChatGPT, Perplexity, and Gemini.",
       "unit": "percent",
       "source_tables": "ai_answer",
-      "population": "Answers with a stored engine.",
+      "population": "All answers. The engine comes from the stored engine column, or from the engine tag the battery appends to every prompt and encodes in the sim id.",
       "formula": "per engine: fender_wins / resolved",
       "owner": "intofocus",
       "confidence": "measured",
-      "notes": "Most archived answers have no engine stored."
+      "notes": "The stored engine column covers 114 answers; the prompt tag and sim id cover every answer, and the two agree on all 114."
     },
     {
       "id": "ai_battery_freshness",

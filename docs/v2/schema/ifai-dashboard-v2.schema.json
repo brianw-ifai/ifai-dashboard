@@ -1,0 +1,590 @@
+{
+  "id": "ifai-dashboard-v2",
+  "title": "IntoFocus client dashboard v2",
+  "subtitle": "Shows how a brand's ecommerce performance shapes which brand AI assistants name, and what to do next. Reading rule: a measured zero is a stored 0 with a run id, a missing reading is no row, and a partial read is a run whose rows_read is below population_count.",
+  "kicker": "Database model",
+  "version": "v0.2",
+  "date": "2026-10-08",
+  "status": "Draft for the sandbox schema",
+  "sampleNote": "Synthetic records for a made-up client named Sample Brand. No real customer, seller, or price data.",
+  "domains": [
+    { "id": "client_context", "name": "Client context", "color": "#0284c7", "description": "Who the client is, how it sells on Amazon, and which sellers it authorizes." },
+    { "id": "catalog_runs", "name": "Catalog and reading runs", "color": "#0d9488", "description": "The listings we watch for each client and the log of every reading run, so each number traces to the run that produced it." },
+    { "id": "retail_readings", "name": "Retail readings", "color": "#16a34a", "description": "Featured Offer, seller, and price readings from Amazon and outside stores, plus the client's MAP sheet." },
+    { "id": "product_data", "name": "Product data readings", "color": "#ca8a04", "description": "Checks of how complete the product facts are on Amazon and on the brand's own site." },
+    { "id": "ai_visibility", "name": "AI visibility", "color": "#7c3aed", "description": "The prompts we ask AI assistants, the answers they give, and the brands they name." },
+    { "id": "curated_outputs", "name": "Curated outputs", "color": "#ea580c", "description": "Metric definitions, computed values, estimates with their inputs, and action items the dashboard shows executives." }
+  ],
+  "tables": [
+    {
+      "name": "seller_type",
+      "domain": "client_context",
+      "purpose": "Lists the five ways a brand can sell on Amazon and the retail question the dashboard leads with for each.",
+      "grain": "One row per seller type",
+      "refresh": "Changed by IntoFocus when the product adds a seller type",
+      "sources": ["IntoFocus product definition"],
+      "rowEstimate": "5",
+      "notes": [
+        "Reference data shared by every client, so it has no client_id.",
+        "New table. Nothing in command stores a seller type today."
+      ],
+      "columns": [
+        { "name": "seller_type", "type": "text", "pk": true, "enum": ["partner_led", "brand_led_marketplace", "amazon_retail_only", "hybrid", "no_managed_presence"], "description": "Short code for how the brand sells on Amazon." },
+        { "name": "label", "type": "text", "nullable": false, "description": "Name the dashboard shows, such as Partner-led." },
+        { "name": "primary_retail_question", "type": "text", "nullable": false, "description": "The first retail question the dashboard answers for a client of this type." },
+        { "name": "description", "type": "text", "description": "One sentence that explains this seller type to a new client." }
+      ],
+      "sample": [
+        { "seller_type": "partner_led", "label": "Partner-led", "primary_retail_question": "Does an authorized seller hold a healthy Featured Offer on each active listing?", "description": "Authorized resellers sell the brand on Amazon; the brand doesn't sell there itself." },
+        { "seller_type": "brand_led_marketplace", "label": "Brand-led marketplace", "primary_retail_question": "Does the brand's own seller account hold the Featured Offer at a healthy price?", "description": "The brand sells on Amazon through its own seller account." },
+        { "seller_type": "amazon_retail_only", "label": "Amazon Retail only", "primary_retail_question": "Does Amazon Retail keep each listing in stock and hold the Featured Offer?", "description": "The brand sells wholesale to Amazon, and Amazon Retail sells to shoppers." },
+        { "seller_type": "hybrid", "label": "Hybrid", "primary_retail_question": "Is the seller holding the Featured Offer on each listing the one the brand planned for?", "description": "The brand mixes Amazon Retail, its own account, and partners across listings." },
+        { "seller_type": "no_managed_presence", "label": "No managed presence", "primary_retail_question": "Who sells the brand's products on Amazon today, and at what price?", "description": "The brand doesn't manage Amazon; whoever lists the products sells them." }
+      ]
+    },
+    {
+      "name": "client",
+      "domain": "client_context",
+      "purpose": "Holds each brand IntoFocus reports on, with the seller type that sets its primary retail question.",
+      "grain": "One row per client brand",
+      "refresh": "Changed at onboarding and when the client's selling model changes",
+      "sources": ["IntoFocus onboarding", "command.organizations (name and slug)"],
+      "rowEstimate": "1 today (pilot), grows by one per client",
+      "notes": [
+        "Every table that holds client data points here through client_id, so the same model serves the next brand.",
+        "The primary retail question comes from seller_type, so it can't drift from the type.",
+        "Login tables (organizations, organization_memberships, user_profiles) stay in command; organization_id links to them by value."
+      ],
+      "columns": [
+        { "name": "client_id", "type": "text", "pk": true, "description": "IntoFocus id for the brand we report on." },
+        { "name": "name", "type": "text", "nullable": false, "description": "Brand name the dashboard shows." },
+        { "name": "slug", "type": "text", "nullable": false, "unique": true, "description": "Short name used in links, such as sample-brand." },
+        { "name": "seller_type", "type": "text", "fk": "seller_type.seller_type", "nullable": false, "relation": "sells as", "description": "How the brand sells on Amazon. This picks the primary retail question." },
+        { "name": "organization_id", "type": "uuid", "description": "The client's login account in command.organizations. Stored as a plain value because login tables stay outside this model." },
+        { "name": "brand_site_domain", "type": "text", "description": "Website where the brand publishes its own product pages. The product data check looks here." },
+        { "name": "is_active", "type": "boolean", "nullable": false, "default": "true", "description": "True while IntoFocus is reporting on this brand." },
+        { "name": "onboarded_at", "type": "timestamptz", "description": "When the client was set up." },
+        { "name": "updated_at", "type": "timestamptz", "description": "When this row last changed." }
+      ],
+      "sample": [
+        { "client_id": "cl_sample", "name": "Sample Brand", "slug": "sample-brand", "seller_type": "partner_led", "organization_id": "00000000-0000-4000-8000-0000000000a1", "brand_site_domain": "example.com", "is_active": true, "onboarded_at": "2026-09-20T15:00:00Z", "updated_at": "2026-10-08T19:30:00Z" },
+        { "client_id": "cl_demo", "name": "Demo Audio Co", "slug": "demo-audio", "seller_type": "brand_led_marketplace", "organization_id": null, "brand_site_domain": "demo.example.com", "is_active": false, "onboarded_at": null, "updated_at": "2026-10-08T19:30:00Z" }
+      ]
+    },
+    {
+      "name": "seller",
+      "domain": "client_context",
+      "purpose": "Holds each Amazon seller account seen holding a Featured Offer, with its public rating.",
+      "grain": "One row per Amazon seller id",
+      "refresh": "Daily, with the seller reading",
+      "sources": ["Keepa seller lookup", "fender_buybox_seller_harvester"],
+      "rowEstimate": "~35",
+      "notes": [
+        "Marketplace data shared across clients, so it has no client_id. Whether a seller is authorized is client data and lives in seller_authorization.",
+        "Loaded from command.fmic_sellers."
+      ],
+      "columns": [
+        { "name": "seller_id", "type": "text", "pk": true, "description": "Amazon's id for the seller account." },
+        { "name": "marketplace", "type": "text", "nullable": false, "default": "'amazon'", "enum": ["amazon"], "description": "Marketplace the seller account belongs to." },
+        { "name": "seller_name", "type": "text", "description": "Storefront name shoppers see. Empty when the lookup didn't return a name." },
+        { "name": "is_amazon_retail", "type": "boolean", "nullable": false, "default": "false", "description": "True when the seller is Amazon itself (Amazon Retail)." },
+        { "name": "ships_with_amazon", "type": "boolean", "description": "True when the seller's offers ship through Fulfillment by Amazon." },
+        { "name": "rating_pct", "type": "integer", "description": "Share of the seller's feedback that is positive, in percent." },
+        { "name": "rating_count", "type": "integer", "description": "How many feedback ratings the seller has." },
+        { "name": "first_seen_at", "type": "timestamptz", "description": "First time a reading saw this seller holding a Featured Offer." },
+        { "name": "updated_at", "type": "timestamptz", "description": "When the seller lookup last refreshed this row." }
+      ],
+      "sample": [
+        { "seller_id": "ASAMPLEAMAZON1", "marketplace": "amazon", "seller_name": "Amazon Retail", "is_amazon_retail": true, "ships_with_amazon": true, "rating_pct": 100, "rating_count": 50000, "first_seen_at": "2026-09-22T10:00:00Z", "updated_at": "2026-10-08T18:03:00Z" },
+        { "seller_id": "ASAMPLESELLER01", "marketplace": "amazon", "seller_name": "Example Music Co", "is_amazon_retail": false, "ships_with_amazon": false, "rating_pct": 98, "rating_count": 4200, "first_seen_at": "2026-09-23T11:00:00Z", "updated_at": "2026-10-08T18:03:00Z" },
+        { "seller_id": "ASAMPLESELLER02", "marketplace": "amazon", "seller_name": "Sample Strings Outlet", "is_amazon_retail": false, "ships_with_amazon": true, "rating_pct": 91, "rating_count": 310, "first_seen_at": "2026-10-01T09:00:00Z", "updated_at": "2026-10-08T18:03:00Z" }
+      ]
+    },
+    {
+      "name": "seller_authorization",
+      "domain": "client_context",
+      "purpose": "Records which sellers the client says are authorized to sell its products, and from when.",
+      "grain": "One row per client, seller, and effective start date",
+      "refresh": "When the client sends an updated authorized-seller list",
+      "sources": ["Client authorized-seller list"],
+      "rowEstimate": "0 today; tens per client once the list arrives",
+      "notes": [
+        "New table. No authorized flag exists in command today, so the Partner-led headline stays unavailable until the client's list is stored.",
+        "Unique on (client_id, seller_id, effective_from).",
+        "A seller with no row is unknown, not unauthorized."
+      ],
+      "columns": [
+        { "name": "seller_authorization_id", "type": "text", "pk": true, "description": "Id for this authorization record." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "authorization list of", "description": "Client whose list this row comes from." },
+        { "name": "seller_id", "type": "text", "fk": "seller.seller_id", "nullable": false, "relation": "decision about", "description": "Amazon seller the client made a decision about." },
+        { "name": "authorization_status", "type": "text", "nullable": false, "enum": ["authorized", "not_authorized"], "description": "Whether the client says this seller may sell its products." },
+        { "name": "effective_from", "type": "date", "nullable": false, "description": "First day the decision applies." },
+        { "name": "effective_to", "type": "date", "description": "Last day the decision applies. Empty means it still applies." },
+        { "name": "source", "type": "text", "description": "Where the decision came from, such as the client's reseller sheet." },
+        { "name": "supplied_by", "type": "text", "description": "Person who sent the list." },
+        { "name": "loaded_at", "type": "timestamptz", "nullable": false, "description": "When IntoFocus stored this row." }
+      ],
+      "sample": [
+        { "seller_authorization_id": "sa_001", "client_id": "cl_sample", "seller_id": "ASAMPLESELLER01", "authorization_status": "authorized", "effective_from": "2026-10-01", "effective_to": null, "source": "Sample Brand reseller sheet", "supplied_by": "ops@example.com", "loaded_at": "2026-10-08T17:00:00Z" },
+        { "seller_authorization_id": "sa_002", "client_id": "cl_sample", "seller_id": "ASAMPLEAMAZON1", "authorization_status": "authorized", "effective_from": "2026-10-01", "effective_to": null, "source": "Sample Brand reseller sheet", "supplied_by": "ops@example.com", "loaded_at": "2026-10-08T17:00:00Z" },
+        { "seller_authorization_id": "sa_003", "client_id": "cl_sample", "seller_id": "ASAMPLESELLER02", "authorization_status": "not_authorized", "effective_from": "2026-10-01", "effective_to": null, "source": "Sample Brand reseller sheet", "supplied_by": "ops@example.com", "loaded_at": "2026-10-08T17:00:00Z" }
+      ]
+    },
+    {
+      "name": "listing",
+      "domain": "catalog_runs",
+      "purpose": "Holds each retailer listing we watch for a client, with the facts that rarely change.",
+      "grain": "One row per client and retailer listing (ASIN on Amazon)",
+      "refresh": "Daily, with the catalog reading",
+      "sources": ["Keepa product finder", "fender_catalog_harvester", "command.fmic_electric_catalog", "command.fmic_retail_buybox_map (bundle_name)"],
+      "rowEstimate": "~3,600",
+      "notes": [
+        "Unique on (client_id, retailer, asin).",
+        "Prices, rank, stock, and seller live in listing_offer_reading, because they change with every read.",
+        "Whether a listing is active comes from offer_status in its latest offer reading, not from a flag here."
+      ],
+      "columns": [
+        { "name": "listing_id", "type": "text", "pk": true, "description": "IntoFocus id for the listing." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "listing of", "description": "Client whose product this listing sells." },
+        { "name": "retailer", "type": "text", "nullable": false, "default": "'amazon'", "enum": ["amazon"], "description": "Store the listing lives on. Amazon today." },
+        { "name": "asin", "type": "text", "nullable": false, "description": "Amazon's product id for the listing." },
+        { "name": "parent_listing_id", "type": "text", "fk": "listing.listing_id", "relation": "variation of", "description": "The parent listing when this is a size or color variation." },
+        { "name": "parent_asin", "type": "text", "description": "Amazon's id for the parent listing, as Keepa reports it, even when we don't watch the parent." },
+        { "name": "title", "type": "text", "description": "Listing title on Amazon." },
+        { "name": "brand", "type": "text", "description": "Brand name on the listing." },
+        { "name": "manufacturer", "type": "text", "description": "Manufacturer name on the listing." },
+        { "name": "model_number", "type": "text", "description": "Manufacturer model number." },
+        { "name": "upc", "type": "text", "description": "UPC barcode number." },
+        { "name": "ean", "type": "text", "description": "EAN barcode number." },
+        { "name": "color", "type": "text", "description": "Color or finish on the listing." },
+        { "name": "category", "type": "text", "description": "Amazon category the listing sits in. This replaces the old hand-named divisions." },
+        { "name": "is_bundle", "type": "boolean", "nullable": false, "default": "false", "description": "True when the title marks a bundle, kit, pack, or combo." },
+        { "name": "bundle_name", "type": "text", "description": "Name of the bundle when the listing is one." },
+        { "name": "url", "type": "text", "description": "Link to the listing page." },
+        { "name": "amazon_list_price", "type": "numeric(10,2)", "description": "Price Amazon shows as the list price, in dollars. This isn't MAP." },
+        { "name": "first_seen_at", "type": "timestamptz", "description": "When the catalog reading first found this listing." },
+        { "name": "last_harvested_at", "type": "timestamptz", "description": "When the catalog reading last refreshed these facts." },
+        { "name": "updated_at", "type": "timestamptz", "description": "When this row last changed." }
+      ],
+      "sample": [
+        { "listing_id": "lst_001", "client_id": "cl_sample", "retailer": "amazon", "asin": "B0SAMPLE001", "parent_listing_id": null, "parent_asin": null, "title": "Sample Brand Standard Electric Guitar, Sunburst", "brand": "Sample Brand", "manufacturer": "Sample Brand Inc", "model_number": "SB-100", "upc": "000000000011", "ean": "0000000000011", "color": "Sunburst", "category": "Electric Guitars", "is_bundle": false, "bundle_name": null, "url": "https://www.example.com/dp/B0SAMPLE001", "amazon_list_price": 599.99, "first_seen_at": "2026-09-22T10:00:00Z", "last_harvested_at": "2026-10-08T06:00:00Z", "updated_at": "2026-10-08T06:00:00Z" },
+        { "listing_id": "lst_002", "client_id": "cl_sample", "retailer": "amazon", "asin": "B0SAMPLE002", "parent_listing_id": null, "parent_asin": null, "title": "Sample Brand Starter Electric Guitar Pack with Amp", "brand": "Sample Brand", "manufacturer": "Sample Brand Inc", "model_number": "SB-PK1", "upc": "000000000028", "ean": "0000000000028", "color": "Black", "category": "Electric Guitars", "is_bundle": true, "bundle_name": "Starter Pack", "url": "https://www.example.com/dp/B0SAMPLE002", "amazon_list_price": 229.99, "first_seen_at": "2026-09-22T10:00:00Z", "last_harvested_at": "2026-10-08T06:00:00Z", "updated_at": "2026-10-08T06:00:00Z" },
+        { "listing_id": "lst_003", "client_id": "cl_sample", "retailer": "amazon", "asin": "B0SAMPLE003", "parent_listing_id": "lst_001", "parent_asin": "B0SAMPLE001", "title": "Sample Brand Standard Electric Guitar, Arctic White", "brand": "Sample Brand", "manufacturer": "Sample Brand Inc", "model_number": "SB-100W", "upc": "000000000035", "ean": "0000000000035", "color": "Arctic White", "category": "Electric Guitars", "is_bundle": false, "bundle_name": null, "url": "https://www.example.com/dp/B0SAMPLE003", "amazon_list_price": 599.99, "first_seen_at": "2026-09-24T10:00:00Z", "last_harvested_at": "2026-10-08T06:00:00Z", "updated_at": "2026-10-08T06:00:00Z" }
+      ]
+    },
+    {
+      "name": "reading_run",
+      "domain": "catalog_runs",
+      "purpose": "Logs every run that reads data, with how many items it should have read and how many it did, so missing, partial, and zero readings stay distinct.",
+      "grain": "One row per run of one reading source",
+      "refresh": "One row per run of any reading job",
+      "sources": ["Every reading wrench", "command.fmic_audit_runs", "command.fmic_job_state (cursor and extra)"],
+      "rowEstimate": "~750 today, grows by about 40 per day",
+      "notes": [
+        "complete: rows_read equals population_count. partial: rows_read is below population_count, or the run hasn't finished (finished_at empty). failed: the run ended without usable rows.",
+        "A missing reading is an item with no row in any run. A measured zero is a 0 stored on a row that has a reading_run_id.",
+        "Replaces fmic_job_state: the next run's starting point is cursor_end on the latest run for that source.",
+        "Unique on workflow_execution_id."
+      ],
+      "columns": [
+        { "name": "reading_run_id", "type": "uuid", "pk": true, "description": "Id for this run. Every reading row points here." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "run for", "description": "Client the run read data for." },
+        { "name": "source", "type": "text", "nullable": false, "enum": ["keepa_product", "keepa_seller", "walmart_price", "musiciansfriend_price", "sweetwater_price", "reverb_price", "spec_check", "ai_battery"], "description": "What the run reads, such as Keepa product data, Walmart prices, or AI answers." },
+        { "name": "workflow_name", "type": "text", "description": "Name of the job that ran, such as fender_spec_readiness_audit." },
+        { "name": "workflow_execution_id", "type": "text", "unique": true, "description": "The job platform's id for this run, so a run is never logged twice." },
+        { "name": "trigger_type", "type": "text", "enum": ["scheduled", "manual", "webhook", "backfill"], "description": "What started the run. Backfill marks rows loaded from older tables." },
+        { "name": "started_at", "type": "timestamptz", "nullable": false, "description": "When the run started." },
+        { "name": "finished_at", "type": "timestamptz", "description": "When the run ended. Empty while it's still going." },
+        { "name": "status", "type": "text", "nullable": false, "enum": ["complete", "partial", "failed"], "description": "complete when it read every item it should have, partial when it read fewer, failed when it read nothing usable." },
+        { "name": "population_count", "type": "integer", "nullable": false, "description": "How many items the run should have read, such as every active listing in the batch." },
+        { "name": "rows_read", "type": "integer", "nullable": false, "default": "0", "description": "How many items the run actually read and stored." },
+        { "name": "findings_count", "type": "integer", "description": "How many items the run flagged, such as offers above the benchmark." },
+        { "name": "cursor_start", "type": "integer", "description": "Position in the item list where the run began." },
+        { "name": "cursor_end", "type": "integer", "description": "Position where the next run should pick up." },
+        { "name": "legacy_run_key", "type": "text", "description": "Old batch id, such as spec_run_123, so loaded rows trace back to the old tables." },
+        { "name": "detail", "type": "jsonb", "description": "Extra facts the job records about the run, such as batch size or API notes." }
+      ],
+      "sample": [
+        { "reading_run_id": "00000000-0000-4000-8000-000000000001", "client_id": "cl_sample", "source": "keepa_product", "workflow_name": "fender_omnichannel_audit_sync", "workflow_execution_id": "exec_sample_001", "trigger_type": "scheduled", "started_at": "2026-10-08T18:00:00Z", "finished_at": "2026-10-08T18:04:10Z", "status": "complete", "population_count": 3, "rows_read": 3, "findings_count": 1, "cursor_start": 0, "cursor_end": 3, "legacy_run_key": null, "detail": { "batch_size": 3 } },
+        { "reading_run_id": "00000000-0000-4000-8000-000000000002", "client_id": "cl_sample", "source": "walmart_price", "workflow_name": "fender_retail_buybox_map_audit", "workflow_execution_id": "exec_sample_002", "trigger_type": "scheduled", "started_at": "2026-10-08T18:10:00Z", "finished_at": "2026-10-08T18:12:30Z", "status": "partial", "population_count": 3, "rows_read": 2, "findings_count": 1, "cursor_start": 0, "cursor_end": 2, "legacy_run_key": null, "detail": { "note": "Walmart search timed out on one item" } },
+        { "reading_run_id": "00000000-0000-4000-8000-000000000003", "client_id": "cl_sample", "source": "musiciansfriend_price", "workflow_name": "fender_map_checker_musiciansfriend", "workflow_execution_id": "exec_sample_003", "trigger_type": "scheduled", "started_at": "2026-10-08T18:20:00Z", "finished_at": "2026-10-08T18:21:05Z", "status": "complete", "population_count": 2, "rows_read": 2, "findings_count": 0, "cursor_start": 0, "cursor_end": 2, "legacy_run_key": null, "detail": { "scope": "non-bundle listings" } },
+        { "reading_run_id": "00000000-0000-4000-8000-000000000004", "client_id": "cl_sample", "source": "spec_check", "workflow_name": "fender_spec_readiness_audit", "workflow_execution_id": "exec_sample_004", "trigger_type": "scheduled", "started_at": "2026-10-08T18:30:00Z", "finished_at": "2026-10-08T18:33:40Z", "status": "complete", "population_count": 2, "rows_read": 2, "findings_count": 2, "cursor_start": 0, "cursor_end": 2, "legacy_run_key": "spec_run_sample_01", "detail": null },
+        { "reading_run_id": "00000000-0000-4000-8000-000000000005", "client_id": "cl_sample", "source": "ai_battery", "workflow_name": "fender_ai_simulation_battery_real", "workflow_execution_id": "exec_sample_005", "trigger_type": "scheduled", "started_at": "2026-10-05T16:00:00Z", "finished_at": "2026-10-05T16:26:00Z", "status": "partial", "population_count": 6, "rows_read": 4, "findings_count": 1, "cursor_start": null, "cursor_end": null, "legacy_run_key": null, "detail": { "prompts": 3, "engines": 2, "repeats": 1 } }
+      ]
+    },
+    {
+      "name": "listing_offer_reading",
+      "domain": "retail_readings",
+      "purpose": "Stores what one Keepa run saw on one Amazon listing: whether Amazon withheld the Featured Offer, the offer price, Amazon's outside benchmark, and who holds the offer.",
+      "grain": "One row per listing per reading run",
+      "refresh": "Daily product and seller runs, plus the hourly benchmark pass",
+      "sources": ["Keepa product data (buyBoxIsUnqualified, competitivePriceThreshold)", "Keepa seller data", "fender_catalog_harvester", "fender_buybox_seller_harvester", "fender_omnichannel_audit_sync"],
+      "rowEstimate": "~1,000 per run; append-only",
+      "notes": [
+        "Unique on (listing_id, reading_run_id). The current state of a listing is its latest row.",
+        "Answers why the Featured Offer is withheld: featured_offer_withheld, offer_price_cents, competitive_external_price_cents, and read_at sit on one row. Join listing_channel_price on the same listing_id where price_cents equals competitive_external_price_cents to find the stored outside price that matches.",
+        "Product runs fill the price and Featured Offer fields. Seller runs fill the seller fields and leave price fields empty. An empty field means that run didn't read it; seller_class = not_read means a seller read was due but returned nothing.",
+        "Suppressed means featured_offer_withheld is true and offer_price_cents is above competitive_external_price_cents."
+      ],
+      "columns": [
+        { "name": "listing_offer_reading_id", "type": "text", "pk": true, "description": "Id for this reading." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "reading for", "description": "Client whose listing was read." },
+        { "name": "listing_id", "type": "text", "fk": "listing.listing_id", "nullable": false, "relation": "reading of", "description": "Listing this reading describes." },
+        { "name": "reading_run_id", "type": "uuid", "fk": "reading_run.reading_run_id", "nullable": false, "relation": "read in", "description": "Run that took this reading. Use it to see when the run happened and whether it finished." },
+        { "name": "read_at", "type": "timestamptz", "nullable": false, "description": "When Keepa returned this reading." },
+        { "name": "offer_status", "type": "text", "nullable": false, "enum": ["active", "no_active_offer"], "description": "Whether the listing had any offer shoppers could buy when read." },
+        { "name": "featured_offer_withheld", "type": "boolean", "description": "True when Amazon showed no Featured Offer on the listing. Empty when this run didn't read it." },
+        { "name": "offer_price", "type": "numeric(10,2)", "description": "Lowest offer price including shipping, in dollars." },
+        { "name": "offer_price_cents", "type": "integer generated always as (round(offer_price * 100)::integer) stored", "description": "The same offer price in cents, so it compares directly with Amazon's benchmark." },
+        { "name": "competitive_external_price_cents", "type": "integer", "description": "Amazon's outside benchmark (Competitive External Price) in cents, as Keepa supplies it. Amazon may withhold the Featured Offer when the offer is above it. Empty when Keepa didn't report one." },
+        { "name": "listed_price", "type": "numeric(10,2)", "description": "Current price Keepa shows for the listing, in dollars, before shipping." },
+        { "name": "featured_offer_seller_id", "type": "text", "fk": "seller.seller_id", "relation": "Featured Offer held by", "description": "Seller holding the Featured Offer when read. Empty when no seller was read." },
+        { "name": "seller_class", "type": "text", "enum": ["amazon_retail", "third_party", "not_read", "no_offer"], "description": "Who holds the Featured Offer: Amazon Retail, a third-party seller, not read yet, or no offer to hold." },
+        { "name": "seller_ships_with_amazon", "type": "boolean", "description": "True when the offer holding the Featured Offer ships through Fulfillment by Amazon." },
+        { "name": "offer_count_new", "type": "integer", "description": "How many sellers offer the item new. A stored 0 means Keepa counted none." },
+        { "name": "sales_rank", "type": "integer", "description": "Amazon Best Sellers Rank in the listing's category. Lower sells more." },
+        { "name": "monthly_sold", "type": "integer", "description": "Keepa's estimate of units bought in the past month." },
+        { "name": "amazon_stock", "type": "text", "description": "Amazon Retail's stock state, as Keepa reports it, such as in stock or no Amazon offer." },
+        { "name": "legacy_status", "type": "text", "description": "The status text the old table stored for this listing, kept so loaded rows can be checked against it." }
+      ],
+      "sample": [
+        { "listing_offer_reading_id": "lor_001", "client_id": "cl_sample", "listing_id": "lst_001", "reading_run_id": "00000000-0000-4000-8000-000000000001", "read_at": "2026-10-08T18:02:11Z", "offer_status": "active", "featured_offer_withheld": true, "offer_price": 649.99, "offer_price_cents": 64999, "competitive_external_price_cents": 62999, "listed_price": 639.99, "featured_offer_seller_id": "ASAMPLESELLER02", "seller_class": "third_party", "seller_ships_with_amazon": true, "offer_count_new": 3, "sales_rank": 21000, "monthly_sold": 20, "amazon_stock": "no_amazon_offer", "legacy_status": "3P Confirmed" },
+        { "listing_offer_reading_id": "lor_002", "client_id": "cl_sample", "listing_id": "lst_002", "reading_run_id": "00000000-0000-4000-8000-000000000001", "read_at": "2026-10-08T18:02:40Z", "offer_status": "active", "featured_offer_withheld": false, "offer_price": 229.99, "offer_price_cents": 22999, "competitive_external_price_cents": null, "listed_price": 229.99, "featured_offer_seller_id": "ASAMPLESELLER01", "seller_class": "third_party", "seller_ships_with_amazon": false, "offer_count_new": 1, "sales_rank": 9500, "monthly_sold": 50, "amazon_stock": "no_amazon_offer", "legacy_status": "3P Confirmed" },
+        { "listing_offer_reading_id": "lor_003", "client_id": "cl_sample", "listing_id": "lst_003", "reading_run_id": "00000000-0000-4000-8000-000000000001", "read_at": "2026-10-08T18:03:05Z", "offer_status": "no_active_offer", "featured_offer_withheld": null, "offer_price": null, "offer_price_cents": null, "competitive_external_price_cents": null, "listed_price": null, "featured_offer_seller_id": null, "seller_class": "no_offer", "seller_ships_with_amazon": null, "offer_count_new": 0, "sales_rank": null, "monthly_sold": null, "amazon_stock": "out_of_stock", "legacy_status": "No Active Offer" }
+      ]
+    },
+    {
+      "name": "listing_channel_price",
+      "domain": "retail_readings",
+      "purpose": "Stores the price one run found for a listing at one store, with the link and the time it was checked.",
+      "grain": "One row per listing, channel, and reading run",
+      "refresh": "Hourly Walmart and Musician's Friend runs; Sweetwater and Reverb once a reader exists",
+      "sources": ["Walmart search", "Musician's Friend pages", "fender_retail_buybox_map_audit", "fender_map_checker_musiciansfriend", "command.listing_channel_price"],
+      "rowEstimate": "~1,400 per full pass; append-only",
+      "notes": [
+        "Unique on (listing_id, channel, reading_run_id). The current price at a store is the latest row for that listing and channel.",
+        "match_status = no_match is a real reading: the store was checked and had no matching item. No row at all means the store wasn't checked.",
+        "The amazon row copies the offer price from listing_offer_reading so MAP checks run the same way on every channel.",
+        "To find the outside price behind Amazon's benchmark, match price_cents to listing_offer_reading.competitive_external_price_cents on the same listing."
+      ],
+      "columns": [
+        { "name": "listing_channel_price_id", "type": "text", "pk": true, "description": "Id for this price reading." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "price for", "description": "Client whose product was priced." },
+        { "name": "listing_id", "type": "text", "fk": "listing.listing_id", "nullable": false, "relation": "outside price of", "description": "Amazon listing this outside price matches." },
+        { "name": "reading_run_id", "type": "uuid", "fk": "reading_run.reading_run_id", "nullable": false, "relation": "read in", "description": "Run that checked the store." },
+        { "name": "read_at", "type": "timestamptz", "nullable": false, "description": "When the run stored this reading." },
+        { "name": "channel", "type": "text", "nullable": false, "enum": ["amazon", "walmart", "musiciansfriend", "sweetwater", "reverb"], "description": "Store the price comes from." },
+        { "name": "match_status", "type": "text", "nullable": false, "enum": ["priced", "no_match"], "description": "priced when the store had a matching item with a price, no_match when it was checked and had none." },
+        { "name": "price", "type": "numeric(10,2)", "description": "Price shown at the store, in dollars. Empty when there was no match." },
+        { "name": "price_cents", "type": "integer generated always as (round(price * 100)::integer) stored", "description": "The same price in cents, so it compares directly with Amazon's benchmark." },
+        { "name": "url", "type": "text", "description": "Link to the item at the store." },
+        { "name": "checked_at", "type": "timestamptz", "nullable": false, "description": "When the store page was checked." },
+        { "name": "store_title", "type": "text", "description": "Item title as the store shows it. Use it to confirm the match." },
+        { "name": "store_seller_name", "type": "text", "description": "Seller named on the store's offer, such as a Walmart marketplace seller." },
+        { "name": "store_msrp", "type": "numeric(10,2)", "description": "List price or MSRP the store shows next to its price, in dollars." },
+        { "name": "match_confidence", "type": "numeric(3,2)", "description": "How sure the reader is that the store item is the same product, from 0 to 1." }
+      ],
+      "sample": [
+        { "listing_channel_price_id": "lcp_001", "client_id": "cl_sample", "listing_id": "lst_001", "reading_run_id": "00000000-0000-4000-8000-000000000002", "read_at": "2026-10-08T18:11:02Z", "channel": "walmart", "match_status": "priced", "price": 629.99, "price_cents": 62999, "url": "https://walmart.example.com/ip/0001", "checked_at": "2026-10-08T18:11:00Z", "store_title": "Sample Brand Standard Electric Guitar Sunburst", "store_seller_name": "Example Music Co", "store_msrp": null, "match_confidence": 0.95 },
+        { "listing_channel_price_id": "lcp_002", "client_id": "cl_sample", "listing_id": "lst_002", "reading_run_id": "00000000-0000-4000-8000-000000000002", "read_at": "2026-10-08T18:11:40Z", "channel": "walmart", "match_status": "no_match", "price": null, "price_cents": null, "url": null, "checked_at": "2026-10-08T18:11:38Z", "store_title": null, "store_seller_name": null, "store_msrp": null, "match_confidence": null },
+        { "listing_channel_price_id": "lcp_003", "client_id": "cl_sample", "listing_id": "lst_001", "reading_run_id": "00000000-0000-4000-8000-000000000003", "read_at": "2026-10-08T18:20:30Z", "channel": "musiciansfriend", "match_status": "priced", "price": 649.99, "price_cents": 64999, "url": "https://mf.example.com/sample-standard", "checked_at": "2026-10-08T18:20:28Z", "store_title": "Sample Brand Standard Electric Guitar", "store_seller_name": null, "store_msrp": 699.99, "match_confidence": 1.0 },
+        { "listing_channel_price_id": "lcp_004", "client_id": "cl_sample", "listing_id": "lst_001", "reading_run_id": "00000000-0000-4000-8000-000000000001", "read_at": "2026-10-08T18:02:11Z", "channel": "amazon", "match_status": "priced", "price": 649.99, "price_cents": 64999, "url": "https://www.example.com/dp/B0SAMPLE001", "checked_at": "2026-10-08T18:02:11Z", "store_title": "Sample Brand Standard Electric Guitar, Sunburst", "store_seller_name": "Sample Strings Outlet", "store_msrp": null, "match_confidence": 1.0 }
+      ]
+    },
+    {
+      "name": "listing_map_price",
+      "domain": "retail_readings",
+      "purpose": "Holds the minimum advertised price (MAP) the client sets for each listing, with the dates it applies.",
+      "grain": "One row per listing and effective start date",
+      "refresh": "When the client sends a new MAP sheet",
+      "sources": ["Client MAP sheet"],
+      "rowEstimate": "0 today; one per listing once the sheet arrives",
+      "notes": [
+        "Client-supplied, so it has no reading run. Offers below MAP stays unavailable until this table has rows.",
+        "Amazon's list price isn't MAP and is never loaded here."
+      ],
+      "columns": [
+        { "name": "listing_map_price_id", "type": "text", "pk": true, "description": "Id for this MAP record." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "MAP set by", "description": "Client that set the price." },
+        { "name": "listing_id", "type": "text", "fk": "listing.listing_id", "nullable": false, "relation": "MAP for", "description": "Listing the MAP applies to." },
+        { "name": "map_price", "type": "numeric(10,2)", "nullable": false, "description": "Lowest price a seller may advertise, in dollars." },
+        { "name": "effective_from", "type": "date", "nullable": false, "description": "First day this MAP applies." },
+        { "name": "effective_to", "type": "date", "description": "Last day this MAP applies. Empty means it still applies." },
+        { "name": "source", "type": "text", "description": "Document the price came from, such as the client's MAP sheet name." },
+        { "name": "supplied_by", "type": "text", "description": "Person who sent the sheet." },
+        { "name": "loaded_at", "type": "timestamptz", "nullable": false, "description": "When IntoFocus stored this row." }
+      ],
+      "sample": [
+        { "listing_map_price_id": "map_001", "client_id": "cl_sample", "listing_id": "lst_001", "map_price": 599.99, "effective_from": "2026-10-01", "effective_to": null, "source": "Sample Brand MAP sheet, October", "supplied_by": "ops@example.com", "loaded_at": "2026-10-08T17:05:00Z" },
+        { "listing_map_price_id": "map_002", "client_id": "cl_sample", "listing_id": "lst_002", "map_price": 219.99, "effective_from": "2026-10-01", "effective_to": null, "source": "Sample Brand MAP sheet, October", "supplied_by": "ops@example.com", "loaded_at": "2026-10-08T17:05:00Z" }
+      ]
+    },
+    {
+      "name": "spec_reading",
+      "domain": "product_data",
+      "purpose": "Stores one check of how complete a listing's product facts are on Amazon and on the brand's own product page.",
+      "grain": "One row per listing per reading run",
+      "refresh": "Hourly batches",
+      "sources": ["Amazon listing page", "Brand site product page (JSON-LD)", "fender_spec_readiness_audit", "command.fmic_spec_readiness"],
+      "rowEstimate": "~2,000 today; append-only",
+      "notes": [
+        "Unique on (listing_id, reading_run_id). The current check for a listing is its latest row.",
+        "Completeness percent is found divided by expected, so it isn't stored.",
+        "Missing-field lists are stored as text arrays. Loading splits the old semicolon lists.",
+        "additional_property_present is filled at load from the brand-site missing-field list until the audit writes it directly."
+      ],
+      "columns": [
+        { "name": "spec_reading_id", "type": "text", "pk": true, "description": "Id for this check." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "check for", "description": "Client whose listing was checked." },
+        { "name": "listing_id", "type": "text", "fk": "listing.listing_id", "nullable": false, "relation": "check of", "description": "Listing that was checked." },
+        { "name": "reading_run_id", "type": "uuid", "fk": "reading_run.reading_run_id", "nullable": false, "relation": "checked in", "description": "Run that did the check." },
+        { "name": "read_at", "type": "timestamptz", "nullable": false, "description": "When the check ran." },
+        { "name": "amazon_checked", "type": "boolean", "nullable": false, "description": "True when the Amazon page loaded and was read. False means the Amazon counts below aren't measured." },
+        { "name": "amazon_fields_found", "type": "integer", "description": "How many of the expected Amazon product-detail fields are filled." },
+        { "name": "amazon_fields_expected", "type": "integer", "description": "How many Amazon product-detail fields the check looks for. 13 today." },
+        { "name": "amazon_missing_fields", "type": "text[]", "description": "Names of the Amazon fields that are empty." },
+        { "name": "brand_site_page_found", "type": "boolean", "nullable": false, "description": "True when site search found the product's page on the brand's own site." },
+        { "name": "brand_site_url", "type": "text", "description": "Link to the brand's product page that was checked." },
+        { "name": "brand_site_fields_found", "type": "integer", "description": "How many expected product facts the brand page's structured data includes." },
+        { "name": "brand_site_fields_expected", "type": "integer", "description": "How many product facts the check looks for on the brand page. 8 today." },
+        { "name": "brand_site_missing_fields", "type": "text[]", "description": "Names of the product facts the brand page is missing." },
+        { "name": "additional_property_present", "type": "boolean", "description": "True when the brand page's structured data has an additionalProperty block, where detailed specs go. Empty when no page was found." }
+      ],
+      "sample": [
+        { "spec_reading_id": "spr_001", "client_id": "cl_sample", "listing_id": "lst_001", "reading_run_id": "00000000-0000-4000-8000-000000000004", "read_at": "2026-10-08T18:31:10Z", "amazon_checked": true, "amazon_fields_found": 12, "amazon_fields_expected": 13, "amazon_missing_fields": ["fretboard_radius"], "brand_site_page_found": true, "brand_site_url": "https://www.example.com/products/sb-100", "brand_site_fields_found": 6, "brand_site_fields_expected": 8, "brand_site_missing_fields": ["additionalProperty", "gtin"], "additional_property_present": false },
+        { "spec_reading_id": "spr_002", "client_id": "cl_sample", "listing_id": "lst_002", "reading_run_id": "00000000-0000-4000-8000-000000000004", "read_at": "2026-10-08T18:32:05Z", "amazon_checked": true, "amazon_fields_found": 13, "amazon_fields_expected": 13, "amazon_missing_fields": [], "brand_site_page_found": false, "brand_site_url": null, "brand_site_fields_found": 0, "brand_site_fields_expected": 8, "brand_site_missing_fields": ["page_not_found"], "additional_property_present": null }
+      ]
+    },
+    {
+      "name": "competitor_brand",
+      "domain": "ai_visibility",
+      "purpose": "Lists the brands an AI answer can name for a client, including the client's own brand, so answers are scored against one list.",
+      "grain": "One row per client and brand",
+      "refresh": "When IntoFocus updates the rival list",
+      "sources": ["fender_ai_simulation_battery_real scorer keyword list", "command.fmic_competitor_sov (brand names only)"],
+      "rowEstimate": "~10 per client",
+      "notes": [
+        "Old winner values map here at load: the client's brand, its sub-brand, and combined values such as Brand/Sub-brand map to the client brand; Unclear maps to no brand with outcome unclear.",
+        "Unique on (client_id, name)."
+      ],
+      "columns": [
+        { "name": "competitor_brand_id", "type": "text", "pk": true, "description": "Id for the brand." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "rival list of", "description": "Client whose answers are scored against this brand." },
+        { "name": "name", "type": "text", "nullable": false, "description": "Brand name as the dashboard shows it." },
+        { "name": "is_client_brand", "type": "boolean", "nullable": false, "default": "false", "description": "True for the client's own brand or its sub-brands." },
+        { "name": "match_terms", "type": "text[]", "description": "Words the scorer looks for in an answer to count a mention of this brand." }
+      ],
+      "sample": [
+        { "competitor_brand_id": "cb_001", "client_id": "cl_sample", "name": "Sample Brand", "is_client_brand": true, "match_terms": ["sample brand", "sb-100"] },
+        { "competitor_brand_id": "cb_002", "client_id": "cl_sample", "name": "Rival Guitar Co", "is_client_brand": false, "match_terms": ["rival guitar"] },
+        { "competitor_brand_id": "cb_003", "client_id": "cl_sample", "name": "Other Tone Works", "is_client_brand": false, "match_terms": ["other tone"] }
+      ]
+    },
+    {
+      "name": "ai_prompt",
+      "domain": "ai_visibility",
+      "purpose": "Holds each question we ask AI assistants for a client, grouped by shopping category.",
+      "grain": "One row per client and prompt text",
+      "refresh": "When IntoFocus changes the prompt set",
+      "sources": ["fender_ai_simulation_battery_real prompt list", "command.fmic_ai_simulations (category, prompt)"],
+      "rowEstimate": "~100 per client",
+      "notes": ["Unique on (client_id, prompt_text)."],
+      "columns": [
+        { "name": "ai_prompt_id", "type": "text", "pk": true, "description": "Id for the prompt." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "prompt for", "description": "Client the prompt tests." },
+        { "name": "category", "type": "text", "nullable": false, "description": "Shopping topic the prompt belongs to, such as beginner guitars or wrong specs." },
+        { "name": "prompt_text", "type": "text", "nullable": false, "description": "The exact question sent to the assistant." },
+        { "name": "names_client_product", "type": "boolean", "nullable": false, "default": "false", "description": "True when the question itself names a client product. These prompts are left out of share rankings." },
+        { "name": "is_active", "type": "boolean", "nullable": false, "default": "true", "description": "True while the prompt is still in the battery." },
+        { "name": "legacy_sim_id", "type": "text", "description": "Old prompt id from the simulation tables, so loaded answers trace back." }
+      ],
+      "sample": [
+        { "ai_prompt_id": "pr_001", "client_id": "cl_sample", "category": "beginner_guitars", "prompt_text": "What's the best electric guitar for a beginner under $700?", "names_client_product": false, "is_active": true, "legacy_sim_id": "sim_sample_01" },
+        { "ai_prompt_id": "pr_002", "client_id": "cl_sample", "category": "wrong_specs", "prompt_text": "How many frets does the Sample Brand SB-100 have?", "names_client_product": true, "is_active": true, "legacy_sim_id": "sim_sample_02" },
+        { "ai_prompt_id": "pr_003", "client_id": "cl_sample", "category": "starter_packs", "prompt_text": "Which guitar starter pack comes with the best amp?", "names_client_product": false, "is_active": true, "legacy_sim_id": "sim_sample_03" }
+      ]
+    },
+    {
+      "name": "ai_answer",
+      "domain": "ai_visibility",
+      "purpose": "Stores each answer an AI assistant gave to a prompt, which brand it named, and whether it stated a wrong product fact.",
+      "grain": "One row per prompt, engine, repeat, and reading run",
+      "refresh": "Each battery run",
+      "sources": ["ChatGPT, Perplexity, and Gemini APIs", "fender_ai_simulation_battery_real", "command.fmic_ai_simulations", "command.fmic_ai_simulations_run1_archive", "command.fmic_ai_sim_conflict_snapshot"],
+      "rowEstimate": "~4,400 after load; append-only",
+      "notes": [
+        "Three old tables merge here; legacy_source says which one a row came from. Conflict snapshot rows that duplicate a live row aren't loaded twice.",
+        "Engine is stored on about 114 old rows only; the rest load as unknown.",
+        "Answer share counts resolved answers only. Unclear answers and errors are left out of the denominator."
+      ],
+      "columns": [
+        { "name": "ai_answer_id", "type": "text", "pk": true, "description": "Id for this answer." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "answer for", "description": "Client the answer was scored for." },
+        { "name": "ai_prompt_id", "type": "text", "fk": "ai_prompt.ai_prompt_id", "nullable": false, "relation": "answer to", "description": "Question that produced the answer." },
+        { "name": "reading_run_id", "type": "uuid", "fk": "reading_run.reading_run_id", "nullable": false, "relation": "asked in", "description": "Battery run that asked the question." },
+        { "name": "read_at", "type": "timestamptz", "nullable": false, "description": "When the run stored the answer." },
+        { "name": "answered_at", "type": "timestamptz", "nullable": false, "description": "When the assistant returned the answer." },
+        { "name": "engine", "type": "text", "nullable": false, "enum": ["chatgpt", "perplexity", "gemini", "unknown"], "description": "Assistant that answered. unknown means the old row didn't record it." },
+        { "name": "repeat_no", "type": "integer", "nullable": false, "default": "1", "description": "Which repeat of the same question in the run, since answers vary." },
+        { "name": "outcome", "type": "text", "nullable": false, "enum": ["resolved", "unclear", "error"], "description": "resolved when the scorer found a named brand, unclear when it couldn't pick one, error when the call failed." },
+        { "name": "winner_brand_id", "type": "text", "fk": "competitor_brand.competitor_brand_id", "relation": "named", "description": "Brand the answer named most. Empty unless the outcome is resolved." },
+        { "name": "wrong_spec_flag", "type": "boolean", "nullable": false, "default": "false", "description": "True when the answer stated a product fact the rule set knows is false." },
+        { "name": "wrong_spec_reason", "type": "text", "description": "The rule the answer broke, in plain words." },
+        { "name": "answer_text", "type": "text", "description": "Full text of the answer." },
+        { "name": "citations", "type": "text", "description": "Sources the assistant listed, as it wrote them." },
+        { "name": "citation_urls", "type": "text[]", "description": "Links the assistant cited." },
+        { "name": "remediation_note", "type": "text", "description": "What the old battery suggested doing about this answer." },
+        { "name": "legacy_source", "type": "text", "enum": ["live", "run1_archive", "conflict_snapshot"], "description": "Old table the row was loaded from. Empty for new answers." }
+      ],
+      "sample": [
+        { "ai_answer_id": "ans_001", "client_id": "cl_sample", "ai_prompt_id": "pr_001", "reading_run_id": "00000000-0000-4000-8000-000000000005", "read_at": "2026-10-05T16:05:00Z", "answered_at": "2026-10-05T16:04:58Z", "engine": "chatgpt", "repeat_no": 1, "outcome": "resolved", "winner_brand_id": "cb_002", "wrong_spec_flag": false, "wrong_spec_reason": null, "answer_text": "Rival Guitar Co's starter model is a common pick.", "citations": "example.com review", "citation_urls": ["https://www.example.com/review"], "remediation_note": null, "legacy_source": null },
+        { "ai_answer_id": "ans_002", "client_id": "cl_sample", "ai_prompt_id": "pr_002", "reading_run_id": "00000000-0000-4000-8000-000000000005", "read_at": "2026-10-05T16:10:00Z", "answered_at": "2026-10-05T16:09:55Z", "engine": "perplexity", "repeat_no": 1, "outcome": "resolved", "winner_brand_id": "cb_001", "wrong_spec_flag": true, "wrong_spec_reason": "Stated 24 frets; the SB-100 has 22.", "answer_text": "The SB-100 has 24 frets.", "citations": null, "citation_urls": [], "remediation_note": "Publish fret count in the brand page specs.", "legacy_source": null },
+        { "ai_answer_id": "ans_003", "client_id": "cl_sample", "ai_prompt_id": "pr_003", "reading_run_id": "00000000-0000-4000-8000-000000000005", "read_at": "2026-10-05T16:15:00Z", "answered_at": "2026-10-05T16:14:50Z", "engine": "gemini", "repeat_no": 1, "outcome": "unclear", "winner_brand_id": null, "wrong_spec_flag": false, "wrong_spec_reason": null, "answer_text": "Several packs are similar.", "citations": null, "citation_urls": [], "remediation_note": null, "legacy_source": null }
+      ]
+    },
+    {
+      "name": "metric_registry",
+      "domain": "curated_outputs",
+      "purpose": "Defines every number the dashboard shows: what it means, who it covers, how it's computed, which tables feed it, and how much to trust it.",
+      "grain": "One row per client and registry id",
+      "refresh": "When IntoFocus adds or changes a metric",
+      "sources": ["inbox/ifai-dashboard-v2/metric-registry.seed.json (25 rows)"],
+      "rowEstimate": "25 per client",
+      "notes": [
+        "The dashboard shows no number without a row here.",
+        "confidence = assumption marks a claim with no stored reading behind it, such as the link from listing gaps to AI answers.",
+        "Primary key is (client_id, registry_id); registry_key below joins the two.",
+        "Status colors come from status_rule, never from code, so a threshold change is a data change."
+      ],
+      "columns": [
+        { "name": "registry_key", "type": "text", "pk": true, "description": "Client and registry id joined, such as cl_sample:featured_offer_suppressed." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "metric for", "description": "Client this definition applies to." },
+        { "name": "registry_id", "type": "text", "nullable": false, "description": "Short metric id, such as featured_offer_suppressed." },
+        { "name": "name", "type": "text", "nullable": false, "description": "Metric name the dashboard shows." },
+        { "name": "meaning", "type": "text", "nullable": false, "description": "One sentence on what the number tells you." },
+        { "name": "unit", "type": "text", "nullable": false, "enum": ["percent", "count", "usd", "timestamp", "none"], "description": "What the number is measured in." },
+        { "name": "population", "type": "text", "description": "Which listings, answers, or runs the number covers and which it leaves out." },
+        { "name": "formula", "type": "text", "description": "How the number is computed, in plain terms." },
+        { "name": "source_tables", "type": "text[]", "description": "Tables in this model the number is built from." },
+        { "name": "owner", "type": "text", "nullable": false, "description": "Who answers for the number: intofocus, client, coo, or mixed." },
+        { "name": "confidence", "type": "text", "nullable": false, "enum": ["measured", "estimate", "target", "assumption"], "description": "measured comes from stored readings; estimate uses stored inputs; target is a goal; assumption has no reading behind it." },
+        { "name": "status_rule", "type": "jsonb", "nullable": true, "description": "Rule that turns the value into a dashboard status. Holds kind (higher_is_better, lower_is_better, or count_is_bad), warn, and danger thresholds. Empty means the metric shows a neutral status." },
+        { "name": "notes", "type": "text", "description": "Caveats the reader should know, such as when a number stays unavailable." }
+      ],
+      "sample": [
+        { "registry_key": "cl_sample:featured_offer_suppressed", "client_id": "cl_sample", "registry_id": "featured_offer_suppressed", "name": "Featured Offer withheld above Amazon's outside benchmark", "meaning": "Listings where Amazon shows no Featured Offer and the offer, including shipping, is above the Competitive External Price.", "unit": "count", "population": "Active offers with a benchmark reading.", "formula": "withheld = true AND offer_cents > benchmark_cents", "source_tables": ["listing_offer_reading"], "owner": "intofocus", "confidence": "measured", "status_rule": {"kind": "count_is_bad", "warn": 1, "danger": 10}, "notes": null },
+        { "registry_key": "cl_sample:retail_control_partner_led", "client_id": "cl_sample", "registry_id": "retail_control_partner_led", "name": "Healthy Featured Offer, authorized seller", "meaning": "Share of active listings where a Featured Offer is present and an authorized seller holds it.", "unit": "percent", "population": "Active offers.", "formula": "count(present AND authorized) / active offers", "source_tables": ["listing_offer_reading", "seller_authorization"], "owner": "client", "confidence": "measured", "status_rule": {"kind": "higher_is_better", "warn": 80, "danger": 60}, "notes": "Unavailable until the authorized-seller list is stored." },
+        { "registry_key": "cl_sample:estimate_phase1_uplift", "client_id": "cl_sample", "registry_id": "estimate_phase1_uplift", "name": "Phase 1 uplift", "meaning": "The annual uplift figure the current dashboard shows as text only.", "unit": "usd", "population": "Not defined until inputs exist.", "formula": "buybox_recapture + ai_dtc_conversions + reduced_returns + review_synergy", "source_tables": ["estimate", "estimate_input"], "owner": "coo", "confidence": "estimate", "status_rule": null, "notes": "Formula shape stored; no input values stored." },
+        { "registry_key": "cl_sample:action_items_open", "client_id": "cl_sample", "registry_id": "action_items_open", "name": "Open action items", "meaning": "Stored actions that aren't done.", "unit": "count", "population": "Action rows with status other than done.", "formula": "count(*)", "source_tables": ["action_item"], "owner": "mixed", "confidence": "measured", "status_rule": null, "notes": null },
+        { "registry_key": "cl_sample:ecommerce_to_ai_link", "client_id": "cl_sample", "registry_id": "ecommerce_to_ai_link", "name": "Ecommerce cause of the AI result", "meaning": "The claim that listing control and product-data gaps change which brand an assistant names.", "unit": "none", "population": "Not defined.", "formula": "not defined", "source_tables": [], "owner": "intofocus", "confidence": "assumption", "status_rule": null, "notes": "No stored reading links one listing's gap to one answer." }
+      ]
+    },
+    {
+      "name": "metric_value",
+      "domain": "curated_outputs",
+      "purpose": "Stores each computed value of a metric, with the run it was computed from, so the dashboard shows a number and its as-of time together.",
+      "grain": "One row per metric, dimension value, and computation",
+      "refresh": "After each reading run that feeds the metric",
+      "sources": ["Computed from the reading tables", "command.fmic_brand_kpi_summary", "command.fmic_division_metrics"],
+      "rowEstimate": "~25 per refresh per client",
+      "notes": [
+        "Replaces the old KPI and division tables, which stored values as display text.",
+        "dimension is empty for a whole-catalog value and holds a category or engine for a split."
+      ],
+      "columns": [
+        { "name": "metric_value_id", "type": "text", "pk": true, "description": "Id for this computed value." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "value for", "description": "Client the value describes." },
+        { "name": "registry_key", "type": "text", "fk": "metric_registry.registry_key", "nullable": false, "relation": "value of", "description": "Metric this value belongs to." },
+        { "name": "reading_run_id", "type": "uuid", "fk": "reading_run.reading_run_id", "relation": "computed from", "description": "Latest run that fed the value. Empty for values built from client-supplied data only." },
+        { "name": "computed_at", "type": "timestamptz", "nullable": false, "description": "When the value was computed." },
+        { "name": "dimension_name", "type": "text", "description": "What the value is split by, such as category or engine." },
+        { "name": "dimension_value", "type": "text", "description": "The split this row covers, such as Electric Guitars." },
+        { "name": "numeric_value", "type": "numeric", "description": "The number itself. A 0 here is a measured zero." },
+        { "name": "numerator", "type": "integer", "description": "Count on top of the fraction for percent metrics." },
+        { "name": "denominator", "type": "integer", "description": "Count underneath the fraction for percent metrics." }
+      ],
+      "sample": [
+        { "metric_value_id": "mv_001", "client_id": "cl_sample", "registry_key": "cl_sample:featured_offer_suppressed", "reading_run_id": "00000000-0000-4000-8000-000000000001", "computed_at": "2026-10-08T18:05:00Z", "dimension_name": null, "dimension_value": null, "numeric_value": 1, "numerator": 1, "denominator": 2 },
+        { "metric_value_id": "mv_002", "client_id": "cl_sample", "registry_key": "cl_sample:action_items_open", "reading_run_id": null, "computed_at": "2026-10-08T19:00:00Z", "dimension_name": null, "dimension_value": null, "numeric_value": 1, "numerator": null, "denominator": null }
+      ]
+    },
+    {
+      "name": "estimate",
+      "domain": "curated_outputs",
+      "purpose": "Holds each dollar estimate the dashboard shows, with its formula, owner, and as-of date, so no estimate appears without its inputs.",
+      "grain": "One row per client and estimate",
+      "refresh": "When the owner updates the estimate",
+      "sources": ["Current dashboard text figures", "Owner worksheets"],
+      "rowEstimate": "2 per client today",
+      "notes": ["The two current figures exist only as text. They load with no inputs, so the dashboard shows them as unsupported until estimate_input rows exist."],
+      "columns": [
+        { "name": "estimate_id", "type": "text", "pk": true, "description": "Id for the estimate." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "estimate for", "description": "Client the estimate is about." },
+        { "name": "registry_key", "type": "text", "fk": "metric_registry.registry_key", "nullable": false, "relation": "defined by", "description": "Registry row that defines the estimate." },
+        { "name": "name", "type": "text", "nullable": false, "description": "Estimate name the dashboard shows." },
+        { "name": "formula", "type": "text", "nullable": false, "description": "How the inputs combine, in plain terms." },
+        { "name": "unit", "type": "text", "nullable": false, "default": "'usd'", "description": "What the estimate is measured in." },
+        { "name": "low_value", "type": "numeric(14,2)", "description": "Low end of the estimate. Empty until inputs exist." },
+        { "name": "high_value", "type": "numeric(14,2)", "description": "High end of the estimate. Equals the low end for a single figure." },
+        { "name": "owner", "type": "text", "nullable": false, "description": "Person or role who answers for the estimate." },
+        { "name": "confidence", "type": "text", "nullable": false, "enum": ["measured", "estimate", "target", "assumption"], "description": "How much to trust the figure." },
+        { "name": "as_of", "type": "date", "nullable": false, "description": "Date the estimate was last reviewed." }
+      ],
+      "sample": [
+        { "estimate_id": "est_001", "client_id": "cl_sample", "registry_key": "cl_sample:estimate_phase1_uplift", "name": "Phase 1 uplift", "formula": "buybox_recapture + ai_dtc_conversions + reduced_returns + review_synergy", "unit": "usd", "low_value": null, "high_value": null, "owner": "coo", "confidence": "estimate", "as_of": "2026-10-08" }
+      ]
+    },
+    {
+      "name": "estimate_input",
+      "domain": "curated_outputs",
+      "purpose": "Stores each input to an estimate with its source and owner, so a reader can check every part of the figure.",
+      "grain": "One row per estimate and input key",
+      "refresh": "When the owner updates an input",
+      "sources": ["Owner worksheets"],
+      "rowEstimate": "0 today; about 4 per estimate",
+      "notes": ["Unique on (estimate_id, input_key)."],
+      "columns": [
+        { "name": "estimate_input_id", "type": "text", "pk": true, "description": "Id for the input." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "input for", "description": "Client the input is about." },
+        { "name": "estimate_id", "type": "text", "fk": "estimate.estimate_id", "nullable": false, "relation": "input to", "description": "Estimate this input feeds." },
+        { "name": "input_key", "type": "text", "nullable": false, "description": "Name of the input in the formula, such as reduced_returns." },
+        { "name": "value", "type": "numeric(14,2)", "nullable": false, "description": "The input amount." },
+        { "name": "unit", "type": "text", "nullable": false, "description": "What the input is measured in." },
+        { "name": "source", "type": "text", "nullable": false, "description": "Where the amount came from." },
+        { "name": "as_of", "type": "date", "nullable": false, "description": "Date the amount was true." },
+        { "name": "owner", "type": "text", "nullable": false, "description": "Who supplied the amount." },
+        { "name": "confidence", "type": "text", "nullable": false, "enum": ["measured", "estimate", "target", "assumption"], "description": "How much to trust the amount." }
+      ],
+      "sample": [
+        { "estimate_input_id": "ei_001", "client_id": "cl_sample", "estimate_id": "est_001", "input_key": "reduced_returns", "value": 10000.00, "unit": "usd", "source": "Synthetic sample value", "as_of": "2026-10-08", "owner": "coo", "confidence": "assumption" }
+      ]
+    },
+    {
+      "name": "action_item",
+      "domain": "curated_outputs",
+      "purpose": "Tracks each action that follows from a metric or finding, who owns it, and where it stands.",
+      "grain": "One row per action",
+      "refresh": "When an owner adds or updates an action",
+      "sources": ["IntoFocus analysts", "Client team"],
+      "rowEstimate": "Tens per client",
+      "notes": ["Each action ties to a registry row, a finding reference, or both. A listing is optional."],
+      "columns": [
+        { "name": "action_item_id", "type": "text", "pk": true, "description": "Id for the action." },
+        { "name": "client_id", "type": "text", "fk": "client.client_id", "nullable": false, "relation": "action for", "description": "Client the action is for." },
+        { "name": "registry_key", "type": "text", "fk": "metric_registry.registry_key", "relation": "follows from", "description": "Metric the action responds to." },
+        { "name": "finding_ref", "type": "text", "description": "Reading the action responds to, such as lor_001." },
+        { "name": "listing_id", "type": "text", "fk": "listing.listing_id", "relation": "about", "description": "Listing the action is about, if any." },
+        { "name": "title", "type": "text", "nullable": false, "description": "What needs doing, in one line." },
+        { "name": "owner", "type": "text", "nullable": false, "enum": ["intofocus", "client", "unassigned"], "description": "Who does the work." },
+        { "name": "status", "type": "text", "nullable": false, "default": "'open'", "enum": ["open", "in_progress", "done"], "description": "Where the action stands." },
+        { "name": "severity", "type": "text", "enum": ["high", "medium", "low"], "description": "How much it matters." },
+        { "name": "created_at", "type": "timestamptz", "nullable": false, "description": "When the action was added." },
+        { "name": "updated_at", "type": "timestamptz", "nullable": false, "description": "When the action last changed." },
+        { "name": "due_date", "type": "date", "description": "When it should be done." }
+      ],
+      "sample": [
+        { "action_item_id": "act_001", "client_id": "cl_sample", "registry_key": "cl_sample:featured_offer_suppressed", "finding_ref": "lor_001", "listing_id": "lst_001", "title": "Ask the seller to match the $629.99 outside price on B0SAMPLE001", "owner": "client", "status": "open", "severity": "high", "created_at": "2026-10-08T19:00:00Z", "updated_at": "2026-10-08T19:00:00Z", "due_date": "2026-10-15" }
+      ]
+    }
+  ]
+}
