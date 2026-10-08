@@ -48,7 +48,7 @@ command.* (sandbox project copy, as of 2026-10-08 19:30 UTC)
 sandbox.* ──PostgREST, server-only keys──► lib/dashboard-v2/data/reads.ts ──► selectors ──► canvas spec, panels, charts, tables, explainers ──► /dashboard-v2
 ```
 
-Sandbox migrations applied (sandbox project only, schema `sandbox` only; files in `supabase/sandbox-migrations/`): 0001_sandbox_schema, 0002_sandbox_grants, 0003_sandbox_load, 0004_sandbox_views, 0005_sandbox_refresh (plus 0005b, the same function re-applied after a fix), 0006_sandbox_seed_outputs. Proof of the load: `docs/v2/05-sandbox-load.md`.
+Sandbox migrations applied (sandbox project only, schema `sandbox` only; files in `supabase/sandbox-migrations/`): 0001_sandbox_schema, 0002_sandbox_grants, 0003_sandbox_load, 0004_sandbox_views, 0005_sandbox_refresh (plus 0005b, the same function re-applied after a fix), 0006_sandbox_seed_outputs, 0007_sandbox_listing_view_speed (the listings view without a per-row subquery; 989 ms to 34 ms). Proof of the load: `docs/v2/05-sandbox-load.md`.
 
 Changes production and the FenderTest workflow would need to match the sandbox model (full map in `docs/v2/schema/migration-map.md`):
 
@@ -61,6 +61,8 @@ Changes production and the FenderTest workflow would need to match the sandbox m
 - Client-supplied tables with no writer today: `seller_authorization`, `listing_map_price`, `estimate_input`.
 - Retire: `fmic_competitor_sov`, `fmic_ai_sim_conflict_snapshot`, `fmic_social_intelligence`, `fmic_dual_write_errors`, the 18 zero-row public work-register tables, the 7 command views and 11 canvas views (rebuilt over the new tables), and `fmic_job_state` (replaced by `reading_run`).
 
-## 5. Blockers
+## 5. Verification and blockers
 
-(filled after verification)
+Verification (`docs/v2/08-verification.md`): 74 unit tests pass, including missing, partial, stored zero, conflicting-surface, headline-rule, and money recompute cases. The seven v2 end-to-end specs pass (headline, drill-down, explainer, sort, filter, empty result, failed read, narrow width). An interactive pass read every headline text, sorted and filtered rows, opened explainers, forced a failed read, walked the tour, and hovered a glossary term, with no console or page errors. The current dashboard renders and behaves as before: the same 43 of its end-to-end specs pass and the same 19 fail as in the before-run baseline; one further spec (the panel rail width after a resize) is timing-flaky on this machine and passed 3 of 7 runs across the session on code this branch does not touch. The schema diagram, the executive summary, and the page name the same six areas and the same registry rows.
+
+Blockers removed during the run: none remained. Items that are data gaps, not blockers, and are shown as unavailable with an open action each: the client's authorized-seller list, the client's MAP sheet, the inputs for the two dollar estimates, and a reading that links one listing's gap to one AI answer. Not done by design: no push, pull request, or merge; no change to production or to any schema other than `sandbox`; no change to the FenderTest workflow (the list of changes it would need is in section 4).

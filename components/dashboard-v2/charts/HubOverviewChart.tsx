@@ -12,6 +12,35 @@ import { BAR_THICKNESS, CHART_FONT, fitLabel, hoverNoteProps, markProps, statusC
 const ROW = 56;
 const LABEL_W = 200;
 const FIGURE_W = 120;
+const FIGURE_FONT = 16;
+const FIGURE_X = 18;
+
+/**
+ * Splits a label into at most two lines that fit the pixel budget at the chart font, breaking on
+ * spaces. A line that still does not fit is truncated by fitLabel, so a long label wraps before it
+ * is cut. The label text itself is never changed.
+ */
+function wrapLabel(text: string, maxPx: number): string[] {
+  const perChar = CHART_FONT * 0.56;
+  const max = Math.max(3, Math.floor(maxPx / perChar));
+  if (text.length <= max) return [text];
+  const words = text.split(" ");
+  let first = "";
+  for (const word of words) {
+    const next = first ? `${first} ${word}` : word;
+    if (next.length > max && first) break;
+    first = next;
+  }
+  const rest = text.slice(first.length).trim();
+  if (!rest) return [fitLabel(first, maxPx)];
+  return [fitLabel(first, maxPx), fitLabel(rest, maxPx)];
+}
+
+/** The figure column is as wide as the longest figure, so the coverage bar never starts under one. */
+function figureColumnWidth(figures: string[], minimum: number): number {
+  const longest = figures.reduce((n, f) => Math.max(n, f.length), 0);
+  return Math.max(minimum, Math.ceil(FIGURE_X + longest * FIGURE_FONT * 0.62 + 10));
+}
 
 export function HubOverviewChart({
   view,
@@ -28,7 +57,10 @@ export function HubOverviewChart({
   const hatch = useHatch();
   const narrow = width < 480;
   const labelW = narrow ? 140 : LABEL_W;
-  const figureW = narrow ? 90 : FIGURE_W;
+  const figureW = figureColumnWidth(
+    view.marks.filter((m) => !m.unavailable).map((m) => m.figure),
+    narrow ? 90 : FIGURE_W,
+  );
   const barX = labelW + figureW;
   const barW = Math.max(60, width - barX - 8);
   const height = view.marks.length * ROW + 8;
@@ -42,13 +74,19 @@ export function HubOverviewChart({
           const open = openId === mark.id;
           const fill = statusColor(mark.status);
           const fraction = mark.coverage?.fraction ?? (mark.unavailable ? 0 : 1);
+          const labelLines = wrapLabel(mark.label, labelW - 16);
+          const twoLines = labelLines.length > 1;
           return (
             <g key={mark.id} transform={`translate(0 ${y})`} {...markProps({ id: mark.id, registryId: mark.registryId, label: mark.label, open, controls, onActivate: () => onSelect(mark) })}>
               <rect x="0" y="0" width={width} height={ROW - 4} rx="10" className="dv2-mark-hit" />
-              <text x="8" y={ROW / 2 - 6} fontSize={CHART_FONT} className="dv2-chart-label">
-                {fitLabel(mark.label, labelW - 16)}
+              <text x="8" y={twoLines ? 16 : ROW / 2 - 6} fontSize={CHART_FONT} className="dv2-chart-label">
+                {labelLines.map((line, n) => (
+                  <tspan key={n} x="8" dy={n === 0 ? 0 : 13}>
+                    {n < labelLines.length - 1 ? `${line} ` : line}
+                  </tspan>
+                ))}
               </text>
-              <text x="8" y={ROW / 2 + 12} fontSize={10} className="dv2-chart-muted">
+              <text x="8" y={twoLines ? 42 : ROW / 2 + 12} fontSize={10} className="dv2-chart-muted">
                 {mark.coverage ? mark.coverage.line : mark.reason ? "no coverage stored" : ""}
               </text>
               {mark.unavailable ? (
@@ -61,7 +99,7 @@ export function HubOverviewChart({
               ) : (
                 <>
                   <circle cx={labelW + 6} cy={ROW / 2 - 4} r="5" fill={fill} />
-                  <text x={labelW + 18} y={ROW / 2} fontSize={16} fontWeight={700} className="dv2-chart-figure">
+                  <text x={labelW + FIGURE_X} y={ROW / 2} fontSize={FIGURE_FONT} fontWeight={700} className="dv2-chart-figure">
                     {mark.figure}
                   </text>
                 </>
