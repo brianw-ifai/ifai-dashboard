@@ -20,7 +20,7 @@ Tickers across the top surface the headline alerts and jump to the matching spok
 
 **AI Readiness.** Whether Fender's product data is ready for AI engines to read. The bubble, its two satellites, and its three tabs share one set of names: **AI Readiness** for the catalog-level view, **Machine Readability** for Schema.org JSON-LD on fender.com product pages, and **Amazon A+ Matrix** for Amazon A+ comparison content. The guided tour introduces this area as **Product Readiness**.
 
-**Competitive Radar.** Share of voice against category rivals, battlecards for the lines where Fender loses the recommendation, and channel scope beyond Amazon.
+**Competitive Radar.** Share of voice against category rivals, battlecards for the lines where Fender loses the recommendation, and which retail channels have a stored shelf price.
 
 **Action Items.** Prioritized interventions with estimated impact. The ROI tab switches between the pilot model and the full enterprise model.
 

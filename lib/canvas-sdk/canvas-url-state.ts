@@ -37,6 +37,7 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "catalog-readiness-executive-guide": "ai-readiness",
   "machine-readable-schema-org-json-ld-audit": "machine-readability",
   "amazon-a-comparison-matrix-blueprint": "amazon-a-matrix",
+  "multi-marketplace-channel-scope-sweetwater-reverb-walmart": "measured-retail-channels",
 };
 
 export function tabIndexFromSlug(tabs: string[], slug: string | null): number {
