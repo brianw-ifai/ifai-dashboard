@@ -56,7 +56,7 @@
     "specs": {
       "badge": "WATCH SPOKE · AI READINESS",
       "title": "AI Readiness: Product Specs & Schema.org",
-      "desc": "Across {spec_checked} checked SKUs, site search found a fender.com product page for {fender_found_ratio} ({spec_fender_found_pct}). {spec_missing_additional_property} found pages are missing Schema.org additionalProperty. Amazon structured fields averaged {spec_avg_amazon_pct} complete.",
+      "desc": "Across {spec_checked} checked SKUs, site search found a fender.com product page for {fender_found_ratio} ({spec_fender_found_pct}). {spec_missing_additional_property} found pages are missing Schema.org additionalProperty.",
       "tabs": [
         "Catalog Readiness & Executive Guide",
         "Machine-Readable Schema.org JSON-LD Audit",
@@ -67,7 +67,7 @@
       "tabTemplates": [
         "\n<div class=\"content-box\">\n  <div class=\"content-box-title\">Spec read</div>\n  <p style=\"font-size:12px; color:var(--text-muted); line-height:1.45;\">\n    {spec_checked} SKUs checked. fender.com page found for {fender_found_ratio} ({spec_fender_found_pct}).\n    Amazon attribute completeness averages {spec_avg_amazon_pct}. fender.com completeness, when a page is found, averages {spec_avg_fender_pct}.\n    {spec_missing_additional_property} found pages are missing additionalProperty.\n  </p>\n</div>\n",
         "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\"><span>What is Schema.org, and why does AI need it?</span></div>\n  <div class=\"ceo-callout-body\">\n    When people visit fender.com, they read marketing copy. AI crawlers need Schema.org JSON-LD to take a spec as a fact.\n    additionalProperty is the part of that block that can carry neck, pickup, and hardware specs.\n    The missing-field rows on this tab are the latest spec read.\n  </div>\n</div>\n",
-        "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\"><span>What is Amazon A+ content, and why does it win AI queries?</span></div>\n  <div class=\"ceo-callout-body\">\n    <strong>Amazon A+ content:</strong> enhanced modules on a product page, such as graphics, diagrams, and comparison charts.\n    When a comparison table is present, Amazon's shopping assistant and other AI models can read the columns and use Fender's lineup to explain the step up.\n  </div>\n</div>\n"
+        "\n<div class=\"ceo-callout\">\n  <div class=\"ceo-callout-header\"><span>What is Amazon A+ content, and why does it win AI queries?</span></div>\n  <div class=\"ceo-callout-body\">\n    Comparison tables have not been measured. A+ Content is the enhanced modules on a product page: graphics, diagrams, and comparison charts.\n    When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how the lineup steps up.\n  </div>\n</div>\n"
       ]
     },
     "competitors": {

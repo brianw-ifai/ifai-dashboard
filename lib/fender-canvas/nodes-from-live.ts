@@ -129,18 +129,14 @@ export function buildLiveNodes(
       x: 320,
       y: 870,
       r: 48,
-      status: "warning",
+      status: "neutral",
       title: "A+ Tables",
-      stats: [
-        `${formatPct(m.spec_avg_amazon_pct)} Amazon`,
-        `${formatInt(m.spec_checked)} checked`,
-      ],
-      meta: "Amazon field completeness",
+      stats: ["Not measured yet"],
       spokeId: "specs",
       subTab: "a+",
       tooltip: {
-        title: "Amazon Structured Field Completeness",
-        desc: `Amazon product attribute completeness averages ${formatPct(m.spec_avg_amazon_pct)} across ${formatInt(m.spec_checked)} SKUs in the spec audit.`,
+        title: "A+ comparison tables",
+        desc: "Comparison tables have not been measured. When a comparison table is on the page, a shopping assistant can read the columns and repeat how the lineup steps up.",
       },
     },
     {
