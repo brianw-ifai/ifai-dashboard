@@ -6,6 +6,7 @@ import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
 import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-causes.ts";
 import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
 import { activeOfferClarity } from "../lib/fender-canvas/offer-clarity.ts";
+import { MAP_PRICES_NOT_STORED } from "../lib/fender-canvas/portfolio-retail.ts";
 import { headlineSentence, headlineSurface } from "../lib/fender-canvas/portfolio-retail-display.ts";
 import { bundleReadLine, mapReadLine } from "../lib/fender-canvas/retail-copy.ts";
 import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
@@ -237,6 +238,36 @@ test("the MAP violations widget follows the listing read", () => {
   assert.equal(failed.value, "Unavailable");
   assert.doesNotMatch(failed.value, /533/);
   assert.match(failed.detail, /did not succeed/);
+});
+
+test("missing MAP prices do not become a below-MAP count or an average gap", () => {
+  const retail = retailReady();
+  if (retail.phase !== "ready") throw new Error("expected a ready retail read");
+  retail.snapshot.mapLeakage = {
+    status: "unavailable",
+    issueCount: null,
+    missingMessage: MAP_PRICES_NOT_STORED,
+    detail: null,
+  };
+  const mapItem = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "map-leakage");
+  const itemText = [mapItem?.title, mapItem?.why, mapItem?.impact].filter(Boolean).join(" ");
+  assert.equal(mapItem?.title, MAP_PRICES_NOT_STORED);
+  assert.match(itemText, /Fender MAP prices have not been stored/);
+  assert.doesNotMatch(itemText, /below MAP|average gap|\$|\d/);
+
+  const satellite = buildLiveNodes(bundle(), buildLiveMetrics(bundle(), retail), retail).find(
+    (node) => node.id === "sat-map",
+  );
+  const satelliteText = [satellite?.title, satellite?.meta, satellite?.tooltip.desc, ...(satellite?.stats ?? [])]
+    .filter(Boolean)
+    .join(" ");
+  assert.match(satelliteText, /Fender MAP prices have not been stored/);
+  assert.doesNotMatch(satelliteText, /below MAP|gap|\$|\d/);
+
+  const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;
+  assert.equal(drift.value, "Not stored");
+  assert.equal(drift.detail, MAP_PRICES_NOT_STORED);
+  assert.equal(mapReadLine(retail), MAP_PRICES_NOT_STORED);
 });
 
 test("the guided tour uses the same retail headline as the ticker", () => {

@@ -24,6 +24,7 @@ import {
   channelReadingNote,
   channelSummaryText,
 } from "@/lib/fender-canvas/map-reading-status";
+import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
@@ -45,10 +46,14 @@ function httpUrl(value: string | null): string | null {
   }
 }
 
-async function loadMapRows(): Promise<MapSourceRow[]> {
+async function loadMapRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
   const rows: MapSourceRow[] = [];
   for (let page = 0; page < 20; page += 1) {
-    const { data, error } = await listingsQuery(page, PAGE_SIZE, { violationsOnly: true });
+    const { data, error } = await listingsQuery(
+      page,
+      PAGE_SIZE,
+      violationsOnly ? { violationsOnly: true } : undefined,
+    );
     if (error) throw error;
     const batch = (data ?? []) as MapSourceRow[];
     rows.push(...batch);
@@ -121,12 +126,23 @@ function mapColumns(model: MapTabModel): RetailColumn[] {
   return columns;
 }
 
+function mapPricesNotStored(read: RetailCanvasRead): boolean {
+  return read.phase === "ready" && read.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
+}
+
 function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
   }
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;
+  }
+  if (mapPricesNotStored(read)) {
+    return (
+      <p className="retail-missing">
+        <DefinedCopy text={MAP_PRICES_NOT_STORED} />
+      </p>
+    );
   }
   const reading = read.snapshot.mapLeakage;
   const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
@@ -186,9 +202,12 @@ export function MapChannelPanel({
   const [walmartMissing, setWalmartMissing] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
 
+  const pricesNotStored = mapPricesNotStored(read);
+
   useEffect(() => {
+    if (read.phase === "loading") return;
     let cancelled = false;
-    Promise.all([loadMapRows(), loadChannelPrices(), loadListingsWithoutWalmartPrice()])
+    Promise.all([loadMapRows(!pricesNotStored), loadChannelPrices(), loadListingsWithoutWalmartPrice()])
       .then(([nextRows, nextPrices, missing]) => {
         if (!cancelled) {
           setRows(nextRows);
@@ -202,7 +221,7 @@ export function MapChannelPanel({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pricesNotStored, read.phase]);
 
   if (failed) {
     return (
@@ -255,7 +274,7 @@ export function MapChannelPanel({
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">Summary</div>
         <MapReadingSummary read={read} />
-        {summaryChannels.length ? (
+        {!pricesNotStored && summaryChannels.length ? (
           <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
             {summaryChannels.map((channel) => (
               <li key={channel.key}>
@@ -282,7 +301,11 @@ export function MapChannelPanel({
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length}>No active offers are under MAP.</td>
+                  <td colSpan={columns.length}>
+                    {pricesNotStored
+                      ? "No stored channel prices were returned."
+                      : "No active offers are under MAP."}
+                  </td>
                 </tr>
               ) : (
                 rows.map((row) => {

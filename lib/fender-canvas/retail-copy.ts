@@ -5,7 +5,7 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
-import type { RetailReading } from "@/lib/fender-canvas/portfolio-retail";
+import { MAP_PRICES_NOT_STORED, type RetailReading } from "@/lib/fender-canvas/portfolio-retail";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 function countLine(
@@ -25,6 +25,7 @@ function countLine(
 
 export function mapReadLine(read: RetailCanvasRead): string {
   const reading = read.phase === "ready" ? read.snapshot.mapLeakage : null;
+  if (reading?.missingMessage === MAP_PRICES_NOT_STORED) return MAP_PRICES_NOT_STORED;
   return countLine(
     read,
     reading,
