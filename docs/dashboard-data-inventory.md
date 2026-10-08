@@ -1,3 +1,5 @@
+> **Superseded on 2026-10-08.** This file describes the authored canvas of 17 Sep 2026 and no longer matches `/dashboard`. The current surfaces, pipeline, and tables are in `docs/v2/01-baseline-audit.md`; the figures the new dashboard at `/dashboard-v2` shows are defined in `docs/v2/02-metric-registry.md` and stored in the sandbox `metric_registry` table. Keep this file only as a record of what the old canvas claimed.
+
 # V3 canvas data inventory
 
 Exhaustive catalogue of every data point on the **Fender Brand Intelligence Canvas** (`/v3`): where each value appears, and any calculation behind it.
