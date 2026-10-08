@@ -5,6 +5,7 @@ import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
+import { listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
 import {
   channelDisplayName,
   channelPriceLookup,
@@ -79,7 +80,7 @@ function exploreColumns(extras: { channel: string; name: string }[]): RetailColu
     moneyColumn("walmart", "Walmart"),
     moneyColumn("musicians-friend", "Musician's Friend", 176),
     ...extras.map((channel) => moneyColumn(channel.channel, channel.name)),
-    { id: "reviews", name: "Reviews", label: "Reviews", width: 90, minWidth: 72 },
+    { id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112 },
     { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80 },
   ];
 }
@@ -268,7 +269,7 @@ export function FenderListingsTable() {
                     />
                   );
                 })}
-                <td>{row.reviews_count != null ? formatInt(row.reviews_count) : pendingLabel()}</td>
+                <td>{listingReviewLabel(row.reviews_count)}</td>
                 <td>{row.channels?.trim() || "n/a"}</td>
               </tr>
             );
