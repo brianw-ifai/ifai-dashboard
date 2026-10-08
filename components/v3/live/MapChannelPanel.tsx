@@ -2,8 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
+import { DefinedCopy, DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
-import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
+import {
+  listingChannelPricesQuery,
+  listingsQuery,
+  retailListingHeadCountQuery,
+} from "@/lib/canvasData";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import {
   channelPriceLookup,
@@ -15,8 +20,13 @@ import {
   type MapTabModel,
   type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
+import {
+  channelReadingNote,
+  channelSummaryText,
+} from "@/lib/fender-canvas/map-reading-status";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
+import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
 
@@ -45,6 +55,20 @@ async function loadMapRows(): Promise<MapSourceRow[]> {
     if (batch.length < PAGE_SIZE) return rows;
   }
   throw new Error("Below-MAP rows are not available.");
+}
+
+/** Listings in the retail read with no Walmart price above zero. Null when the count cannot be read. */
+async function loadListingsWithoutWalmartPrice(): Promise<number | null> {
+  try {
+    const [all, priced] = await Promise.all([
+      retailListingHeadCountQuery(),
+      retailListingHeadCountQuery({ storedWalmartPrice: true }),
+    ]);
+    if (all.error || priced.error || all.count == null || priced.count == null) return null;
+    return all.count - priced.count;
+  } catch {
+    return null;
+  }
 }
 
 async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
@@ -126,7 +150,9 @@ function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
         </div>
       </div>
       {showMissing && reading.missingMessage ? (
-        <p className="retail-missing">{reading.missingMessage}</p>
+        <p className="retail-missing">
+          <DefinedCopy text={reading.missingMessage} />
+        </p>
       ) : null}
     </>
   );
@@ -139,25 +165,35 @@ function mapDefinition() {
         <span>What is MAP?</span>
       </div>
       <div className="ceo-callout-body">
-        <strong>MAP</strong> (Minimum Advertised Price) is the lowest price a retail partner agrees
-        to display publicly.
+        <strong>
+          <DefinedTerm term="MAP" />
+        </strong>{" "}
+        (Minimum Advertised Price) is the lowest price a retail partner agrees to display publicly.
       </div>
     </div>
   );
 }
 
-export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
+export function MapChannelPanel({
+  read,
+  musiciansFriendFreshness = null,
+}: {
+  read: RetailCanvasRead;
+  musiciansFriendFreshness?: CanvasFreshnessRow | null;
+}) {
   const [rows, setRows] = useState<MapSourceRow[] | null>(null);
   const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
+  const [walmartMissing, setWalmartMissing] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadMapRows(), loadChannelPrices()])
-      .then(([nextRows, nextPrices]) => {
+    Promise.all([loadMapRows(), loadChannelPrices(), loadListingsWithoutWalmartPrice()])
+      .then(([nextRows, nextPrices, missing]) => {
         if (!cancelled) {
           setRows(nextRows);
           setChannelPrices(nextPrices);
+          setWalmartMissing(missing);
         }
       })
       .catch(() => {
@@ -223,8 +259,17 @@ export function MapChannelPanel({ read }: { read: RetailCanvasRead }) {
           <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
             {summaryChannels.map((channel) => (
               <li key={channel.key}>
-                <strong>{channel.name}</strong> · {formatInt(channel.count)}{" "}
-                {channel.count === 1 ? "listing" : "listings"} below MAP
+                <strong>{channel.name}</strong>
+                {" · "}
+                <DefinedCopy
+                  text={channelSummaryText(
+                    channel.count,
+                    channelReadingNote(channel.name, {
+                      walmartMissing,
+                      musiciansFriendLastRunAt: musiciansFriendFreshness?.last_run_at,
+                    }),
+                  )}
+                />
               </li>
             ))}
           </ul>

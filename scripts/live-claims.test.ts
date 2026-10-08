@@ -140,6 +140,7 @@ test("command center uses the retail headline and drops unsourced claims", () =>
     .filter(Boolean)
     .join("\n");
   const headline = headlineSentence(headlineSurface(retail));
+  const map = spec.items.find((item) => item.id === "map-leakage");
 
   assert.match(text, /3,598/);
   assert.ok(text.includes(headline));
@@ -148,7 +149,29 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   assert.match(text, /222/);
   assert.doesNotMatch(text, /8\.3%/);
   assert.doesNotMatch(text, /3,430|993|7\.4%|16\.7%|Fourteen|14 catalog|2,420|fingerboard|dual humbucker/i);
+  assert.doesNotMatch(text, /discounted bundles are dragging/i);
   assert.equal(spec.items.length, 6);
+  assert.equal(map?.title, "555 listings are below MAP in this listing read");
+  assert.equal(map?.subTab, "MAP");
+  assert.match(map?.why ?? "", /Open the MAP tab/);
+  assert.doesNotMatch(map?.why ?? "", /not a final count/);
+});
+
+test("command center MAP item repeats the MAP tab's partial reading", () => {
+  const retail = retailReady();
+  if (retail.phase !== "ready") throw new Error("expected a ready retail read");
+  const missingMessage =
+    "MAP leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
+  retail.snapshot.mapLeakage = {
+    status: "incomplete",
+    issueCount: 12,
+    missingMessage,
+    detail: null,
+  };
+  const map = buildLiveCommandCenter(bundle(), retail).items.find((item) => item.id === "map-leakage");
+  assert.equal(map?.title, "12 listings are below MAP in this listing read");
+  assert.equal(map?.why, missingMessage);
+  assert.doesNotMatch(`${map?.title} ${map?.why}`, /discounted bundle/i);
 });
 
 test("hub offer arithmetic does not pair the 1P count with the harvested percentage", () => {

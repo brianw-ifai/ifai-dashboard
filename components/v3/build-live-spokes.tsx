@@ -18,6 +18,7 @@ import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types"
 import { spokeData } from "@/components/v3/spoke-data";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
 import { buildTemplateVars } from "@/lib/fender-canvas/template-vars";
@@ -41,7 +42,14 @@ const TAB_OVERRIDES: Partial<
   ecommerce: {
     0: (_bundle, _vars, retail) => <RetailOverview read={retail} />,
     1: (_bundle, _vars, retail) => <SuppressedListingsPanel read={retail} />,
-    2: (_bundle, _vars, retail) => <MapChannelPanel read={retail} />,
+    2: (bundle, _vars, retail) => (
+      <MapChannelPanel
+        read={retail}
+        musiciansFriendFreshness={
+          bundle.fresh.find((row) => row.job_key === MUSICIANS_FRIEND_FRESHNESS_JOB) ?? null
+        }
+      />
+    ),
     3: (_bundle, _vars, retail) => <CatalogGovernancePanel read={retail} />,
   },
   aeo: {
