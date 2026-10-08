@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { specRowsQuery } from "@/lib/canvasData";
-import type { CanvasSpecMissingRow, CanvasSpecReadinessRow } from "@/lib/fender-canvas/types";
+import {
+  specFenderFoundLabel,
+  specModelTitle,
+  type CanvasSpecMissingRow,
+  type CanvasSpecReadinessRow,
+} from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
 
 export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }) {
@@ -84,9 +89,9 @@ export function FenderSpecPanel({ missing }: { missing: CanvasSpecMissingRow[] }
                     <td>
                       <span className="asin-chip">{row.asin}</span>
                     </td>
-                    <td>{row.model_name?.trim() || "n/a"}</td>
+                    <td>{specModelTitle(row.title)}</td>
                     <td>{formatPct(row.amazon_completeness_pct)}</td>
-                    <td>{row.fender_page_found ? "Yes" : "No"}</td>
+                    <td>{specFenderFoundLabel(row.fender_found)}</td>
                     <td>
                       {chips.length
                         ? chips.map((c) => (

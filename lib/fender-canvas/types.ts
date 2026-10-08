@@ -135,12 +135,24 @@ export type CanvasSimulationRow = {
 
 export type CanvasSpecReadinessRow = {
   asin: string;
-  model_name: string | null;
+  title: string | null;
   amazon_completeness_pct: number | null;
   fender_completeness_pct: number | null;
-  fender_page_found: boolean | null;
+  fender_found: boolean | null;
   amazon_missing_fields: string | null;
 };
+
+/** Model cell. Reads the stored listing title on the spec view. */
+export function specModelTitle(title: string | null | undefined): string {
+  return title?.trim() ?? "";
+}
+
+/** fender.com found cell. True is Yes, false is No, and a null flag stays blank. */
+export function specFenderFoundLabel(found: boolean | null | undefined): string {
+  if (found === true) return "Yes";
+  if (found === false) return "No";
+  return "";
+}
 
 export type CanvasBundle = {
   m: CanvasMetricsRow;
