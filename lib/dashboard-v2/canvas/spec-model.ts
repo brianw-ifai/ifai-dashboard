@@ -1,3 +1,4 @@
+import { routeUrl } from "@/lib/dashboard-v2/data/client-paths";
 import type {
   CanvasEdge,
   CanvasLegendItem,
@@ -537,7 +538,7 @@ export function buildSpecModel(all: AllSelections): SpecModel {
     title: hubDef.title,
     stats: hubStats.map((s) => s.stat),
     meta: headerText(all),
-    logoSrc: "/image.png",
+    logoSrc: routeUrl("/image.png"),
     spokeId: "hub",
     tooltip: { title: hubDef.title, desc: hubTooltip.desc },
   });
