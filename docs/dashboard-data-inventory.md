@@ -74,7 +74,7 @@ Headline numbers a viewer sees, with every reuse.
 | MAP undercut | **−$52 avg**, **15** sellers on satellite; 3 marketplaces in MAP tab | No | MAP satellite; ecommerce tab 2 (Amazon, Walmart, Reverb) |
 | Pilot revenue | **+$680K / yr** on 14 ASINs | 380+190+65+45=680 | Ticker; suggestions; hub; ROI pilot toggle; tour 6 |
 | Enterprise revenue | **+$28.4M – $42.6M / yr** | Enterprise breakdown 14.2+9.6+2.8+1.8=28.4 | Ticker; hub tab 2; suggestions ROI enterprise; tour 6 |
-| Enterprise ROI | **118×** on annual service fee; pilot **2.8×** | Stated. Fee cited as $20k/mo = $240k/yr; 28.4M/240k ≈ 118 | Hub tab 2; ROI enterprise mode |
+| Enterprise ROI | **118×** on annual service fee; pilot **2.8×** | Stated. Fee cited as $20k/mo = $240k/yr; 28.4M/240k ≈ 118. Internal inventory only. The client portal must not show this fee or multiple. | Hub tab 2; ROI enterprise mode |
 | Readiness lift | **52% → 94%** (+42 pts) | Stated | Roadmap KPI headline; phases 52→68→82→94 |
 | Open fixes | **18** | Action table still shows rows 1–8 | BRAND FIXES; suggestions; tour 6 |
 | Open fixes | **18** | Action table only renders rows 1–8 | BRAND FIXES spoke; suggestions desc; tour step 6 |

@@ -9,17 +9,17 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
   summary:
-    "Offer coverage, seller mix, beginner share of voice, and spec hallucination flags load with the canvas read.",
+    "The retail headline, beginner share of voice, and spec hallucination flags load with the canvas read.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
     {
       id: "buybox-suppression",
-      title: "Confirm who holds the buy button on active Amazon offers",
-      why: "The catalog read lists how many electric SKUs have an active Amazon offer, and how many of those confirm Amazon as the seller, a third-party seller, or no seller yet.",
+      title: "The retail headline loads with the catalog read",
+      why: "Suppressed Featured Offers, MAP leakage, and unnested bundles are ranked from the stored retail read. The count and any missing coverage appear when that read finishes.",
       severity: "critical",
       spokeId: "ecommerce",
-      subTab: "Retail Listings",
+      subTab: "Retail Overview",
       defaultOwner: "intofocus",
     },
     {
@@ -34,16 +34,16 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "schema-coverage",
       title: "fender.com pages are missing machine-readable spec fields",
-      why: "The spec read shows how often a fender.com page was found and how many of those pages are missing additionalProperty. The Schema tab lists the missing-field rows.",
+      why: "The spec read shows how often a fender.com page was found and how many of those pages are missing additionalProperty. The Machine Readability tab lists the found pages whose stored missing fields include additionalProperty.",
       severity: "high",
       spokeId: "specs",
-      subTab: "Schema",
+      subTab: "Machine Readability",
       defaultOwner: "intofocus",
     },
     {
       id: "map-leakage",
-      title: "Discounted bundles are dragging your prices down everywhere",
-      why: "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.",
+      title: "Below-MAP listings load with the retail read",
+      why: "The MAP tab states how many stored prices are below MAP. When that reading is partial, it also states what is still missing. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel.",
       impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
       severity: "high",
       spokeId: "ecommerce",
@@ -61,8 +61,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "aplus-tables",
-      title: "A+ comparison tables are how assistants read your lineup",
-      why: "Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
+      title: "A+ comparison tables have not been measured",
+      why: "Comparison tables have not been measured. Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

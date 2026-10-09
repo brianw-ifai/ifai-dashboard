@@ -9,7 +9,7 @@
     "category": "BRAND CORE",
     "displays": [
       "Monitored electric SKUs load with the catalog read",
-      "Buy Box seller mix loads with the offer read",
+      "Retail health uses the same headline as the ticker",
       "AI win rate and the weakest category load with the simulation read"
     ],
     "value": "One page tying Amazon listing problems and AI recommendations to revenue."
@@ -19,15 +19,14 @@
     "targetX": 1160,
     "targetY": 320,
     "radius": 125,
-    "title": "Amazon & Retail Health",
-    "subtitle": "Buy Box, price leaks, and partner bundles",
+    "title": "Portfolio Retail",
+    "subtitle": "Featured Offer, MAP, and catalog nesting",
     "category": "RETAIL HEALTH",
     "displays": [
-      "Amazon 1P, third-party, and unknown sellers load with the offer read",
-      "MAP listings load on the MAP tab",
-      "Partner bundle rows load with the retail read"
+      "Suppressed Featured Offers, MAP leakage, and unnested bundles",
+      "A partial reading keeps its count and says what is still missing"
     ],
-    "value": "Win back the Buy Box (target 95%) by working with partners, not sending legal threats."
+    "value": "These catalog and retail issues change what an assistant can recommend and what a shopper can buy."
   },
   {
     "nodeId": "aeo",
@@ -55,7 +54,7 @@
     "displays": [
       "additionalProperty coverage loads with the spec read",
       "fender.com findability loads with the spec read",
-      "Missing-field rows are listed on the Schema tab"
+      "Missing-field rows are listed on the Machine Readability tab"
     ],
     "value": "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns."
   },
@@ -98,10 +97,9 @@
     "subtitle": "What happens at 30, 60, and 90 days",
     "category": "ROADMAP",
     "displays": [
-      "Buy Box and AI win baselines load with the canvas read",
-      "Targets toward 95% Buy Box",
-      "Choose who does the work: IntoFocus or your team"
+      "The retail headline matches the ticker",
+      "AI win rate loads with the simulation read"
     ],
-    "value": "Follow a clear 90-day plan with targets, whichever team does the work."
+    "value": "Follow a 90-day plan from the current retail headline."
   }
 ]

@@ -2,8 +2,16 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { beginnerSovLine } from "../lib/fender-canvas/beginner-sov.ts";
 import { buildLiveCommandCenter } from "../lib/fender-canvas/command-center-from-live.ts";
+import { buildLiveNodes } from "../lib/fender-canvas/nodes-from-live.ts";
 import { groupHallucinationCauses } from "../lib/fender-canvas/hallucination-causes.ts";
+import { buildLiveMetrics } from "../lib/fender-canvas/metrics-from-live.ts";
+import { activeOfferClarity } from "../lib/fender-canvas/offer-clarity.ts";
+import { MAP_PRICES_NOT_STORED } from "../lib/fender-canvas/portfolio-retail.ts";
+import { headlineSentence, headlineSurface } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import { bundleReadLine, mapReadLine } from "../lib/fender-canvas/retail-copy.ts";
+import { buildLiveTourSteps } from "../lib/fender-canvas/tour-from-live.ts";
 import type { CanvasBundle } from "../lib/fender-canvas/types.ts";
+import type { RetailCanvasRead } from "../lib/fender-canvas/portfolio-retail-display.ts";
 
 function bundle(): CanvasBundle {
   return {
@@ -94,20 +102,187 @@ test("beginner share of voice uses the stored competitor percents", () => {
   assert.equal(line, "Yamaha 66.7% vs Fender/Squier 33.3%");
 });
 
-test("command center uses live offer counts and drops unsourced claims", () => {
-  const spec = buildLiveCommandCenter(bundle());
+function retailReady(): RetailCanvasRead {
+  return {
+    phase: "ready",
+    snapshot: {
+      headline: null,
+      suppressedListings: {
+        status: "available_with_issues",
+        issueCount: 48,
+        missingMessage: null,
+        detail: null,
+      },
+      mapLeakage: {
+        status: "available_with_issues",
+        issueCount: 555,
+        missingMessage: null,
+        detail: null,
+      },
+      unnestedBundles: {
+        status: "available_with_issues",
+        issueCount: 12,
+        missingMessage: null,
+        detail: null,
+      },
+      amazonSpecGaps: {
+        status: "unavailable",
+        issueCount: null,
+        missingMessage: "Amazon spec-field readings have not been stored.",
+        detail: null,
+      },
+    },
+  };
+}
+
+test("A+ tables do not borrow Amazon attribute completeness", () => {
+  const retail = retailReady();
+  const metrics = buildLiveMetrics(bundle(), retail);
+  const nodes = buildLiveNodes(bundle(), metrics, retail);
+  const satellite = nodes.find((node) => node.id === "sat-tables");
+  const readiness = nodes.find((node) => node.id === "spoke-specs");
+  assert.ok(satellite);
+  assert.ok(readiness);
+  assert.deepEqual(satellite.stats, ["Not measured yet"]);
+  assert.equal(satellite.title, "Amazon A+ Matrix");
+  const satelliteText = [satellite.meta, satellite.tooltip.title, satellite.tooltip.desc, ...satellite.stats]
+    .filter(Boolean)
+    .join(" ");
+  assert.match(satelliteText, /Comparison tables have not been measured/);
+  assert.doesNotMatch(satelliteText, /91\.8%|%/);
+  assert.doesNotMatch(satelliteText, /\d/);
+
+  assert.match(readiness.stats.join(" "), /91\.8%/);
+  assert.equal(metrics.machineReadableSpecs.value, "91.8%");
+  assert.equal(metrics.machineReadableSpecs.detail, "Amazon attribute completeness");
+
+  const item = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "aplus-tables");
+  assert.ok(item);
+  const itemText = [item.title, item.why, item.impact].filter(Boolean).join(" ");
+  assert.match(itemText, /comparison tables have not been measured/i);
+  assert.doesNotMatch(itemText, /91\.8%|%/);
+  assert.doesNotMatch(itemText, /\d/);
+  assert.doesNotMatch(itemText, /Fender/);
+});
+
+test("command center uses the retail headline and drops unsourced claims", () => {
+  const retail = retailReady();
+  const spec = buildLiveCommandCenter(bundle(), retail);
   const text = [spec.desc, spec.summary, ...spec.items.flatMap((item) => [item.title, item.why, item.impact])]
     .filter(Boolean)
     .join("\n");
+  const headline = headlineSentence(headlineSurface(retail));
+  const map = spec.items.find((item) => item.id === "map-leakage");
 
   assert.match(text, /3,598/);
-  assert.match(text, /1,025/);
-  assert.match(text, /8\.3%/);
+  assert.ok(text.includes(headline));
   assert.match(text, /13 divisions/);
   assert.match(text, /Yamaha 66\.7% vs Fender\/Squier 33\.3%/);
   assert.match(text, /222/);
+  assert.doesNotMatch(text, /8\.3%/);
   assert.doesNotMatch(text, /3,430|993|7\.4%|16\.7%|Fourteen|14 catalog|2,420|fingerboard|dual humbucker/i);
+  assert.doesNotMatch(text, /discounted bundles are dragging/i);
   assert.equal(spec.items.length, 6);
+  assert.equal(map?.title, "555 listings are below MAP in this listing read");
+  assert.equal(map?.subTab, "MAP");
+  assert.match(map?.why ?? "", /Open the MAP tab/);
+  assert.doesNotMatch(map?.why ?? "", /not a final count/);
+});
+
+test("command center MAP item repeats the MAP tab's partial reading", () => {
+  const retail = retailReady();
+  if (retail.phase !== "ready") throw new Error("expected a ready retail read");
+  const missingMessage =
+    "MAP leakage is stored for 3 of 4 listings. 12 stored listings are below MAP. 1 listing has a price and no stored MAP comparison, so it is missing from this count and is not counted as zero. This is not a final count.";
+  retail.snapshot.mapLeakage = {
+    status: "incomplete",
+    issueCount: 12,
+    missingMessage,
+    detail: null,
+  };
+  const map = buildLiveCommandCenter(bundle(), retail).items.find((item) => item.id === "map-leakage");
+  assert.equal(map?.title, "12 listings are below MAP in this listing read");
+  assert.equal(map?.why, missingMessage);
+  assert.doesNotMatch(`${map?.title} ${map?.why}`, /discounted bundle/i);
+});
+
+test("hub offer arithmetic does not pair the 1P count with the harvested percentage", () => {
+  const text = activeOfferClarity({
+    ...bundle().m,
+    bb_1p: 67,
+    bb_3p: 871,
+    bb_unharvested: 66,
+    bb_no_offer: 25,
+    catalog_skus: 3598,
+    seller_harvested_pct: 28.6,
+  });
+  assert.match(text, /1,004 listings have an active Amazon offer/);
+  assert.match(text, /67 of 1,004 \(6\.7%\)/);
+  assert.match(text, /871 of 1,004 \(86\.8%\)/);
+  assert.match(text, /66 of 1,004 offers have no stored seller name \(6\.6%\)/);
+  assert.match(text, /25 listings have no Amazon offer/);
+  assert.match(text, /not part of the active-offer count/);
+  assert.doesNotMatch(text, /28\.6%/);
+  assert.doesNotMatch(text, /67 of 3,598/);
+  assert.match(text, /Featured Offer/);
+});
+
+test("the MAP violations widget follows the listing read", () => {
+  const ready = buildLiveMetrics(bundle(), retailReady()).flaggedAsins;
+  assert.equal(ready.label, "MAP violations");
+  assert.equal(ready.value, "555");
+  assert.equal(ready.subTab, "MAP");
+  assert.doesNotMatch(ready.detail, /48/);
+
+  const failed = buildLiveMetrics(bundle(), { phase: "error" }).flaggedAsins;
+  assert.equal(failed.value, "Unavailable");
+  assert.doesNotMatch(failed.value, /533/);
+  assert.match(failed.detail, /did not succeed/);
+});
+
+test("missing MAP prices do not become a below-MAP count or an average gap", () => {
+  const retail = retailReady();
+  if (retail.phase !== "ready") throw new Error("expected a ready retail read");
+  retail.snapshot.mapLeakage = {
+    status: "unavailable",
+    issueCount: null,
+    missingMessage: MAP_PRICES_NOT_STORED,
+    detail: null,
+  };
+  const mapItem = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "map-leakage");
+  const itemText = [mapItem?.title, mapItem?.why, mapItem?.impact].filter(Boolean).join(" ");
+  assert.equal(mapItem?.title, MAP_PRICES_NOT_STORED);
+  assert.match(itemText, /Fender MAP prices have not been stored/);
+  assert.doesNotMatch(itemText, /below MAP|average gap|\$|\d/);
+
+  const satellite = buildLiveNodes(bundle(), buildLiveMetrics(bundle(), retail), retail).find(
+    (node) => node.id === "sat-map",
+  );
+  const satelliteText = [satellite?.title, satellite?.meta, satellite?.tooltip.desc, ...(satellite?.stats ?? [])]
+    .filter(Boolean)
+    .join(" ");
+  assert.match(satelliteText, /Fender MAP prices have not been stored/);
+  assert.doesNotMatch(satelliteText, /below MAP|gap|\$|\d/);
+
+  const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;
+  assert.equal(drift.value, "Not stored");
+  assert.equal(drift.detail, MAP_PRICES_NOT_STORED);
+  assert.equal(mapReadLine(retail), MAP_PRICES_NOT_STORED);
+});
+
+test("the guided tour uses the same retail headline as the ticker", () => {
+  const retail = retailReady();
+  const headline = headlineSentence(headlineSurface(retail));
+  const steps = buildLiveTourSteps(bundle(), retail);
+  const hub = steps.find((step) => step.nodeId === "hub");
+  const roadmap = steps.find((step) => step.nodeId === "roadmap");
+  assert.ok(hub?.displays.includes(headline));
+  assert.ok(roadmap?.displays.includes(headline));
+  const text = [...(hub?.displays ?? []), ...(roadmap?.displays ?? []), roadmap?.value ?? ""].join(" ");
+  assert.doesNotMatch(text, /Buy Box:|95% Buy Box|6\.5%/);
+  assert.equal(mapReadLine(retail), "555 listings are below MAP in this listing read.");
+  assert.equal(bundleReadLine(retail), "12 bundles have no usable parent ASIN in this listing read.");
+  assert.match(mapReadLine({ phase: "error" }), /does not state a MAP count/);
 });
 
 test("hallucination groups are the stored root causes and their row counts", () => {

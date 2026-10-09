@@ -11,11 +11,12 @@ import type { TourStep } from "@/lib/canvas-sdk/types";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { defineCanvas } from "@/lib/canvas-sdk/types";
 import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
+import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { formatInt } from "@/lib/fender-canvas/format";
 
 const FOCUS_TARGETS = graphLayout.focusTargets as Record<string, { x: number; y: number }>;
 const tourSteps = staticTourSteps as TourStep[];
@@ -44,6 +45,7 @@ export type BuildCanvasSpecOptions = {
   viewerId?: string;
   headerSlot?: ReactNode;
   metricStorageSuffix?: string;
+  retail?: RetailCanvasRead;
 };
 
 function viewerStorageScope(viewerId?: string) {
@@ -65,19 +67,20 @@ export function buildFenderCanvasSpec(
   bundle: CanvasBundle | null,
   options: BuildCanvasSpecOptions = {},
 ) {
-  const metrics = bundle ? buildLiveMetrics(bundle) : FENDER_METRICS;
+  const retail = options.retail ?? { phase: "loading" as const };
+  const metrics = bundle ? buildLiveMetrics(bundle, retail) : FENDER_METRICS;
   const widgetList = bundle
     ? Object.values(metrics)
     : fenderWidgetMetrics;
 
   const m = bundle?.m;
-  const bb = metrics.buyBoxRetention.value;
   const ai = metrics.overallAiWinRate.value;
+  const headline = headlineSurface(retail);
   const beginner = metrics.beginnerAiWinRate.value;
 
   return defineCanvas({
     appearance: "iom",
-    commandCenter: bundle ? buildLiveCommandCenter(bundle) : fenderCommandCenter,
+    commandCenter: bundle ? buildLiveCommandCenter(bundle, retail) : fenderCommandCenter,
     glossary: fenderGlossary,
     metricWidgets: {
       metrics: widgetList,
@@ -100,13 +103,8 @@ export function buildFenderCanvasSpec(
         tone: "danger",
         icon: "pulse",
         spokeId: "ecommerce",
-        subTab: "Retail Listings",
-        label: (
-          <>
-            Buy Box (Active Offers): <strong>{bb} 1P</strong> ({m ? formatInt(m.bb_1p) : "n/a"} of{" "}
-            {m ? formatInt(m.bb_total) : "n/a"} active)
-          </>
-        ),
+        subTab: headline.tab,
+        label: headlineSentence(headline),
       },
       {
         id: "aeo",
@@ -145,10 +143,10 @@ export function buildFenderCanvasSpec(
     ],
     badges: [],
     edges: STATIC_EDGES,
-    nodes: bundle ? buildLiveNodes(bundle, metrics) : fenderStaticNodes,
-    spokes: bundle ? buildLiveSpokes(bundle) : spokeData,
+    nodes: bundle ? buildLiveNodes(bundle, metrics, retail) : fenderStaticNodes,
+    spokes: bundle ? buildLiveSpokes(bundle, retail) : spokeData,
     focusTargets: FOCUS_TARGETS,
-    tour: bundle ? buildLiveTourSteps(bundle) : tourSteps,
+    tour: bundle ? buildLiveTourSteps(bundle, retail) : tourSteps,
     ...(options.userMenu
       ? { userMenu: options.userMenu, userEmail: options.userMenu.email }
       : {}),

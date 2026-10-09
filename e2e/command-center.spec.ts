@@ -13,6 +13,8 @@ test.describe("command center", () => {
     await expect(canvas.commandCenter).not.toContainText("16.7%");
     await expect(canvas.commandCenter).not.toContainText("Fourteen");
     await expect(canvas.commandCenter).not.toContainText("14 catalog");
+    await expect(canvas.commandCenter).not.toContainText("Discounted bundles");
+    await expect(canvas.commandCenter).toContainText("Fender MAP prices have not been stored.");
     await expect(canvas.page.locator(".drilldown-title")).toContainText(
       "What do I need to worry about?",
     );
@@ -33,7 +35,7 @@ test.describe("command center", () => {
     await expect(quadrants.nth(1)).toContainText("6");
     await expect(quadrants.nth(0)).toContainText("2"); // critical
 
-    await canvas.priority("active Amazon offers").locator(".cc-done-btn").click();
+    await canvas.priority("Suppressed Listings").locator(".cc-done-btn").click();
     await expect(canvas.priorities).toHaveCount(5);
     await expect(quadrants.nth(1)).toContainText("5");
     await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
@@ -51,7 +53,7 @@ test.describe("command center", () => {
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
     await canvas.openCommandCenter();
-    const item = canvas.priority("active Amazon offers");
+    const item = canvas.priority("Suppressed Listings");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -60,7 +62,7 @@ test.describe("command center", () => {
     await canvas.reload();
     await canvas.openCommandCenter();
     await expect(
-      canvas.priority("active Amazon offers").locator(".cc-owner-btn.active"),
+      canvas.priority("Suppressed Listings").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -73,10 +75,10 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["active Amazon offers", "Retail Listings"],
+    ["Suppressed Listings", "Retail Overview"],
     ["AI assistants are quoting specs", "Hallucination"],
-    ["machine-readable spec", "Schema"],
-    ["Discounted bundles are dragging", "MAP"],
+    ["machine-readable spec", "Machine Readability"],
+    ["Fender MAP prices have not been stored", "MAP"],
     ["Beginner share of voice", "Battlecards"],
     ["A+ comparison tables", "A+"],
   ] as const;
@@ -89,7 +91,7 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
-    await canvas.openPriority("active Amazon offers");
+    await canvas.openPriority("Suppressed Listings");
     await canvas.backToPriorities();
     await expect(canvas.priorities).toHaveCount(6);
   });

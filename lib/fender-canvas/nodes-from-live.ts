@@ -1,18 +1,28 @@
 import type { CanvasNode } from "@/lib/canvas-sdk/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
-import { formatInt, formatPct, formatUsd } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import {
+  headlineSentence,
+  headlineSurface,
+  retailBubbleFaces,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
 
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
-export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): CanvasNode[] {
+export function buildLiveNodes(
+  bundle: CanvasBundle,
+  metrics: MetricsMap,
+  retail: RetailCanvasRead = { phase: "loading" },
+): CanvasNode[] {
   const { m, cats } = bundle;
+  const retailFaces = retailBubbleFaces(retail);
   const beginner = cats.find((c) => c.category === "beginner");
   const acoustics = cats.find((c) => c.category === "acoustics");
   const amps = cats.find((c) => c.category === "amps");
 
-  const unharvestedPct = formatPct(m.bb_unharvested_pct);
-  const bb1p = metrics.buyBoxRetention.value;
+  const headline = headlineSurface(retail);
   const simWin = metrics.overallAiWinRate.value;
   const beginnerWin = metrics.beginnerAiWinRate.value;
 
@@ -76,56 +86,24 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       x: 1360,
       y: 200,
       r: 54,
-      status: "danger",
-      title: "Buy Box",
-      stats: [`${bb1p} 1P`, `${unharvestedPct} Unk`],
-      meta: `${formatInt(m.bb_total)} active offers`,
       spokeId: "ecommerce",
-      subTab: "Retail Listings",
-      tooltip: {
-        title: "Buy Box (Active Offers)",
-        desc: `Amazon 1P holds ${bb1p} of ${formatInt(m.bb_total)} active listings. The seller for ${formatInt(m.bb_unharvested)} listings is unknown; ${formatInt(m.bb_3p)} confirmed 3P.`,
-      },
+      ...retailFaces.suppressed,
     },
     {
       id: "sat-asin",
       x: 1420,
       y: 360,
       r: 54,
-      status: "warning",
-      title: "ASIN Split",
-      stats: [
-        `${formatInt(m.map_violation_skus)} MAP flags`,
-        metrics.strandedReviews.value === "Pending data"
-          ? "Reviews pending"
-          : `${metrics.strandedReviews.value} Reviews`,
-      ],
-      meta: "Retail listings",
       spokeId: "ecommerce",
-      subTab: "catalog",
-      tooltip: {
-        title: "Splintered Bundle ASINs",
-        desc: "Partner bundles and MAP violations from the retail listings. Use the drill-down table to inspect ASIN-level leakage.",
-      },
+      ...retailFaces.catalog,
     },
     {
       id: "sat-map",
       x: 1340,
       y: 480,
-      r: 52,
-      status: "danger",
-      title: "MAP Leakage",
-      stats: [
-        formatUsd(m.offamz_avg_leak, { signed: true }) + " off-Amazon avg",
-        `${formatInt(m.map_violation_skus)} violations`,
-      ],
-      meta: `Amazon · Walmart · MF`,
+      r: 60,
       spokeId: "ecommerce",
-      subTab: "map",
-      tooltip: {
-        title: "Cross-Marketplace MAP Leakage",
-        desc: `${formatInt(m.amz_below_map)} Amazon listings below MAP (${formatUsd(m.amz_avg_drift, { signed: true })} avg). Walmart leaks ${formatInt(m.wmt_leaks)} of ${formatInt(m.wmt_checked)} checked; MF ${formatInt(m.mf_leaks)} of ${formatInt(m.mf_checked)}.`,
-      },
+      ...retailFaces.map,
     },
     {
       id: "sat-schema",
@@ -133,14 +111,14 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       y: 720,
       r: 50,
       status: "danger",
-      title: "Schema.org",
+      title: "Machine Readability",
       stats: [
         `${formatInt(m.spec_missing_additional_property)} missing additionalProperty`,
         `${formatInt(m.spec_checked)} checked`,
       ],
       meta: "fender.com JSON-LD gap",
       spokeId: "specs",
-      subTab: "schema",
+      subTab: "Machine Readability",
       tooltip: {
         title: "Schema.org Structured Data",
         desc: `${formatPct(m.spec_fender_found_pct)} of audited SKUs have a fender.com page (${formatInt(m.spec_fender_found)} of ${formatInt(m.spec_checked)}). ${formatInt(m.spec_missing_additional_property)} pages lack additionalProperty specs.`,
@@ -151,18 +129,14 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       x: 320,
       y: 870,
       r: 48,
-      status: "warning",
-      title: "A+ Tables",
-      stats: [
-        `${formatPct(m.spec_avg_amazon_pct)} Amazon`,
-        `${formatInt(m.spec_checked)} checked`,
-      ],
-      meta: "Amazon field completeness",
+      status: "neutral",
+      title: "Amazon A+ Matrix",
+      stats: ["Not measured yet"],
       spokeId: "specs",
-      subTab: "a+",
+      subTab: "Amazon A+ Matrix",
       tooltip: {
-        title: "Amazon Structured Field Completeness",
-        desc: `Amazon product attribute completeness averages ${formatPct(m.spec_avg_amazon_pct)} across ${formatInt(m.spec_checked)} SKUs in the spec audit.`,
+        title: "A+ comparison tables",
+        desc: "Comparison tables have not been measured. When a comparison table is on the page, a shopping assistant can read the columns and repeat how the lineup steps up.",
       },
     },
     {
@@ -225,17 +199,10 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       id: "spoke-retail",
       x: 1160,
       y: 320,
-      r: 86,
-      status: "danger",
-      title: "Portfolio Retail",
+      r: 96,
       titleSize: 13.5,
-      stats: [`${bb1p} 1P`, `${formatInt(m.bb_total)} Active`],
-      meta: `${unharvestedPct} seller unknown`,
       spokeId: "ecommerce",
-      tooltip: {
-        title: "Portfolio Retail & Brand Registry",
-        desc: `Buy Box: ${bb1p} 1P on ${formatInt(m.bb_total)} active offers. ${formatInt(m.bb_no_offer)} SKUs without an active offer.`,
-      },
+      ...retailFaces.main,
     },
     {
       id: "spoke-specs",
@@ -300,11 +267,11 @@ export function buildLiveNodes(bundle: CanvasBundle, metrics: MetricsMap): Canva
       title: "Strategy Roadmap",
       titleSize: 14,
       stats: ["90 Days", "3 Phases"],
-      meta: "Buy Box & AI Search Visibility",
+      meta: headline.countLabel ? `${headline.label}: ${headline.countLabel}` : headline.label,
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
-        desc: `Baselines: Buy Box ${bb1p}, AI win ${simWin}. Day 90 Buy Box target ${metrics.dayNinetyBuyBoxTarget.value}.`,
+        desc: headlineSentence(headline),
       },
     },
     {

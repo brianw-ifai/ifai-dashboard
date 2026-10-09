@@ -1,10 +1,19 @@
 import type { TourStep } from "@/lib/canvas-sdk/types";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import {
+  headlineSentence,
+  headlineSurface,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { formatInt, formatPct, formatUsd } from "@/lib/fender-canvas/format";
 
-export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
+export function buildLiveTourSteps(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead = { phase: "loading" },
+): TourStep[] {
   const { m, cats } = bundle;
   const beginner = cats.find((c) => c.category === "beginner");
+  const headline = headlineSentence(headlineSurface(retail));
 
   return [
     {
@@ -17,7 +26,7 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       category: "BRAND CORE",
       displays: [
         `${formatInt(m.catalog_skus)} monitored SKUs`,
-        `Buy Box: ${formatPct(m.bb_1p_pct)} Amazon 1P on ${formatInt(m.bb_total)} active offers`,
+        headline,
         `AI win rate ${formatPct(m.sim_win_pct)}; weakest is ${m.weakest_category ?? "n/a"} at ${formatPct(m.weakest_win_pct)}`,
       ],
       value: "One page tying Amazon listing problems and AI recommendations to revenue.",
@@ -27,15 +36,14 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       targetX: 1160,
       targetY: 320,
       radius: 125,
-      title: "Amazon & Retail Health",
-      subtitle: "Buy Box, price leaks, and partner bundles",
+      title: "Portfolio Retail",
+      subtitle: "Featured Offer, MAP, and catalog nesting",
       category: "RETAIL HEALTH",
       displays: [
-        `${formatPct(m.bb_1p_pct)} of ${formatInt(m.bb_total)} active offers confirm Amazon 1P`,
-        `${formatInt(m.map_violation_skus)} MAP violation SKUs across channels`,
-        `MAP drift: Amazon ${formatUsd(m.amz_avg_drift, { signed: true })} average on ${formatInt(m.amz_below_map)} listings`,
+        "Suppressed Featured Offers, MAP leakage, and unnested bundles",
+        "A partial reading keeps its count and says what is still missing",
       ],
-      value: "Win back the Buy Box (target 95%) by working with partners, not sending legal threats.",
+      value: "These catalog and retail issues change what an assistant can recommend and what a shopper can buy.",
     },
     {
       nodeId: "aeo",
@@ -106,11 +114,10 @@ export function buildLiveTourSteps(bundle: CanvasBundle): TourStep[] {
       subtitle: "What happens at 30, 60, and 90 days",
       category: "ROADMAP",
       displays: [
-        `Baseline: Buy Box ${formatPct(m.bb_1p_pct)}, AI win ${formatPct(m.sim_win_pct)}`,
-        "Targets toward 95% Buy Box",
-        "Choose who does the work: IntoFocus or your team",
+        headline,
+        `AI win rate ${formatPct(m.sim_win_pct)}`,
       ],
-      value: "Follow a clear 90-day plan with targets, whichever team does the work.",
+      value: "Follow a 90-day plan from the current retail headline.",
     },
   ];
 }

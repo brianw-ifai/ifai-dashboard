@@ -18,7 +18,7 @@ Tickers across the top surface the headline alerts and jump to the matching spok
 
 **AI Search Visibility.** How AI assistants such as ChatGPT, Perplexity, and Gemini recommend and cite Fender. Panels cover prompt simulations, citation sources, and the spec hallucinations models repeat.
 
-**AI Readiness.** Whether Fender's product data is ready for AI engines to read. Tabs cover Catalog Readiness, Schema.org JSON-LD on fender.com product pages, and Amazon A+ comparison content. The guided tour introduces this area as **Product Readiness**.
+**AI Readiness.** Whether Fender's product data is ready for AI engines to read. The bubble, its two satellites, and its three tabs share one set of names: **AI Readiness** for the catalog-level view, **Machine Readability** for Schema.org JSON-LD on fender.com product pages, and **Amazon A+ Matrix** for Amazon A+ comparison content. The guided tour introduces this area as **Product Readiness**.
 
 **Competitive Radar.** Share of voice against category rivals, battlecards for the lines where Fender loses the recommendation, and channel scope beyond Amazon.
 
@@ -52,15 +52,16 @@ Follow these rules for every visible string: titles, labels, tooltips, tour step
 
 - **AI Search Visibility**: how AI assistants recommend and cite Fender.
 - **AI Readiness**: whether product data is ready for AI engines to read.
-- **Catalog Readiness**: the catalog-level view inside AI Readiness.
+- **Machine Readability**: the Schema.org JSON-LD view inside AI Readiness, named for the bubble's satellite.
+- **Amazon A+ Matrix**: the A+ comparison-content view inside AI Readiness, named for the bubble's other satellite.
 - **Product Readiness**: the product-page view of the same area, used as its guided tour title.
 - **Action Items**: the prioritized interventions. Use it for the area and as the count noun ("18 Action Items").
 
-Don't bring back the retired labels Brand AEO, Brand Fixes, Spec Readiness, or Suggestion Engine.
+Don't bring back the retired labels Brand AEO, Brand Fixes, Spec Readiness, Suggestion Engine, Catalog Readiness, Schema.org (as an area or tab name), or A+ Tables. Schema.org still names the standard itself, as in "Schema.org JSON-LD".
 
 **AEO.** Use AEO (Answer Engine Optimization) only for the technical discipline, as in "AEO schemas" or "AEO execution". Never use it as the name of an area, tab, or metric.
 
-**Internal keys stay put.** The spoke IDs `aeo`, `specs`, and `suggestions`, along with storage keys, are code identifiers. Don't rename them when visible copy changes. Deep links (`subTab` in the spec and `data-ifai-tab` in panel HTML) match tab names by case-insensitive substring, so a renamed tab must keep the matched word, or the link must change with it.
+**Internal keys stay put.** The spoke IDs `aeo`, `specs`, and `suggestions`, along with storage keys, are code identifiers. Don't rename them when visible copy changes. Deep links (`subTab` in the spec and `data-ifai-tab` in panel HTML) match tab names by case-insensitive substring, so a renamed tab must keep the matched word, or the link must change with it. A tab slug already shared in a copied URL keeps working through `TAB_SLUG_ALIASES` in `lib/canvas-sdk/canvas-url-state.ts`: add the old slug there whenever you rename a tab.
 
 **Punctuation and style**
 
@@ -73,6 +74,8 @@ Don't bring back the retired labels Brand AEO, Brand Fixes, Spec Readiness, or S
 **Voice.** Write for an e-commerce or marketing operator. Use plain language, active voice, contractions, and short sentences. Command center items speak to the reader as "you". Explain any unavoidable jargon in `glossary.ts`.
 
 **Figures.** Keep numbers in the source files above, not in documentation. Label analyst estimates and targets at the point of use ("est.", "analyst estimate", "not yet measured"), and give a rate's sample or denominator next to it.
+
+**IntoFocus fees.** Client-facing copy never mentions IntoFocus fees, retainers, monthly charges, or whether the estimated lift justifies IntoFocus's price. Do not show a service-fee multiple. Opening an estimate to its inputs is a later pass. Until then, label the figure as an analyst estimate and do not invent the formula.
 
 **Tests.** End-to-end specs select some elements by visible text. When you rename a visible label, update the matching specs in `e2e/`.
 

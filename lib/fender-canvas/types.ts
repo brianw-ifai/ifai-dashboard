@@ -102,6 +102,7 @@ export type CanvasRetailListingRow = {
   buybox_seller_name: string | null;
   map_price: number | null;
   offer_price: number | null;
+  amz_leakage?: number | null;
   worst_leakage: number | null;
   reviews_count: number | null;
   channels: string | null;
@@ -113,6 +114,7 @@ export type CanvasRetailListingRow = {
   wmt_url: string | null;
   mf_price: number | null;
   mf_leakage: number | null;
+  product_url?: string | null;
   competitive_price_threshold_cents?: number | null;
   featured_offer_withheld?: boolean | null;
   competitive_offer_suppressed?: boolean | null;
@@ -133,12 +135,24 @@ export type CanvasSimulationRow = {
 
 export type CanvasSpecReadinessRow = {
   asin: string;
-  model_name: string | null;
+  title: string | null;
   amazon_completeness_pct: number | null;
   fender_completeness_pct: number | null;
-  fender_page_found: boolean | null;
+  fender_found: boolean | null;
   amazon_missing_fields: string | null;
 };
+
+/** Model cell. Reads the stored listing title on the spec view. */
+export function specModelTitle(title: string | null | undefined): string {
+  return title?.trim() ?? "";
+}
+
+/** fender.com found cell. True is Yes, false is No, and a null flag stays blank. */
+export function specFenderFoundLabel(found: boolean | null | undefined): string {
+  if (found === true) return "Yes";
+  if (found === false) return "No";
+  return "";
+}
 
 export type CanvasBundle = {
   m: CanvasMetricsRow;

@@ -31,9 +31,17 @@ export function tabSlug(label: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/** Slugs already copied from an earlier tab title. They still open that tab. */
+const TAB_SLUG_ALIASES: Record<string, string> = {
+  "executive-briefing-buy-box-coverage": "executive-briefing",
+  "catalog-readiness-executive-guide": "ai-readiness",
+  "machine-readable-schema-org-json-ld-audit": "machine-readability",
+  "amazon-a-comparison-matrix-blueprint": "amazon-a-matrix",
+};
+
 export function tabIndexFromSlug(tabs: string[], slug: string | null): number {
   if (!slug) return 0;
-  const normalized = slug.toLowerCase();
+  const normalized = (TAB_SLUG_ALIASES[slug.toLowerCase()] ?? slug).toLowerCase();
   const exact = tabs.findIndex((tab) => tabSlug(tab) === normalized);
   if (exact >= 0) return exact;
   const partial = tabs.findIndex((tab) => tab.toLowerCase().includes(normalized.replace(/-/g, " ")));

@@ -1,17 +1,51 @@
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { beginnerSovLine, beginnerSovWhy } from "@/lib/fender-canvas/beginner-sov";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import {
+  headlineSentence,
+  headlineSurface,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
+import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
+import { mapReadLine } from "@/lib/fender-canvas/retail-copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
+const MAP_CHANNEL_WHY =
+  "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.";
+
+const MAP_PRICES_NOT_STORED_WHY =
+  "Fender MAP prices have not been stored. Amazon, Walmart, and Musician's Friend prices still show when a price is stored for that channel. A missing price stays blank.";
+
+/** The MAP tab shows this sentence while the reading is unfinished or missing. */
+function mapMissingSentence(retail: RetailCanvasRead): string | null {
+  if (retail.phase !== "ready") return null;
+  const reading = retail.snapshot.mapLeakage;
+  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
+  return showMissing ? reading.missingMessage : null;
+}
+
+function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
+  if (retail.phase === "ready" && retail.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED) {
+    return { title: MAP_PRICES_NOT_STORED, why: MAP_PRICES_NOT_STORED_WHY };
+  }
+  const title = mapReadLine(retail).replace(/\.$/, "");
+  return { title, why: mapMissingSentence(retail) ?? MAP_CHANNEL_WHY };
+}
+
 /** Command center copy from the canvas reads. Unsourced counts are omitted. */
-export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec {
+export function buildLiveCommandCenter(
+  bundle: CanvasBundle,
+  retail: RetailCanvasRead = { phase: "loading" },
+): CommandCenterSpec {
   const { m, divisions } = bundle;
   const divisionCount = divisions.length > 0 ? divisions.length : m.division_count;
   const sovLine = beginnerSovLine(bundle.sov);
   const sovWhy = beginnerSovWhy(bundle.sov);
+  const headline = headlineSurface(retail);
+  const mapItem = mapPriority(retail);
 
   const summaryParts = [
-    `Of ${formatInt(m.bb_total)} active Amazon offers, ${formatPct(m.bb_1p_pct)} confirm Amazon as the seller, ${formatPct(m.bb_3p_pct)} are confirmed third-party, and ${formatPct(m.bb_unharvested_pct)} have no seller in this read.`,
+    headlineSentence(headline),
     `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs across ${formatInt(divisionCount)} divisions.`,
   ];
   if (sovLine) summaryParts.push(`Beginner share of voice is ${sovLine}.`);
@@ -31,11 +65,13 @@ export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec 
     items: [
       {
         id: "buybox-suppression",
-        title: `Only ${formatPct(m.bb_1p_pct)} of active Amazon offers confirm Amazon as the seller`,
-        why: `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs. ${formatInt(m.bb_total)} have an active Amazon offer. Amazon is the seller on ${formatInt(m.bb_1p)} of those (${formatPct(m.bb_1p_pct)}). A third-party seller is confirmed on ${formatInt(m.bb_3p)} (${formatPct(m.bb_3p_pct)}). The seller is unknown on ${formatInt(m.bb_unharvested)} (${formatPct(m.bb_unharvested_pct)}).`,
+        title: headline.countLabel ? `${headline.label}: ${headline.countLabel}` : headline.label,
+        why: headline.missingMessage
+          ? headline.missingMessage
+          : `${headline.label} is the current retail headline${headline.countLabel ? `, with ${headline.countLabel}` : ""}.`,
         severity: "critical",
         spokeId: "ecommerce",
-        subTab: "Retail Listings",
+        subTab: headline.commandTab,
         defaultOwner: "intofocus",
       },
       {
@@ -50,16 +86,16 @@ export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec 
       {
         id: "schema-coverage",
         title: "fender.com pages are missing machine-readable spec fields",
-        why: `Site search found a fender.com page for ${formatRatio(m.spec_fender_found, m.spec_checked)} checked SKUs (${formatPct(m.spec_fender_found_pct)}). additionalProperty is missing on ${formatInt(m.spec_missing_additional_property)} of the found pages, so an assistant still has no spec block to read there. The Schema tab lists the missing-field rows from this read.`,
+        why: `Site search found a fender.com page for ${formatRatio(m.spec_fender_found, m.spec_checked)} checked SKUs (${formatPct(m.spec_fender_found_pct)}). additionalProperty is missing on ${formatInt(m.spec_missing_additional_property)} of the found pages, so an assistant still has no spec block to read there. The Machine Readability tab lists the found pages whose stored missing fields include additionalProperty.`,
         severity: "high",
         spokeId: "specs",
-        subTab: "Schema",
+        subTab: "Machine Readability",
         defaultOwner: "intofocus",
       },
       {
         id: "map-leakage",
-        title: "Discounted bundles are dragging your prices down everywhere",
-        why: "Open the MAP tab for the current below-MAP listings. Amazon, Walmart, and Musician's Friend appear only when this read stored a price for that channel. Any other retailer appears only when a stored price exists for that channel.",
+        title: mapItem.title,
+        why: mapItem.why,
         impact: "The summary and the listing rows are the rows returned by the latest retail listing read.",
         severity: "high",
         spokeId: "ecommerce",
@@ -81,8 +117,8 @@ export function buildLiveCommandCenter(bundle: CanvasBundle): CommandCenterSpec 
         : []),
       {
         id: "aplus-tables",
-        title: "A+ comparison tables are how assistants read your lineup",
-        why: "Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
+        title: "A+ comparison tables have not been measured",
+        why: "Comparison tables have not been measured. Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
         severity: "moderate",
         spokeId: "specs",
         subTab: "A+",

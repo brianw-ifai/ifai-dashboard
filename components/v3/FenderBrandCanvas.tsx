@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
+import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
 import { useFenderCanvasData } from "@/components/v3/use-fender-canvas-data";
 import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
@@ -50,6 +51,7 @@ export function FenderBrandCanvas({
   viewerId?: string;
 }) {
   const { bundle, loading, stale, error } = useFenderCanvasData();
+  const retail = usePortfolioRetailSnapshot();
 
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
@@ -88,12 +90,13 @@ export function FenderBrandCanvas({
     return buildFenderCanvasSpec(bundle, {
       userMenu,
       viewerId,
+      retail,
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: (
         <DataFreshnessBar fresh={bundle.fresh} stale={stale} />
       ),
     });
-  }, [bundle, stale, userMenu, viewerId]);
+  }, [bundle, retail, stale, userMenu, viewerId]);
 
   if (loading && !spec) {
     return <CanvasLoadingShell />;
