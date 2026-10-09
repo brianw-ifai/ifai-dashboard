@@ -58,4 +58,6 @@ Phase 1 and full-enterprise dollar figures stay labeled as analyst estimates. Op
 ## Related human docs
 
 - `README.md` — canvas areas, copy rules, file map
-- `docs/dashboard-data-inventory.md` — data inventory behind figures
+- `docs/dashboard-truth-map.md` — current source of truth for every dashboard output, plus the prioritized data-acquisition backlog
+- `docs/retail-and-readiness-sources.md` — structural map and writer table for Portfolio Retail and AI Readiness (MAP section superseded)
+- `docs/dashboard-data-inventory.md` — retired 17 September 2026 inventory of authored demo copy. History only; do not cite its figures

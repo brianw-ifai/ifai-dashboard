@@ -1,5 +1,21 @@
 # Portfolio Retail and AI Readiness sources
 
+> ## Partly superseded. Reconciled against `main` on 2026-10-09.
+>
+> This file was accurate when it was read on 2026-10-07. Since then the retail table was rebuilt and the MAP program lost its reference price, so **every MAP figure below is gone from the database**.
+>
+> **What is still accurate:** the reading method, the status vocabulary, the writer table, the structural description of every bubble, satellite, tab, and widget, the absence of a writer for the Competitive External Price, the Featured Offer withheld flag, and `reviews_count`, the empty `listing_channel_price` table that keeps Sweetwater and Reverb off the MAP table, the five proposed A+ columns, and the caveat that a null `fender_url` is not proof a product is absent from fender.com.
+>
+> **What is superseded:**
+>
+> - **The entire MAP section.** `map_price` is now null on all 1,036 retail rows, and so is the Amazon `leakage_amount` column. The 532 listings below MAP, the -$209.47 average gap, the Amazon 456 and -$221.19 drift, the Walmart 40, the Musician's Friend 84, and the "stored for 1,013 of 1,030" coverage no longer exist. The screen no longer prints a below-MAP count: PR #25 replaced it with "Fender MAP prices have not been stored." on the MAP satellite, the MAP tab summary, the Average Amazon Price Drift widget, and the command-center MAP item. Four `mf_leakage` values survive as residue on rows with no MAP price, and one of them still drives `map_violation_skus = 1` and `offamz_avg_leak = -200.00` in `canvas_metrics`.
+> - **The Musician's Friend staleness finding.** That job is current again (last run 2026-10-08 23:38, cursor 115). Its match rate is still poor, 1 of 10 on its last batch.
+> - **Every row count.** 1,030 retail rows is now 1,036; 3,599 catalog rows is 3,604; 941 catalog bundles is 943; 47 suppressed is 48; 49 unnested bundles is 52; 925 spec SKUs is 949; 13.3% findability is 15.4%; 91.6% Amazon completeness is 91.4%; 81 Amazon 1P at 7.9% is 72 at 6.9%.
+>
+> **What this file does not cover.** It placed Action Items, Commercial Sizing, Competitive Radar, the AI simulation battery, and social harvests out of scope. Those areas hold the largest unaddressed defects.
+>
+> **For current readings across the whole canvas, read [`dashboard-truth-map.md`](dashboard-truth-map.md).** Keep this file for the structural map and the writer table.
+
 This is a reading of what Fender sees on Portfolio Retail and AI Readiness, and where each number comes from. It does not change the screen, the copy, the queries, or the database.
 
 **Read at:** 2026-10-07 23:43:13 UTC.
