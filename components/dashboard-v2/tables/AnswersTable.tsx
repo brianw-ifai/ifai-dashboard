@@ -75,7 +75,7 @@ function AnswerExplainer({ ctx, row }: { ctx: SpokeRenderContext; row: AnswerTab
 }
 
 export function AnswersTable({ ctx }: { ctx: SpokeRenderContext }) {
-  const state = useApiRows<AiAnswerDetailRow>("/api/dashboard-v2/answers");
+  const state = useApiRows<AiAnswerDetailRow>({ resource: "answers" });
   const rows = useMemo(() => state.rows.map(toRow), [state.rows]);
 
   return (
@@ -142,7 +142,7 @@ export function reasonGroups(rows: AiAnswerDetailRow[]): ReasonGroupRow[] {
 
 /** Tab 2 of AI Search Visibility: flagged answers grouped by the rule that flagged them, then the rows. */
 export function WrongSpecsTable({ ctx }: { ctx: SpokeRenderContext }) {
-  const state = useApiRows<AiAnswerDetailRow>("/api/dashboard-v2/answers?flag=1");
+  const state = useApiRows<AiAnswerDetailRow>({ resource: "answers", params: { flag: 1 } });
   const groups = useMemo(() => reasonGroups(state.rows), [state.rows]);
   const rows = useMemo(() => state.rows.map(toRow), [state.rows]);
   const flags = ctx.all.wrongSpec;

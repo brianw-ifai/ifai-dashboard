@@ -7,8 +7,9 @@ import type { RemoteRows } from "./useApiRows";
 export const LOADING_TEXT = "Loading the reading";
 
 /**
- * Wraps a table that loads through a route handler: "Loading the reading" while it loads, the
- * unavailable state with the error when the fetch fails, and a count line when it is ready.
+ * Wraps a table that loads through useApiRows (a route handler, or exported JSON on the static
+ * export): "Loading the reading" while it loads, the unavailable state with the error when the
+ * fetch fails, and a count line when it is ready.
  */
 export function RemoteTable<T>({
   state,

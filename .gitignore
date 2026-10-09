@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# dashboard-v2 data exported at build time for the static export
+/public/dashboard-v2-data/
+
 # production
 /build
 

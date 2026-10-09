@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:pages": "node scripts/prepare-static-export.mjs stash && NEXT_PUBLIC_STATIC_EXPORT=1 next build && node scripts/prepare-static-export.mjs restore",
+    "pages:data": "node scripts/dashboard-v2/export-static-data.mjs",
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",

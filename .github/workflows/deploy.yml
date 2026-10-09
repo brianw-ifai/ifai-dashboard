@@ -2,7 +2,7 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, dashboard-v2]
   workflow_dispatch:
 
 permissions:
@@ -24,6 +24,11 @@ jobs:
           node-version: "20"
           cache: npm
       - run: npm ci
+      - name: Export dashboard v2 data
+        env:
+          SANDBOX_SUPABASE_URL: ${{ secrets.SANDBOX_SUPABASE_URL }}
+          SANDBOX_PUBLISHABLE_KEY: ${{ secrets.SANDBOX_PUBLISHABLE_KEY }}
+        run: node scripts/dashboard-v2/export-static-data.mjs
       - name: Build static export
         env:
           NEXT_PUBLIC_STATIC_EXPORT: "1"

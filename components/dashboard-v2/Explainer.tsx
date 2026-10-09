@@ -74,7 +74,7 @@ export function rateInputLabels(formula: string | undefined): { numerator: strin
 }
 
 function ChannelPrices({ listing }: { listing: ExplainerListing }) {
-  const state = useApiRows<ListingChannelPriceRow>(`/api/dashboard-v2/channel-prices?listingId=${encodeURIComponent(listing.listingId)}`);
+  const state = useApiRows<ListingChannelPriceRow>({ resource: "channel-prices", params: { listingId: listing.listingId } });
   return (
     <RemoteTable state={state} noun="channel price rows">
       {(rows) => (

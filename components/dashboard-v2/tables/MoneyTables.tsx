@@ -39,7 +39,7 @@ const GAP_COLUMNS: ColumnDef[] = [
 
 /** The suppressed listings and the price gap recomputed from them through the selector. */
 export function usePriceGapLines(ctx: SpokeRenderContext): { state: RemoteRows<ListingCurrentRow>; gap: PriceGap } {
-  const state = useApiRows<ListingCurrentRow>("/api/dashboard-v2/listings?suppressed=1");
+  const state = useApiRows<ListingCurrentRow>({ resource: "listings", params: { suppressed: 1 } });
   const gap = useMemo(() => selectPriceGapAboveBenchmark(ctx.bundle, state.rows), [ctx.bundle, state.rows]);
   return { state, gap };
 }

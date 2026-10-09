@@ -78,7 +78,7 @@ export function outsidePriceRows(listings: ListingCurrentRow[]): OutsidePriceRow
 }
 
 export function OutsidePricesTable({ ctx }: { ctx: SpokeRenderContext }) {
-  const state = useApiRows<ListingCurrentRow>("/api/dashboard-v2/listings");
+  const state = useApiRows<ListingCurrentRow>({ resource: "listings" });
   const rows = useMemo(() => outsidePriceRows(state.rows), [state.rows]);
   return (
     <RemoteTable state={{ ...state, rows }} noun="outside price rows">

@@ -39,7 +39,7 @@ const COLUMNS: ColumnDef[] = [
 ];
 
 export function ActionsTable({ ctx }: { ctx: SpokeRenderContext }) {
-  const state = useApiRows<ActionItemRow>("/api/dashboard-v2/actions");
+  const state = useApiRows<ActionItemRow>({ resource: "actions" });
   const rows = useMemo<ActionTableRow[]>(
     () =>
       state.rows.map((row) => {

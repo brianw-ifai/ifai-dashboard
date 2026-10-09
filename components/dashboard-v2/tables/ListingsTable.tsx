@@ -89,7 +89,7 @@ export function toListingTableRow(row: ListingCurrentRow): ListingTableRow {
 }
 
 export function ListingsTable({ ctx, suppressedOnly = false }: { ctx: SpokeRenderContext; suppressedOnly?: boolean }) {
-  const state = useApiRows<ListingCurrentRow>(suppressedOnly ? "/api/dashboard-v2/listings?suppressed=1" : "/api/dashboard-v2/listings");
+  const state = useApiRows<ListingCurrentRow>(suppressedOnly ? { resource: "listings", params: { suppressed: 1 } } : { resource: "listings" });
   const rows = useMemo(() => state.rows.map(toListingTableRow), [state.rows]);
   const noun = suppressedOnly ? "suppressed listings" : "listings";
 

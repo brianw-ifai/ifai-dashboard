@@ -15,11 +15,16 @@ const STASH_PATHS = [
   "app/portal",
   "app/sdk",
   "app/v3",
+  // dashboard-v2 route handlers read the sandbox on request; the static export reads the JSON
+  // that scripts/dashboard-v2/export-static-data.mjs wrote to public/dashboard-v2-data/ instead.
+  "app/api/dashboard-v2",
 ];
 
 const PAGE_SWAP = [
   ["app/(canvas)/dashboard/page.tsx", "app/(canvas)/dashboard/page.dynamic.tsx"],
   ["app/(canvas)/dashboard/page.static.tsx", "app/(canvas)/dashboard/page.tsx"],
+  ["app/(canvas)/dashboard-v2/page.tsx", "app/(canvas)/dashboard-v2/page.dynamic.tsx"],
+  ["app/(canvas)/dashboard-v2/page.static.tsx", "app/(canvas)/dashboard-v2/page.tsx"],
 ];
 
 const ACTION_SHIMS = [
@@ -41,6 +46,10 @@ function stashedPath(rel) {
 mkdirSync(stashDir, { recursive: true });
 
 if (mode === "stash") {
+  // `next dev` generates .next/dev/types from the routes it saw; `next build` type-checks that
+  // file, so a stale copy that still names a stashed route fails the static build. It is a
+  // cache, and the next `next dev` run writes it again.
+  rmSync(join(root, ".next/dev/types"), { recursive: true, force: true });
   for (const [fromRel, toRel] of PAGE_SWAP) {
     const from = stashPath(fromRel);
     const to = stashPath(toRel);
@@ -85,6 +94,8 @@ if (mode === "stash") {
   const RESTORE_PAGE = [
     ["app/(canvas)/dashboard/page.tsx", "app/(canvas)/dashboard/page.static.tsx"],
     ["app/(canvas)/dashboard/page.dynamic.tsx", "app/(canvas)/dashboard/page.tsx"],
+    ["app/(canvas)/dashboard-v2/page.tsx", "app/(canvas)/dashboard-v2/page.static.tsx"],
+    ["app/(canvas)/dashboard-v2/page.dynamic.tsx", "app/(canvas)/dashboard-v2/page.tsx"],
   ];
   // If only the static swap ran, page.dynamic.tsx may not exist.
   for (const [fromRel, toRel] of RESTORE_PAGE) {

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiUrl, type ApiQuery } from "@/lib/dashboard-v2/data/client-paths";
 
 /**
- * Loads rows from an app/api/dashboard-v2 route handler in the browser, following `nextPage`
- * until the server has no more. A failed fetch becomes `error`; nothing throws into a panel.
+ * Loads rows for one dashboard-v2 read in the browser, following `nextPage` until there is no
+ * more. The URL comes from apiUrl: a route handler in normal mode, an exported JSON file on the
+ * static export. A failed fetch becomes `error`; nothing throws into a panel.
  */
 
 export type RemoteStatus = "loading" | "ready" | "error";
@@ -57,13 +59,13 @@ async function fetchPageWithRetry<T>(url: string, signal?: AbortSignal): Promise
   return last as PageAnswer<T>;
 }
 
-export async function fetchAllPages<T>(path: string, signal?: AbortSignal): Promise<RemoteRows<T>> {
+export async function fetchAllPages<T>(query: ApiQuery, signal?: AbortSignal): Promise<RemoteRows<T>> {
   const rows: T[] = [];
   let page: number | null = 0;
   let pages = 0;
   let fetchedAt: string | null = null;
   while (page !== null) {
-    const url: string = `${path}${path.includes("?") ? "&" : "?"}page=${page}`;
+    const url: string = apiUrl(query.resource, { ...query.params, page });
     const answer: PageAnswer<T> = await fetchPageWithRetry<T>(url, signal);
     const { response, body } = answer;
     if (!response.ok || !body || !body.ok) {
@@ -78,29 +80,32 @@ export async function fetchAllPages<T>(path: string, signal?: AbortSignal): Prom
   return { status: "ready", rows, error: null, fetchedAt, pages };
 }
 
-type Settled<T> = { path: string; result: RemoteRows<T> };
+type Settled<T> = { key: string; result: RemoteRows<T> };
 
 /** Pass null to skip loading (for example when the explainer is closed). */
-export function useApiRows<T>(path: string | null): RemoteRows<T> {
-  // The settled result remembers the path it answers, so a path change reads as loading again
-  // without a synchronous state reset inside the effect.
+export function useApiRows<T>(query: ApiQuery | null): RemoteRows<T> {
+  // The first page's URL identifies the query. The settled result remembers the key it answers,
+  // so a query change reads as loading again without a synchronous state reset inside the effect.
+  const key = query ? apiUrl(query.resource, query.params) : null;
   const [settled, setSettled] = useState<Settled<T> | null>(null);
 
   useEffect(() => {
-    if (!path) return;
+    if (!query || !key) return;
     const controller = new AbortController();
-    fetchAllPages<T>(path, controller.signal)
+    fetchAllPages<T>(query, controller.signal)
       .then((result) => {
-        if (!controller.signal.aborted) setSettled({ path, result });
+        if (!controller.signal.aborted) setSettled({ key, result });
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : "The fetch failed.";
-        setSettled({ path, result: { status: "error", rows: [], error: message, fetchedAt: null, pages: 0 } });
+        setSettled({ key, result: { status: "error", rows: [], error: message, fetchedAt: null, pages: 0 } });
       });
     return () => controller.abort();
-  }, [path]);
+    // `key` is the query's identity; the object itself may be a fresh literal each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
-  if (path && settled && settled.path === path) return settled.result;
+  if (key && settled && settled.key === key) return settled.result;
   return LOADING;
 }

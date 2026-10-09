@@ -59,7 +59,7 @@ function toRow(row: SpecCurrentRow): SpecTableRow {
 }
 
 export function SpecTable({ ctx }: { ctx: SpokeRenderContext }) {
-  const state = useApiRows<SpecCurrentRow>("/api/dashboard-v2/spec");
+  const state = useApiRows<SpecCurrentRow>({ resource: "spec" });
   const rows = useMemo(() => state.rows.map(toRow), [state.rows]);
 
   return (
