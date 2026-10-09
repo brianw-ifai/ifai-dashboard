@@ -1,4 +1,4 @@
-import { routeUrl } from "@/lib/dashboard-v2/data/client-paths";
+import { basePath } from "@/lib/dashboard-v2/data/client-paths";
 import type { ReactNode } from "react";
 import { defineCanvas, type CanvasSpec, type CanvasTicker, type SpokeContent } from "@/lib/canvas-sdk/types";
 import type { SandboxBundle } from "../data/types";
@@ -55,7 +55,7 @@ export function buildDashboardV2Spec(bundle: SandboxBundle, options: BuildDashbo
 
   const spec = defineCanvas({
     appearance: "iom",
-    brand: { name: model.brand.name, subtitle: model.brand.subtitle, logoSrc: routeUrl("/icon.png") },
+    brand: { name: model.brand.name, subtitle: model.brand.subtitle, logoSrc: `${basePath()}/icon.png` },
     glossary: dashboardV2Glossary,
     commandCenter: model.commandCenter,
     metricWidgets: { metrics: model.metrics, defaults: model.metricDefaults, storageKey: METRIC_STORAGE_KEY },
