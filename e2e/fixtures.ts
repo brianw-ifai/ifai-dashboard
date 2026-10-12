@@ -103,16 +103,16 @@ export class Canvas {
   }
 
   get simulations() {
-    return this.page.locator("#simulation-list .action-card");
+    return this.page.locator("#ai-simulation-list .ai-sim-row");
   }
 
   filterChip(label: string) {
     return this.page.locator(".segmented-btn", { hasText: label });
   }
 
-  /** AI Search Visibility -> the 100-prompt explorer, where stars and filters live. */
+  /** AI Search Visibility -> the explorer over every call in the published run. */
   async openSimulations() {
-    await this.openPriority("AI assistants are quoting specs");
+    await this.openSpokeFromMap("AI Search Visibility");
     await this.openTab("Simulations");
     await expect(this.simulations.first()).toBeVisible();
   }

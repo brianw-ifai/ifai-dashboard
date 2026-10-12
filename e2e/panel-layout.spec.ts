@@ -71,7 +71,7 @@ test.describe("panel layout", () => {
   });
 
   test("the tab strip wraps rather than side-scrolling", async ({ canvas, page }) => {
-    await canvas.openPriority("AI assistants are quoting specs");
+    await canvas.openSpokeFromMap("AI Search Visibility");
     const overflow = await page
       .locator(".drilldown-tabs")
       .evaluate((el) => el.scrollWidth - el.clientWidth);
