@@ -1,0 +1,96 @@
+/** Row shapes for the `public.canvas_ai_*` views in docs/ai-search-truth-contract.md. */
+
+export type AiRunState = "completed" | "partial" | "running" | "failed" | "historical";
+
+export type AiCurrentRun = {
+  audit_run_id: string;
+  run_state: AiRunState | string;
+  collector_version: string | null;
+  prompt_set_hash: string | null;
+  expected_calls: number | null;
+  attempted_calls: number | null;
+  answered_calls: number | null;
+  error_calls: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  published_at: string | null;
+  missing_calls: number | null;
+};
+
+export type AiOutcome = "fender_win" | "competitor_win" | "unresolved" | "error" | "not_scored";
+
+export type AiMaterialHallucination =
+  | "none"
+  | "confirmed"
+  | "suspected"
+  | "historical_unverified"
+  | "not_evaluated";
+
+export type AiPromptKind = "commercial" | "probe";
+
+export type AiCallRow = {
+  id: string;
+  audit_run_id: string;
+  sim_id: number;
+  engine: string | null;
+  model: string | null;
+  category: string | null;
+  prompt: string | null;
+  prompt_key: string | null;
+  prompt_kind: AiPromptKind | string | null;
+  call_status: "answered" | "error" | string | null;
+  outcome: AiOutcome | string | null;
+  primary_brand: string | null;
+  material_hallucination: AiMaterialHallucination | string | null;
+  hallucination_evidence: string | null;
+  root_cause: string | null;
+  remediation_patch: string | null;
+  error_message: string | null;
+  attempt_no: number | null;
+  repeat_no: number | null;
+  created_at: string | null;
+};
+
+export type AiProbeRow = {
+  audit_run_id: string;
+  sim_id: number;
+  prompt_key: string | null;
+  prompt: string | null;
+  engine: string | null;
+  model: string | null;
+  call_status: string | null;
+  material_hallucination: AiMaterialHallucination | string | null;
+  hallucination_evidence: string | null;
+  verified_claim: string | null;
+  verified_source_url: string | null;
+  verified_at: string | null;
+  created_at: string | null;
+};
+
+export type AiCitationRow = {
+  audit_run_id: string;
+  sim_id: number;
+  simulation_id: string;
+  prompt_key: string | null;
+  prompt_kind: string | null;
+  category: string | null;
+  engine: string | null;
+  position: number | null;
+  url: string | null;
+  domain: string | null;
+  title: string | null;
+};
+
+export type AiSearchSnapshot = {
+  run: AiCurrentRun;
+  calls: AiCallRow[];
+  probes: AiProbeRow[];
+  citations: AiCitationRow[];
+};
+
+/** Every surface renders one of these. A failed or missing read is never shown as zero. */
+export type AiSearchRead =
+  | { phase: "loading" }
+  | { phase: "error"; message: string }
+  | { phase: "no-run" }
+  | { phase: "ready"; snapshot: AiSearchSnapshot; stale?: boolean };
