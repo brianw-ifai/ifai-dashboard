@@ -6,6 +6,13 @@ import {
   joinBrands,
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
+import {
+  FACT_CHECK_SCOPE,
+  factCheckCoverageNote,
+  factCheckHeadline,
+  factCheckShortLine,
+  factsCheckedLine,
+} from "@/lib/ai-search/fact-check-copy";
 import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 import {
   engineModelLine,
@@ -22,7 +29,7 @@ export type NodeFace = Pick<CanvasNode, "status" | "title" | "stats" | "meta" | 
 export const AI_TABS = {
   summary: "Run Summary",
   simulations: "Simulations",
-  drift: "AI Drift",
+  drift: "Product Fact Checks",
   citations: "Citation Ecosystem",
 } as const;
 
@@ -81,7 +88,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       spokeAeo: pending("AI Search Visibility", AI_TABS.summary),
       satPrompts: pending("AI Calls", AI_TABS.simulations),
       satCitations: pending("Citations", AI_TABS.citations),
-      satDrift: pending("AI Drift", AI_TABS.drift),
+      satDrift: pending("Product Fact Checks", AI_TABS.drift),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards),
       satGap: pending("Category Gap", RADAR_TABS.wins),
       satLead: pending("Category Lead", RADAR_TABS.battlecards),
@@ -106,7 +113,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       subTab: AI_TABS.summary,
       tooltip: {
         title: "AI Search Visibility",
-        desc: `On commercial buying prompts, Fender/Squier was named more than any competitor in ${c.fenderWins} of ${c.resolved} resolved answers. ${c.unresolved} answers had no clear leader and ${c.errors} commercial calls failed. Engines: ${engines}. ${runLine}`,
+        desc: `On shopping prompts, Fender/Squier was named more than any competitor in ${c.fenderWins} of ${c.resolved} resolved answers. ${c.unresolved} answers had no clear leader and ${c.errors} commercial calls failed. Engines: ${engines}. ${runLine}`,
       },
     },
     satPrompts: {
@@ -117,32 +124,32 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       subTab: AI_TABS.simulations,
       tooltip: {
         title: "Commercial prompt calls",
-        desc: `${c.calls} commercial prompt-engine calls in the ${state.toLowerCase()} published run. The rate is ${c.fenderWins} Fender/Squier leads over ${c.resolved} resolved answers. ${s.probesAnswered} answered fact-check probes are excluded. ${c.unresolved} answers with no clear leader and ${c.errors} provider errors are reported separately, not as losses.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Simulations to see every call.`,
+        desc: `${c.calls} shopping prompt-engine calls in the ${state.toLowerCase()} published run. The rate is ${c.fenderWins} Fender/Squier leads over ${c.resolved} resolved answers. ${s.probesAnswered} answered product fact checks are excluded. ${c.unresolved} answers with no clear leader and ${c.errors} provider errors are reported separately, not as losses.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Simulations to see every call.`,
       },
     },
     satCitations: {
       status: citations.rows > 0 ? "warning" : "neutral",
       title: "Citations",
       stats: [
-        `${citations.answersWithCitation} of ${citations.answered} answers cited`,
-        `Fender-owned ${pct(citations.fenderOwnedRows, citations.rows)}`,
+        `${citations.answersWithCitation} of ${citations.answered} answers cited sources`,
+        `Fender-owned ${pct(citations.fenderOwnedRows, citations.rows)} of links`,
       ],
-      meta: `${citations.rows} links · ${citations.domains} domains`,
+      meta: `${citations.rows} cited links · ${citations.domains} domains`,
       subTab: AI_TABS.citations,
       tooltip: {
         title: "AI Citation Ecosystem",
-        desc: `${citations.answersWithCitation} of ${citations.answered} answered commercial calls cited at least one valid link, ${citations.rows} links across ${citations.domains} domains. ${citations.fenderOwnedRows} of those links point to Fender-owned pages. Run completed ${s.completedAt}.`,
+        desc: `${citations.answersWithCitation} of ${citations.answered} answered shopping prompts cited web sources. Those answers contained ${citations.rows} cited links across ${citations.domains} domains, and ${citations.fenderOwnedRows} of those links led to Fender-owned sites. Answers and links are separate counts. A cited link is not proof that the source caused the recommendation. Run completed ${s.completedAt}.`,
       },
     },
     satDrift: {
       status: drift.totalConfirmed > 0 ? "danger" : "success",
-      title: "AI Drift",
-      stats: [`${drift.totalConfirmed} confirmed`, `${drift.checked} probes checked`],
-      meta: `${drift.noFact} with no verified fact`,
+      title: "Product Fact Checks",
+      stats: [factsCheckedLine(drift.coverage), factCheckShortLine(drift.coverage)],
+      meta: `Across ${joinBrands(drift.coverage.checkedEngines)}`,
       subTab: AI_TABS.drift,
       tooltip: {
-        title: "Fact checks against verified Fender facts",
-        desc: `${drift.checked} answered probe calls were compared with a fact verified on a Fender page. ${drift.confirmed} contradicted it. No contradiction matched does not guarantee the whole answer is accurate. ${drift.noFact} answered probes have no verified fact yet and ${drift.errors} probe calls failed.`,
+        title: "Product fact checks",
+        desc: `${factCheckHeadline(drift.coverage)} ${FACT_CHECK_SCOPE}${factCheckCoverageNote(drift.coverage) ? ` ${factCheckCoverageNote(drift.coverage)}` : ""}`,
       },
     },
     spokeCompetitors: {
@@ -205,7 +212,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
   const s = summarizeRun(read.snapshot);
   const c = s.commercial;
-  return `${runStateLabel(s.completeness.state)} published run, completed ${s.completedAt}: ${s.completeness.answered} of ${s.completeness.expected} calls answered, ${errorLine(s)}. On commercial prompts, Fender/Squier was named more than any competitor in ${c.fenderWins} of ${c.resolved} resolved answers (${pct(c.fenderWins, c.resolved)}). ${s.drift.confirmed} confirmed contradictions in ${s.drift.checked} fact-checked probe answers.`;
+  return `${runStateLabel(s.completeness.state)} published run, completed ${s.completedAt}: ${s.completeness.answered} of ${s.completeness.expected} calls answered, ${errorLine(s)}. On shopping prompts, Fender/Squier was named more than any competitor in ${c.fenderWins} of ${c.resolved} resolved answers (${pct(c.fenderWins, c.resolved)}). ${factCheckHeadline(s.drift.coverage)}`;
 }
 
 /** One sentence for the command center summary. Silent until the run loads. */
@@ -220,7 +227,7 @@ export function aiCommandSummary(read: AiSearchRead): string | null {
 export function competitorsSpokeDesc(read: AiSearchRead): string {
   if (read.phase !== "ready") return aiSpokeDesc(read);
   const s = summarizeRun(read.snapshot);
-  return `Which brands AI engines name over Fender/Squier on commercial buying prompts in the published run. Competitors led ${s.competitorWins} of ${s.commercial.resolved} resolved answers. Fact-check probes, provider errors, and answers with no clear leader are left out.`;
+  return `Which brands AI engines name over Fender/Squier on shopping prompts in the published run. Competitors led ${s.competitorWins} of ${s.commercial.resolved} resolved answers. Product fact checks, provider errors, and answers with no clear leader are left out.`;
 }
 
 /** Client priorities this run can prove. Nothing appears while the run is loading or missing. */
@@ -233,11 +240,11 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
     items.push({
       id: "ai-confirmed-contradiction",
       title: `${s.drift.totalConfirmed} AI answers contradict a verified Fender fact`,
-      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} fact-checked answers stated something a Fender product page contradicts. The AI Drift tab quotes each answer, the verified fact, and its source page.`,
+      why: `In the published run, ${s.drift.totalConfirmed} of ${s.drift.totalChecked} checked answers stated something an official Fender page contradicts. The Product Fact Checks tab shows each question, the verified fact, its Fender source page, and the answer.`,
       impact: "A shopper who reads a wrong spec may buy the wrong product or return it.",
       severity: "critical",
       spokeId: "aeo",
-      subTab: "AI Drift",
+      subTab: AI_TABS.drift,
       defaultOwner: "client",
     });
   }
@@ -311,7 +318,7 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
     overallAiWinRate: { id: "overall-ai-win-rate", spokeId: "aeo", label: "Overall AI Win Rate", subTab: AI_TABS.summary },
     beginnerAiWinRate: { id: "beginner-ai-win-rate", spokeId: "aeo", label: "Beginner AI Win Rate", subTab: AI_TABS.simulations },
     resolvedSimulations: { id: "resolved-simulations", spokeId: "aeo", label: "Answered AI Calls", subTab: AI_TABS.summary },
-    confirmedHallucinations: { id: "confirmed-hallucinations", spokeId: "aeo", label: "Confirmed Spec Hallucinations", subTab: AI_TABS.drift },
+    confirmedHallucinations: { id: "confirmed-hallucinations", spokeId: "aeo", label: "Product Fact Checks", subTab: AI_TABS.drift },
     beginnerSovGap: { id: "beginner-sov-gap", spokeId: "competitors", label: "Beginner Category SOV Gap", subTab: RADAR_TABS.battlecards },
     strongestCategorySov: { id: "strongest-category-sov", spokeId: "competitors", label: "Strongest Category SOV", subTab: RADAR_TABS.battlecards },
   } as const;
@@ -352,8 +359,8 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
     },
     confirmedHallucinations: {
       ...base.confirmedHallucinations, ...live,
-      value: String(s.drift.totalConfirmed),
-      detail: `Of ${s.drift.totalChecked} answers checked against a verified fact`,
+      value: factsCheckedLine(s.drift.coverage),
+      detail: factCheckShortLine(s.drift.coverage),
       tone: s.drift.totalConfirmed > 0 ? "danger" : "success",
     },
     beginnerSovGap: {
@@ -390,7 +397,7 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     aeo: [
       `${runStateLabel(s.completeness.state)} run: ${s.completeness.answered} of ${s.completeness.expected} calls answered, completed ${s.completedAt}`,
       lead,
-      `${s.drift.confirmed} confirmed contradictions in ${s.drift.checked} fact-checked probe answers`,
+      `${factsCheckedLine(s.drift.coverage)} against official Fender pages: ${factCheckShortLine(s.drift.coverage).toLowerCase()}`,
     ],
     competitors: [
       s.topCompetitor

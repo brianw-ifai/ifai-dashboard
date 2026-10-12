@@ -85,7 +85,7 @@ export const OUTCOME_LABELS: Record<CallOutcome, string> = {
   competitor_win: "Competitor named most",
   unresolved: "No clear leader",
   error: "Provider error",
-  probe: "Fact check",
+  probe: "Product fact check",
   unsupported: "Not in the contract",
 };
 

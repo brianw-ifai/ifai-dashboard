@@ -1,0 +1,105 @@
+"use client";
+
+import { mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
+import { answerCopy, useAnswerText } from "@/components/v3/live/ai-search/useAnswerText";
+import { PROBE_STATE_LABELS, type ProbeEvidence } from "@/lib/ai-search/drift";
+import { cleanPrompt, engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
+import type { AiCallRow } from "@/lib/ai-search/types";
+
+const label = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--text-subtle)" } as const;
+const value = { fontSize: 13, lineHeight: 1.5, margin: "2px 0 10px" } as const;
+
+function Step({ step, heading, children }: { step: number; heading: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div style={label}>
+        {step}. {heading}
+      </div>
+      <div style={value}>{children}</div>
+    </div>
+  );
+}
+
+/**
+ * One product fact check, read top to bottom: the question, the fact Fender
+ * publishes, its source page, the engine's answer, and the result.
+ */
+export function FactCheckEvidence({
+  row,
+  probe,
+  questionsSent,
+}: {
+  row: AiCallRow;
+  probe: ProbeEvidence | null;
+  questionsSent: number;
+}) {
+  const answer = useAnswerText(row.id);
+  const failed = row.call_status === "error";
+  const result = probe ? PROBE_STATE_LABELS[probe.state] : "Result not recorded";
+
+  return (
+    <div data-ai-fact-check-evidence>
+      <p style={{ ...mutedText, marginTop: 0 }}>
+        This is one of {questionsSent} product questions IntoFocus sends to every engine on purpose. It is not a
+        randomly chosen product.
+      </p>
+
+      <Step step={1} heading="Question checked">
+        {cleanPrompt(row.prompt)}
+      </Step>
+
+      <Step step={2} heading="Verified Fender fact">
+        {probe?.claim ?? "IntoFocus has not verified a fact for this question yet, so no comparison was made."}
+      </Step>
+
+      <Step step={3} heading="Official Fender source">
+        {probe?.sourceUrl ? (
+          <ExternalLink href={probe.sourceUrl}>{probe.sourceUrl}</ExternalLink>
+        ) : (
+          "No source page recorded"
+        )}
+      </Step>
+
+      <Step step={4} heading="AI answer">
+        {failed ? (
+          <span>
+            {engineLabel(row.engine)} returned no answer for this call
+            {row.error_message ? ` (${row.error_message})` : ""}.
+          </span>
+        ) : (
+          <span style={{ whiteSpace: "pre-wrap" }} data-ai-answer>
+            {answerCopy(answer, "No answer text was stored for this call.")}
+          </span>
+        )}
+      </Step>
+
+      <Step step={5} heading="Result">
+        <span data-ai-fact-result-row>{result}</span>
+        {probe?.evidence ? <div style={mutedText}>Conflicting text: {probe.evidence}</div> : null}
+        {probe?.state === "no_contradiction" ? (
+          <div style={mutedText}>
+            <AiTerm term="no contradiction found">This checks one fact, not the whole answer.</AiTerm>
+          </div>
+        ) : null}
+      </Step>
+
+      <details>
+        <summary style={{ ...label, cursor: "pointer" }}>6. Engine and run details</summary>
+        <table className="table-sm" style={{ marginTop: 6 }}>
+          <tbody>
+            <tr><td>Engine</td><td>{engineLabel(row.engine)}</td></tr>
+            <tr><td>Model</td><td>{modelLabel(row.model)}</td></tr>
+            <tr><td>Question ID</td><td>{row.prompt_key ?? "Not recorded"}</td></tr>
+            <tr><td>Checked</td><td>{formatRunTime(row.created_at)}</td></tr>
+            <tr><td>Fact verified</td><td>{formatRunTime(probe?.verifiedAt)}</td></tr>
+            <tr><td>Attempt</td><td>{row.attempt_no ?? "Not recorded"}</td></tr>
+            <tr><td>Run</td><td style={{ wordBreak: "break-all" }}>{row.audit_run_id}</td></tr>
+            <tr><td>Answer ID</td><td style={{ wordBreak: "break-all" }}>{row.id}</td></tr>
+          </tbody>
+        </table>
+      </details>
+    </div>
+  );
+}

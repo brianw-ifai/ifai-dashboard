@@ -39,11 +39,11 @@
     "aeo": {
       "badge": "CRITICAL SPOKE · AI SEARCH VISIBILITY",
       "title": "AI Search Visibility, Citations & Simulations",
-      "desc": "How often AI engines name Fender/Squier on buying questions in the published audit run, which pages they cite, and whether their answers match verified Fender facts.",
+      "desc": "How often AI engines name Fender/Squier on shopping questions in the published audit run, which web sources they cite, and whether their answers match Fender's published product facts.",
       "tabs": [
         "Run Summary",
         "Simulations",
-        "AI Drift",
+        "Product Fact Checks",
         "Citation Ecosystem"
       ],
       "navLabel": "AI Search Visibility",
@@ -75,7 +75,7 @@
     "competitors": {
       "badge": "BENCHMARK SPOKE · RADAR",
       "title": "Competitive Radar & Category SOV",
-      "desc": "Which brands AI engines name over Fender/Squier on commercial buying prompts in the published audit run.",
+      "desc": "Which brands AI engines name over Fender/Squier on shopping prompts in the published audit run.",
       "tabs": [
         "Category Battlecards",
         "Competitor Wins",

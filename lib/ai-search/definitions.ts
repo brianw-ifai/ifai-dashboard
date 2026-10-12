@@ -10,18 +10,22 @@ export const AI_DEFINITIONS = {
     "The answer did not name one brand more than the others. It is neither a win nor a loss, and it is reported on its own line.",
   "provider error":
     "The AI engine failed to return an answer for this call. It is neither a win nor a loss, and it is reported on its own line.",
-  probe:
-    "A factual question about a Fender product, used to check accuracy against a fact verified on a Fender page. Probes are not buying prompts, so they never count toward win rates or competitor share.",
+  "product fact check":
+    "A factual question about a Fender product, sent on purpose to check an answer against a fact IntoFocus verified on an official Fender page. These are not buying prompts, so they never count toward win rates or competitor share.",
+  "shopping answer": "A usable response from one AI engine to one shopping prompt.",
+  "cited link":
+    "A web URL the AI engine explicitly returned with its answer. It does not prove that the source caused or endorsed the recommendation.",
+  "Fender-owned": "A cited site controlled by Fender or another FMIC brand, classified by IntoFocus.",
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",
   "published run":
     "The one audit run IntoFocus has published as current. Earlier and unpublished runs are kept as history and never mixed into these figures.",
   "confirmed contradiction":
     "The answer contradicts a fact IntoFocus verified on a Fender page, and the stored evidence quotes the conflicting text.",
-  "no contradiction matched":
-    "The answer was compared with a verified Fender fact and the check found no contradiction. A pattern check can miss a paraphrase, so this does not guarantee the whole answer is accurate.",
+  "no contradiction found":
+    "The answer was compared with one verified Fender fact and nothing in it contradicted that fact. It does not prove every statement in the answer is accurate.",
   "source class":
-    "IntoFocus groups each cited domain into a class (Fender-owned, retailer, editorial, community, video, reference, competitor brand site, or other) from a fixed domain list. The collector does not store this class.",
+    "IntoFocus's grouping of a cited domain as brand-owned, retailer, editorial, community, video, or other.",
   "canonical URL":
     "The cited link with tracking parameters, page fragments, and www removed, so the same page counts once per answer.",
   "small sample": `Fewer than ${MIN_COMPARABLE_RESOLVED} resolved answers, or less than half of the largest sample beside it. The figure is shown, but it is not ranked against the others.`,

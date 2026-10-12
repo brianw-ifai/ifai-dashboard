@@ -109,11 +109,11 @@ export const FENDER_METRICS = {
   confirmedHallucinations: {
     id: "confirmed-hallucinations",
     spokeId: "aeo",
-    label: "Confirmed Spec Hallucinations",
+    label: "Product Fact Checks",
     value: "Loading",
-    detail: "Probe fact checks are on the AI Drift tab",
+    detail: "Reading the published AI run",
     tone: "neutral",
-    subTab: "AI Drift",
+    subTab: "Product Fact Checks",
     provenance: "live",
   },
   fenderFindability: {

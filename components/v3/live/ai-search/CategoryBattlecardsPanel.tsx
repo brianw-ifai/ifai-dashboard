@@ -21,9 +21,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <span>Who out-mentions Fender/Squier in AI buying answers?</span>
         </div>
         <div className="ceo-callout-body">
-          Each row is one product category of commercial buying prompts in the published run. A{" "}
+          Each row is one product category of shopping prompts in the published run. A{" "}
           <AiTerm term="Fender lead" /> means Fender or Squier was named more than any other brand. Squier counts with
-          Fender because it is Fender&apos;s entry-level line against Yamaha and Ibanez. Fact-check probes, provider
+          Fender because it is Fender&apos;s entry-level line against Yamaha and Ibanez. Product fact checks, provider
           errors, and answers with no clear leader are not in these shares.
         </div>
       </div>

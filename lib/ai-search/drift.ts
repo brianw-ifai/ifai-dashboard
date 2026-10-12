@@ -1,13 +1,13 @@
-import { cleanPrompt, isCommercial, isConfirmedHallucination } from "@/lib/ai-search/run-metrics";
+import { cleanPrompt, engineLabel, isCommercial, isConfirmedHallucination } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow, AiProbeRow } from "@/lib/ai-search/types";
 
 export type ProbeState = "confirmed" | "no_contradiction" | "no_fact" | "provider_error" | "unverified";
 
 export const PROBE_STATE_LABELS: Record<ProbeState, string> = {
-  confirmed: "Confirmed contradiction",
-  no_contradiction: "No contradiction matched",
-  no_fact: "No verified fact to check",
-  provider_error: "Provider error, not checked",
+  confirmed: "Contradiction found",
+  no_contradiction: "No contradiction found for this fact",
+  no_fact: "No verified fact available",
+  provider_error: "No answer returned",
   unverified: "Unverified flag",
 };
 
@@ -60,9 +60,56 @@ export type DriftRead = {
   totalConfirmed: number;
   /** Answers compared with a verified fact, probes and commercial together. */
   totalChecked: number;
-  /** Distinct facts used by the probes, with their source page. */
+  /** Distinct facts used by the fact checks, with their source page. */
   facts: Array<{ promptKey: string; claim: string; sourceUrl: string | null; verifiedAt: string | null }>;
+  /** What the fact-check section leads with, in the operator's terms. */
+  coverage: FactCheckCoverage;
 };
+
+export type FactCheckCoverage = {
+  /** Product-fact questions sent in this run. */
+  questionsSent: number;
+  /** Those questions that have a fact IntoFocus verified on a Fender page. */
+  questionsWithFact: number;
+  /** Verified facts an answer was actually compared against. */
+  factsChecked: number;
+  /** Answers compared against one of those facts. */
+  answersChecked: number;
+  /** Checked answers that contradicted the verified fact. */
+  contradictions: number;
+  /** Engines that returned a checked answer. */
+  checkedEngines: string[];
+  /** Questions with no verified fact yet, and the answers left unevaluated. */
+  questionsWithoutFact: string[];
+  answersWithoutFact: number;
+  /** Fact-check calls an engine failed to answer. */
+  failedCalls: number;
+  failedEngines: string[];
+};
+
+function engineNames(rows: ProbeEvidence[]): string[] {
+  return [...new Set(rows.map((row) => engineLabel(row.engine)))].sort();
+}
+
+function factCheckCoverage(rows: ProbeEvidence[]): FactCheckCoverage {
+  const checkedStates: ProbeState[] = ["confirmed", "no_contradiction"];
+  const checked = rows.filter((row) => checkedStates.includes(row.state));
+  const failed = rows.filter((row) => row.state === "provider_error");
+  const withoutFact = rows.filter((row) => row.state === "no_fact");
+
+  return {
+    questionsSent: new Set(rows.map((row) => row.promptKey)).size,
+    questionsWithFact: new Set(rows.filter((row) => row.claim).map((row) => row.promptKey)).size,
+    factsChecked: new Set(checked.map((row) => row.promptKey)).size,
+    answersChecked: checked.length,
+    contradictions: checked.filter((row) => row.state === "confirmed").length,
+    checkedEngines: engineNames(checked),
+    questionsWithoutFact: [...new Set(withoutFact.map((row) => row.promptKey))].sort(),
+    answersWithoutFact: withoutFact.length,
+    failedCalls: failed.length,
+    failedEngines: engineNames(failed),
+  };
+}
 
 export function driftRead(calls: AiCallRow[], probes: AiProbeRow[]): DriftRead {
   const rows: ProbeEvidence[] = probes
@@ -119,5 +166,6 @@ export function driftRead(calls: AiCallRow[], probes: AiProbeRow[]): DriftRead {
     totalConfirmed: count("confirmed") + commercialConfirmed,
     totalChecked: checked + commercialChecked,
     facts: [...facts.values()],
+    coverage: factCheckCoverage(rows),
   };
 }

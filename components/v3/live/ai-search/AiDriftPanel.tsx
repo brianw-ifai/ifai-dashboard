@@ -1,114 +1,94 @@
 "use client";
 
-import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
-import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { ExternalLink } from "@/components/v3/live/ai-search/ExternalLink";
-import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { driftRead, PROBE_STATE_LABELS, type ProbeState } from "@/lib/ai-search/drift";
+import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
+import { driftRead } from "@/lib/ai-search/drift";
+import {
+  FACT_CHECK_SCOPE,
+  FACT_CHECK_SHOPPING_SCOPE,
+  factCheckCoverageNote,
+  factCheckHeadline,
+  factCheckPendingNote,
+} from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
-const STATE_TONE: Record<ProbeState, string> = {
-  confirmed: "tag-danger",
-  no_contradiction: "tag-success",
-  no_fact: "tag-neutral",
-  provider_error: "tag-warning",
-  unverified: "tag-warning",
-};
-
-function Drift({ snapshot }: { snapshot: AiSearchSnapshot }) {
-  const d = driftRead(snapshot.calls, snapshot.probes);
-  const confirmed = d.probes.filter((p) => p.state === "confirmed");
+function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const drift = driftRead(snapshot.calls, snapshot.probes);
+  const { coverage } = drift;
+  const contradictions = drift.probes.filter((row) => row.state === "confirmed");
+  const coverageNote = factCheckCoverageNote(coverage);
+  const pendingNote = factCheckPendingNote(coverage);
 
   return (
     <>
       <div className="content-box ai-drift-summary">
         <div className="content-box-title">
-          <span>Confirmed errors against verified Fender facts</span>
-          <span className={`tag-badge ${d.confirmed ? "tag-danger" : "tag-success"}`} data-ai-confirmed>
-            {d.confirmed} confirmed
+          <span>Do AI answers match Fender&apos;s published product facts?</span>
+          <span
+            className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
+            data-ai-fact-result
+          >
+            {coverage.contradictions ? `${coverage.contradictions} contradictions` : "No contradictions found"}
           </span>
         </div>
-        <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
-          <li>
-            {d.checked} answered <AiTerm term="probe">probes</AiTerm> were compared with a fact verified on a Fender
-            page. {d.confirmed} had a <AiTerm term="confirmed contradiction" />. {d.noContradiction} had{" "}
-            <AiTerm term="no contradiction matched" />, which means the check found nothing wrong, not that the whole
-            answer is accurate.
-          </li>
-          <li>{d.noFact} answered probes have no verified fact yet, so they were not checked.</li>
-          <li>
-            {d.errors} probe calls failed with a <AiTerm term="provider error" /> and have no answer to check.
-          </li>
-          <li>
-            Commercial answers: {d.commercialChecked} of {d.commercialAnswered} were fact-checked in this run.{" "}
-            {d.commercialConfirmed} had a confirmed contradiction and none of those counts as a Fender lead.
-          </li>
-          <li>
-            Unverified flags in this run: {d.unverified}. Flags from earlier runs were never verified and are not
-            shown as confirmed.
-          </li>
-        </ul>
+        <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
+          {factCheckHeadline(coverage)}
+        </p>
+        <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
+        <p style={{ ...mutedText, marginBottom: 0 }}>
+          IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each
+          answer with a fact taken from an official Fender page. A{" "}
+          <AiTerm term="product fact check">product fact check</AiTerm> is not a buying prompt, so it never counts
+          toward a win rate or a competitor&apos;s share.
+        </p>
       </div>
 
-      {confirmed.length ? (
+      {contradictions.length ? (
         <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Contradictions</div>
-          {confirmed.map((p) => (
-            <div key={p.key} className="action-card critical" style={{ marginTop: 6 }}>
-              <div className="action-head">{p.prompt}</div>
+          <div className="content-box-title">Answers that contradict a Fender fact</div>
+          {contradictions.map((row) => (
+            <div key={row.key} className="action-card critical" style={{ marginTop: 6 }}>
+              <div className="action-head">{row.prompt}</div>
               <div className="action-details">
-                {engineLabel(p.engine)} · {modelLabel(p.model)}. Expected: {p.claim}. Evidence: {p.evidence}
+                {engineLabel(row.engine)} · {modelLabel(row.model)}. Fender publishes: {row.claim}. The answer said:{" "}
+                {row.evidence}
               </div>
             </div>
           ))}
         </div>
       ) : null}
 
-      <div className="content-box ai-probe-table" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Every probe call in the run</div>
-        {d.probes.length === 0 ? <EmptyRows>This run has no probe calls.</EmptyRows> : null}
-        <table className="table-sm">
-          <thead>
-            <tr><th>Prompt</th><th>Engine</th><th>State</th><th>Verified fact</th><th>Checked</th></tr>
-          </thead>
-          <tbody>
-            {d.probes.map((p) => (
-              <tr key={p.key} data-probe-state={p.state} data-sim-id={p.simId}>
-                <td>
-                  <EvidenceLink focus={{ field: "sim", value: String(p.simId) }} tab={AI_TABS.simulations}>
-                    {p.prompt}
-                  </EvidenceLink>
-                </td>
-                <td>{engineLabel(p.engine)}<div style={mutedText}>{modelLabel(p.model)}</div></td>
-                <td><span className={`tag-badge ${STATE_TONE[p.state]}`}>{PROBE_STATE_LABELS[p.state]}</span></td>
-                <td style={{ wordBreak: "break-word" }}>
-                  {p.claim ? (
-                    <>
-                      {p.claim}{" "}
-                      <ExternalLink href={p.sourceUrl}>Source</ExternalLink>
-                    </>
-                  ) : (
-                    "No verified fact"
-                  )}
-                  {p.evidence ? <div style={mutedText}>Evidence: {p.evidence}</div> : null}
-                </td>
-                <td>{formatRunTime(p.checkedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {d.facts.length ? (
-          <p style={{ ...mutedText, marginTop: 8 }}>
-            Each verified fact was taken from the linked Fender page on {formatRunTime(d.facts[0].verifiedAt)}.
-          </p>
-        ) : null}
+      <FactCheckTable rows={drift.probes} />
+
+      <div className="content-box" style={{ marginTop: 12 }}>
+        <div className="content-box-title">What this does and does not cover</div>
+        <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
+          <li>{FACT_CHECK_SHOPPING_SCOPE}</li>
+          <li>
+            A result of <AiTerm term="no contradiction found" /> means nothing in that answer conflicted with the one
+            fact being checked. It is not a clean bill of health for the whole answer.
+          </li>
+          {pendingNote ? <li data-ai-pending-fact>{pendingNote}</li> : null}
+          {coverageNote ? <li data-ai-coverage-note>{coverageNote}</li> : null}
+          {drift.unverified > 0 ? (
+            <li>
+              {drift.unverified} answers carry a flag that was never verified against a Fender page, so they are not
+              reported as contradictions.
+            </li>
+          ) : null}
+          {drift.facts.length ? (
+            <li>
+              Each verified fact was read from the linked Fender page on {formatRunTime(drift.facts[0].verifiedAt)}.
+            </li>
+          ) : null}
+        </ul>
       </div>
     </>
   );
 }
 
 export function AiDriftPanel() {
-  return <AiReadGate>{(snapshot) => <Drift snapshot={snapshot} />}</AiReadGate>;
+  return <AiReadGate>{(snapshot) => <FactChecks snapshot={snapshot} />}</AiReadGate>;
 }

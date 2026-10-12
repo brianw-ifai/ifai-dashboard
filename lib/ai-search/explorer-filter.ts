@@ -7,9 +7,9 @@ export type PromptScope = "commercial" | "probe" | "all";
 export type AccuracyState = "confirmed" | "none" | "not_evaluated" | "unverified";
 
 export const ACCURACY_LABELS: Record<AccuracyState, string> = {
-  confirmed: "Confirmed contradiction",
-  none: "No contradiction matched",
-  not_evaluated: "Not fact-checked",
+  confirmed: "Contradiction found",
+  none: "No contradiction found for this fact",
+  not_evaluated: "No verified fact available",
   unverified: "Unverified flag",
 };
 

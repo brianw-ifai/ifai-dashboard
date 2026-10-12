@@ -24,19 +24,19 @@ export function CitationEvidenceTable({
   return (
     <div className="content-box ai-citation-evidence" style={{ marginTop: 12 }}>
       <div className="content-box-title">
-        <span>Cited pages: {label}</span>
+        <span>Cited links: {label}</span>
         <span className="tag-badge tag-neutral" data-ai-citation-count>{rows.length} links</span>
       </div>
       {onClear ? (
         <button type="button" className="segmented-btn" onClick={onClear} style={{ marginBottom: 6 }}>
-          Show every cited page
+          Show every cited link
         </button>
       ) : null}
-      {rows.length === 0 ? <EmptyRows>No valid cited page matches this selection.</EmptyRows> : null}
+      {rows.length === 0 ? <EmptyRows>No cited link matches this selection.</EmptyRows> : null}
       {rows.length ? (
         <table className="table-sm">
           <thead>
-            <tr><th>Prompt and answer</th><th>Engine</th><th>Page</th><th>Domain and class</th></tr>
+            <tr><th>Prompt and answer</th><th>Engine</th><th>Cited link</th><th>Domain and class</th></tr>
           </thead>
           <tbody>
             {shown.map((row) => (

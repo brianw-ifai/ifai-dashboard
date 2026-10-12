@@ -7,6 +7,7 @@ import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/Simulat
 import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilters";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
+import { driftRead } from "@/lib/ai-search/drift";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
   ACCURACY_LABELS,
@@ -64,6 +65,8 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     return byCall;
   }, [snapshot]);
 
+  const drift = useMemo(() => driftRead(snapshot.calls, snapshot.probes), [snapshot]);
+
   const rows = useMemo(
     () => sortExplorerRows(applyExplorerFilter(snapshot.calls, filter)),
     [snapshot.calls, filter],
@@ -84,9 +87,10 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </span>
       </div>
       <p style={mutedText}>
-        Commercial prompts are buying questions scored by which brand is named most. <AiTerm term="probe">Probes</AiTerm>{" "}
-        are fact checks and are never scored as wins. A <AiTerm term="provider error" /> or an answer with{" "}
-        <AiTerm term="no clear leader" /> is neither a win nor a loss.
+        Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
+        <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead, so it is
+        never scored as a win. A <AiTerm term="provider error" /> or an answer with <AiTerm term="no clear leader" /> is
+        neither a win nor a loss.
       </p>
       <SimulationFilters rows={snapshot.calls} filter={filter} onChange={changeFilter} />
       {filter.brand ? (
@@ -123,12 +127,18 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                 </div>
                 <div className="action-details" style={{ fontSize: 11 }}>
                   {engineLabel(row.engine)} · {modelLabel(row.model)} ·{" "}
-                  {row.prompt_kind === "probe" ? "Fact-check probe" : categoryLabel(row.category)} ·{" "}
-                  {ACCURACY_LABELS[accuracyState(row)]} · {cited.length} cited pages · checked {formatRunTime(row.created_at)}
+                  {row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)} ·{" "}
+                  {ACCURACY_LABELS[accuracyState(row)]} · {cited.length} cited links · checked {formatRunTime(row.created_at)}
                 </div>
               </button>
               {open ? (
-                <SimulationEvidenceDrawer row={row} citations={cited} onClose={() => setOpenId(null)} />
+                <SimulationEvidenceDrawer
+                  row={row}
+                  probe={drift.probes.find((p) => p.simId === row.sim_id) ?? null}
+                  citations={cited}
+                  questionsSent={drift.coverage.questionsSent}
+                  onClose={() => setOpenId(null)}
+                />
               ) : null}
             </Fragment>
           );

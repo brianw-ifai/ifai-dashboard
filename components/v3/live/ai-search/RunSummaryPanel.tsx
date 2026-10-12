@@ -108,7 +108,7 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
               <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
                 {s.probesAnswered} answered
               </EvidenceLink>{" "}
-              <AiTerm term="probe">probes</AiTerm> (fact checks, not buying prompts)
+              <AiTerm term="product fact check">product fact checks</AiTerm> (not buying prompts)
             </li>
             {c.disqualified > 0 ? (
               <li>
@@ -190,7 +190,7 @@ function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </tbody>
       </table>
       <p style={{ ...mutedText, marginTop: 8 }}>
-        Fact-check probes are not a category here. They are on the AI Drift tab.
+        Product fact checks are not a shopping category. They are on the Product Fact Checks tab.
       </p>
     </div>
   );

@@ -41,8 +41,8 @@ export function SimulationFilters({
       <div role="group" aria-label="Prompt type" style={{ display: "flex", gap: 4 }}>
         {(
           [
-            ["commercial", "Commercial prompts"],
-            ["probe", "Fact-check probes"],
+            ["commercial", "Shopping prompts"],
+            ["probe", "Product fact checks"],
             ["all", "All calls"],
           ] as const
         ).map(([value, label]) => (
@@ -86,12 +86,12 @@ export function SimulationFilters({
         ))}
       </select>
       <select
-        aria-label="Accuracy"
+        aria-label="Fact-check result"
         style={selectStyle}
         value={filter.accuracy}
         onChange={(e) => set({ accuracy: e.target.value as ExplorerFilter["accuracy"] })}
       >
-        <option value="">Any accuracy state</option>
+        <option value="">Any fact-check result</option>
         {Object.entries(ACCURACY_LABELS).map(([value, label]) => (
           <option key={value} value={value}>{label}</option>
         ))}

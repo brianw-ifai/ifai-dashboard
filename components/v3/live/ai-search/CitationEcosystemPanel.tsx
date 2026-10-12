@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
+import {
+  CitationInterpretationNote,
+  CitationRoleNote,
+} from "@/components/v3/live/ai-search/CitationRoleNote";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
   citationEvidence,
@@ -21,8 +25,8 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 type CitationPick = { field: "domain" | "class" | "engine" | "category"; value: string } | null;
 
 const SCOPES: Array<[CitationScope, string]> = [
-  ["commercial", "Commercial answers"],
-  ["probe", "Fact-check probes"],
+  ["commercial", "Shopping answers"],
+  ["probe", "Product fact checks"],
   ["all", "All answers"],
 ];
 
@@ -70,9 +74,10 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const engineLinks = new Map(groupCitations(read.rows, (row) => row.engine).map((g) => [g.key, g]));
   const byCategory = citedAnswers(snapshot.calls, read.rows, scope, (call) => call.category ?? "");
   const categoryLinks = new Map(groupCitations(read.rows, (row) => row.category).map((g) => [g.key, g]));
+  const scopeNoun = scope === "probe" ? "fact-check answers" : scope === "all" ? "answers" : "shopping answers";
   const filtered = read.rows.filter((row) => matches(row, pick));
   const pickLabel = !pick
-    ? "every valid link"
+    ? "every cited link"
     : pick.field === "class"
       ? SOURCE_CLASS_LABELS[pick.value as SourceClass]
       : pick.field === "engine"
@@ -85,7 +90,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <>
       <div className="content-box ai-citation-summary">
         <div className="content-box-title">
-          <span>Which pages AI answers cite</span>
+          <span>Which web sources AI answers cite</span>
           <div role="group" aria-label="Citation scope" style={{ display: "flex", gap: 4 }}>
             {SCOPES.map(([value, label]) => (
               <button
@@ -103,31 +108,60 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
             ))}
           </div>
         </div>
+        <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-cited-answers>
+          {read.answersWithCitation} of {read.answered} {scopeNoun} cited web sources ({pct(read.answersWithCitation, read.answered)}).
+        </p>
+        <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-cited-links>
+          Those answers contained {read.rows.length} <AiTerm term="cited link">cited links</AiTerm> across{" "}
+          {domains.length} domains.{" "}
+          <span data-ai-fender-owned>
+            {fender.length} links, or {pct(fender.length, read.rows.length)}, led to{" "}
+            <AiTerm term="Fender-owned">Fender-owned</AiTerm> sites.
+          </span>
+        </p>
         <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
-          <li data-ai-cited-answers>
-            {read.answersWithCitation} of {read.answered} answered calls cited at least one valid link ({pct(read.answersWithCitation, read.answered)}).
-          </li>
-          <li>{read.rows.length} valid links across {domains.length} domains.</li>
-          <li data-ai-fender-owned>
-            Fender-owned pages: {fender.length} of {read.rows.length} links ({pct(fender.length, read.rows.length)}), in {fenderAnswers} answers. Third-party pages: {read.rows.length - fender.length} links.
+          <li>
+            Answers and links are separate counts. {read.answersWithCitation} {scopeNoun} produced{" "}
+            {read.rows.length} links, so one answer can cite several pages.
           </li>
           <li>
-            {read.stored} stored rows in this scope. {read.duplicates} repeat the same <AiTerm term="canonical URL" /> in one answer and {read.invalid} were empty or invalid, so they are left out.
+            Fender-owned links appear in {fenderAnswers} of those answers. The other{" "}
+            {read.rows.length - fender.length} links point to sites Fender does not control.
           </li>
+          {read.duplicates + read.invalid > 0 ? (
+            <li>
+              {read.stored} stored rows in this view. Left out:{" "}
+              {read.duplicates > 0 ? (
+                <>
+                  {read.duplicates} that repeat the same <AiTerm term="canonical URL" /> inside one answer
+                </>
+              ) : null}
+              {read.duplicates > 0 && read.invalid > 0 ? ", and " : null}
+              {read.invalid > 0 ? `${read.invalid} with no usable address` : null}.
+            </li>
+          ) : null}
         </ul>
         <p style={{ ...mutedText, marginTop: 8 }}>
-          A cited page appears alongside an answer. This read does not measure whether the page caused the answer.
+          A cited link appears alongside an answer. This read does not measure whether the page caused the
+          recommendation, and a citation is not an endorsement of Fender by that source.
         </p>
       </div>
 
+      <CitationRoleNote />
+
       {read.rows.length === 0 ? (
         <div className="content-box" style={{ marginTop: 12 }}>
-          <EmptyRows>No answer in this scope cited a valid link.</EmptyRows>
+          <EmptyRows>No answer in this view returned a cited link.</EmptyRows>
         </div>
       ) : (
         <>
           <div className="content-box" style={{ marginTop: 12 }}>
-            <div className="content-box-title">By <AiTerm term="source class" /></div>
+            <div className="content-box-title">
+              <span>
+                By <AiTerm term="source class" />
+              </span>
+            </div>
+            <CitationInterpretationNote partial={snapshot.run.run_state === "partial"} />
             <table className="table-sm">
               <thead><tr><th>Class</th><th>Links</th><th>Share</th><th>Answers</th></tr></thead>
               <tbody>
@@ -182,7 +216,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
                 <tbody>
                   {byCategory.map((g) => (
                     <tr key={g.key} data-category={g.key}>
-                      <td><PickButton pick={{ field: "category", value: g.key }} onPick={setPick}>{g.key === "hallucinations" ? "Fact-check probes" : categoryLabel(g.key)}</PickButton></td>
+                      <td><PickButton pick={{ field: "category", value: g.key }} onPick={setPick}>{g.key === "hallucinations" ? "Product fact checks" : categoryLabel(g.key)}</PickButton></td>
                       <td>{g.cited} of {g.answered}</td>
                       <td>{categoryLinks.get(g.key)?.rows ?? 0}</td>
                       <td>{categoryLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
