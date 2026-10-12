@@ -1715,6 +1715,15 @@
       white-space: nowrap;
     }
 
+    /* A stored price that is not a current observation. */
+    .channel-note {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
     .table-sm tr:last-child td {
       border-bottom: none;
     }
@@ -3144,6 +3153,37 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+
+    /* Featured Offer readings: one card per state, each with its own denominator. */
+    .fo-reading-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .fo-reading {
+      cursor: default;
+      gap: 4px;
+    }
+
+    .fo-denominator {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* A reading that has no comparable number. Never rendered as a zero. */
+    .fo-note {
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .fo-failed-note {
+      display: block;
+      font-size: 10.5px;
+      color: var(--warning-amber, var(--text-muted));
     }
 
     .retail-finding {
