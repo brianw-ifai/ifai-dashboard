@@ -4,18 +4,23 @@ import { expect, test } from "./fixtures";
    These cover the contract in lib/canvas-sdk/panel-interactions.ts. */
 
 test.describe("simulation filters", () => {
-  test("filters narrow the list", async ({ canvas }) => {
+  test("commercial prompts, probes, and errors filter apart", async ({ canvas, page }) => {
     await canvas.openSimulations();
-    await expect(canvas.simulations).toHaveCount(7);
+    const rows = canvas.simulations;
+    for (const kind of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-kind")))) {
+      expect(kind).toBe("commercial");
+    }
 
-    await canvas.filterChip("Hallucination Flags").click();
-    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(1);
+    await canvas.filterChip("Product fact checks").click();
+    await expect(rows.first()).toHaveAttribute("data-kind", "probe");
+    for (const kind of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-kind")))) {
+      expect(kind).toBe("probe");
+    }
 
-    await canvas.filterChip("Electrics").click();
-    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(1);
-
-    await canvas.filterChip("All (102)").click();
-    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(7);
+    await page.locator(".ai-sim-filters .segmented-btn", { hasText: "Errors" }).click();
+    for (const outcome of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-outcome")))) {
+      expect(outcome).toBe("error");
+    }
   });
 
   /* Guards the regression these buttons shipped with: they called
@@ -28,45 +33,10 @@ test.describe("simulation filters", () => {
     expect(inlineHandlers).toBe(0);
   });
 
-  test("the active chip tracks the selection", async ({ canvas }) => {
+  test("the active chip tracks the selection", async ({ canvas, page }) => {
     await canvas.openSimulations();
-    await canvas.filterChip("Amps (12)").click();
-    await expect(canvas.page.locator(".segmented-btn.active")).toHaveText(/Amps \(12\)/);
-  });
-});
-
-test.describe("prompt watchlist", () => {
-  test("starring builds a per-viewer watchlist that survives a reload", async ({ canvas }) => {
-    await canvas.openSimulations();
-    await expect(canvas.page.locator(".ifai-star-btn")).toHaveCount(7);
-
-    await canvas.simulations.nth(1).locator(".ifai-star-btn").click();
-    await canvas.simulations.nth(4).locator(".ifai-star-btn").click();
-    await expect(canvas.page.locator(".ifai-star-chip")).toContainText("2");
-
-    await canvas.filterChip("Starred").click();
-    await expect(canvas.simulations.filter({ visible: true })).toHaveCount(2);
-
-    await canvas.reload();
-    await canvas.openSimulations();
-    await expect(canvas.page.locator("#simulation-list .action-card.starred")).toHaveCount(2);
-  });
-
-  test("an empty watchlist says how to fill it", async ({ canvas, page }) => {
-    await canvas.openSimulations();
-    await canvas.filterChip("Starred").click();
-    await expect(page.locator(".ifai-filter-empty")).toContainText("Nothing starred yet");
-  });
-
-  test("unstarring removes the row from the watchlist", async ({ canvas }) => {
-    await canvas.openSimulations();
-    const row = canvas.simulations.first();
-    await row.locator(".ifai-star-btn").click();
-    await expect(row).toHaveClass(/starred/);
-
-    await row.locator(".ifai-star-btn").click();
-    await expect(row).not.toHaveClass(/starred/);
-    await expect(canvas.page.locator(".ifai-star-chip")).toContainText("0");
+    await canvas.filterChip("Product fact checks").click();
+    await expect(page.locator(".ai-sim-filters .segmented-btn.active")).toHaveText("Product fact checks");
   });
 });
 
@@ -212,17 +182,23 @@ test.describe("drill-downs", () => {
     await expect(page.locator(".drilldown-body")).not.toContainText("14 catalog");
   });
 
-  test("the hallucination tab lists stored root causes", async ({ canvas, page }) => {
-    await canvas.openPriority("AI assistants are quoting specs");
-    await expect(canvas.activeTab).toContainText("Hallucination");
-    await expect(page.locator(".drilldown-body")).toContainText("flagged answers");
-    await expect(page.locator(".drilldown-body")).not.toContainText("Dual Humbucker");
-    await expect(page.locator(".drilldown-body")).not.toContainText("12-Inch");
-    await expect(page.locator(".drilldown-body")).not.toContainText("2 of 6");
+  test("Product Fact Checks leads with the business result", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("AI Search Visibility");
+    await canvas.openTab("Product Fact Checks");
+    const body = page.locator(".drilldown-body");
+    await expect(page.locator("[data-ai-fact-headline]")).toContainText(
+      /\d+ Fender product facts were checked across .+\. No contradictions were found in \d+ answers\./,
+    );
+    await expect(body).toContainText("These checks cover the selected facts only");
+    await expect(page.locator(".ai-probe-table tbody tr").first()).toBeVisible();
+    await expect(body).not.toContainText("Dual Humbucker");
+    await expect(body).not.toContainText("12-Inch");
+    await expect(body).not.toContainText("flagged answers");
   });
 
-  test("competitive rows use the share-of-voice read", async ({ canvas, page }) => {
-    await canvas.openPriority("Beginner share of voice");
+  test("competitive rows use commercial AI-search outcomes", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("Competitive Radar");
+    await expect(page.locator(".ai-battlecards")).toBeVisible();
 
     const headers = await page.locator(".table-sm th").allInnerTexts();
     expect(headers.some((h) => /fender win/i.test(h))).toBe(true);

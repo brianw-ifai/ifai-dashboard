@@ -1,5 +1,6 @@
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
-import { beginnerSovLine, beginnerSovWhy } from "@/lib/fender-canvas/beginner-sov";
+import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
+import type { AiSearchRead } from "@/lib/ai-search/types";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
@@ -36,24 +37,22 @@ function mapPriority(retail: RetailCanvasRead): { title: string; why: string } {
 export function buildLiveCommandCenter(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
+  ai: AiSearchRead = { phase: "loading" },
 ): CommandCenterSpec {
   const { m, divisions } = bundle;
   const divisionCount = divisions.length > 0 ? divisions.length : m.division_count;
-  const sovLine = beginnerSovLine(bundle.sov);
-  const sovWhy = beginnerSovWhy(bundle.sov);
   const headline = headlineSurface(retail);
   const mapItem = mapPriority(retail);
+  const aiItems = aiPriorityItems(ai);
+  const aiCritical = aiItems.filter((item) => item.severity === "critical");
+  const aiOther = aiItems.filter((item) => item.severity !== "critical");
 
   const summaryParts = [
     headlineSentence(headline),
     `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs across ${formatInt(divisionCount)} divisions.`,
   ];
-  if (sovLine) summaryParts.push(`Beginner share of voice is ${sovLine}.`);
-  if (m.sim_hallucinations != null) {
-    summaryParts.push(
-      `${formatInt(m.sim_hallucinations)} simulation answers are flagged for a spec hallucination.`,
-    );
-  }
+  const aiLine = aiCommandSummary(ai);
+  if (aiLine) summaryParts.push(aiLine);
 
   return {
     badge: "COMMAND CENTER · TODAY",
@@ -74,15 +73,7 @@ export function buildLiveCommandCenter(
         subTab: headline.commandTab,
         defaultOwner: "intofocus",
       },
-      {
-        id: "ai-spec-hallucination",
-        title: "AI assistants are quoting specs you never published",
-        why: `${formatInt(m.sim_hallucinations)} answers in the latest simulation read are flagged for a spec hallucination. The hallucination tab lists each root cause stored on those rows.`,
-        severity: "critical",
-        spokeId: "aeo",
-        subTab: "Hallucination",
-        defaultOwner: "intofocus",
-      },
+      ...aiCritical,
       {
         id: "schema-coverage",
         title: "fender.com pages are missing machine-readable spec fields",
@@ -102,19 +93,7 @@ export function buildLiveCommandCenter(
         subTab: "MAP",
         defaultOwner: "client",
       },
-      ...(sovWhy
-        ? [
-            {
-              id: "midrange-losses",
-              title: `Beginner share of voice is ${sovLine}`,
-              why: sovWhy,
-              severity: "high" as const,
-              spokeId: "competitors",
-              subTab: "Battlecards",
-              defaultOwner: "intofocus" as const,
-            },
-          ]
-        : []),
+      ...aiOther,
       {
         id: "aplus-tables",
         title: "A+ comparison tables have not been measured",

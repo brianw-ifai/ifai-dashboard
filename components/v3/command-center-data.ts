@@ -9,7 +9,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
   title: "What do I need to worry about?",
   desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
   summary:
-    "The retail headline, beginner share of voice, and spec hallucination flags load with the canvas read.",
+    "The retail headline and the published AI run load with the canvas read.",
   openByDefault: true,
   storageKey: "ifai:fender:command-center",
   items: [
@@ -20,15 +20,6 @@ export const fenderCommandCenter: CommandCenterSpec = {
       severity: "critical",
       spokeId: "ecommerce",
       subTab: "Retail Overview",
-      defaultOwner: "intofocus",
-    },
-    {
-      id: "ai-spec-hallucination",
-      title: "AI assistants are quoting specs you never published",
-      why: "The hallucination tab lists each root cause stored on the flagged simulation rows.",
-      severity: "critical",
-      spokeId: "aeo",
-      subTab: "Hallucination",
       defaultOwner: "intofocus",
     },
     {
@@ -49,15 +40,6 @@ export const fenderCommandCenter: CommandCenterSpec = {
       spokeId: "ecommerce",
       subTab: "MAP",
       defaultOwner: "client",
-    },
-    {
-      id: "midrange-losses",
-      title: "Beginner share of voice is in the competitor read",
-      why: "Yamaha and Fender/Squier shares for the beginner category come from the competitor share-of-voice rows, not from a saved sentence.",
-      severity: "high",
-      spokeId: "competitors",
-      subTab: "Battlecards",
-      defaultOwner: "intofocus",
     },
     {
       id: "aplus-tables",
