@@ -58,8 +58,19 @@ test.describe("AI Search Visibility", () => {
   test("citations drill from a domain to its cited pages", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await canvas.openTab("Citation Ecosystem");
-    await expect(page.locator("[data-ai-cited-answers]")).toContainText(/\d+ of \d+ answered calls/);
-    await expect(page.locator("[data-ai-fender-owned]")).toContainText("Fender-owned pages");
+    await expect(page.locator("[data-ai-cited-answers]")).toContainText(
+      /\d+ of \d+ shopping answers cited web sources/,
+    );
+    await expect(page.locator("[data-ai-cited-links]")).toContainText(/Those answers contained \d+ cited links across \d+ domains/);
+    await expect(page.locator("[data-ai-fender-owned]")).toContainText(/\d+ links, or \d+\.\d%, led to Fender-owned sites/);
+    const body = page.locator(".drilldown-body");
+    await expect(body).toContainText("Answers and links are separate counts");
+    await expect(body).toContainText("Why this matters");
+    await expect(body).toContainText("canonical product facts");
+    await expect(page.locator("[data-ai-citation-interpretation]")).toContainText(
+      "A low count does not prove a source had no influence",
+    );
+    await expect(body).not.toContainText("valid link");
     const domain = page.locator(".ai-top-domains [data-ai-pick^='domain:']").first();
     const picked = (await domain.getAttribute("data-ai-pick"))!.slice("domain:".length);
     await domain.click();
@@ -82,6 +93,59 @@ test.describe("AI Search Visibility", () => {
       expect((await term.getAttribute("data-ifai-tooltip-desc"))?.length ?? 0).toBeGreaterThan(20);
       await expect(term).not.toHaveAttribute("title");
     }
+  });
+
+  test("the citation definitions are reachable by keyboard", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("AI Search Visibility");
+    await canvas.openTab("Citation Ecosystem");
+    for (const [label, fragment] of [
+      ["Cited link", "explicitly returned with its answer"],
+      ["Fender-owned", "controlled by Fender or another FMIC brand"],
+      ["Source class", "brand-owned, retailer, editorial, community, video, or other"],
+    ]) {
+      const term = page.locator(`.ifai-term[data-ifai-tooltip-title="${label}"]`).first();
+      await expect(term).toHaveAttribute("data-ifai-tooltip-desc", new RegExp(fragment));
+      await expect(term).toHaveAttribute("tabindex", "0");
+      await expect(term).toHaveAttribute("aria-label", new RegExp(label));
+      await expect(term).not.toHaveAttribute("title");
+      await term.focus();
+      await expect(page.locator(".node-tooltip-definition, .node-tooltip")).toBeVisible();
+    }
+  });
+
+  test("the fact-check drawer reads question, fact, source, answer, result", async ({ canvas, page }) => {
+    await canvas.openSimulations();
+    await canvas.filterChip("Product fact checks").click();
+    const checked = canvas.simulations.filter({ hasText: "No contradiction found for this fact" }).first();
+    await checked.click();
+    const drawer = page.locator("[data-ai-fact-check-evidence]");
+    await expect(drawer).toBeVisible();
+    await expect(drawer).toContainText("product questions IntoFocus sends to every engine on purpose");
+    // The step labels are uppercased in CSS, so compare case-insensitively.
+    const order = (await drawer.innerText()).toLowerCase();
+    const steps = ["question checked", "verified fender fact", "official fender source", "ai answer", "result"];
+    let cursor = -1;
+    for (const step of steps) {
+      const at = order.indexOf(step);
+      expect(at, step).toBeGreaterThan(cursor);
+      cursor = at;
+    }
+    await expect(drawer.locator("[data-ai-fact-result-row]")).toHaveText("No contradiction found for this fact");
+    await expect(drawer.locator("[data-ai-remediation]")).toHaveCount(0);
+    await expect(drawer.locator("[data-ai-root-cause]")).toHaveCount(0);
+  });
+
+  test("a question with no verified fact says so", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("AI Search Visibility");
+    await canvas.openTab("Product Fact Checks");
+    const pending = page.locator(".ai-probe-table tr[data-probe-state='no_fact']").first();
+    await expect(pending).toContainText("No verified fact available");
+    await expect(page.locator("[data-ai-pending-fact]")).toContainText(/no verified Fender fact yet/);
+    await expect(page.locator("[data-ai-coverage-note]")).toContainText(/did not return answers for \d+ fact-check calls/);
+    const body = page.locator(".drilldown-body");
+    await expect(body).not.toContainText("0 of 65");
+    await expect(body).not.toContainText("0 confirmed");
+    await expect(body).not.toContainText("Not evaluated");
   });
 });
 
@@ -108,7 +172,9 @@ test.describe("Competitive Radar", () => {
       ["competitors", "multi-marketplace-channel-scope-sweetwater-reverb-walmart", "Engine Comparison"],
       ["competitors", "head-to-head-category-battlecards", "Category Battlecards"],
       ["aeo", "dual-index-scoring-executive-callout", "Run Summary"],
-      ["aeo", "ai-spec-hallucination-engine-root-causes", "AI Drift"],
+      ["aeo", "ai-spec-hallucination-engine-root-causes", "Product Fact Checks"],
+      ["aeo", "ai-drift", "Product Fact Checks"],
+      ["aeo", "hallucination", "Product Fact Checks"],
       ["aeo", "citation-ecosystem-fender-dtc-opportunity", "Citation Ecosystem"],
     ]) {
       await page.goto(`/dashboard?spoke=${spoke}&tab=${slug}`);

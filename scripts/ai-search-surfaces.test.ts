@@ -8,6 +8,8 @@ import { AI_TABS, RADAR_TABS } from "../lib/ai-search/canvas-surfaces.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
+/** Source with JSX line wrapping collapsed, so copy assertions read as sentences. */
+const flat = (path: string) => read(path).replace(/\s+/g, " ");
 const spec = JSON.parse(read("data/fender-v3-spec.json"));
 
 function files(dir: string, ext: string): string[] {
@@ -71,12 +73,13 @@ test("every headline figure opens its evidence", () => {
     assert.match(summary, new RegExp(`value: "${value}"`), value);
   }
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /CitationEvidenceTable/);
-  assert.match(read("components/v3/live/ai-search/AiDriftPanel.tsx"), /field: "sim"/);
+  assert.match(read("components/v3/live/ai-search/FactCheckTable.tsx"), /field: "sim"/);
   assert.match(read("components/v3/live/ai-search/CompetitorWinsPanel.tsx"), /field: "sim"/);
 });
 
 test("remediation and root cause render only through the genuine-text check", () => {
   const drawer = read("components/v3/live/ai-search/SimulationEvidenceDrawer.tsx");
+  assert.doesNotMatch(read("components/v3/live/ai-search/FactCheckEvidence.tsx"), /root_cause|remediation/);
   assert.match(drawer, /genuineGuidance\(row\.root_cause/);
   assert.match(drawer, /genuineGuidance\(row\.remediation_patch/);
   assert.match(drawer, /\{remediation \? \(/);
@@ -114,4 +117,63 @@ test("protected surfaces are unchanged", () => {
   const roi = JSON.stringify(spec.spokes.suggestions);
   for (const figure of ["$680,000", "$38M to $62M", "$50,000,000"]) assert.ok(roi.includes(figure), figure);
   assert.doesNotMatch(roi, /Reddit \/r\/Guitar Community|largest SOV gaps/);
+});
+
+test("the fact-check headline leads with the business result, not a zero", () => {
+  const panel = read("components/v3/live/ai-search/AiDriftPanel.tsx");
+  const copy = read("lib/ai-search/fact-check-copy.ts");
+  assert.match(copy, /Fender product fact/);
+  assert.match(copy, /No contradictions were found in/);
+  assert.match(copy, /These checks cover the selected facts only/);
+  assert.match(copy, /not every factual claim in the shopping answers/);
+  // No zero-led commercial coverage statement, and no collector or regex terminology.
+  for (const text of [panel, copy]) {
+    assert.doesNotMatch(text, /commercialChecked|commercialAnswered/, "commercial zero statement");
+    assert.doesNotMatch(text, /regex|pattern check|collector|probe call/i);
+  }
+  assert.doesNotMatch(panel, /0 confirmed/);
+});
+
+test("the fact-check evidence view runs question, fact, source, answer, result", () => {
+  const view = read("components/v3/live/ai-search/FactCheckEvidence.tsx");
+  const order = ["Question checked", "Verified Fender fact", "Official Fender source", "AI answer", "Result"];
+  let cursor = -1;
+  for (const [index, heading] of order.entries()) {
+    const at = view.indexOf(`heading="${heading}"`);
+    assert.ok(at > cursor, `step ${index + 1} is ${heading}`);
+    cursor = at;
+  }
+  assert.ok(view.indexOf("Engine and run details") > cursor, "engine details stay last");
+  const flatView = flat("components/v3/live/ai-search/FactCheckEvidence.tsx");
+  assert.match(flatView, /product questions IntoFocus sends to every engine on purpose/);
+  assert.match(flatView, /not a randomly chosen product/);
+});
+
+test("citation copy separates answers from links and avoids causal claims", () => {
+  const panel = read("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
+  assert.match(panel, /cited web sources/);
+  assert.match(panel, /Those answers contained \{read\.rows\.length\}/);
+  const flatPanel = flat("components/v3/live/ai-search/CitationEcosystemPanel.tsx");
+  assert.match(flatPanel, /Answers and links are separate counts/);
+  assert.match(flatPanel, /does not measure whether the page caused the recommendation/);
+  assert.match(flatPanel, /not an endorsement/);
+  for (const path of [
+    "components/v3/live/ai-search/CitationEcosystemPanel.tsx",
+    "components/v3/live/ai-search/CitationEvidenceTable.tsx",
+    "components/v3/live/ai-search/CitationRoleNote.tsx",
+  ]) {
+    assert.doesNotMatch(read(path), /valid link|valid cited/, path);
+  }
+  const note = flat("components/v3/live/ai-search/CitationRoleNote.tsx");
+  assert.match(note, /canonical product facts/);
+  assert.match(note, /products they can buy/);
+  assert.match(note, /independent authority/);
+  assert.match(note, /less control over the facts/);
+  assert.match(note, /A low count does not prove a source had no influence/);
+});
+
+test("the old authored citation percentages stay retired", () => {
+  for (const path of files("components/v3/live/ai-search", ".tsx")) {
+    assert.doesNotMatch(read(path), /31%|24%|19%|14%|12% of total AI citations/, path);
+  }
 });

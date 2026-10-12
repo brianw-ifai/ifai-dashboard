@@ -4,7 +4,16 @@ import { test } from "node:test";
 import { aiMetrics, aiNodeFaces, aiPriorityItems, aiSpokeDesc } from "../lib/ai-search/canvas-surfaces.ts";
 import { canonicalUrl, citationEvidence, classifySource, groupCitations, isValidCitationUrl } from "../lib/ai-search/citations.ts";
 import { categoryBattles, competitorTallies } from "../lib/ai-search/competitors.ts";
-import { driftRead } from "../lib/ai-search/drift.ts";
+import { driftRead, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
+import {
+  FACT_CHECK_SCOPE,
+  FACT_CHECK_SHOPPING_SCOPE,
+  factCheckCoverageNote,
+  factCheckHeadline,
+  factCheckPendingNote,
+  factCheckShortLine,
+  factsCheckedLine,
+} from "../lib/ai-search/fact-check-copy.ts";
 import { parseEvidence } from "../lib/ai-search/evidence-focus.ts";
 import { applyExplorerFilter, DEFAULT_FILTER, filterFromEvidence } from "../lib/ai-search/explorer-filter.ts";
 import { loadAiSearchRead, type AiReadClient } from "../lib/ai-search/queries.ts";
@@ -17,6 +26,7 @@ import {
   modelLabel,
   tallyCommercial,
 } from "../lib/ai-search/run-metrics.ts";
+import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
 import { summarizeRun } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchRead, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
@@ -260,4 +270,140 @@ test("drill-down links map to explorer filters", () => {
   assert.deepEqual(yamaha.map((r) => r.id), ["c2"]);
   assert.ok(applyExplorerFilter(calls, DEFAULT_FILTER).every((r) => r.prompt_kind === "commercial"));
   assert.deepEqual(applyExplorerFilter(calls, filterFromEvidence({ field: "kind", value: "probe" })).map((r) => r.id), ["c6", "c7"]);
+});
+
+/* The published run shape: 5 product questions times 3 engines, 4 of them with a
+   verified Fender fact, Perplexity failing every call. */
+function factCheckRun(): AiProbeRow[] {
+  const facts: Record<string, string | null> = {
+    p17: "Player II Stratocaster fingerboard radius is 9.5 inches.",
+    p18: null,
+    p19: "Mustang Micro is a digital headphone amp with no tube section.",
+    p33: "Jaguar scale length is 24 inches.",
+    p34: "Player Plus Stratocaster uses Player Plus Noiseless pickups.",
+  };
+  const rows: AiProbeRow[] = [];
+  let simId = 1160;
+  for (const [key, claim] of Object.entries(facts)) {
+    for (const engine of ["chatgpt", "perplexity", "gemini"]) {
+      simId += 1;
+      const failed = engine === "perplexity";
+      rows.push({
+        audit_run_id: RUN,
+        sim_id: simId,
+        prompt_key: key,
+        prompt: `Question ${key}`,
+        engine,
+        model: engine === "gemini" ? "3.6 Flash" : null,
+        call_status: failed ? "error" : "answered",
+        material_hallucination: failed ? "not_evaluated" : claim ? "none" : "not_evaluated",
+        hallucination_evidence: null,
+        verified_claim: claim,
+        verified_source_url: claim ? `https://www.fender.com/products/${key}` : null,
+        verified_at: "2026-10-12T15:37:00Z",
+        created_at: "2026-10-12T16:47:00Z",
+      });
+    }
+  }
+  return rows;
+}
+
+test("fact-check coverage counts questions, facts, answers, and failures apart", () => {
+  const c = driftRead([], factCheckRun()).coverage;
+  assert.equal(c.questionsSent, 5);
+  assert.equal(c.questionsWithFact, 4);
+  assert.equal(c.factsChecked, 4);
+  assert.equal(c.answersChecked, 8);
+  assert.equal(c.contradictions, 0);
+  assert.deepEqual(c.checkedEngines, ["ChatGPT", "Gemini"]);
+  assert.deepEqual(c.questionsWithoutFact, ["p18"]);
+  assert.equal(c.answersWithoutFact, 2);
+  assert.equal(c.failedCalls, 5);
+  assert.deepEqual(c.failedEngines, ["Perplexity"]);
+});
+
+test("the fact-check headline leads with four facts and eight answers", () => {
+  const c = driftRead([], factCheckRun()).coverage;
+  assert.equal(
+    factCheckHeadline(c),
+    "4 Fender product facts were checked across ChatGPT and Gemini. No contradictions were found in 8 answers.",
+  );
+  assert.equal(factsCheckedLine(c), "4 facts checked");
+  assert.equal(factCheckShortLine(c), "No contradictions in 8 answers");
+  // Never a zero-led commercial coverage claim.
+  assert.doesNotMatch(factCheckHeadline(c), /\b0\b|of 65|commercial/i);
+  assert.match(FACT_CHECK_SCOPE, /do not prove every statement/);
+  assert.match(FACT_CHECK_SHOPPING_SCOPE, /not every factual claim in the shopping answers/);
+});
+
+test("a contradiction changes the headline instead of hiding it", () => {
+  const rows = factCheckRun().map((row) =>
+    row.sim_id === 1161
+      ? { ...row, material_hallucination: "confirmed", hallucination_evidence: "Said 12 inch radius" }
+      : row,
+  );
+  const c = driftRead([], rows).coverage;
+  assert.equal(c.contradictions, 1);
+  assert.match(factCheckHeadline(c), /1 of 8 answers contradicted the verified fact/);
+});
+
+test("provider failures and pending facts are secondary notes", () => {
+  const c = driftRead([], factCheckRun()).coverage;
+  assert.equal(factCheckCoverageNote(c), "Perplexity did not return answers for 5 fact-check calls.");
+  assert.match(factCheckPendingNote(c) ?? "", /1 question has no verified Fender fact yet, so 2 answers were not evaluated/);
+  const clean = factCheckRun().filter((row) => row.engine !== "perplexity");
+  assert.equal(factCheckCoverageNote(driftRead([], clean).coverage), null);
+});
+
+test("fact-check results read in client language", () => {
+  assert.equal(PROBE_STATE_LABELS.no_contradiction, "No contradiction found for this fact");
+  assert.equal(PROBE_STATE_LABELS.no_fact, "No verified fact available");
+  assert.equal(PROBE_STATE_LABELS.provider_error, "No answer returned");
+  const rows = driftRead([], factCheckRun()).probes;
+  const p18 = rows.filter((row) => row.promptKey === "p18" && row.state !== "provider_error");
+  assert.equal(p18.length, 2);
+  for (const row of p18) assert.equal(PROBE_STATE_LABELS[row.state], "No verified fact available");
+});
+
+test("no empty read reports a fact-check result", () => {
+  const empty = driftRead([], []).coverage;
+  assert.equal(factCheckHeadline(empty), "This run sent no product fact checks.");
+  assert.equal(factCheckCoverageNote(empty), null);
+  assert.equal(factCheckPendingNote(empty), null);
+  const allFailed = factCheckRun().map((row) => ({ ...row, call_status: "error", material_hallucination: "not_evaluated" }));
+  assert.match(factCheckHeadline(driftRead([], allFailed).coverage), /No product fact check completed/);
+});
+
+test("the four new client definitions exist with their own wording", () => {
+  const expected: Array<[string, RegExp]> = [
+    ["shopping answer", /one AI engine to one shopping prompt/],
+    ["cited link", /does not prove that the source caused or endorsed/],
+    ["Fender-owned", /controlled by Fender or another FMIC brand/],
+    ["source class", /brand-owned, retailer, editorial, community, video, or other/],
+  ];
+  for (const [term, pattern] of expected) {
+    const definition = (AI_DEFINITIONS as Record<string, string>)[term];
+    assert.ok(definition, `${term} is defined`);
+    assert.match(definition, pattern, term);
+  }
+  for (const definition of Object.values(AI_DEFINITIONS)) {
+    assert.doesNotMatch(definition, /caused the recommendation\b(?! )/);
+  }
+});
+
+test("citation reads keep answers and links as separate denominators", () => {
+  // One answer citing three pages must not read as three cited answers.
+  const many = [
+    cite("c1", 1, "https://www.fender.com/products/player-ii", "fender.com"),
+    cite("c1", 2, "https://www.guitarworld.com/review", "guitarworld.com"),
+    cite("c1", 3, "https://www.sweetwater.com/store/detail/p", "sweetwater.com"),
+    cite("c2", 1, "https://www.reddit.com/r/Guitar/comments/abc", "reddit.com"),
+  ];
+  const read = citationEvidence(calls, many, "commercial");
+  assert.equal(read.rows.length, 4, "cited links");
+  assert.equal(read.answersWithCitation, 2, "answers that cited anything");
+  assert.equal(read.answered, 6, "answered shopping calls");
+  const fender = read.rows.filter((row) => row.sourceClass === "fender_owned");
+  assert.equal(fender.length, 1);
+  assert.equal(new Set(fender.map((row) => row.simulationId)).size, 1);
 });

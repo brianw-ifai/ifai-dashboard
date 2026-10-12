@@ -11,7 +11,7 @@ test.describe("simulation filters", () => {
       expect(kind).toBe("commercial");
     }
 
-    await canvas.filterChip("Fact-check probes").click();
+    await canvas.filterChip("Product fact checks").click();
     await expect(rows.first()).toHaveAttribute("data-kind", "probe");
     for (const kind of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-kind")))) {
       expect(kind).toBe("probe");
@@ -35,8 +35,8 @@ test.describe("simulation filters", () => {
 
   test("the active chip tracks the selection", async ({ canvas, page }) => {
     await canvas.openSimulations();
-    await canvas.filterChip("Fact-check probes").click();
-    await expect(page.locator(".ai-sim-filters .segmented-btn.active")).toHaveText("Fact-check probes");
+    await canvas.filterChip("Product fact checks").click();
+    await expect(page.locator(".ai-sim-filters .segmented-btn.active")).toHaveText("Product fact checks");
   });
 });
 
@@ -182,12 +182,14 @@ test.describe("drill-downs", () => {
     await expect(page.locator(".drilldown-body")).not.toContainText("14 catalog");
   });
 
-  test("AI Drift shows verified probe evidence only", async ({ canvas, page }) => {
+  test("Product Fact Checks leads with the business result", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
-    await canvas.openTab("AI Drift");
+    await canvas.openTab("Product Fact Checks");
     const body = page.locator(".drilldown-body");
-    await expect(body).toContainText("Confirmed errors against verified Fender facts");
-    await expect(body).toContainText("not that the whole answer is accurate");
+    await expect(page.locator("[data-ai-fact-headline]")).toContainText(
+      /\d+ Fender product facts were checked across .+\. No contradictions were found in \d+ answers\./,
+    );
+    await expect(body).toContainText("These checks cover the selected facts only");
     await expect(page.locator(".ai-probe-table tbody tr").first()).toBeVisible();
     await expect(body).not.toContainText("Dual Humbucker");
     await expect(body).not.toContainText("12-Inch");
