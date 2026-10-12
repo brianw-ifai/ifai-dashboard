@@ -28,7 +28,7 @@ export function EvidenceLink({
       data-ifai-tab={tab}
       data-ifai-evidence={focus ? `${focus.field}:${focus.value}` : "all"}
       aria-label={label}
-      onClick={() => setEvidenceFocus(focus)}
+      onClickCapture={() => setEvidenceFocus(focus)}
       style={{
         background: "none",
         border: 0,

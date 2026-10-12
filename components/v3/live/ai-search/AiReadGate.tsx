@@ -42,6 +42,14 @@ export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; 
 
 /** Loading, failed, and missing reads never fall through to zeros or demo figures. */
 export function AiReadGate({ children }: { children: (snapshot: AiSearchSnapshot) => ReactNode }) {
+  return (
+    <div className="ai-search-panel">
+      <GateBody>{children}</GateBody>
+    </div>
+  );
+}
+
+function GateBody({ children }: { children: (snapshot: AiSearchSnapshot) => ReactNode }) {
   const read = useAiSearch();
   if (read.phase === "loading") {
     return (
