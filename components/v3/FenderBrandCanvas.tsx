@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { AiSearchProvider, useAiSearchRead } from "@/components/v3/live/ai-search/AiSearchContext";
 import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
 import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
@@ -52,6 +53,7 @@ export function FenderBrandCanvas({
 }) {
   const { bundle, loading, stale, error } = useFenderCanvasData();
   const retail = usePortfolioRetailSnapshot();
+  const aiSearch = useAiSearchRead();
 
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
@@ -91,12 +93,13 @@ export function FenderBrandCanvas({
       userMenu,
       viewerId,
       retail,
+      aiSearch,
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: (
         <DataFreshnessBar fresh={bundle.fresh} stale={stale} />
       ),
     });
-  }, [bundle, retail, stale, userMenu, viewerId]);
+  }, [aiSearch, bundle, retail, stale, userMenu, viewerId]);
 
   if (loading && !spec) {
     return <CanvasLoadingShell />;
@@ -110,5 +113,9 @@ export function FenderBrandCanvas({
     );
   }
 
-  return <IntelligenceCanvas spec={spec} />;
+  return (
+    <AiSearchProvider read={aiSearch}>
+      <IntelligenceCanvas spec={spec} />
+    </AiSearchProvider>
+  );
 }

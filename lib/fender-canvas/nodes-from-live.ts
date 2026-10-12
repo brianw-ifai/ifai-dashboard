@@ -1,6 +1,8 @@
 import type { CanvasNode } from "@/lib/canvas-sdk/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
+import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
+import type { AiSearchRead } from "@/lib/ai-search/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
@@ -15,16 +17,12 @@ export function buildLiveNodes(
   bundle: CanvasBundle,
   metrics: MetricsMap,
   retail: RetailCanvasRead = { phase: "loading" },
+  ai: AiSearchRead = { phase: "loading" },
 ): CanvasNode[] {
-  const { m, cats } = bundle;
+  const { m } = bundle;
   const retailFaces = retailBubbleFaces(retail);
-  const beginner = cats.find((c) => c.category === "beginner");
-  const acoustics = cats.find((c) => c.category === "acoustics");
-  const amps = cats.find((c) => c.category === "amps");
-
+  const aiFaces = aiNodeFaces(ai);
   const headline = headlineSurface(retail);
-  const simWin = metrics.overallAiWinRate.value;
-  const beginnerWin = metrics.beginnerAiWinRate.value;
 
   return [
     {
@@ -32,54 +30,24 @@ export function buildLiveNodes(
       x: 240,
       y: 200,
       r: 52,
-      status: "danger",
-      title: `${formatInt(m.sim_total)} Sims`,
-      stats: [
-        `${formatInt(m.sim_runs)} engine runs`,
-        `${simWin} win (resolved)`,
-      ],
-      meta: "ChatGPT · Perplexity · Gemini",
       spokeId: "aeo",
-      subTab: "simulations",
-      tooltip: {
-        title: "AI Simulation Battery",
-        desc: `${formatInt(m.sim_total)} prompt-engine calls in the latest battery. ${formatInt(m.sim_wins)} Fender/Squier wins of ${formatInt(m.sim_resolved)} resolved (${formatInt(m.sim_unclear)} unclear, ${formatInt(m.sim_errors)} errors).`,
-      },
+      ...aiFaces.satPrompts,
     },
     {
       id: "sat-citations",
       x: 180,
       y: 360,
       r: 52,
-      status: "warning",
-      title: "Citations",
-      stats: ["SOV mix", "See drill-down"],
-      meta: "Category breakdown in panel",
       spokeId: "aeo",
-      subTab: "citation",
-      tooltip: {
-        title: "AI Citation Ecosystem",
-        desc: "Citation share is derived from the latest simulation battery. Open the AI Search Visibility spoke for category-level win rates and competitor SOV.",
-      },
+      ...aiFaces.satCitations,
     },
     {
       id: "sat-drift",
       x: 260,
       y: 480,
       r: 52,
-      status: "warning",
-      title: "AI Drift",
-      stats: [
-        `${metrics.confirmedHallucinations.value} Confirmed Hallucinations`,
-        "See drill-down",
-      ],
-      meta: `Of ${formatInt(m.sim_hallucination_risk)} risk answers`,
       spokeId: "aeo",
-      subTab: "hallucination",
-      tooltip: {
-        title: "Detected Spec Hallucinations",
-        desc: `${formatInt(m.sim_hallucinations)} confirmed hallucinations in the latest run. Inspect root causes and remediation patches in the simulations table.`,
-      },
+      ...aiFaces.satDrift,
     },
     {
       id: "sat-buybox",
@@ -144,56 +112,25 @@ export function buildLiveNodes(
       x: 1370,
       y: 720,
       r: 51,
-      status: "warning",
-      title: "Taylor / PRS",
-      stats: [
-        acoustics?.top_competitor
-          ? `${formatPct(acoustics.top_competitor_pct)} ${acoustics.top_competitor}`
-          : "Acoustics SOV",
-        `${formatPct(acoustics?.fender_win_pct ?? null)} Fender`,
-      ],
-      meta: "Acoustics category",
       spokeId: "competitors",
-      subTab: "battlecards",
-      tooltip: {
-        title: "Taylor and PRS Category Battles",
-        desc: `Acoustics win rate: Fender/Squier ${formatPct(acoustics?.fender_win_pct ?? null)} vs top rival ${acoustics?.top_competitor ?? "n/a"} ${formatPct(acoustics?.top_competitor_pct ?? null)}.`,
-      },
+      ...aiFaces.satGap,
     },
     {
       id: "sat-amps",
       x: 1280,
       y: 870,
       r: 48,
-      status: "success",
-      title: "Amps Category",
-      stats: [
-        `${formatPct(amps?.fender_win_pct ?? null)} Fender`,
-        `${formatInt(amps?.resolved ?? null)} resolved sims`,
-      ],
-      meta: "AI simulations",
       spokeId: "competitors",
-      subTab: "head-to-head",
-      tooltip: {
-        title: "Digital Amp Ecosystem",
-        desc: `Fender/Squier win ${formatPct(amps?.fender_win_pct ?? null)} of resolved amps-category prompts in the latest battery.`,
-      },
+      ...aiFaces.satLead,
     },
     {
       id: "spoke-aeo",
       x: 440,
       y: 320,
       r: 86,
-      status: "danger",
-      title: "AI Search Visibility",
       titleSize: 14.5,
-      stats: [`${simWin} Win`, `${formatInt(m.sim_total)} Sims`],
-      meta: `Weakest: ${m.weakest_category ?? "n/a"} ${beginnerWin}`,
       spokeId: "aeo",
-      tooltip: {
-        title: "AI Search Visibility & Simulations",
-        desc: `Overall win rate ${simWin} across ${formatInt(m.sim_resolved)} resolved simulations. Weakest category: ${m.weakest_category ?? "n/a"} at ${formatPct(m.weakest_win_pct)}.`,
-      },
+      ...aiFaces.spokeAeo,
     },
     {
       id: "spoke-retail",
@@ -228,19 +165,9 @@ export function buildLiveNodes(
       x: 1160,
       y: 680,
       r: 78,
-      status: "danger",
-      title: "Competitive Radar",
       titleSize: 13,
-      stats: [
-        `${beginner?.top_competitor ?? "Rival"} ${formatPct(beginner?.top_competitor_pct ?? null)}`,
-        `${formatInt(m.weakest_sov_gap_pts)} pt gap`,
-      ],
-      meta: `${m.weakest_category ?? "Category"} gap`,
       spokeId: "competitors",
-      tooltip: {
-        title: "Competitive Radar",
-        desc: `Largest SOV gap: ${m.weakest_top_competitor ?? "n/a"} in ${m.weakest_category ?? "n/a"} (${formatInt(m.weakest_sov_gap_pts)} pts). Strongest: ${m.strongest_category ?? "n/a"} at ${formatPct(m.strongest_win_pct)}.`,
-      },
+      ...aiFaces.spokeCompetitors,
     },
     {
       id: "spoke-fixes",
