@@ -118,6 +118,15 @@ export type CanvasRetailListingRow = {
   competitive_price_threshold_cents?: number | null;
   featured_offer_withheld?: boolean | null;
   competitive_offer_suppressed?: boolean | null;
+  featured_offer_state?: string | null;
+  featured_offer_source?: string | null;
+  featured_offer_checked_at?: string | null;
+  featured_offer_attempted_at?: string | null;
+  featured_offer_last_error?: string | null;
+  competitive_external_price_state?: string | null;
+  featured_offer_observed_price_cents?: number | null;
+  featured_offer_observed_shipping_cents?: number | null;
+  featured_offer_observed_seller?: string | null;
 };
 
 export type CanvasSimulationRow = {

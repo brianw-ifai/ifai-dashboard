@@ -6,10 +6,19 @@
 
 import { tabSlug } from "../canvas-sdk/canvas-url-state";
 import {
-  qualifiesForSuppressionList,
-  thresholdCents,
-  type SuppressionReading,
-} from "./suppressed-listings";
+  countFeaturedOffer,
+  FEATURED_OFFER_COLUMNS,
+  type FeaturedOfferCounts,
+  type FeaturedOfferRow,
+} from "./featured-offer";
+import {
+  classificationCoverageSentence,
+  confirmedSuppressionSentence,
+  FEATURED_OFFER_UNAVAILABLE,
+  featuredOfferHeadlineCount,
+  featuredOfferHeadlineLabel,
+  firstPassIncomplete,
+} from "./featured-offer-copy";
 
 export type RetailReadingStatus =
   | "available_with_issues"
@@ -24,6 +33,13 @@ export type RetailReading<T> = {
   /** Plain language for an incomplete or absent reading. Null when the reading is complete. */
   missingMessage: string | null;
   detail: T;
+  /**
+   * Client-facing name of the confirmed result this reading leads with, when the tab
+   * label is too generic. Every copied surface uses this same label and count.
+   */
+  headlineLabel?: string;
+  /** Noun for the count beside `headlineLabel`. */
+  headlineNoun?: string;
 };
 
 export type RetailFindingId = "suppressed_listings" | "map_leakage" | "unnested_bundles";
@@ -48,8 +64,6 @@ export type RetailHeadline = {
   reading: RetailReading<unknown>;
 };
 
-const SUPPRESSED_UNAVAILABLE =
-  "Suppressed Featured Offer readings have not been stored.";
 const MAP_UNAVAILABLE = "MAP leakage has not been stored.";
 
 /** Shown when the retail read has rows and none of them store a MAP price. */
@@ -57,8 +71,7 @@ export const MAP_PRICES_NOT_STORED = "Fender MAP prices have not been stored.";
 const BUNDLE_UNAVAILABLE = "Catalog bundle parent ASINs have not been stored.";
 const SPEC_UNAVAILABLE = "Amazon spec-field readings have not been stored.";
 
-export const RETAIL_SUPPRESSION_COLUMNS =
-  "asin,offer_price,competitive_price_threshold_cents,featured_offer_withheld";
+export const RETAIL_SUPPRESSION_COLUMNS = FEATURED_OFFER_COLUMNS;
 
 export const RETAIL_MAP_LEAKAGE_COLUMNS =
   "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage";
@@ -90,90 +103,81 @@ function unavailable<T>(message: string): RetailReading<T | null> {
   return { status: "unavailable", issueCount: null, missingMessage: message, detail: null };
 }
 
-export type SuppressionSupportRow = {
-  offer_price: number | string | null;
-  competitive_price_threshold_cents: number | string | null;
-  featured_offer_withheld: boolean | null;
-};
+export type SuppressionSupportRow = FeaturedOfferRow;
 
 export type SuppressionDetail = {
+  counts: FeaturedOfferCounts;
+  /** Confirmed high-price suppression. Not every withheld listing. */
   suppressed: number;
+  /** Listings with a current successful classification. The coverage numerator. */
   audited: number;
+  /** The monitored retail population. The coverage denominator. */
   population: number;
+  /** Checked listings with a positive outside benchmark. */
   withThreshold: number;
 };
 
-function withheldWasStored(value: boolean | null | undefined): boolean {
-  return value === true || value === false;
-}
-
-function asSuppressionReading(row: SuppressionSupportRow): SuppressionReading {
-  return {
-    asin: "",
-    model_name: null,
-    title: null,
-    offer_price: finite(row.offer_price),
-    competitive_price_threshold_cents: finite(row.competitive_price_threshold_cents),
-    featured_offer_withheld: row.featured_offer_withheld ?? null,
-  };
-}
-
 /**
- * Count listings supported by a stored Competitive External Price and a stored
- * Featured Offer withheld flag. Coverage is the share of the population whose
- * withheld flag has been written.
+ * The Featured Offer reading. Coverage is the share of the monitored population with a
+ * current successful classification, so unchecked and failed listings stay in the
+ * denominator instead of being hidden. The older `featured_offer_withheld` boolean on its
+ * own is not coverage: the earlier collector wrote `false` whenever Keepa returned no flag.
+ *
+ * The headline count is confirmed high-price suppression when there is one, and the
+ * confirmed withheld count otherwise. A withheld Featured Offer with no outside benchmark
+ * is never called a price suppression.
  */
 export function suppressedListingsFinding(
   rows: SuppressionSupportRow[] | null,
-  options?: { truncated?: boolean },
+  options?: { truncated?: boolean; now?: number },
 ): RetailReading<SuppressionDetail | null> {
-  if (rows == null) return unavailable(SUPPRESSED_UNAVAILABLE);
+  if (rows == null) return unavailable(FEATURED_OFFER_UNAVAILABLE);
 
-  const population = rows.length;
-  const audited = rows.filter((row) => withheldWasStored(row.featured_offer_withheld)).length;
-  const withThreshold = rows.filter(
-    (row) => thresholdCents(finite(row.competitive_price_threshold_cents)) != null,
-  ).length;
-  const suppressed = rows.filter((row) => qualifiesForSuppressionList(asSuppressionReading(row))).length;
-  const detail: SuppressionDetail = { suppressed, audited, population, withThreshold };
+  const counts = countFeaturedOffer(rows, options?.now ?? Date.now());
+  const detail: SuppressionDetail = {
+    counts,
+    suppressed: counts.confirmedHighPrice,
+    audited: counts.current,
+    population: counts.population,
+    withThreshold: counts.benchmarkPresent,
+  };
 
-  if (population === 0 && !options?.truncated) {
-    return {
-      status: "available_with_zero",
-      issueCount: 0,
-      missingMessage: null,
-      detail,
-    };
+  if (counts.population === 0 && !options?.truncated) {
+    return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
   }
 
-  if (audited === 0 && !options?.truncated) return unavailable(SUPPRESSED_UNAVAILABLE);
+  if (counts.classified === 0 && !options?.truncated) {
+    return { status: "unavailable", issueCount: null, missingMessage: FEATURED_OFFER_UNAVAILABLE, detail };
+  }
 
-  if (options?.truncated || audited < population) {
-    const remaining = population - audited;
-    const confirmed =
-      suppressed === 0
-        ? "No suppressed Featured Offer is confirmed in that partial read."
-        : `${countLabel(suppressed)} ${suppressed === 1 ? "listing" : "listings"} in that partial read ${suppressed === 1 ? "is" : "are"} above the Competitive External Price with the Featured Offer withheld.`;
-    const tail = options?.truncated
-      ? "The read stopped before every listing was loaded, so this is not a final count."
-      : `${countLabel(remaining)} ${remaining === 1 ? "listing is" : "listings are"} still missing, so this is not a final count.`;
+  const issueCount = featuredOfferHeadlineCount(counts);
+  const headlineLabel = featuredOfferHeadlineLabel(counts);
+
+  if (options?.truncated || firstPassIncomplete(counts)) {
+    const stopped = options?.truncated
+      ? " The read stopped before every listing was loaded, so this is not a final count."
+      : "";
     return {
       status: "incomplete",
-      issueCount: suppressed,
-      missingMessage: `The hourly audit has stored a Featured Offer reading for ${countLabel(audited)} of ${countLabel(population)} listings. ${confirmed} ${tail}`,
+      issueCount,
+      missingMessage: `${confirmedSuppressionSentence(counts)} ${classificationCoverageSentence(counts)}${stopped}`,
       detail,
+      headlineLabel,
+      headlineNoun: "listing",
     };
   }
 
-  if (suppressed === 0) {
+  if (issueCount === 0) {
     return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
   }
 
   return {
     status: "available_with_issues",
-    issueCount: suppressed,
+    issueCount,
     missingMessage: null,
     detail,
+    headlineLabel,
+    headlineNoun: "listing",
   };
 }
 
