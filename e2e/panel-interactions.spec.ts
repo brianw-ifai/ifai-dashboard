@@ -72,7 +72,7 @@ test.describe("prompt watchlist", () => {
 
 test.describe("collapsible explanations", () => {
   test("an explanation can be hidden and stays hidden", async ({ canvas, page }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
 
     const toggle = page.locator(".ceo-callout-toggle").first();
     const body = page.locator(".ceo-callout-body").first();
@@ -84,7 +84,7 @@ test.describe("collapsible explanations", () => {
     await expect(page.locator(".ceo-callout-header").first()).toBeVisible();
 
     await canvas.reload();
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     await expect(page.locator(".ceo-callout-body").first()).toBeHidden();
 
     await page.locator(".ceo-callout-toggle").first().click();
@@ -127,7 +127,7 @@ test.describe("drill-downs", () => {
     canvas,
     page,
   }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Retail Overview",
       "Suppressed Listings",
@@ -161,7 +161,7 @@ test.describe("drill-downs", () => {
   });
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
@@ -173,16 +173,48 @@ test.describe("drill-downs", () => {
     await expect(list).not.toContainText("Sweetwater");
     await expect(body).not.toContainText("$808.00");
 
+    // Amazon's benchmark is never attributed to a named retailer.
+    await expect(list).toContainText("Amazon does not name that retailer");
+
     const count = list.locator(".suppressed-count");
     await expect(count).toBeVisible();
-    await expect(list.getByText("Loading qualifying listings…")).toHaveCount(0);
-    await expect(list.getByText(/not a final count|not been stored|could not be loaded/)).toBeVisible();
+    await expect(list.getByText("Loading withheld listings…")).toHaveCount(0);
+    await expect(
+      list.getByText(/current reading|not stored a reading|could not be loaded/).first(),
+    ).toBeVisible();
     if (await count.isVisible()) {
+      // The badge is the confirmed withheld count, and the table lists exactly those rows.
       const badge = Number((await count.innerText()).replace(/,/g, ""));
-      const empty = await list.getByText("No listing in this reading").count();
+      const empty = await list.getByText("No monitored listing has a withheld").count();
       const dataRows = empty ? 0 : await list.locator("tbody tr").count();
       expect(badge).toBe(dataRows);
     }
+  });
+
+  test("the Featured Offer readings keep each state on its own denominator", async ({
+    canvas,
+    page,
+  }) => {
+    await canvas.openPriority("Featured Offer withheld");
+    await expect(canvas.activeTab).toHaveText("Retail Overview");
+    const readings = page.locator(".fo-readings");
+    await expect(readings).toBeVisible();
+    for (const label of [
+      "Featured Offer present",
+      "Featured Offer withheld",
+      "No active offer",
+      "Check failed",
+      "Not checked",
+      "Competitive External Price available",
+      "Confirmed withheld above outside price",
+    ]) {
+      await expect(readings.locator(".fo-reading", { hasText: label }).first()).toBeVisible();
+    }
+    // Every rate shows its denominator, and a missing result is never a bare zero.
+    await expect(readings.locator(".fo-denominator").first()).toBeVisible();
+    await expect(readings).toContainText("not counted as zero");
+    await expect(readings).toContainText("Featured Offer check");
+    await expect(readings).not.toContainText("MAP");
   });
 
   test("roadmap phases open the work behind them", async ({ canvas, page }) => {
@@ -239,7 +271,7 @@ test.describe("drill-downs", () => {
 
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);
@@ -263,7 +295,7 @@ test.describe("glossary", () => {
   });
 
   test("marking does not corrupt the surrounding copy", async ({ canvas, page }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
@@ -271,7 +303,7 @@ test.describe("glossary", () => {
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");
