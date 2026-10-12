@@ -167,8 +167,17 @@ export function suppressedListingsFinding(
     };
   }
 
+  // A finished zero keeps the client-facing label, so the name of this reading does not
+  // swap to the tab title the moment the count clears.
   if (issueCount === 0) {
-    return { status: "available_with_zero", issueCount: 0, missingMessage: null, detail };
+    return {
+      status: "available_with_zero",
+      issueCount: 0,
+      missingMessage: null,
+      detail,
+      headlineLabel,
+      headlineNoun: "listing",
+    };
   }
 
   return {

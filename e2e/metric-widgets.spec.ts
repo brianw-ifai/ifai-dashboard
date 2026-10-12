@@ -5,7 +5,7 @@ test.describe("configurable metric widgets", () => {
     const widgets = page.locator(".canvas-metric-widget");
     await expect(widgets).toHaveCount(3);
     await expect(widgets.nth(0)).toContainText("Featured Offers Suppressed");
-    await expect(widgets.nth(1)).toContainText("Confirmed Spec Hallucinations");
+    await expect(widgets.nth(1)).toContainText("Product Fact Checks");
     await expect(widgets.nth(2)).toContainText("Recoverable Revenue");
 
     const firstBox = await widgets.first().boundingBox();
@@ -31,11 +31,11 @@ test.describe("configurable metric widgets", () => {
     await widgets.nth(0).locator(".metric-widget-config").click();
     await page
       .getByRole("dialog", { name: "Choose metric for widget 1" })
-      .locator(".metric-widget-option", { hasText: "Confirmed Spec Hallucinations" })
+      .locator(".metric-widget-option", { hasText: "Product Fact Checks" })
       .click();
 
     await expect(
-      page.locator(".metric-widget-label", { hasText: "Confirmed Spec Hallucinations" }),
+      page.locator(".metric-widget-label", { hasText: "Product Fact Checks" }),
     ).toHaveCount(2);
   });
 

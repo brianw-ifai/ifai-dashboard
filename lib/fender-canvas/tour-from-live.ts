@@ -1,4 +1,6 @@
 import type { TourStep } from "@/lib/canvas-sdk/types";
+import { aiTourLines } from "@/lib/ai-search/canvas-surfaces";
+import type { AiSearchRead } from "@/lib/ai-search/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
@@ -10,9 +12,10 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 export function buildLiveTourSteps(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
+  ai: AiSearchRead = { phase: "loading" },
 ): TourStep[] {
-  const { m, cats } = bundle;
-  const beginner = cats.find((c) => c.category === "beginner");
+  const { m } = bundle;
+  const aiLines = aiTourLines(ai);
   const headline = headlineSentence(headlineSurface(retail));
 
   return [
@@ -27,7 +30,7 @@ export function buildLiveTourSteps(
       displays: [
         `${formatInt(m.catalog_skus)} monitored SKUs`,
         headline,
-        `AI win rate ${formatPct(m.sim_win_pct)}; weakest is ${m.weakest_category ?? "n/a"} at ${formatPct(m.weakest_win_pct)}`,
+        aiLines.hub,
       ],
       value: "One page tying Amazon listing problems and AI recommendations to revenue.",
     },
@@ -51,14 +54,10 @@ export function buildLiveTourSteps(
       targetY: 320,
       radius: 125,
       title: "AI Search Visibility",
-      subtitle: "What ChatGPT, Perplexity, and Gemini say about Fender",
+      subtitle: "What AI assistants say about Fender on buying questions",
       category: "AI SEARCH VISIBILITY",
-      displays: [
-        `${formatInt(m.sim_total)} simulations across ${formatInt(m.sim_runs)} engine runs`,
-        `${formatPct(m.sim_win_pct)} Fender/Squier wins on ${formatInt(m.sim_resolved)} resolved calls`,
-        `${formatInt(m.sim_hallucinations)} confirmed spec hallucinations flagged`,
-      ],
-      value: "See why AI assistants leave Fender out of recommendations and exactly what to change.",
+      displays: aiLines.aeo,
+      value: "See how often AI assistants name Fender on buying questions, which pages they cite, and where rivals lead.",
     },
     {
       nodeId: "specs",
@@ -83,12 +82,8 @@ export function buildLiveTourSteps(
       title: "Competitors",
       subtitle: "Where rivals beat Fender, and why",
       category: "COMPETITORS",
-      displays: [
-        `${beginner?.top_competitor ?? "Rival"} ${formatPct(beginner?.top_competitor_pct ?? null)} in beginner`,
-        `Strongest category: ${m.strongest_category ?? "n/a"} at ${formatPct(m.strongest_win_pct)}`,
-        "SOV from the simulation battery",
-      ],
-      value: "Get ready-made playbooks for shoppers deciding between Fender and a rival.",
+      displays: aiLines.competitors,
+      value: "See which rivals AI engines name over Fender, in which categories, with every answer behind it.",
     },
     {
       nodeId: "suggestions",
@@ -115,7 +110,7 @@ export function buildLiveTourSteps(
       category: "ROADMAP",
       displays: [
         headline,
-        `AI win rate ${formatPct(m.sim_win_pct)}`,
+        aiLines.roadmap,
       ],
       value: "Follow a 90-day plan from the current retail headline.",
     },

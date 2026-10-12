@@ -1,18 +1,23 @@
 import type { ReactNode } from "react";
 import { CatalogGovernancePanel } from "@/components/v3/live/CatalogGovernancePanel";
-import { CompetitorSovIntro } from "@/components/v3/live/CompetitorSovIntro";
-import { FenderCategorySovPanel } from "@/components/v3/live/FenderCategorySovPanel";
+import { AiDriftPanel } from "@/components/v3/live/ai-search/AiDriftPanel";
+import { CategoryBattlecardsPanel } from "@/components/v3/live/ai-search/CategoryBattlecardsPanel";
+import { CitationEcosystemPanel } from "@/components/v3/live/ai-search/CitationEcosystemPanel";
+import { CompetitorWinsPanel } from "@/components/v3/live/ai-search/CompetitorWinsPanel";
+import { EngineComparisonPanel } from "@/components/v3/live/ai-search/EngineComparisonPanel";
+import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
+import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
-import { FenderHallucinationPanel } from "@/components/v3/live/FenderHallucinationPanel";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
-import { FenderSimulationsPanel } from "@/components/v3/live/FenderSimulationsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
 import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/FenderSpecNarratives";
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
+import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
+import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
@@ -52,8 +57,10 @@ const TAB_OVERRIDES: Partial<
     3: (_bundle, _vars, retail) => <CatalogGovernancePanel read={retail} />,
   },
   aeo: {
-    1: () => <FenderSimulationsPanel />,
-    2: () => <FenderHallucinationPanel />,
+    0: () => <RunSummaryPanel />,
+    1: () => <SimulationsExplorer />,
+    2: () => <AiDriftPanel />,
+    3: () => <CitationEcosystemPanel />,
   },
   specs: {
     0: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
@@ -66,12 +73,9 @@ const TAB_OVERRIDES: Partial<
     2: () => <AplusExplanation />,
   },
   competitors: {
-    0: (bundle) => (
-      <>
-        <CompetitorSovIntro />
-        <FenderCategorySovPanel categories={bundle.cats} sov={bundle.sov} />
-      </>
-    ),
+    0: () => <CategoryBattlecardsPanel />,
+    1: () => <CompetitorWinsPanel />,
+    2: () => <EngineComparisonPanel />,
   },
 };
 
@@ -80,6 +84,7 @@ function wrapSpoke(
   bundle: CanvasBundle,
   vars: Record<string, string>,
   retail: RetailCanvasRead,
+  ai: AiSearchRead,
 ): SpokeDefinition {
   const bound = bindNarrativeSpoke(spokeData[id], vars);
   const overrides = TAB_OVERRIDES[id] ?? {};
@@ -93,6 +98,8 @@ function wrapSpoke(
           tabs: [...RETAIL_PANEL_TABS],
         }
       : {}),
+    ...(id === "aeo" ? { desc: aiSpokeDesc(ai) } : {}),
+    ...(id === "competitors" ? { desc: competitorsSpokeDesc(ai) } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
@@ -106,10 +113,15 @@ function wrapSpoke(
 export function buildLiveSpokes(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
+  ai: AiSearchRead = { phase: "loading" },
 ): Record<SpokeId, SpokeDefinition> {
-  const vars = { ...buildTemplateVars(bundle), ...retailTemplateVars(bundle, retail) };
+  const vars = {
+    ...buildTemplateVars(bundle),
+    ...retailTemplateVars(bundle, retail),
+    ai_action_card: aiActionCardHtml(ai),
+  };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;
-  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail);
+  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail, ai);
   return out;
 }

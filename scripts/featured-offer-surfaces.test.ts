@@ -165,6 +165,26 @@ test("every copied surface carries the same Featured Offer label and count", () 
   }
 });
 
+test("the client-facing label holds even when the confirmed count clears", () => {
+  // Every priority, bubble, and spec that opens this evidence matches on this phrase,
+  // so it must not revert to the tab title once the count reaches zero.
+  const present = withheld({
+    featured_offer_state: "present",
+    featured_offer_withheld: false,
+    featured_offer_observed_price_cents: 30000,
+  });
+  const cleared = suppressedListingsFinding([present]);
+  assert.equal(cleared.status, "available_with_zero");
+  assert.equal(cleared.issueCount, 0);
+  assert.equal(cleared.headlineLabel, "Featured Offer withheld");
+
+  const partial = suppressedListingsFinding([withheld(), notChecked()]);
+  assert.match(partial.headlineLabel ?? "", /^Featured Offer withheld/);
+
+  // No reading at all makes no claim about withheld listings.
+  assert.equal(suppressedListingsFinding(null).headlineLabel, undefined);
+});
+
 test("the suppressed tab keeps its slug so old deep links still resolve", () => {
   assert.equal(RETAIL_FINDING_LABELS.suppressed_listings, "Suppressed Listings");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.suppressed_listings), "suppressed-listings");
