@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
-import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
+import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { featuredOfferState } from "@/lib/fender-canvas/featured-offer";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import { listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
@@ -20,7 +21,6 @@ import { exploreListingSortValue } from "@/lib/fender-canvas/listing-table-sort"
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 
-const PAGE_SIZE = 50;
 const PRICE_PAGE = 1000;
 const PREFERRED_EXTRAS = ["sweetwater", "reverb"];
 
@@ -133,7 +133,6 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
 export function FenderListingsTable() {
   const [rows, setRows] = useState<CanvasRetailListingRow[]>([]);
   const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
-  const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,16 +141,20 @@ export function FenderListingsTable() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: err, count } = await listingsQuery(page, PAGE_SIZE, filter);
-    if (err) {
-      setError(err.message);
+    setRows([]);
+    const result = await loadFilteredPages(async (page, size) => {
+      const { data, error: err, count } = await listingsQuery(page, size, filter);
+      return { data: (data ?? []) as CanvasRetailListingRow[], error: err, count };
+    });
+    if (result.error) {
+      setError(result.error);
       setLoading(false);
       return;
     }
-    setRows((data ?? []) as CanvasRetailListingRow[]);
-    setTotal(count ?? null);
+    setRows(result.rows);
+    setTotal(result.total);
     setLoading(false);
-  }, [filter, page]);
+  }, [filter]);
 
   useEffect(() => {
     void load();
@@ -167,16 +170,24 @@ export function FenderListingsTable() {
     };
   }, []);
 
-  const extras = extraChannels(channelPrices);
-  const columns = exploreColumns(extras);
-  const prices = channelPriceLookup(channelPrices);
-  const sorted = useClientTableSort(rows, columns, (row, columnId) =>
-    exploreListingSortValue(row, columnId, (id) => {
-      const facts = listingChannelFacts(asMapRow(row), prices.get(row.asin.trim()));
-      return facts.find((fact) => fact.key === id)?.price;
-    }),
+  const extras = useMemo(() => extraChannels(channelPrices), [channelPrices]);
+  const columns = useMemo(() => exploreColumns(extras), [extras]);
+  const prices = useMemo(() => channelPriceLookup(channelPrices), [channelPrices]);
+  const sortValue = useCallback(
+    (row: CanvasRetailListingRow, columnId: string) =>
+      exploreListingSortValue(row, columnId, (id) => {
+        const facts = listingChannelFacts(asMapRow(row), prices.get(row.asin.trim()));
+        return facts.find((fact) => fact.key === id)?.price;
+      }),
+    [prices],
   );
-  const pages = total != null ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : 1;
+  const population = useFullPopulationSort(
+    rows,
+    columns,
+    sortValue,
+    (row) => row.asin,
+    CLIENT_TABLE_PAGE_SIZE,
+  );
 
   return (
     <div className="content-box retail-listings-table" style={{ marginTop: 12 }}>
@@ -192,7 +203,7 @@ export function FenderListingsTable() {
           type="button"
           className={`segmented-btn${!filter.violationsOnly && !filter.bundlesOnly ? " active" : ""}`}
           onClick={() => {
-            setPage(0);
+            population.resetPage();
             setFilter({});
           }}
         >
@@ -202,7 +213,7 @@ export function FenderListingsTable() {
           type="button"
           className={`segmented-btn${filter.violationsOnly ? " active" : ""}`}
           onClick={() => {
-            setPage(0);
+            population.resetPage();
             setFilter({ violationsOnly: true });
           }}
         >
@@ -212,7 +223,7 @@ export function FenderListingsTable() {
           type="button"
           className={`segmented-btn${filter.bundlesOnly ? " active" : ""}`}
           onClick={() => {
-            setPage(0);
+            population.resetPage();
             setFilter({ bundlesOnly: true });
           }}
         >
@@ -231,8 +242,8 @@ export function FenderListingsTable() {
         columns={columns}
         freezeHeader
         maxHeight={520}
-        sort={sorted.sort}
-        onSort={sorted.onSort}
+        sort={population.sort}
+        onSort={population.onSort}
       >
         <tbody>
           {loading && rows.length === 0 ? (
@@ -250,7 +261,7 @@ export function FenderListingsTable() {
               <td colSpan={columns.length}>The listing read could not be loaded.</td>
             </tr>
           ) : null}
-          {sorted.rows.map((row) => {
+          {population.pageRows.map((row) => {
             const label = row.model_name?.trim() || row.title?.trim() || "Listing";
             const partner = row.bundle_name ?? row.buybox_seller_name ?? "n/a";
             const href = httpUrl(row.product_url) ?? amazonHref(row.asin);
@@ -306,19 +317,19 @@ export function FenderListingsTable() {
         <button
           type="button"
           className="segmented-btn"
-          disabled={page <= 0 || loading}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={population.page <= 0 || loading}
+          onClick={() => population.setPage((current) => Math.max(0, current - 1))}
         >
           Previous
         </button>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          Page {page + 1} of {pages}
+          Page {population.page + 1} of {population.pages}
         </span>
         <button
           type="button"
           className="segmented-btn"
-          disabled={page + 1 >= pages || loading}
-          onClick={() => setPage((p) => p + 1)}
+          disabled={population.page + 1 >= population.pages || loading}
+          onClick={() => population.setPage((current) => current + 1)}
         >
           Next
         </button>

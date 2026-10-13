@@ -71,11 +71,24 @@ export function compareSortValues(kind: SortKind, left: SortInput, right: SortIn
   return String(left).localeCompare(String(right), undefined, { sensitivity: "base" });
 }
 
+function tieBreakOrder<T>(
+  left: { row: T; index: number },
+  right: { row: T; index: number },
+  tieBreak?: (row: T) => string,
+): number {
+  if (tieBreak) {
+    const compared = tieBreak(left.row).localeCompare(tieBreak(right.row), undefined, { sensitivity: "base" });
+    if (compared !== 0) return compared;
+  }
+  return left.index - right.index;
+}
+
 export function sortRowsByColumn<T>(
   rows: readonly T[],
   kind: SortKind,
   direction: SortDirection,
   value: (row: T) => SortInput,
+  tieBreak?: (row: T) => string,
 ): T[] {
   return rows
     .map((row, index) => ({ row, index, value: value(row) }))
@@ -84,10 +97,10 @@ export function sortRowsByColumn<T>(
       const rightMissing = isMissingSortValue(kind, b.value);
       if (leftMissing || rightMissing) {
         const placed = compareSortValues(kind, a.value, b.value);
-        return placed === 0 ? a.index - b.index : placed;
+        return placed === 0 ? tieBreakOrder(a, b, tieBreak) : placed;
       }
       const compared = compareSortValues(kind, a.value, b.value);
-      if (compared === 0) return a.index - b.index;
+      if (compared === 0) return tieBreakOrder(a, b, tieBreak);
       return direction === "asc" ? compared : -compared;
     })
     .map(({ row }) => row);

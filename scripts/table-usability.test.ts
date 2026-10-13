@@ -159,6 +159,7 @@ test("TSX files in this pass stay at or under 400 lines", () => {
     "components/v3/live/ResizableTable.tsx",
     "components/v3/live/SchemaAdditionalPropertyList.tsx",
     "components/v3/live/SuppressedListingsPanel.tsx",
+    "components/v3/live/useFullPopulationSort.ts",
     "components/v3/live/ai-search/CategoryBattlecardsPanel.tsx",
     "components/v3/live/ai-search/CitationEcosystemPanel.tsx",
     "components/v3/live/ai-search/CitationEvidenceTable.tsx",

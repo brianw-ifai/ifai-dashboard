@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
-import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import {
   isFoundAdditionalPropertyGap,
   schemaGapRowsQuery,
   type SchemaGapRow,
 } from "@/lib/canvasData";
 import { AdditionalPropertyTerm } from "@/components/v3/live/FenderSpecNarratives";
+import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
+import { schemaGapSortValue, schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 import { specModelTitle } from "@/lib/fender-canvas/types";
 import { formatInt } from "@/lib/fender-canvas/format";
-import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const COLUMNS = [
   clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
@@ -20,55 +21,41 @@ const COLUMNS = [
   clientColumn("fields", "Stored missing fields", "text", 280, 140),
 ];
 
-function gapSortValue(row: SchemaGapRow, columnId: string): SortInput {
-  if (columnId === "asin") return row.asin;
-  if (columnId === "model") return specModelTitle(row.title) || null;
-  if (columnId === "page") return pageHref(row.fender_url) ? "fender.com page" : null;
-  return row.fender_missing_fields?.trim() || null;
-}
-
-function pageHref(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
 export function SchemaAdditionalPropertyList() {
   const [rows, setRows] = useState<SchemaGapRow[]>([]);
-  const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const [seenPage, setSeenPage] = useState(page);
-  const pageSize = 50;
-
-  if (seenPage !== page) {
-    setSeenPage(page);
-    setFailed(false);
-    setLoading(true);
-    setRows([]);
-    setTotal(null);
-  }
+  const visible = useMemo(() => rows.filter((row) => isFoundAdditionalPropertyGap(row)), [rows]);
+  const population = useFullPopulationSort(
+    visible,
+    COLUMNS,
+    schemaGapSortValue,
+    (row) => row.asin,
+    CLIENT_TABLE_PAGE_SIZE,
+  );
 
   useEffect(() => {
     let cancelled = false;
-    void schemaGapRowsQuery(page, pageSize).then(
-      ({ data, count, error }) => {
+    void loadFilteredPages(async (page, size) => {
+      const result = await schemaGapRowsQuery(page, size);
+      return {
+        data: (result.data ?? []) as SchemaGapRow[],
+        error: result.error,
+        count: result.count,
+      };
+    }).then(
+      (result) => {
         if (cancelled) return;
-        if (error) {
+        if (result.error) {
           setRows([]);
           setTotal(null);
           setFailed(true);
           setLoading(false);
           return;
         }
-        setRows((data ?? []) as SchemaGapRow[]);
-        setTotal(count ?? null);
+        setRows(result.rows);
+        setTotal(result.total);
         setFailed(false);
         setLoading(false);
       },
@@ -83,11 +70,7 @@ export function SchemaAdditionalPropertyList() {
     return () => {
       cancelled = true;
     };
-  }, [page]);
-
-  const visible = rows.filter((row) => isFoundAdditionalPropertyGap(row));
-  const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const sorted = useClientTableSort(visible, COLUMNS, gapSortValue);
+  }, []);
 
   return (
     <div className="content-box" style={{ marginTop: 12 }} id="schema-additional-property">
@@ -110,8 +93,8 @@ export function SchemaAdditionalPropertyList() {
         columns={COLUMNS}
         freezeHeader
         maxHeight={520}
-        sort={sorted.sort}
-        onSort={sorted.onSort}
+        sort={population.sort}
+        onSort={population.onSort}
       >
         <tbody>
             {loading && visible.length === 0 ? (
@@ -131,8 +114,8 @@ export function SchemaAdditionalPropertyList() {
                 </td>
               </tr>
             ) : null}
-            {sorted.rows.map((row) => {
-              const href = pageHref(row.fender_url);
+            {population.pageRows.map((row) => {
+              const href = schemaPageHref(row.fender_url);
               return (
                 <tr key={row.asin} data-schema-gap="additionalProperty">
                   <td>
@@ -158,19 +141,19 @@ export function SchemaAdditionalPropertyList() {
         <button
           type="button"
           className="segmented-btn"
-          disabled={page <= 0}
-          onClick={() => setPage((current) => current - 1)}
+          disabled={population.page <= 0}
+          onClick={() => population.setPage((current) => current - 1)}
         >
           Previous
         </button>
         <span style={{ fontSize: 11 }}>
-          {page + 1} / {pages}
+          {population.page + 1} / {population.pages}
         </span>
         <button
           type="button"
           className="segmented-btn"
-          disabled={page + 1 >= pages}
-          onClick={() => setPage((current) => current + 1)}
+          disabled={population.page + 1 >= population.pages}
+          onClick={() => population.setPage((current) => current + 1)}
         >
           Next
         </button>

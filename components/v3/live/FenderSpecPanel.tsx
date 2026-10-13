@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
-import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
+import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
+import { specReadinessSortValue } from "@/lib/fender-canvas/spec-table-sort";
 import {
   specFenderFoundLabel,
   specModelTitle,
@@ -12,7 +14,6 @@ import {
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
-import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
@@ -21,15 +22,6 @@ const SPEC_COLUMNS = [
   clientColumn("found", "fender.com found", "text", 150, 110),
   clientColumn("missing", "Missing Amazon fields", "text", 240, 140),
 ];
-
-function specSortValue(row: CanvasSpecReadinessRow, columnId: string): SortInput {
-  const chips = (row.amazon_missing_fields ?? "").split(";").map((part) => part.trim()).filter(Boolean);
-  if (columnId === "asin") return row.asin;
-  if (columnId === "model") return specModelTitle(row.title) || null;
-  if (columnId === "amazon") return row.amazon_completeness_pct;
-  if (columnId === "found") return specFenderFoundLabel(row.fender_found) || null;
-  return chips.length ? chips.join(", ") : null;
-}
 
 const MISSING_PAGE_DESC =
   "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
@@ -104,15 +96,20 @@ function CatalogSpecReadiness({
   const queryMissingPages =
     specRowsFilter(true, missingPagesOnly)?.missingFenderPage === true;
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
-  const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [seenFilter, setSeenFilter] = useState(queryMissingPages);
-  const pageSize = 50;
+  const population = useFullPopulationSort(
+    rows,
+    SPEC_COLUMNS,
+    specReadinessSortValue,
+    (row) => row.asin,
+    CLIENT_TABLE_PAGE_SIZE,
+  );
 
   if (seenFilter !== queryMissingPages) {
     setSeenFilter(queryMissingPages);
-    setPage(0);
+    population.resetPage();
     setRows([]);
     setTotal(null);
     setLoading(true);
@@ -120,15 +117,28 @@ function CatalogSpecReadiness({
 
   useEffect(() => {
     let cancelled = false;
-    void specRowsQuery(
-      page,
-      pageSize,
-      queryMissingPages ? { missingFenderPage: true } : undefined,
-    ).then(
-      ({ data, count }) => {
+    void loadFilteredPages(async (page, size) => {
+      const result = await specRowsQuery(
+        page,
+        size,
+        queryMissingPages ? { missingFenderPage: true } : undefined,
+      );
+      return {
+        data: (result.data ?? []) as CanvasSpecReadinessRow[],
+        error: result.error,
+        count: result.count,
+      };
+    }).then(
+      (result) => {
         if (cancelled) return;
-        setRows((data ?? []) as CanvasSpecReadinessRow[]);
-        setTotal(count ?? null);
+        if (result.error) {
+          setRows([]);
+          setTotal(null);
+          setLoading(false);
+          return;
+        }
+        setRows(result.rows);
+        setTotal(result.total);
         setLoading(false);
       },
       () => {
@@ -139,10 +149,7 @@ function CatalogSpecReadiness({
     return () => {
       cancelled = true;
     };
-  }, [page, queryMissingPages]);
-
-  const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const sorted = useClientTableSort(rows, SPEC_COLUMNS, specSortValue);
+  }, [queryMissingPages]);
 
   return (
     <>
@@ -176,8 +183,8 @@ function CatalogSpecReadiness({
           columns={SPEC_COLUMNS}
           freezeHeader
           maxHeight={520}
-          sort={sorted.sort}
-          onSort={sorted.onSort}
+          sort={population.sort}
+          onSort={population.onSort}
         >
           <tbody>
               {loading && rows.length === 0 ? (
@@ -194,7 +201,7 @@ function CatalogSpecReadiness({
                   </td>
                 </tr>
               ) : null}
-              {sorted.rows.map((row) => {
+              {population.pageRows.map((row) => {
                 const chips = (row.amazon_missing_fields ?? "")
                   .split(";")
                   .map((s) => s.trim())
@@ -225,19 +232,19 @@ function CatalogSpecReadiness({
           <button
             type="button"
             className="segmented-btn"
-            disabled={page <= 0}
-            onClick={() => setPage((p) => p - 1)}
+            disabled={population.page <= 0}
+            onClick={() => population.setPage((current) => current - 1)}
           >
             Previous
           </button>
           <span style={{ fontSize: 11 }}>
-            {page + 1} / {pages}
+            {population.page + 1} / {population.pages}
           </span>
           <button
             type="button"
             className="segmented-btn"
-            disabled={page + 1 >= pages}
-            onClick={() => setPage((p) => p + 1)}
+            disabled={population.page + 1 >= population.pages}
+            onClick={() => population.setPage((current) => current + 1)}
           >
             Next
           </button>
