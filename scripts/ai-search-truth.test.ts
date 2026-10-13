@@ -27,7 +27,8 @@ import {
   tallyCommercial,
 } from "../lib/ai-search/run-metrics.ts";
 import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
-import { summarizeRun } from "../lib/ai-search/summary.ts";
+import { questionRole, roleTally } from "../lib/ai-search/question-role.ts";
+import { headlineLine, summarizeRun } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchRead, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 const RUN = "run-current";
@@ -173,7 +174,9 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(t.winPct, 40);
   const s = summarizeRun(snapshot);
   assert.equal(s.probesAnswered, 1);
-  assert.match(aiSpokeDesc(ready), /2 of 5 resolved answers \(40\.0%\)/);
+  assert.match(aiSpokeDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
+  assert.match(aiSpokeDesc(ready), /Branded consideration: no resolved answers/);
+  assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
 });
 
 test("probes never appear as a commercial category or competitor", () => {
@@ -266,6 +269,8 @@ test("drill-down links map to explorer filters", () => {
   assert.deepEqual(errors.map((r) => r.id), ["c5", "c7"]);
   const resolved = applyExplorerFilter(calls, filterFromEvidence({ field: "outcome", value: "resolved" }));
   assert.equal(resolved.length, 5);
+  const unbranded = applyExplorerFilter(calls, filterFromEvidence({ field: "role", value: "unbranded_discovery/resolved" }));
+  assert.deepEqual(unbranded.map((r) => r.id), ["c8"]);
   const yamaha = applyExplorerFilter(calls, filterFromEvidence({ field: "competitor", value: "Yamaha" }));
   assert.deepEqual(yamaha.map((r) => r.id), ["c2"]);
   assert.ok(applyExplorerFilter(calls, DEFAULT_FILTER).every((r) => r.prompt_kind === "commercial"));
@@ -406,4 +411,81 @@ test("citation reads keep answers and links as separate denominators", () => {
   const fender = read.rows.filter((row) => row.sourceClass === "fender_owned");
   assert.equal(fender.length, 1);
   assert.equal(new Set(fender.map((row) => row.simulationId)).size, 1);
+});
+
+/** Stored prompt text from the published run, with each engine's outcome. */
+const PUBLISHED_PROMPTS: Array<[string, string, string, Array<AiCallRow["outcome"]>]> = [
+  ["p01", "commercial", "Best electric guitar under $900 for versatile tones", ["fender_win", "fender_win", "error"]],
+  ["p02", "commercial", "Fender American Professional II Stratocaster vs PRS Silver Sky SE", ["fender_win", "fender_win", "error"]],
+  ["p03", "commercial", "Is the Fender Player II Stratocaster good for beginners?", ["fender_win", "fender_win", "error"]],
+  ["p04", "commercial", "What are the pickup types on a Fender Player II Stratocaster?", ["fender_win", "fender_win", "error"]],
+  ["p05", "commercial", "Best guitar for indie rock under $1000", ["fender_win", "fender_win", "error"]],
+  ["p06", "commercial", "Best travel acoustic guitar for intermediate players", ["competitor_win", "competitor_win", "error"]],
+  ["p07", "commercial", "Best beginner acoustic guitar under $250 with solid top", ["competitor_win", "competitor_win", "error"]],
+  ["p08", "commercial", "Fender Acoustasonic Player Telecaster pickup types and sounds", ["fender_win", "fender_win", "fender_win"]],
+  ["p09", "commercial", "Best headphone guitar amp with bluetooth for quiet practice", ["fender_win", "fender_win", "error"]],
+  ["p10", "commercial", "Fender Tone Master Deluxe Reverb tube types and biasing instructions", ["fender_win", "fender_win", "fender_win"]],
+  ["p11", "commercial", "Best professional bass guitar for recording and gigging under $1000", ["fender_win", "error", "competitor_win"]],
+  ["p12", "commercial", "Fender Player Precision Bass vs Sire Marcus Miller P5", ["fender_win", "fender_win", "unresolved"]],
+  ["p13", "commercial", "Best budget Stratocaster alternative for upgrading mod platform", ["fender_win", "fender_win", "error"]],
+  ["p14", "commercial", "Is Squier Classic Vibe 60s Stratocaster good quality?", ["fender_win", "fender_win", "fender_win"]],
+  ["p15", "commercial", "What is the best first electric guitar for a total beginner?", ["fender_win", "fender_win", "error"]],
+  ["p16", "commercial", "Fender vs Yamaha for a beginner guitarist", ["fender_win", "fender_win", "fender_win"]],
+  ["p17", "probe", "Fender Player II Stratocaster neck radius and fret size", ["not_scored", "not_scored", "error"]],
+  ["p20", "commercial", "Fender Telecaster vs Gibson Les Paul for rock music", ["fender_win", "fender_win", "error"]],
+  ["p21", "commercial", "Best semi-hollow electric guitar under $1500", ["competitor_win", "competitor_win", "competitor_win"]],
+  ["p22", "commercial", "Fender CD-60S vs Yamaha FG800 for a beginner", ["fender_win", "error", "competitor_win"]],
+  ["p23", "commercial", "Boss Katana vs Fender Mustang for home practice", ["fender_win", "fender_win", "error"]],
+  ["p24", "commercial", "Best 5-string bass guitar for gigging musicians", ["competitor_win", "competitor_win", "error"]],
+  ["p25", "commercial", "Squier Affinity vs Squier Bullet Stratocaster differences", ["fender_win", "fender_win", "error"]],
+  ["p26", "commercial", "How much should a beginner spend on their first guitar", ["unresolved", "error", "competitor_win"]],
+  ["p27", "commercial", "What makes the Fender American Ultra II different from American Professional II", ["fender_win", "fender_win", "error"]],
+  ["p28", "commercial", "Best guitar for playing blues under $800", ["fender_win", "fender_win", "error"]],
+  ["p29", "commercial", "Best parlor acoustic guitar for small hands", ["fender_win", "fender_win", "error"]],
+  ["p30", "commercial", "Positive Grid Spark vs Fender Mustang Micro comparison", ["fender_win", "fender_win", "fender_win"]],
+  ["p31", "commercial", "Fender Jazz Bass vs Precision Bass tonal differences", ["fender_win", "fender_win", "error"]],
+  ["p32", "commercial", "Is Squier a good brand or just a cheap knockoff", ["fender_win", "fender_win", "error"]],
+];
+
+test("shopping questions split into the audited discovery and consideration rates", () => {
+  const rows = PUBLISHED_PROMPTS.flatMap(([key, kind, prompt, outcomes], promptIndex) =>
+    outcomes.map((outcome, index) =>
+      call(`p${promptIndex}-${index}`, {
+        prompt_key: key,
+        prompt_kind: kind,
+        prompt,
+        call_status: outcome === "error" ? "error" : "answered",
+        outcome,
+        primary_brand: outcome === "fender_win" ? "Fender/Squier" : outcome === "competitor_win" ? "Yamaha" : null,
+      }),
+    ),
+  );
+  const unbranded = roleTally(rows, "unbranded_discovery");
+  const branded = roleTally(rows, "branded_consideration");
+  const associated = roleTally(rows, "brand_associated_discovery");
+  const guidance = roleTally(rows, "shopping_guidance");
+  const facts = roleTally(rows, "product_fact");
+
+  assert.equal(unbranded.fenderWins, 13);
+  assert.equal(unbranded.resolved, 23);
+  assert.equal(branded.fenderWins, 22);
+  assert.equal(branded.resolved, 23);
+  assert.equal(associated.fenderWins, 2);
+  assert.equal(associated.resolved, 2);
+  assert.equal(guidance.resolved, 1);
+  assert.equal(guidance.unresolved, 1);
+  assert.equal(guidance.errors, 1);
+  assert.equal(facts.resolved, 14);
+  assert.equal(unbranded.resolved + branded.resolved + associated.resolved + guidance.resolved + facts.resolved, 63);
+  assert.equal(rows.filter((row) => questionRole(row) === "other").length, 0);
+
+  const summary = summarizeRun({ ...snapshot, calls: rows });
+  assert.equal(
+    headlineLine(summary),
+    "Unbranded discovery: Fender/Squier named most in 13 of 23 resolved answers (56.5%). Branded consideration: 22 of 23 resolved answers (95.7%).",
+  );
+  const opened = applyExplorerFilter(rows, filterFromEvidence({ field: "role", value: "unbranded_discovery/resolved" }));
+  assert.equal(opened.length, 23);
+  assert.ok(opened.every((row) => questionRole(row) === "unbranded_discovery"));
+  assert.equal(opened.filter((row) => row.outcome === "unresolved" || row.outcome === "error").length, 0);
 });

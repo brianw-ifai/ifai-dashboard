@@ -69,9 +69,17 @@ test("AI surfaces never read the pooled canvas_metrics sim fields", () => {
 
 test("every headline figure opens its evidence", () => {
   const summary = read("components/v3/live/ai-search/RunSummaryPanel.tsx");
-  for (const value of ["fender_win", "resolved", "competitor_win", "unresolved", "error", "probe"]) {
-    assert.match(summary, new RegExp(`value: "${value}"`), value);
+  for (const value of [
+    "\\$\\{tally\\.role\\}/fender_win",
+    "\\$\\{tally\\.role\\}/resolved",
+    "brand_associated_discovery/resolved",
+    "shopping_guidance",
+    "product_fact",
+  ]) {
+    assert.match(summary, new RegExp(value), value);
   }
+  assert.match(summary, /value: "error"/);
+  assert.match(summary, /value: "probe"/);
   assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /CitationEvidenceTable/);
   assert.match(read("components/v3/live/ai-search/FactCheckTable.tsx"), /field: "sim"/);
   assert.match(read("components/v3/live/ai-search/CompetitorWinsPanel.tsx"), /field: "sim"/);

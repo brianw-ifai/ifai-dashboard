@@ -6,8 +6,9 @@ import { expect, test } from "./fixtures";
 test.describe("AI Search Visibility", () => {
   test("the bubble states the published run with numerator and denominator", async ({ page }) => {
     const bubble = page.locator(".graph-node").filter({ hasText: /AI\s*Search\s*Visibility/i });
-    await expect(bubble).toContainText(/Fender lead/);
-    await expect(bubble).toContainText(/\d+ of \d+ resolved/);
+    await expect(bubble).toContainText(/Unbranded\s*13 of 23/);
+    await expect(bubble).toContainText(/Branded\s*22 of 23/);
+    await expect(bubble).not.toContainText(/51 of 63/);
     await expect(bubble).not.toContainText(/Sims/);
   });
 
@@ -17,11 +18,31 @@ test.describe("AI Search Visibility", () => {
     const body = page.locator(".drilldown-body");
     await expect(page.locator(".ai-run-freshness")).toContainText("Published run");
     await expect(page.locator(".ai-run-freshness")).toContainText(/completed .* UTC/);
-    await expect(page.locator("[data-ai-win-rate]")).toHaveText(/\d+\.\d%/);
-    await expect(body).toContainText(/Fender\/Squier leads of \d+ resolved answers/);
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
+    await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText("13 Fender/Squier leads");
+    await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText("of 23");
+    await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText("22 Fender/Squier leads");
+    await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText("of 23");
+    await expect(body).toContainText("not inside unbranded discovery");
+    await expect(body).toContainText("Not in either rate above");
+    await expect(body).not.toContainText("51 of 63");
     await expect(page.locator(".ai-engine-table tbody tr")).not.toHaveCount(0);
     await expect(page.locator(".ai-category-table [data-category='hallucinations']")).toHaveCount(0);
     await expect(page.locator(".ai-run-card")).toContainText("Expected calls");
+  });
+
+  test("the command center and metric repeat the two rates", async ({ canvas, page }) => {
+    await canvas.openCommandCenter();
+    await expect(canvas.commandCenter).toContainText("13 of 23 resolved answers (56.5%)");
+    await expect(canvas.commandCenter).toContainText("22 of 23 resolved answers (95.7%)");
+    await expect(canvas.commandCenter).not.toContainText("51 of 63");
+    await page.locator(".drilldown-hide-btn").click();
+
+    await page.locator(".metric-widget-config").first().click();
+    const picker = page.getByRole("dialog");
+    await expect(picker.locator(".metric-widget-option", { hasText: "Unbranded discovery" })).toContainText("56.5%");
+    await expect(picker).not.toContainText("Overall AI Win Rate");
   });
 
   test("a headline count opens the rows behind it", async ({ canvas, page }) => {
