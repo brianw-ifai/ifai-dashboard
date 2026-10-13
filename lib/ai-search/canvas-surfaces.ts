@@ -17,7 +17,9 @@ import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-se
 import {
   engineModelLine,
   errorLine,
+  headlineLine,
   pct,
+  resolvedPhrase,
   runStateLabel,
   summarizeRun,
   type AiRunSummary,
@@ -108,23 +110,29 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
     spokeAeo: {
       status: winStatus(s),
       title: "AI Search Visibility",
-      stats: [`${pct(c.fenderWins, c.resolved)} Fender lead`, `${c.fenderWins} of ${c.resolved} resolved`],
+      stats: [
+        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved}`,
+        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved}`,
+      ],
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       tooltip: {
         title: "AI Search Visibility",
-        desc: `On shopping prompts, Fender/Squier was named more than any competitor in ${c.fenderWins} of ${c.resolved} resolved answers. ${c.unresolved} answers had no clear leader and ${c.errors} commercial calls failed. Engines: ${engines}. ${runLine}`,
+        desc: `${headlineLine(s)} Shopping guidance and product-fact questions are not in either rate. Brand-associated discovery is counted on its own. Answers with no clear leader and provider errors stay out of both denominators. Engines: ${engines}. ${runLine}`,
       },
     },
     satPrompts: {
       status: run.isPartial ? "warning" : "success",
       title: `${c.calls} AI Calls`,
-      stats: [`${c.resolved} resolved`, `${pct(c.fenderWins, c.resolved)} Fender lead`],
+      stats: [
+        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved}`,
+        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved}`,
+      ],
       meta: `Completed ${s.completedAt}`,
       subTab: AI_TABS.simulations,
       tooltip: {
-        title: "Commercial prompt calls",
-        desc: `${c.calls} shopping prompt-engine calls in the ${state.toLowerCase()} published run. The rate is ${c.fenderWins} Fender/Squier leads over ${c.resolved} resolved answers. ${s.probesAnswered} answered product fact checks are excluded. ${c.unresolved} answers with no clear leader and ${c.errors} provider errors are reported separately, not as losses.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Simulations to see every call.`,
+        title: "Shopping prompt calls",
+        desc: `${headlineLine(s)} ${c.calls} shopping prompt-engine calls are in this ${state.toLowerCase()} run. ${s.probesAnswered} answered product fact checks are excluded. ${c.unresolved} answers with no clear leader and ${c.errors} provider errors are reported separately, not as losses.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Simulations to see every call.`,
       },
     },
     satCitations: {
@@ -211,8 +219,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
   const s = summarizeRun(read.snapshot);
-  const c = s.commercial;
-  return `${runStateLabel(s.completeness.state)} published run, completed ${s.completedAt}: ${s.completeness.answered} of ${s.completeness.expected} calls answered, ${errorLine(s)}. On shopping prompts, Fender/Squier was named more than any competitor in ${c.fenderWins} of ${c.resolved} resolved answers (${pct(c.fenderWins, c.resolved)}). ${factCheckHeadline(s.drift.coverage)}`;
+  return `${runStateLabel(s.completeness.state)} published run, completed ${s.completedAt}: ${s.completeness.answered} of ${s.completeness.expected} calls answered, ${errorLine(s)}. ${headlineLine(s)} ${factCheckHeadline(s.drift.coverage)}`;
 }
 
 /** One sentence for the command center summary. Silent until the run loads. */
@@ -220,8 +227,7 @@ export function aiCommandSummary(read: AiSearchRead): string | null {
   if (read.phase === "loading") return null;
   if (read.phase !== "ready") return aiSpokeDesc(read);
   const s = summarizeRun(read.snapshot);
-  const c = s.commercial;
-  return `In the published AI run, Fender/Squier was named most in ${c.fenderWins} of ${c.resolved} resolved commercial answers (${runStateLabel(s.completeness.state).toLowerCase()} run, ${s.completeness.answered} of ${s.completeness.expected} calls answered).`;
+  return `In the published AI run, ${headlineLine(s)} Shopping guidance and product-fact questions are not in either rate.`;
 }
 
 export function competitorsSpokeDesc(read: AiSearchRead): string {
@@ -315,7 +321,7 @@ export type AiMetricKey =
 /** AI Search widget values. Ids stay stable so saved widget choices survive. */
 export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric> {
   const base = {
-    overallAiWinRate: { id: "overall-ai-win-rate", spokeId: "aeo", label: "Overall AI Win Rate", subTab: AI_TABS.summary },
+    overallAiWinRate: { id: "overall-ai-win-rate", spokeId: "aeo", label: "Unbranded discovery", subTab: AI_TABS.summary },
     beginnerAiWinRate: { id: "beginner-ai-win-rate", spokeId: "aeo", label: "Beginner AI Win Rate", subTab: AI_TABS.simulations },
     resolvedSimulations: { id: "resolved-simulations", spokeId: "aeo", label: "Answered AI Calls", subTab: AI_TABS.summary },
     confirmedHallucinations: { id: "confirmed-hallucinations", spokeId: "aeo", label: "Product Fact Checks", subTab: AI_TABS.drift },
@@ -341,9 +347,9 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
   return {
     overallAiWinRate: {
       ...base.overallAiWinRate, ...live,
-      value: pct(c.fenderWins, c.resolved),
-      detail: `${c.fenderWins} of ${c.resolved} resolved commercial answers`,
-      tone: c.resolved ? (c.fenderWins / c.resolved >= 0.75 ? "success" : "warning") : "neutral",
+      value: s.roles.unbranded.resolved > 0 ? pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved) : "No resolved answers",
+      detail: `Unbranded ${resolvedPhrase(s.roles.unbranded)}. Branded consideration ${resolvedPhrase(s.roles.branded)}.`,
+      tone: s.roles.unbranded.resolved ? (s.roles.unbranded.fenderWins / s.roles.unbranded.resolved >= 0.75 ? "success" : "warning") : "neutral",
     },
     beginnerAiWinRate: {
       ...base.beginnerAiWinRate, ...live,
@@ -390,8 +396,7 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     return { hub: line, aeo: [line], competitors: [line], roadmap: line };
   }
   const s = summarizeRun(read.snapshot);
-  const c = s.commercial;
-  const lead = `Fender/Squier named most in ${c.fenderWins} of ${c.resolved} resolved AI answers`;
+  const lead = headlineLine(s);
   return {
     hub: lead,
     aeo: [

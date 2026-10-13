@@ -1,6 +1,7 @@
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
 import { largestCompetitorGap, type CategoryBattle, competitorTallies } from "@/lib/ai-search/competitors";
 import { driftRead, type DriftRead } from "@/lib/ai-search/drift";
+import { roleTally, type RoleTally } from "@/lib/ai-search/question-role";
 import {
   categoryTallies,
   engineLabel,
@@ -26,6 +27,13 @@ export type AiRunSummary = {
   completeness: RunCompleteness;
   completedAt: string;
   commercial: OutcomeTally;
+  roles: {
+    unbranded: RoleTally;
+    branded: RoleTally;
+    associated: RoleTally;
+    guidance: RoleTally;
+    productFact: RoleTally;
+  };
   probesAnswered: number;
   engines: GroupTally[];
   /** Engines whose resolved sample is too small to rank against the largest one. */
@@ -63,6 +71,13 @@ export function summarizeRun(snapshot: AiSearchSnapshot): AiRunSummary {
     completeness: runCompleteness(run, calls),
     completedAt: formatRunTime(run.completed_at),
     commercial: tallyCommercial(calls),
+    roles: {
+      unbranded: roleTally(calls, "unbranded_discovery"),
+      branded: roleTally(calls, "branded_consideration"),
+      associated: roleTally(calls, "brand_associated_discovery"),
+      guidance: roleTally(calls, "shopping_guidance"),
+      productFact: roleTally(calls, "product_fact"),
+    },
     probesAnswered: drift.answered,
     engines,
     smallSampleEngines: engines
@@ -119,7 +134,13 @@ export function runStateLabel(state: string): string {
   return state ? state.charAt(0).toUpperCase() + state.slice(1) : "State not recorded";
 }
 
-export function winRateHeadline(summary: AiRunSummary): string {
-  const { fenderWins, resolved } = summary.commercial;
-  return `${pct(fenderWins, resolved)} Fender lead (${fenderWins} of ${resolved} resolved)`;
+/** "13 of 23 resolved answers (56.5%)", or a non-zero phrase when nothing resolved. */
+export function resolvedPhrase(tally: OutcomeTally): string {
+  if (tally.resolved <= 0) return "no resolved answers";
+  return `${tally.fenderWins} of ${tally.resolved} resolved answers (${pct(tally.fenderWins, tally.resolved)})`;
+}
+
+/** The two rates that lead AI Search. Shopping guidance and product-fact questions are not in either one. */
+export function headlineLine(summary: AiRunSummary): string {
+  return `Unbranded discovery: Fender/Squier named most in ${resolvedPhrase(summary.roles.unbranded)}. Branded consideration: ${resolvedPhrase(summary.roles.branded)}.`;
 }

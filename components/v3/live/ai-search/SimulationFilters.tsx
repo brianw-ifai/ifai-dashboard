@@ -1,6 +1,7 @@
 "use client";
 
 import { ACCURACY_LABELS, DEFAULT_FILTER, type ExplorerFilter } from "@/lib/ai-search/explorer-filter";
+import { questionRole, ROLE_LABELS, type QuestionRole } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel, OUTCOME_LABELS } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
@@ -33,6 +34,7 @@ export function SimulationFilters({
   const categories = unique(
     rows.filter((r) => filter.scope === "all" || r.prompt_kind === filter.scope).map((r) => r.category),
   );
+  const roles = unique(rows.map((row) => questionRole(row))) as QuestionRole[];
 
   return (
     <div className="ai-sim-filters" style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0 10px" }}>
@@ -65,6 +67,21 @@ export function SimulationFilters({
         <option value="">All models</option>
         {models.map((model) => (
           <option key={model} value={model}>{model}</option>
+        ))}
+      </select>
+      <select
+        aria-label="Question type"
+        value={filter.role}
+        onChange={(e) =>
+          set({
+            role: e.target.value as QuestionRole | "",
+            scope: e.target.value === "probe" ? "probe" : filter.scope,
+          })
+        }
+      >
+        <option value="">All question types</option>
+        {roles.map((role) => (
+          <option key={role} value={role}>{ROLE_LABELS[role]}</option>
         ))}
       </select>
       <select aria-label="Category" value={filter.category} onChange={(e) => set({ category: e.target.value })}>

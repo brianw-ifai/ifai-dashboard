@@ -79,9 +79,9 @@ export const FENDER_METRICS = {
   overallAiWinRate: {
     id: "overall-ai-win-rate",
     spokeId: "aeo",
-    label: "Overall AI Win Rate",
+    label: "Unbranded discovery",
     value: "Loading",
-    detail: "Reading the published AI run",
+    detail: "Branded consideration loads with the published run",
     tone: "neutral",
     subTab: "Run Summary",
     provenance: "live",

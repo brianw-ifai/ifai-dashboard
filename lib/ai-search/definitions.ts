@@ -4,6 +4,16 @@ import { MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 export const AI_DEFINITIONS = {
   "Fender lead":
     "An answer where Fender or Squier is named more often than any competitor brand, counted by whole-word brand mentions. It measures mention share. It does not prove the engine recommended a specific Fender product.",
+  "unbranded discovery":
+    "A shopping question that does not name a brand or a model line. The shopper asks what to buy, and the engine chooses which brands to name.",
+  "branded consideration":
+    "A shopping question that names Fender, Squier, or a rival and asks whether that product is a good buy, or which of the named options to choose.",
+  "brand-associated discovery":
+    "A shopping question that names a brand or a model line, such as Stratocaster, while still asking what to buy. It is counted on its own, not inside unbranded discovery.",
+  "shopping guidance":
+    "A question about how to shop, such as what to spend, rather than which product to buy. It is left out of the discovery and consideration rates.",
+  "product-fact question":
+    "A question about how a named product is built or how two models differ. These prompts are stored with the shopping prompts, and they are left out of the discovery and consideration rates. They are not the separate product fact checks.",
   resolved:
     "A commercial answer with a clear leader: Fender/Squier or one competitor is named most. Answers with no clear leader and provider errors are not in the denominator.",
   "no clear leader":
