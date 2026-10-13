@@ -24,13 +24,53 @@ import {
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 
+/** Recent enough that the reading counts as current whenever the suite runs. */
+const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
+
+/** Confirmed withheld, above a benchmark from the same observation. */
 function suppression(overrides: Partial<SuppressionSupportRow> = {}): SuppressionSupportRow {
   return {
+    asin: "B0EQ000000",
     offer_price: 949.99,
-    competitive_price_threshold_cents: 84999,
+    featured_offer_state: "withheld",
     featured_offer_withheld: true,
+    featured_offer_source: "keepa",
+    featured_offer_checked_at: CHECKED_AT,
+    featured_offer_attempted_at: CHECKED_AT,
+    featured_offer_last_error: null,
+    competitive_external_price_state: "present",
+    competitive_price_threshold_cents: 84999,
+    featured_offer_observed_price_cents: 94999,
+    featured_offer_observed_shipping_cents: null,
+    featured_offer_observed_seller: null,
     ...overrides,
   };
+}
+
+/** Featured Offer present, with a benchmark from the same observation. */
+function present(overrides: Partial<SuppressionSupportRow> = {}): SuppressionSupportRow {
+  return suppression({
+    featured_offer_state: "present",
+    featured_offer_withheld: false,
+    featured_offer_observed_price_cents: 84999,
+    featured_offer_observed_seller: "ATVPDKIKX0DER",
+    ...overrides,
+  });
+}
+
+/** No v11 reading at all. Not a zero. */
+function notChecked(overrides: Partial<SuppressionSupportRow> = {}): SuppressionSupportRow {
+  return suppression({
+    featured_offer_state: null,
+    featured_offer_withheld: null,
+    featured_offer_source: null,
+    featured_offer_checked_at: null,
+    featured_offer_attempted_at: null,
+    competitive_external_price_state: null,
+    competitive_price_threshold_cents: null,
+    featured_offer_observed_price_cents: null,
+    ...overrides,
+  });
 }
 
 function mapRow(overrides: Partial<MapLeakageRow> = {}): MapLeakageRow {
@@ -57,9 +97,7 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
 }
 
 function findings(overrides: Partial<PortfolioRetailFindings> = {}): PortfolioRetailFindings {
-  const zero = suppressedListingsFinding([
-    suppression({ featured_offer_withheld: false, competitive_price_threshold_cents: 100 }),
-  ]);
+  const zero = suppressedListingsFinding([present()]);
   const mapZero = mapLeakageFinding([mapRow({ amz_leakage: 0, offer_price: 100 })]);
   const bundlesZero = unnestedBundlesFinding([
     bundle({ asin: "B000000001", parent_asin: "B0000000ZZ" }),
@@ -75,30 +113,49 @@ function findings(overrides: Partial<PortfolioRetailFindings> = {}): PortfolioRe
   };
 }
 
-test("suppressed count uses the withheld flag and a positive benchmark", () => {
+test("coverage counts current classifications, not the older withheld boolean", () => {
   const reading = suppressedListingsFinding([
     suppression(),
-    suppression({ offer_price: 849.99, competitive_price_threshold_cents: 84999 }),
-    suppression({ featured_offer_withheld: false }),
-    suppression({ featured_offer_withheld: null }),
-    suppression({ competitive_price_threshold_cents: null }),
-    suppression({ competitive_price_threshold_cents: 0 }),
+    present(),
+    notChecked(),
+    suppression({ featured_offer_state: "check_failed", featured_offer_withheld: null, featured_offer_last_error: "missing_from_keepa" }),
+    suppression({ featured_offer_state: "no_active_offer", featured_offer_withheld: null, featured_offer_source: "catalog.current_price", featured_offer_observed_price_cents: null }),
   ]);
 
   assert.equal(reading.status, "incomplete");
-  assert.equal(reading.issueCount, 1);
-  assert.equal(reading.detail?.suppressed, 1);
-  assert.equal(reading.detail?.audited, 5);
-  assert.equal(reading.detail?.population, 6);
-  assert.equal(reading.detail?.withThreshold, 4);
-  assert.match(reading.missingMessage ?? "", /Featured Offer/);
+  assert.equal(reading.detail?.counts.population, 5);
+  assert.equal(reading.detail?.counts.present, 1);
+  assert.equal(reading.detail?.counts.withheld, 1);
+  assert.equal(reading.detail?.counts.noActiveOffer, 1);
+  assert.equal(reading.detail?.counts.checkFailed, 1);
+  assert.equal(reading.detail?.counts.notChecked, 1);
+  // Unchecked and failed stay in the denominator instead of being hidden.
+  assert.equal(reading.detail?.audited, 3);
+  assert.equal(reading.detail?.population, 5);
+  assert.equal(reading.detail?.counts.catalogNoActiveOffer, 1);
+  assert.equal(reading.detail?.counts.requiresKeepa, 4);
+  assert.match(reading.missingMessage ?? "", /not been checked yet/);
+  assert.match(reading.missingMessage ?? "", /failed/);
   assert.doesNotMatch(reading.missingMessage ?? "", /partner-led|Buy Box/i);
+});
+
+test("the older withheld boolean on its own is not coverage", () => {
+  const legacy = suppressedListingsFinding([
+    notChecked({ featured_offer_withheld: false }),
+    notChecked({ featured_offer_withheld: true, competitive_price_threshold_cents: 84999 }),
+  ]);
+  assert.equal(legacy.status, "unavailable");
+  assert.equal(legacy.issueCount, null);
+  assert.equal(legacy.detail?.counts.legacyBooleanOnly, 2);
+  assert.equal(legacy.detail?.counts.classified, 0);
+  assert.equal(legacy.detail?.counts.withheld, 0);
+  assert.equal(legacy.detail?.counts.confirmedHighPrice, 0);
 });
 
 test("a stored zero suppression is separate from an absent reading", () => {
   const storedZero = suppressedListingsFinding([
-    suppression({ featured_offer_withheld: false, offer_price: 80, competitive_price_threshold_cents: 9000 }),
-    suppression({ featured_offer_withheld: false, competitive_price_threshold_cents: null }),
+    present({ featured_offer_observed_price_cents: 8000, competitive_price_threshold_cents: 9000 }),
+    present({ competitive_external_price_state: "unavailable", competitive_price_threshold_cents: null }),
   ]);
   assert.equal(storedZero.status, "available_with_zero");
   assert.equal(storedZero.issueCount, 0);
@@ -112,25 +169,36 @@ test("a stored zero suppression is separate from an absent reading", () => {
   assert.equal(absent.status, "unavailable");
   assert.equal(absent.issueCount, null);
   assert.equal(absent.detail, null);
-  assert.match(absent.missingMessage ?? "", /have not been stored/);
+  assert.match(absent.missingMessage ?? "", /has not stored a reading/);
 
-  const neverWritten = suppressedListingsFinding([
-    suppression({ featured_offer_withheld: null, competitive_price_threshold_cents: null }),
-    suppression({ featured_offer_withheld: null, competitive_price_threshold_cents: 100 }),
-  ]);
+  const neverWritten = suppressedListingsFinding([notChecked(), notChecked()]);
   assert.equal(neverWritten.status, "unavailable");
   assert.equal(neverWritten.issueCount, null);
 });
 
-test("a finished suppression audit with issues is available", () => {
+test("a finished reading with a confirmed suppression is available", () => {
   const reading = suppressedListingsFinding([
-    suppression({ offer_price: 100, competitive_price_threshold_cents: 9000 }),
-    suppression({ featured_offer_withheld: false, offer_price: 50, competitive_price_threshold_cents: 4000 }),
+    suppression({ featured_offer_observed_price_cents: 10000, competitive_price_threshold_cents: 9000 }),
+    present({ featured_offer_observed_price_cents: 5000, competitive_price_threshold_cents: 4000 }),
   ]);
   assert.equal(reading.status, "available_with_issues");
   assert.equal(reading.issueCount, 1);
   assert.equal(reading.missingMessage, null);
   assert.equal(reading.detail?.audited, reading.detail?.population);
+  // Every withheld listing has a benchmark here, so the stronger label applies.
+  assert.equal(reading.headlineLabel, "Featured Offer withheld above Amazon's outside price");
+});
+
+test("a withheld listing with no benchmark keeps the plain withheld headline", () => {
+  const reading = suppressedListingsFinding([
+    suppression({ featured_offer_observed_price_cents: 10000, competitive_price_threshold_cents: 9000 }),
+    suppression({ competitive_external_price_state: "unavailable", competitive_price_threshold_cents: null }),
+  ]);
+  assert.equal(reading.headlineLabel, "Featured Offer withheld");
+  // The headline is the confirmed withheld count, not the comparable subset.
+  assert.equal(reading.issueCount, 2);
+  assert.equal(reading.detail?.counts.confirmedHighPrice, 1);
+  assert.equal(reading.detail?.counts.withheldWithoutBenchmark, 1);
 });
 
 test("MAP violations are stored leakage below zero, and a missing price is not zero", () => {
@@ -337,7 +405,7 @@ test("headline rank prefers suppressed Featured Offers, then MAP, then unnested 
 
   const selected = selectRetailHeadline(
     findings({
-      suppressedListings: suppressedListingsFinding([suppression(), suppression({ featured_offer_withheld: false })]),
+      suppressedListings: suppressedListingsFinding([suppression(), present()]),
       mapLeakage: mapLeakageFinding([mapRow()]),
       unnestedBundles: unnestedBundlesFinding([bundle({ asin: "B000000009" })]),
     }),
@@ -385,14 +453,11 @@ test("a missing top reading is returned and does not fall through", () => {
   assert.equal(absent?.findingId, "suppressed_listings");
   assert.equal(absent?.reading.status, "unavailable");
   assert.equal(absent?.reading.issueCount, null);
-  assert.match(absent?.reading.missingMessage ?? "", /have not been stored/);
+  assert.match(absent?.reading.missingMessage ?? "", /has not stored a reading/);
 
   const partial = selectRetailHeadline(
     findings({
-      suppressedListings: suppressedListingsFinding([
-        suppression({ featured_offer_withheld: null }),
-        suppression({ featured_offer_withheld: false, competitive_price_threshold_cents: 100 }),
-      ]),
+      suppressedListings: suppressedListingsFinding([notChecked(), present()]),
       mapLeakage: mapLeakageFinding([mapRow({ amz_leakage: -50 })]),
     }),
   );
@@ -427,6 +492,11 @@ test("headline selection ignores 1P share, active listings, and unknown sellers"
 test("query columns stay on the stored finding fields", () => {
   assert.match(RETAIL_SUPPRESSION_COLUMNS, /competitive_price_threshold_cents/);
   assert.match(RETAIL_SUPPRESSION_COLUMNS, /featured_offer_withheld/);
+  assert.match(RETAIL_SUPPRESSION_COLUMNS, /featured_offer_state/);
+  assert.match(RETAIL_SUPPRESSION_COLUMNS, /featured_offer_checked_at/);
+  assert.match(RETAIL_SUPPRESSION_COLUMNS, /featured_offer_observed_price_cents/);
+  assert.match(RETAIL_SUPPRESSION_COLUMNS, /competitive_external_price_state/);
+  assert.doesNotMatch(RETAIL_SUPPRESSION_COLUMNS, /map_price/);
   assert.match(RETAIL_MAP_LEAKAGE_COLUMNS, /amz_leakage/);
   assert.doesNotMatch(RETAIL_MAP_LEAKAGE_COLUMNS, /is_bundle|parent_asin|buybox/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /parent_asin/);
@@ -452,11 +522,7 @@ test("a failed page read is unavailable and a stored page zero stays zero", asyn
   assert.notEqual(failed.headline?.findingId, "map_leakage");
 
   const storedZero = await loadPortfolioRetailSnapshot({
-    suppressionRows: async () => ({
-      ok: true,
-      rows: [suppression({ featured_offer_withheld: false })],
-      truncated: false,
-    }),
+    suppressionRows: async () => ({ ok: true, rows: [present()], truncated: false }),
     mapRows: async () => ({ ok: true, rows: [], truncated: false }),
     catalogRows: async () => ({ ok: true, rows: [], truncated: false }),
     catalogBundleCount: async () => null,

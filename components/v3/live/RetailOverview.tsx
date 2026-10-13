@@ -2,13 +2,15 @@
 
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
 import { RetailFindingVisual } from "@/components/v3/live/RetailFindingVisual";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   RETAIL_FINDING_LABELS,
   type PortfolioRetailSnapshot,
 } from "@/lib/fender-canvas/portfolio-retail";
-import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { readingLabel, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 function priceGap(snapshot: PortfolioRetailSnapshot): string | null {
   const gap = snapshot.mapLeakage.detail?.averageLeakage;
@@ -24,7 +26,10 @@ function Findings({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
   return (
     <div className="retail-finding-grid">
       <RetailFindingVisual
-        label={RETAIL_FINDING_LABELS.suppressed_listings}
+        label={readingLabel(
+          snapshot.suppressedListings,
+          RETAIL_FINDING_LABELS.suppressed_listings,
+        )}
         tab={RETAIL_FINDING_LABELS.suppressed_listings}
         reading={snapshot.suppressedListings}
         coverage={
@@ -57,7 +62,16 @@ function Findings({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
   );
 }
 
-export function RetailOverview({ read }: { read: RetailCanvasRead }) {
+export function RetailOverview({
+  read,
+  freshness = null,
+}: {
+  read: RetailCanvasRead;
+  freshness?: CanvasFreshnessRow[] | null;
+}) {
+  const counts =
+    read.phase === "ready" ? read.snapshot.suppressedListings.detail?.counts ?? null : null;
+
   return (
     <div className="retail-health retail-surface">
       <div className="ceo-callout">
@@ -80,6 +94,7 @@ export function RetailOverview({ read }: { read: RetailCanvasRead }) {
         <p className="retail-missing">The retail read could not be loaded.</p>
       ) : null}
       {read.phase === "ready" ? <Findings snapshot={read.snapshot} /> : null}
+      {counts ? <FeaturedOfferReadings counts={counts} freshness={freshness} /> : null}
 
       <ExploreListings />
     </div>

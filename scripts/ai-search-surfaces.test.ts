@@ -111,8 +111,10 @@ test("client copy has no em dashes", () => {
 test("protected surfaces are unchanged", () => {
   assert.match(read("lib/canvas-sdk/canvas-chrome-flags.ts"), /SHOW_HEADER_TICKERS = false/);
   const spokes = read("components/v3/build-live-spokes.tsx");
-  assert.match(spokes, /<RetailOverview read=\{retail\} \/>/);
-  assert.match(spokes, /<SuppressedListingsPanel read=\{retail\} \/>/);
+  // The retail panels stay bound to the retail read. The prop list is not pinned: the
+  // Featured Offer reading also passes job freshness so it uses its own clock.
+  assert.match(spokes, /<RetailOverview read=\{retail\}/);
+  assert.match(spokes, /<SuppressedListingsPanel read=\{retail\}/);
   assert.match(spokes, /<MapChannelPanel/);
   const roi = JSON.stringify(spec.spokes.suggestions);
   for (const figure of ["$680,000", "$38M to $62M", "$50,000,000"]) assert.ok(roi.includes(figure), figure);

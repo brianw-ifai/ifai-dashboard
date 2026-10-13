@@ -42,8 +42,10 @@ const TAB_OVERRIDES: Partial<
     1: (bundle) => <FenderDivisionsTable divisions={bundle.divisions} />,
   },
   ecommerce: {
-    0: (_bundle, _vars, retail) => <RetailOverview read={retail} />,
-    1: (_bundle, _vars, retail) => <SuppressedListingsPanel read={retail} />,
+    0: (bundle, _vars, retail) => <RetailOverview read={retail} freshness={bundle.fresh} />,
+    1: (bundle, _vars, retail) => (
+      <SuppressedListingsPanel read={retail} freshness={bundle.fresh} />
+    ),
     2: (bundle, _vars, retail) => (
       <MapChannelPanel
         read={retail}

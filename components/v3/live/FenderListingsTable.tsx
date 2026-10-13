@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
+import { featuredOfferState } from "@/lib/fender-canvas/featured-offer";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import { listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
 import {
@@ -83,6 +84,14 @@ function exploreColumns(extras: { channel: string; name: string }[]): RetailColu
     { id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112 },
     { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80 },
   ];
+}
+
+/**
+ * A listing with no active offer keeps its last stored Amazon price for history.
+ * Label it so the stored number is not read as a current offer.
+ */
+function lastSeenNote(row: CanvasRetailListingRow): string | null {
+  return featuredOfferState(row) === "no_active_offer" ? "Last seen, no active offer" : null;
 }
 
 function asMapRow(row: CanvasRetailListingRow): MapSourceRow {
@@ -256,7 +265,7 @@ export function FenderListingsTable() {
                 </td>
                 <td>{partner}</td>
                 <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
-                <ChannelPriceCell fact={facts.get("amazon")} />
+                <ChannelPriceCell fact={facts.get("amazon")} note={lastSeenNote(row)} />
                 <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} />
                 <ChannelPriceCell fact={facts.get("musicians-friend")} />
                 {extras.map((channel) => {
