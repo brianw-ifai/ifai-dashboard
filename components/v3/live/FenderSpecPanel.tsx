@@ -13,14 +13,15 @@ import {
   type CanvasSpecMissingRow,
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
-import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { presentMissingAmazonFields } from "@/lib/fender-canvas/spec-missing-fields";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
-  clientColumn("model", "Model", "text", 220, 120),
-  clientColumn("amazon", "Amazon completeness", "number", 170, 120),
-  clientColumn("found", "fender.com found", "text", 150, 110),
-  clientColumn("missing", "Missing Amazon fields", "text", 240, 140),
+  clientColumn("model", "Model", "text", 220, 140),
+  clientColumn("amazon", "Amazon completeness", "number", 170, 130),
+  clientColumn("found", "fender.com found", "text", 150, 120),
+  clientColumn("missing", "Missing Amazon fields", "text", 280, 180),
 ];
 
 const MISSING_PAGE_DESC =
@@ -183,6 +184,7 @@ function CatalogSpecReadiness({
           columns={SPEC_COLUMNS}
           freezeHeader
           maxHeight={520}
+          fillColumnId="missing"
           sort={population.sort}
           onSort={population.onSort}
         >
@@ -202,10 +204,10 @@ function CatalogSpecReadiness({
                 </tr>
               ) : null}
               {population.pageRows.map((row) => {
-                const chips = (row.amazon_missing_fields ?? "")
-                  .split(";")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
+                const missing = presentMissingAmazonFields(
+                  row.amazon_missing_fields,
+                  row.amazon_completeness_pct,
+                );
                 return (
                   <tr key={row.asin}>
                     <td>
@@ -215,13 +217,13 @@ function CatalogSpecReadiness({
                     <td>{formatPct(row.amazon_completeness_pct)}</td>
                     <td>{specFenderFoundLabel(row.fender_found)}</td>
                     <td>
-                      {chips.length
-                        ? chips.map((c) => (
-                            <span key={c} className="tag-badge tag-neutral" style={{ marginRight: 4 }}>
-                              {c}
+                      {missing.kind === "fields"
+                        ? missing.fields.map((field) => (
+                            <span key={field} className="tag-badge tag-neutral spec-field-pill">
+                              {field}
                             </span>
                           ))
-                        : pendingLabel()}
+                        : missing.label}
                     </td>
                   </tr>
                 );

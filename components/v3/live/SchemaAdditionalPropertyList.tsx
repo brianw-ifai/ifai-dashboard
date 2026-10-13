@@ -15,10 +15,10 @@ import { specModelTitle } from "@/lib/fender-canvas/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 
 const COLUMNS = [
-  clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
-  clientColumn("model", "Model", "text", 200, 120),
-  clientColumn("page", "fender.com page", "text", 160, 110),
-  clientColumn("fields", "Stored missing fields", "text", 280, 140),
+  clientColumn("asin", "ASIN", "text", 120, 108, "asin-col"),
+  clientColumn("model", "Model", "text", 420, 220),
+  clientColumn("page", "fender.com page", "text", 150, 128),
+  clientColumn("fields", "Stored missing fields", "text", 180, 150),
 ];
 
 export function SchemaAdditionalPropertyList() {
@@ -91,6 +91,7 @@ export function SchemaAdditionalPropertyList() {
       <ResizableTable
         tableId="schema-additional-property"
         columns={COLUMNS}
+        fillColumnId="model"
         freezeHeader
         maxHeight={520}
         sort={population.sort}

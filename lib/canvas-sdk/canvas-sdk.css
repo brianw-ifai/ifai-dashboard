@@ -1650,8 +1650,10 @@
 
     .ceo-callout.ok,
     .content-box.ok,
+    .fo-reading.ok,
     .ifai-canvas.theme-iom .ceo-callout.ok,
-    .ifai-canvas.theme-iom .content-box.ok {
+    .ifai-canvas.theme-iom .content-box.ok,
+    .ifai-canvas.theme-iom .fo-reading.ok {
       border-left: 3px solid var(--success-green);
       background: var(--success-bg);
     }
@@ -3155,7 +3157,8 @@
     }
 
     .ifai-canvas.light-theme .ceo-callout.ok,
-    .ifai-canvas.light-theme .content-box.ok {
+    .ifai-canvas.light-theme .content-box.ok,
+    .ifai-canvas.light-theme .fo-reading.ok {
       border-left: 3px solid var(--success-green);
       background: var(--success-bg);
     }
@@ -3166,7 +3169,7 @@
       gap: 10px;
     }
 
-    /* Featured Offer readings: one card per state, each with its own denominator. */
+    /* Featured Offer readings. Unchecked and failed share one card, still as two counts. */
     .fo-reading-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -3183,6 +3186,15 @@
       font-size: 12px;
       font-weight: 500;
       color: var(--text-muted);
+    }
+
+    /* Two counts stay on one line inside the shared coverage card. */
+    .fo-reading .fo-coverage-value {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      white-space: nowrap;
     }
 
     /* A reading that has no comparable number. Never rendered as a zero. */
@@ -3276,6 +3288,9 @@
 
     .retail-explore {
       appearance: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: transparent;
       border: 0;
       padding: 0;
@@ -3284,6 +3299,23 @@
       font-weight: 700;
       text-align: left;
       cursor: pointer;
+    }
+
+    .retail-explore:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    .retail-explore-chevron {
+      flex: none;
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 160ms ease;
+    }
+
+    .retail-explore[aria-expanded="true"] .retail-explore-chevron {
+      transform: rotate(180deg);
     }
 
     .resizable-table {
@@ -3298,6 +3330,17 @@
       white-space: normal;
       max-width: 100%;
       vertical-align: top;
+    }
+
+    /* Field names read at the same size as the cell text around them. */
+    .resizable-table .spec-field-pill {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: normal;
+      line-height: 1.35;
+      text-transform: none;
+      padding: 2px 8px;
+      margin: 0 4px 4px 0;
     }
 
     .resizable-table .resizable-th {
