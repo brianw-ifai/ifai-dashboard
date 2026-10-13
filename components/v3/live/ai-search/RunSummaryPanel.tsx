@@ -1,10 +1,39 @@
 "use client";
 
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { categoryLabel, engineLabel, formatRunTime } from "@/lib/ai-search/run-metrics";
+import { categoryLabel, engineLabel, formatRunTime, type GroupTally } from "@/lib/ai-search/run-metrics";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
+
+const ENGINE_COLUMNS = [
+  clientColumn("engine", "Engine", "text", 140, 100),
+  clientColumn("model", "Model", "text", 180, 110),
+  clientColumn("lead", "Fender lead", "number", 160, 110),
+  clientColumn("resolved", "Resolved", "number", 120, 90),
+  clientColumn("leader", "No leader", "number", 110, 80),
+  clientColumn("errors", "Errors", "number", 90, 72),
+];
+
+const CATEGORY_COLUMNS = [
+  clientColumn("category", "Category", "text", 160, 110),
+  clientColumn("lead", "Fender lead", "number", 160, 110),
+  clientColumn("resolved", "Resolved", "number", 120, 90),
+  clientColumn("leader", "No leader", "number", 110, 80),
+  clientColumn("errors", "Errors", "number", 90, 72),
+];
+
+function groupSortValue(row: GroupTally, columnId: string, label: string): SortInput {
+  if (columnId === "engine" || columnId === "category") return label;
+  if (columnId === "model") return row.models.join(", ") || null;
+  if (columnId === "lead") return row.winPct;
+  if (columnId === "resolved") return row.resolved;
+  if (columnId === "leader") return row.unresolved;
+  return row.errors;
+}
 import { engineModelLine, errorLine, pct, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -125,17 +154,22 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
 function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const s = summarizeRun(snapshot);
   const small = new Set(s.smallSampleEngines);
+  const sorted = useClientTableSort(s.engines, ENGINE_COLUMNS, (row, columnId) =>
+    groupSortValue(row, columnId, engineLabel(row.key)),
+  );
   return (
     <div className="content-box ai-engine-table" style={{ marginTop: 12 }}>
       <div className="content-box-title">By engine and model</div>
-      <table className="table-sm">
-        <thead>
-          <tr>
-            <th>Engine</th><th>Model</th><th>Fender lead</th><th>Resolved</th><th>No leader</th><th>Errors</th>
-          </tr>
-        </thead>
+      <ResizableTable
+        tableId="ai-run-engines"
+        columns={ENGINE_COLUMNS}
+        freezeHeader
+        maxHeight={520}
+        sort={sorted.sort}
+        onSort={sorted.onSort}
+      >
         <tbody>
-          {s.engines.map((engine) => (
+          {sorted.rows.map((engine) => (
             <tr key={engine.key} data-engine={engine.key}>
               <td>
                 <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={SIM}>
@@ -159,22 +193,29 @@ function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
     </div>
   );
 }
 
 function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const s = summarizeRun(snapshot);
+  const sorted = useClientTableSort(s.categories, CATEGORY_COLUMNS, (row, columnId) =>
+    groupSortValue(row, columnId, categoryLabel(row.key)),
+  );
   return (
     <div className="content-box ai-category-table" style={{ marginTop: 12 }}>
       <div className="content-box-title">By commercial category</div>
-      <table className="table-sm">
-        <thead>
-          <tr><th>Category</th><th>Fender lead</th><th>Resolved</th><th>No leader</th><th>Errors</th></tr>
-        </thead>
+      <ResizableTable
+        tableId="ai-run-categories"
+        columns={CATEGORY_COLUMNS}
+        freezeHeader
+        maxHeight={520}
+        sort={sorted.sort}
+        onSort={sorted.onSort}
+      >
         <tbody>
-          {s.categories.map((row) => (
+          {sorted.rows.map((row) => (
             <tr key={row.key} data-category={row.key}>
               <td>
                 <EvidenceLink focus={{ field: "category", value: row.key }} tab={SIM}>
@@ -188,7 +229,7 @@ function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </ResizableTable>
       <p style={{ ...mutedText, marginTop: 8 }}>
         Product fact checks are not a shopping category. They are on the Product Fact Checks tab.
       </p>

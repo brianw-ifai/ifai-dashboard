@@ -1,6 +1,10 @@
 "use client";
 
 import { formatInt } from "@/lib/fender-canvas/format";
+import {
+  coverageExceptionLabel,
+  coverageExceptionsHealthy,
+} from "@/lib/fender-canvas/coverage-exceptions";
 import type { FeaturedOfferCounts } from "@/lib/fender-canvas/featured-offer";
 import {
   benchmarkCoverageSentence,
@@ -20,8 +24,8 @@ type Reading = {
 };
 
 /**
- * Every Featured Offer state, counted separately with its own denominator.
- * No state is folded into another, and a missing result is never shown as zero.
+ * Each Featured Offer state keeps its own count and denominator.
+ * Unchecked and failed stay separate numbers inside one coverage card.
  */
 function readings(counts: FeaturedOfferCounts): Reading[] {
   return [
@@ -44,18 +48,6 @@ function readings(counts: FeaturedOfferCounts): Reading[] {
       note: "The catalog has no current offer for this listing, so no Amazon check is needed.",
     },
     {
-      label: "Check failed",
-      value: counts.checkFailed,
-      denominator: counts.population,
-      note: "The last attempt failed. These are not counted as present and not as zero.",
-    },
-    {
-      label: "Not checked",
-      value: counts.notChecked,
-      denominator: counts.population,
-      note: "This collector has not reached these listings yet.",
-    },
-    {
       label: "Competitive External Price available",
       value: counts.benchmarkPresent,
       denominator: counts.keepaClassified,
@@ -68,6 +60,26 @@ function readings(counts: FeaturedOfferCounts): Reading[] {
       note: "Withheld listings whose offer and outside price came from one check, with the offer above that price.",
     },
   ];
+}
+
+function CoverageExceptionsCard({ counts }: { counts: FeaturedOfferCounts }) {
+  const healthy = coverageExceptionsHealthy(counts.notChecked, counts.checkFailed);
+  return (
+    <div
+      className={`retail-finding fo-reading${healthy ? " ok" : ""}`}
+      data-coverage-unchecked={counts.notChecked}
+      data-coverage-failed={counts.checkFailed}
+    >
+      <span className="metric-card-label">Coverage exceptions</span>
+      <span className="metric-card-val fo-coverage-value">
+        {coverageExceptionLabel(counts.notChecked, counts.checkFailed)}
+      </span>
+      <span className="metric-card-sub">
+        Unchecked listings have not been reached. Failed checks are not counted as present and not
+        counted as zero. A failed check is not an unchecked listing.
+      </span>
+    </div>
+  );
 }
 
 function ReadingCard({ reading }: { reading: Reading }) {
@@ -92,6 +104,7 @@ export function FeaturedOfferReadings({
   counts: FeaturedOfferCounts;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
+  const cards = readings(counts);
   return (
     <div className="content-box fo-readings" style={{ marginTop: 12 }}>
       <div className="content-box-title">
@@ -107,7 +120,11 @@ export function FeaturedOfferReadings({
         {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
       </p>
       <div className="retail-finding-grid fo-reading-grid">
-        {readings(counts).map((reading) => (
+        {cards.slice(0, 3).map((reading) => (
+          <ReadingCard key={reading.label} reading={reading} />
+        ))}
+        <CoverageExceptionsCard counts={counts} />
+        {cards.slice(3).map((reading) => (
           <ReadingCard key={reading.label} reading={reading} />
         ))}
       </div>

@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { listingChannelPricesQuery, listingsQuery } from "@/lib/canvasData";
+import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { featuredOfferState } from "@/lib/fender-canvas/featured-offer";
 import { formatInt, formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
 import { listingReviewLabel } from "@/lib/fender-canvas/listing-reviews";
@@ -15,10 +17,10 @@ import {
   type MapSourceRow,
   type PricedChannelCell,
 } from "@/lib/fender-canvas/map-channels";
+import { exploreListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
 import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
 import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 
-const PAGE_SIZE = 50;
 const PRICE_PAGE = 1000;
 const PREFERRED_EXTRAS = ["sweetwater", "reverb"];
 
@@ -44,7 +46,7 @@ function httpUrl(value: string | null | undefined): string | null {
 }
 
 function moneyColumn(id: string, name: string, width = 164): RetailColumn {
-  return { id, name, label: name, width, minWidth: 148, className: "money" };
+  return { id, name, label: name, width, minWidth: 148, className: "money", sort: "number" };
 }
 
 function extraChannels(prices: ChannelPriceRow[]): { channel: string; name: string }[] {
@@ -73,16 +75,17 @@ function exploreColumns(extras: { channel: string; name: string }[]): RetailColu
       width: MAP_LISTING_COLUMN_WIDTH,
       minWidth: 96,
       className: "listing-col",
+      sort: "text",
     },
-    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
-    { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 150, minWidth: 100 },
-    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money" },
+    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
+    { id: "partner", name: "Partner / Bundle", label: "Partner / Bundle", width: 150, minWidth: 100, sort: "text" },
+    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money", sort: "number" },
     moneyColumn("amazon", "Amazon"),
     moneyColumn("walmart", "Walmart"),
     moneyColumn("musicians-friend", "Musician's Friend", 176),
     ...extras.map((channel) => moneyColumn(channel.channel, channel.name)),
-    { id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112 },
-    { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80 },
+    { id: "reviews", name: "Reviews", label: "Reviews", width: 124, minWidth: 112, sort: "number" },
+    { id: "channels", name: "Channels", label: "Channels", width: 120, minWidth: 80, sort: "text" },
   ];
 }
 
@@ -130,7 +133,6 @@ async function loadChannelPrices(): Promise<ChannelPriceRow[]> {
 export function FenderListingsTable() {
   const [rows, setRows] = useState<CanvasRetailListingRow[]>([]);
   const [channelPrices, setChannelPrices] = useState<ChannelPriceRow[]>([]);
-  const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -139,16 +141,20 @@ export function FenderListingsTable() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: err, count } = await listingsQuery(page, PAGE_SIZE, filter);
-    if (err) {
-      setError(err.message);
+    setRows([]);
+    const result = await loadFilteredPages(async (page, size) => {
+      const { data, error: err, count } = await listingsQuery(page, size, filter);
+      return { data: (data ?? []) as CanvasRetailListingRow[], error: err, count };
+    });
+    if (result.error) {
+      setError(result.error);
       setLoading(false);
       return;
     }
-    setRows((data ?? []) as CanvasRetailListingRow[]);
-    setTotal(count ?? null);
+    setRows(result.rows);
+    setTotal(result.total);
     setLoading(false);
-  }, [filter, page]);
+  }, [filter]);
 
   useEffect(() => {
     void load();
@@ -164,10 +170,24 @@ export function FenderListingsTable() {
     };
   }, []);
 
-  const extras = extraChannels(channelPrices);
-  const columns = exploreColumns(extras);
-  const prices = channelPriceLookup(channelPrices);
-  const pages = total != null ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : 1;
+  const extras = useMemo(() => extraChannels(channelPrices), [channelPrices]);
+  const columns = useMemo(() => exploreColumns(extras), [extras]);
+  const prices = useMemo(() => channelPriceLookup(channelPrices), [channelPrices]);
+  const sortValue = useCallback(
+    (row: CanvasRetailListingRow, columnId: string) =>
+      exploreListingSortValue(row, columnId, (id) => {
+        const facts = listingChannelFacts(asMapRow(row), prices.get(row.asin.trim()));
+        return facts.find((fact) => fact.key === id)?.price;
+      }),
+    [prices],
+  );
+  const population = useFullPopulationSort(
+    rows,
+    columns,
+    sortValue,
+    (row) => row.asin,
+    CLIENT_TABLE_PAGE_SIZE,
+  );
 
   return (
     <div className="content-box retail-listings-table" style={{ marginTop: 12 }}>
@@ -183,7 +203,7 @@ export function FenderListingsTable() {
           type="button"
           className={`segmented-btn${!filter.violationsOnly && !filter.bundlesOnly ? " active" : ""}`}
           onClick={() => {
-            setPage(0);
+            population.resetPage();
             setFilter({});
           }}
         >
@@ -193,7 +213,7 @@ export function FenderListingsTable() {
           type="button"
           className={`segmented-btn${filter.violationsOnly ? " active" : ""}`}
           onClick={() => {
-            setPage(0);
+            population.resetPage();
             setFilter({ violationsOnly: true });
           }}
         >
@@ -203,7 +223,7 @@ export function FenderListingsTable() {
           type="button"
           className={`segmented-btn${filter.bundlesOnly ? " active" : ""}`}
           onClick={() => {
-            setPage(0);
+            population.resetPage();
             setFilter({ bundlesOnly: true });
           }}
         >
@@ -217,7 +237,14 @@ export function FenderListingsTable() {
         </p>
       ) : null}
 
-      <ResizableTable tableId="explore-listings" columns={columns} freezeHeader maxHeight={520}>
+      <ResizableTable
+        tableId="explore-listings"
+        columns={columns}
+        freezeHeader
+        maxHeight={520}
+        sort={population.sort}
+        onSort={population.onSort}
+      >
         <tbody>
           {loading && rows.length === 0 ? (
             <tr>
@@ -234,7 +261,7 @@ export function FenderListingsTable() {
               <td colSpan={columns.length}>The listing read could not be loaded.</td>
             </tr>
           ) : null}
-          {rows.map((row) => {
+          {population.pageRows.map((row) => {
             const label = row.model_name?.trim() || row.title?.trim() || "Listing";
             const partner = row.bundle_name ?? row.buybox_seller_name ?? "n/a";
             const href = httpUrl(row.product_url) ?? amazonHref(row.asin);
@@ -290,19 +317,19 @@ export function FenderListingsTable() {
         <button
           type="button"
           className="segmented-btn"
-          disabled={page <= 0 || loading}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={population.page <= 0 || loading}
+          onClick={() => population.setPage((current) => Math.max(0, current - 1))}
         >
           Previous
         </button>
         <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          Page {page + 1} of {pages}
+          Page {population.page + 1} of {population.pages}
         </span>
         <button
           type="button"
           className="segmented-btn"
-          disabled={page + 1 >= pages || loading}
-          onClick={() => setPage((p) => p + 1)}
+          disabled={population.page + 1 >= population.pages || loading}
+          onClick={() => population.setPage((current) => current + 1)}
         >
           Next
         </button>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
@@ -20,7 +22,64 @@ import {
 } from "@/lib/ai-search/citations";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { pct } from "@/lib/ai-search/summary";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+
+function CountTable<T>({
+  tableId,
+  columns,
+  rows,
+  value,
+  renderRow,
+}: {
+  tableId: string;
+  columns: readonly RetailColumn[];
+  rows: readonly T[];
+  value: (row: T, columnId: string) => SortInput;
+  renderRow: (row: T) => ReactNode;
+}) {
+  const sorted = useClientTableSort(rows, columns, value);
+  return (
+    <ResizableTable
+      tableId={tableId}
+      columns={columns}
+      freezeHeader
+      maxHeight={520}
+      sort={sorted.sort}
+      onSort={sorted.onSort}
+    >
+      <tbody>{sorted.rows.map((row) => renderRow(row))}</tbody>
+    </ResizableTable>
+  );
+}
+
+const CLASS_COLUMNS = [
+  clientColumn("class", "Class", "text", 180, 110),
+  clientColumn("links", "Links", "number", 90, 72),
+  clientColumn("share", "Share", "number", 90, 72),
+  clientColumn("answers", "Answers", "number", 100, 80),
+];
+
+const DOMAIN_COLUMNS = [
+  clientColumn("domain", "Domain", "text", 200, 120),
+  clientColumn("class", "Class", "text", 140, 100),
+  clientColumn("links", "Links", "number", 90, 72),
+  clientColumn("answers", "Answers", "number", 100, 80),
+];
+
+const ENGINE_COLUMNS = [
+  clientColumn("engine", "Engine", "text", 140, 100),
+  clientColumn("cited", "Cited answers", "number", 140, 110),
+  clientColumn("links", "Links", "number", 90, 72),
+  clientColumn("owned", "Fender-owned", "number", 130, 100),
+];
+
+const CATEGORY_COLUMNS = [
+  clientColumn("category", "Category", "text", 180, 120),
+  clientColumn("cited", "Cited answers", "number", 140, 110),
+  clientColumn("links", "Links", "number", 90, 72),
+  clientColumn("owned", "Fender-owned", "number", 130, 100),
+];
 
 type CitationPick = { field: "domain" | "class" | "engine" | "category"; value: string } | null;
 
@@ -162,68 +221,92 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
               </span>
             </div>
             <CitationInterpretationNote partial={snapshot.run.run_state === "partial"} />
-            <table className="table-sm">
-              <thead><tr><th>Class</th><th>Links</th><th>Share</th><th>Answers</th></tr></thead>
-              <tbody>
-                {classes.map((g) => (
-                  <tr key={g.key} data-source-class={g.key}>
-                    <td><PickButton pick={{ field: "class", value: g.key }} onPick={setPick}>{SOURCE_CLASS_LABELS[g.key as SourceClass]}</PickButton></td>
-                    <td>{g.rows}</td>
-                    <td>{pct(g.rows, read.rows.length)}</td>
-                    <td>{g.answers}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <CountTable
+              tableId="citation-classes"
+              columns={CLASS_COLUMNS}
+              rows={classes}
+              value={(g, id) => {
+                if (id === "class") return SOURCE_CLASS_LABELS[g.key as SourceClass];
+                if (id === "links") return g.rows;
+                if (id === "share") return read.rows.length ? g.rows / read.rows.length : null;
+                return g.answers;
+              }}
+              renderRow={(g) => (
+                <tr key={g.key} data-source-class={g.key}>
+                  <td><PickButton pick={{ field: "class", value: g.key }} onPick={setPick}>{SOURCE_CLASS_LABELS[g.key as SourceClass]}</PickButton></td>
+                  <td>{g.rows}</td>
+                  <td>{pct(g.rows, read.rows.length)}</td>
+                  <td>{g.answers}</td>
+                </tr>
+              )}
+            />
           </div>
 
           <div className="content-box ai-top-domains" style={{ marginTop: 12 }}>
             <div className="content-box-title">Top domains</div>
-            <table className="table-sm">
-              <thead><tr><th>Domain</th><th>Class</th><th>Links</th><th>Answers</th></tr></thead>
-              <tbody>
-                {domains.slice(0, 15).map((g) => (
-                  <tr key={g.key} data-domain={g.key}>
-                    <td style={{ wordBreak: "break-all" }}><PickButton pick={{ field: "domain", value: g.key }} onPick={setPick}>{g.key}</PickButton></td>
-                    <td>{SOURCE_CLASS_LABELS[read.rows.find((r) => r.domain === g.key)?.sourceClass ?? "other"]}</td>
-                    <td>{g.rows}</td>
-                    <td>{g.answers}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <CountTable
+              tableId="citation-domains"
+              columns={DOMAIN_COLUMNS}
+              rows={domains.slice(0, 15)}
+              value={(g, id) => {
+                if (id === "domain") return g.key;
+                if (id === "class") return SOURCE_CLASS_LABELS[read.rows.find((r) => r.domain === g.key)?.sourceClass ?? "other"];
+                if (id === "links") return g.rows;
+                return g.answers;
+              }}
+              renderRow={(g) => (
+                <tr key={g.key} data-domain={g.key}>
+                  <td style={{ wordBreak: "break-all" }}><PickButton pick={{ field: "domain", value: g.key }} onPick={setPick}>{g.key}</PickButton></td>
+                  <td>{SOURCE_CLASS_LABELS[read.rows.find((r) => r.domain === g.key)?.sourceClass ?? "other"]}</td>
+                  <td>{g.rows}</td>
+                  <td>{g.answers}</td>
+                </tr>
+              )}
+            />
             {domains.length > 15 ? <p style={mutedText}>{domains.length - 15} more domains are in the cited pages table below.</p> : null}
           </div>
 
           <div className="content-box" style={{ marginTop: 12 }}>
             <div className="content-box-title">By engine and category</div>
-            <table className="table-sm">
-              <thead><tr><th>Engine</th><th>Cited answers</th><th>Links</th><th>Fender-owned</th></tr></thead>
-              <tbody>
-                {byEngine.map((g) => (
-                  <tr key={g.key} data-engine={g.key}>
-                    <td><PickButton pick={{ field: "engine", value: g.key }} onPick={setPick}>{engineLabel(g.key)}</PickButton></td>
-                    <td>{g.cited} of {g.answered}</td>
-                    <td>{engineLinks.get(g.key)?.rows ?? 0}</td>
-                    <td>{engineLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <CountTable
+              tableId="citation-engines"
+              columns={ENGINE_COLUMNS}
+              rows={byEngine}
+              value={(g, id) => {
+                if (id === "engine") return engineLabel(g.key);
+                if (id === "cited") return g.cited;
+                if (id === "links") return engineLinks.get(g.key)?.rows ?? 0;
+                return engineLinks.get(g.key)?.fenderOwnedRows ?? 0;
+              }}
+              renderRow={(g) => (
+                <tr key={g.key} data-engine={g.key}>
+                  <td><PickButton pick={{ field: "engine", value: g.key }} onPick={setPick}>{engineLabel(g.key)}</PickButton></td>
+                  <td>{g.cited} of {g.answered}</td>
+                  <td>{engineLinks.get(g.key)?.rows ?? 0}</td>
+                  <td>{engineLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
+                </tr>
+              )}
+            />
             {scope !== "probe" ? (
-              <table className="table-sm" style={{ marginTop: 8 }}>
-                <thead><tr><th>Category</th><th>Cited answers</th><th>Links</th><th>Fender-owned</th></tr></thead>
-                <tbody>
-                  {byCategory.map((g) => (
-                    <tr key={g.key} data-category={g.key}>
-                      <td><PickButton pick={{ field: "category", value: g.key }} onPick={setPick}>{g.key === "hallucinations" ? "Product fact checks" : categoryLabel(g.key)}</PickButton></td>
-                      <td>{g.cited} of {g.answered}</td>
-                      <td>{categoryLinks.get(g.key)?.rows ?? 0}</td>
-                      <td>{categoryLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <CountTable
+                tableId="citation-categories"
+                columns={CATEGORY_COLUMNS}
+                rows={byCategory}
+                value={(g, id) => {
+                  if (id === "category") return g.key === "hallucinations" ? "Product fact checks" : categoryLabel(g.key);
+                  if (id === "cited") return g.cited;
+                  if (id === "links") return categoryLinks.get(g.key)?.rows ?? 0;
+                  return categoryLinks.get(g.key)?.fenderOwnedRows ?? 0;
+                }}
+                renderRow={(g) => (
+                  <tr key={g.key} data-category={g.key}>
+                    <td><PickButton pick={{ field: "category", value: g.key }} onPick={setPick}>{g.key === "hallucinations" ? "Product fact checks" : categoryLabel(g.key)}</PickButton></td>
+                    <td>{g.cited} of {g.answered}</td>
+                    <td>{categoryLinks.get(g.key)?.rows ?? 0}</td>
+                    <td>{categoryLinks.get(g.key)?.fenderOwnedRows ?? 0}</td>
+                  </tr>
+                )}
+              />
             ) : null}
           </div>
         </>

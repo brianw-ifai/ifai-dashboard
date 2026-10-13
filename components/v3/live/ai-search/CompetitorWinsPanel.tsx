@@ -1,14 +1,33 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
-import { competitorTallies } from "@/lib/ai-search/competitors";
+import { competitorTallies, type CompetitorTally } from "@/lib/ai-search/competitors";
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+
+const COLUMNS = [
+  clientColumn("competitor", "Competitor", "text", 160, 110),
+  clientColumn("leads", "Leads", "number", 140, 100),
+  clientColumn("categories", "Categories", "text", 280, 140),
+  clientColumn("engines", "Engines", "text", 240, 120),
+];
+
+function tallySortValue(row: CompetitorTally, columnId: string): SortInput {
+  if (columnId === "competitor") return row.brand;
+  if (columnId === "leads") return row.wins;
+  if (columnId === "categories") {
+    return row.byCategory.map((c) => `${categoryLabel(c.category)} ${c.wins} of ${c.resolved}`).join(", ") || null;
+  }
+  return row.byEngine.map((e) => `${engineLabel(e.engine)} ${e.wins} of ${e.resolved}`).join(", ") || null;
+}
 
 function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const focus = useEvidenceFocus();
@@ -22,6 +41,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   }
 
   const tallies = competitorTallies(snapshot.calls);
+  const sorted = useClientTableSort(tallies, COLUMNS, tallySortValue);
   const losses = useMemo(
     () =>
       snapshot.calls
@@ -47,10 +67,16 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <>
       <div className="content-box ai-competitor-tallies">
         <div className="content-box-title">Competitors named more than Fender/Squier</div>
-        <table className="table-sm">
-          <thead><tr><th>Competitor</th><th>Leads</th><th>Categories</th><th>Engines</th></tr></thead>
+        <ResizableTable
+          tableId="competitor-wins"
+          columns={COLUMNS}
+          freezeHeader
+          maxHeight={520}
+          sort={sorted.sort}
+          onSort={sorted.onSort}
+        >
           <tbody>
-            {tallies.map((t) => (
+            {sorted.rows.map((t) => (
               <tr key={t.brand} data-competitor={t.brand}>
                 <td>
                   <button
@@ -68,7 +94,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </ResizableTable>
       </div>
 
       <div className="content-box ai-competitor-answers" style={{ marginTop: 12 }}>

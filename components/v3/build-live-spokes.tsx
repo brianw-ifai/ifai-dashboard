@@ -65,10 +65,10 @@ const TAB_OVERRIDES: Partial<
   specs: {
     0: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
     1: () => (
-      <>
+      <div className="readiness-surface">
         <SchemaExplanation />
         <SchemaAdditionalPropertyList />
-      </>
+      </div>
     ),
     2: () => <AplusExplanation />,
   },

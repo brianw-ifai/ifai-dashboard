@@ -1,5 +1,6 @@
 "use client";
 
+import type { RetailColumn } from "@/components/v3/live/ResizableTable";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   aboveBenchmarkDollars,
@@ -16,9 +17,9 @@ import {
 } from "@/lib/fender-canvas/featured-offer";
 import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 
-export const FEATURED_OFFER_TABLE_COLUMNS = [
-  { id: "listing", name: "Listing", label: "Listing", width: 230, minWidth: 140 },
-  { id: "state", name: "Featured Offer", label: "Featured Offer", width: 150, minWidth: 110 },
+export const FEATURED_OFFER_TABLE_COLUMNS: RetailColumn[] = [
+  { id: "listing", name: "Listing", label: "Listing", width: 230, minWidth: 140, sort: "text" },
+  { id: "state", name: "Featured Offer", label: "Featured Offer", width: 150, minWidth: 110, sort: "text" },
   {
     id: "offer",
     name: "Observed offer",
@@ -26,6 +27,7 @@ export const FEATURED_OFFER_TABLE_COLUMNS = [
     width: 130,
     minWidth: 100,
     className: "money",
+    sort: "number",
   },
   {
     id: "benchmark",
@@ -34,6 +36,7 @@ export const FEATURED_OFFER_TABLE_COLUMNS = [
     width: 190,
     minWidth: 140,
     className: "money",
+    sort: "number",
   },
   {
     id: "gap",
@@ -42,9 +45,10 @@ export const FEATURED_OFFER_TABLE_COLUMNS = [
     width: 140,
     minWidth: 110,
     className: "money",
+    sort: "number",
   },
-  { id: "source", name: "Source", label: "Source", width: 120, minWidth: 90 },
-  { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 120 },
+  { id: "source", name: "Source", label: "Source", width: 120, minWidth: 90, sort: "text" },
+  { id: "checked", name: "Checked", label: "Checked", width: 170, minWidth: 120, sort: "date" },
 ];
 
 export const FEATURED_OFFER_TABLE_COLUMN_COUNT = FEATURED_OFFER_TABLE_COLUMNS.length;

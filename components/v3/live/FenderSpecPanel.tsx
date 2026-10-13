@@ -1,15 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
+import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
+import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
+import { specReadinessSortValue } from "@/lib/fender-canvas/spec-table-sort";
 import {
   specFenderFoundLabel,
   specModelTitle,
   type CanvasSpecMissingRow,
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
-import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { presentMissingAmazonFields } from "@/lib/fender-canvas/spec-missing-fields";
+
+const SPEC_COLUMNS = [
+  clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
+  clientColumn("model", "Model", "text", 220, 140),
+  clientColumn("amazon", "Amazon completeness", "number", 170, 130),
+  clientColumn("found", "fender.com found", "text", 150, 120),
+  clientColumn("missing", "Missing Amazon fields", "text", 280, 180),
+];
 
 const MISSING_PAGE_DESC =
   "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
@@ -84,15 +97,20 @@ function CatalogSpecReadiness({
   const queryMissingPages =
     specRowsFilter(true, missingPagesOnly)?.missingFenderPage === true;
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
-  const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [seenFilter, setSeenFilter] = useState(queryMissingPages);
-  const pageSize = 50;
+  const population = useFullPopulationSort(
+    rows,
+    SPEC_COLUMNS,
+    specReadinessSortValue,
+    (row) => row.asin,
+    CLIENT_TABLE_PAGE_SIZE,
+  );
 
   if (seenFilter !== queryMissingPages) {
     setSeenFilter(queryMissingPages);
-    setPage(0);
+    population.resetPage();
     setRows([]);
     setTotal(null);
     setLoading(true);
@@ -100,15 +118,28 @@ function CatalogSpecReadiness({
 
   useEffect(() => {
     let cancelled = false;
-    void specRowsQuery(
-      page,
-      pageSize,
-      queryMissingPages ? { missingFenderPage: true } : undefined,
-    ).then(
-      ({ data, count }) => {
+    void loadFilteredPages(async (page, size) => {
+      const result = await specRowsQuery(
+        page,
+        size,
+        queryMissingPages ? { missingFenderPage: true } : undefined,
+      );
+      return {
+        data: (result.data ?? []) as CanvasSpecReadinessRow[],
+        error: result.error,
+        count: result.count,
+      };
+    }).then(
+      (result) => {
         if (cancelled) return;
-        setRows((data ?? []) as CanvasSpecReadinessRow[]);
-        setTotal(count ?? null);
+        if (result.error) {
+          setRows([]);
+          setTotal(null);
+          setLoading(false);
+          return;
+        }
+        setRows(result.rows);
+        setTotal(result.total);
         setLoading(false);
       },
       () => {
@@ -119,9 +150,7 @@ function CatalogSpecReadiness({
     return () => {
       cancelled = true;
     };
-  }, [page, queryMissingPages]);
-
-  const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  }, [queryMissingPages]);
 
   return (
     <>
@@ -150,18 +179,16 @@ function CatalogSpecReadiness({
             absent from fender.com.
           </p>
         ) : null}
-        <div style={{ overflowX: "auto" }}>
-          <table className="table-sm">
-            <thead>
-              <tr>
-                <th>ASIN</th>
-                <th>Model</th>
-                <th>Amazon completeness</th>
-                <th>fender.com found</th>
-                <th>Missing Amazon fields</th>
-              </tr>
-            </thead>
-            <tbody>
+        <ResizableTable
+          tableId="spec-readiness"
+          columns={SPEC_COLUMNS}
+          freezeHeader
+          maxHeight={520}
+          fillColumnId="missing"
+          sort={population.sort}
+          onSort={population.onSort}
+        >
+          <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
                   <td colSpan={5}>Loading…</td>
@@ -176,11 +203,11 @@ function CatalogSpecReadiness({
                   </td>
                 </tr>
               ) : null}
-              {rows.map((row) => {
-                const chips = (row.amazon_missing_fields ?? "")
-                  .split(";")
-                  .map((s) => s.trim())
-                  .filter(Boolean);
+              {population.pageRows.map((row) => {
+                const missing = presentMissingAmazonFields(
+                  row.amazon_missing_fields,
+                  row.amazon_completeness_pct,
+                );
                 return (
                   <tr key={row.asin}>
                     <td>
@@ -190,37 +217,36 @@ function CatalogSpecReadiness({
                     <td>{formatPct(row.amazon_completeness_pct)}</td>
                     <td>{specFenderFoundLabel(row.fender_found)}</td>
                     <td>
-                      {chips.length
-                        ? chips.map((c) => (
-                            <span key={c} className="tag-badge tag-neutral" style={{ marginRight: 4 }}>
-                              {c}
+                      {missing.kind === "fields"
+                        ? missing.fields.map((field) => (
+                            <span key={field} className="tag-badge tag-neutral spec-field-pill">
+                              {field}
                             </span>
                           ))
-                        : pendingLabel()}
+                        : missing.label}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </ResizableTable>
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <button
             type="button"
             className="segmented-btn"
-            disabled={page <= 0}
-            onClick={() => setPage((p) => p - 1)}
+            disabled={population.page <= 0}
+            onClick={() => population.setPage((current) => current - 1)}
           >
             Previous
           </button>
           <span style={{ fontSize: 11 }}>
-            {page + 1} / {pages}
+            {population.page + 1} / {population.pages}
           </span>
           <button
             type="button"
             className="segmented-btn"
-            disabled={page + 1 >= pages}
-            onClick={() => setPage((p) => p + 1)}
+            disabled={population.page + 1 >= population.pages}
+            onClick={() => population.setPage((current) => current + 1)}
           >
             Next
           </button>

@@ -173,13 +173,16 @@ test.describe("drill-downs", () => {
       "Featured Offer present",
       "Featured Offer withheld",
       "No active offer",
-      "Check failed",
-      "Not checked",
+      "Coverage exceptions",
       "Competitive External Price available",
       "Confirmed withheld above outside price",
     ]) {
       await expect(readings.locator(".fo-reading", { hasText: label }).first()).toBeVisible();
     }
+    const coverage = readings.locator(".fo-reading", { hasText: "Coverage exceptions" });
+    await expect(coverage).toContainText("unchecked");
+    await expect(coverage).toContainText("failed");
+    await expect(readings.locator(".fo-reading")).toHaveCount(6);
     // Every rate shows its denominator, and a missing result is never a bare zero.
     await expect(readings.locator(".fo-denominator").first()).toBeVisible();
     await expect(readings).toContainText("not counted as zero");
