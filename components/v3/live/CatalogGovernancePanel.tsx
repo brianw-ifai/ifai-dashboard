@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type {
@@ -10,15 +11,24 @@ import type {
   UnnestedBundleOpportunity,
 } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const PAGE = 20;
 
 const BUNDLE_COLUMNS: RetailColumn[] = [
-  { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120 },
-  { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col" },
-  { id: "parent", name: "Parent ASIN", label: "Parent ASIN", width: 128, minWidth: 108, className: "asin-col" },
-  { id: "why", name: "Why it is here", label: "Why it is here", width: 280, minWidth: 140 },
+  { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120, sort: "text" },
+  { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
+  { id: "parent", name: "Parent ASIN", label: "Parent ASIN", width: 128, minWidth: 108, className: "asin-col", sort: "text" },
+  { id: "why", name: "Why it is here", label: "Why it is here", width: 280, minWidth: 140, sort: "text" },
 ];
+
+function bundleSortValue(row: UnnestedBundleOpportunity, columnId: string): SortInput {
+  if (columnId === "listing") return row.modelOrTitle?.trim() || row.bundleName?.trim() || null;
+  if (columnId === "asin") return row.asin;
+  if (columnId === "parent") return row.parentAsin?.trim() || null;
+  if (columnId === "why") return reasonCopy(row);
+  return null;
+}
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -104,10 +114,21 @@ function AsinLink({ asin, href }: { asin: string; href: string | null }) {
 
 function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
   const [page, setPage] = useState(0);
-  const slice = rows.slice(page * PAGE, page * PAGE + PAGE);
+  const sorted = useClientTableSort(rows, BUNDLE_COLUMNS, bundleSortValue);
+  const slice = sorted.rows.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <>
-      <ResizableTable tableId="catalog-bundles" columns={BUNDLE_COLUMNS}>
+      <ResizableTable
+        tableId="catalog-bundles"
+        columns={BUNDLE_COLUMNS}
+        freezeHeader
+        maxHeight={520}
+        sort={sorted.sort}
+        onSort={(columnId) => {
+          setPage(0);
+          sorted.onSort(columnId);
+        }}
+      >
           <tbody>
             {slice.length === 0 ? (
               <tr>

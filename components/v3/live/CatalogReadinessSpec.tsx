@@ -10,7 +10,7 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
   const [missingPagesOnly, setMissingPagesOnly] = useState(false);
 
   return (
-    <>
+    <div className="readiness-surface">
       <FenderSpecSummary
         bundle={bundle}
         missingPageControl={{
@@ -23,6 +23,6 @@ export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
         catalogReadiness
         missingPagesOnly={missingPagesOnly}
       />
-    </>
+    </div>
   );
 }

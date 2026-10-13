@@ -4,8 +4,6 @@ import { ACCURACY_LABELS, DEFAULT_FILTER, type ExplorerFilter } from "@/lib/ai-s
 import { categoryLabel, engineLabel, OUTCOME_LABELS } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
-const selectStyle = { fontSize: 12, padding: "3px 6px", maxWidth: 190 } as const;
-
 const OUTCOME_OPTIONS: Array<[ExplorerFilter["outcome"], string]> = [
   ["", "Any outcome"],
   ["resolved", "Resolved (clear leader)"],
@@ -57,19 +55,19 @@ export function SimulationFilters({
           </button>
         ))}
       </div>
-      <select aria-label="Engine" style={selectStyle} value={filter.engine} onChange={(e) => set({ engine: e.target.value })}>
+      <select aria-label="Engine" value={filter.engine} onChange={(e) => set({ engine: e.target.value })}>
         <option value="">All engines</option>
         {engines.map((engine) => (
           <option key={engine} value={engine}>{engineLabel(engine)}</option>
         ))}
       </select>
-      <select aria-label="Model" style={selectStyle} value={filter.model} onChange={(e) => set({ model: e.target.value })}>
+      <select aria-label="Model" value={filter.model} onChange={(e) => set({ model: e.target.value })}>
         <option value="">All models</option>
         {models.map((model) => (
           <option key={model} value={model}>{model}</option>
         ))}
       </select>
-      <select aria-label="Category" style={selectStyle} value={filter.category} onChange={(e) => set({ category: e.target.value })}>
+      <select aria-label="Category" value={filter.category} onChange={(e) => set({ category: e.target.value })}>
         <option value="">All categories</option>
         {categories.map((category) => (
           <option key={category} value={category}>{categoryLabel(category)}</option>
@@ -77,7 +75,6 @@ export function SimulationFilters({
       </select>
       <select
         aria-label="Outcome"
-        style={selectStyle}
         value={filter.outcome}
         onChange={(e) => set({ outcome: e.target.value as ExplorerFilter["outcome"], brand: "" })}
       >
@@ -87,7 +84,6 @@ export function SimulationFilters({
       </select>
       <select
         aria-label="Fact-check result"
-        style={selectStyle}
         value={filter.accuracy}
         onChange={(e) => set({ accuracy: e.target.value as ExplorerFilter["accuracy"] })}
       >

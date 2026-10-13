@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
   FEATURED_OFFER_TABLE_COLUMNS,
   FEATURED_OFFER_TABLE_COLUMN_COUNT,
@@ -13,7 +14,18 @@ import {
   suppressedListingsQuery,
 } from "@/lib/canvasData";
 import { formatInt } from "@/lib/fender-canvas/format";
-import { withheldListings, type FeaturedOfferRow } from "@/lib/fender-canvas/featured-offer";
+import {
+  aboveBenchmarkDollars,
+  benchmarkDollars,
+  FEATURED_OFFER_STATE_LABELS,
+  featuredOfferState,
+  listingLabel,
+  observedOfferDollars,
+  readFromKeepa,
+  withheldListings,
+  type FeaturedOfferRow,
+} from "@/lib/fender-canvas/featured-offer";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import {
   benchmarkCoverageSentence,
   confirmedSuppressionSentence,
@@ -24,6 +36,16 @@ import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-disp
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
+
+function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
+  if (columnId === "listing") return listingLabel(row).trim() || null;
+  if (columnId === "state") return FEATURED_OFFER_STATE_LABELS[featuredOfferState(row)];
+  if (columnId === "offer") return observedOfferDollars(row);
+  if (columnId === "benchmark") return benchmarkDollars(row);
+  if (columnId === "gap") return aboveBenchmarkDollars(row);
+  if (columnId === "source") return readFromKeepa(row) ? "Amazon listing read" : "Catalog";
+  return row.featured_offer_checked_at ?? null;
+}
 
 async function loadWithheldListings(): Promise<
   { available: false } | { available: true; rows: FeaturedOfferRow[] }
@@ -126,6 +148,7 @@ export function SuppressedListingsPanel({
   }, []);
 
   const rows = typeof state === "object" ? state.rows : null;
+  const sorted = useClientTableSort(rows ?? [], FEATURED_OFFER_TABLE_COLUMNS, suppressedSortValue);
   const counts = read.phase === "ready" ? read.snapshot.suppressedListings.detail?.counts : null;
 
   return (
@@ -154,16 +177,23 @@ export function SuppressedListingsPanel({
               listing read, so the gap compares one moment. A blank gap means this reading has
               no comparable pair yet, not a gap of zero.
             </p>
-            <ResizableTable tableId="suppressed-listings" columns={FEATURED_OFFER_TABLE_COLUMNS}>
+            <ResizableTable
+              tableId="suppressed-listings"
+              columns={FEATURED_OFFER_TABLE_COLUMNS}
+              freezeHeader
+              maxHeight={520}
+              sort={sorted.sort}
+              onSort={sorted.onSort}
+            >
               <tbody>
-                {rows.length === 0 ? (
+                {sorted.rows.length === 0 ? (
                   <tr>
                     <td colSpan={FEATURED_OFFER_TABLE_COLUMN_COUNT}>
                       No monitored listing has a withheld Featured Offer in the current reading.
                     </td>
                   </tr>
                 ) : (
-                  rows.map((row) => (
+                  sorted.rows.map((row) => (
                     <FeaturedOfferTableRow key={String(row.asin ?? "")} row={row} />
                   ))
                 )}

@@ -6,13 +6,32 @@ import {
   mergeColumnWidths,
   type ColumnWidthSpec,
 } from "@/lib/fender-canvas/retail-column-layout";
+import {
+  ariaSortValue,
+  tableScrollClass,
+  type SortKind,
+  type TableSort,
+} from "@/lib/fender-canvas/table-sort";
 
 export type RetailColumn = ColumnWidthSpec & {
   label: ReactNode;
   /** Spoken name for the resize control. */
   name: string;
   className?: string;
+  /** When set, the header sorts this column. Currency and counts use "number". */
+  sort?: SortKind;
 };
+
+export function clientColumn(
+  id: string,
+  name: string,
+  sort: SortKind,
+  width: number,
+  minWidth = 72,
+  className?: string,
+): RetailColumn {
+  return { id, name, label: name, sort, width, minWidth, className };
+}
 
 const KEY_STEP = 16;
 
@@ -117,14 +136,18 @@ function ColumnResizeHandle({
 export function ResizableTable({
   tableId,
   columns,
-  freezeHeader = false,
-  maxHeight,
+  freezeHeader = true,
+  maxHeight = 520,
+  sort = null,
+  onSort,
   children,
 }: {
   tableId: string;
   columns: readonly RetailColumn[];
   freezeHeader?: boolean;
   maxHeight?: number;
+  sort?: TableSort | null;
+  onSort?: (columnId: string) => void;
   children: ReactNode;
 }) {
   const { widths, setWidth } = useColumnWidths(tableId, columns);
@@ -160,9 +183,10 @@ export function ResizableTable({
 
   return (
     <div
-      className={`table-scroll${freezeHeader ? " table-freeze-head" : ""}`}
+      className={tableScrollClass(freezeHeader)}
       style={maxHeight != null ? { maxHeight } : undefined}
       data-table-id={tableId}
+      data-freeze-header={freezeHeader ? "true" : "false"}
     >
       <table ref={tableRef} className="table-sm resizable-table" style={{ width: total }}>
         <colgroup>
@@ -181,11 +205,27 @@ export function ResizableTable({
               return (
                 <th
                   key={column.id}
+                  scope="col"
                   data-col-id={column.id}
                   className={`resizable-th${column.className ? ` ${column.className}` : ""}`}
                   style={{ width }}
+                  aria-sort={column.sort ? ariaSortValue(sort, column.id) : undefined}
                 >
-                  <span className="resizable-th-label">{column.label}</span>
+                  {column.sort ? (
+                    <button
+                      type="button"
+                      className="ifai-sort-btn"
+                      data-sort-dir={sort?.columnId === column.id ? sort.direction : undefined}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSort?.(column.id);
+                      }}
+                    >
+                      {column.label}
+                    </button>
+                  ) : (
+                    <span className="resizable-th-label">{column.label}</span>
+                  )}
                   <ColumnResizeHandle
                     name={column.name}
                     width={width}

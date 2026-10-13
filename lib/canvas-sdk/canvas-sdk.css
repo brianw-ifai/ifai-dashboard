@@ -2385,6 +2385,17 @@
     .ifai-sort-btn[data-sort-dir="asc"]::after { content: " ↑"; }
     .ifai-sort-btn[data-sort-dir="desc"]::after { content: " ↓"; }
 
+    .resizable-th .ifai-sort-btn {
+      white-space: normal;
+      text-align: left;
+      overflow-wrap: anywhere;
+      max-width: 100%;
+    }
+
+    .ai-sim-row {
+      cursor: pointer;
+    }
+
     .map-channel-row {
       cursor: pointer;
     }
@@ -3280,6 +3291,13 @@
       width: max-content;
       border-collapse: separate;
       border-spacing: 0;
+    }
+
+    /* Fixed columns must keep a long status badge inside its own cell. */
+    .resizable-table .tag-badge {
+      white-space: normal;
+      max-width: 100%;
+      vertical-align: top;
     }
 
     .resizable-table .resizable-th {

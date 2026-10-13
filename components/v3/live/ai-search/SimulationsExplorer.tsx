@@ -1,6 +1,8 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
@@ -27,7 +29,37 @@ import {
   OUTCOME_LABELS,
   type CallOutcome,
 } from "@/lib/ai-search/run-metrics";
-import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+
+const SIM_COLUMNS = [
+  clientColumn("prompt", "Prompt", "text", 280, 160),
+  clientColumn("outcome", "Outcome", "text", 220, 140),
+  clientColumn("engine", "Engine", "text", 120, 90),
+  clientColumn("model", "Model", "text", 150, 100),
+  clientColumn("category", "Category", "text", 160, 110),
+  clientColumn("fact", "Fact check", "text", 180, 120),
+  clientColumn("cited", "Cited links", "number", 110, 90),
+  clientColumn("checked", "Checked", "date", 180, 130),
+];
+
+function simulationSortValue(row: AiCallRow, columnId: string, cited: number): SortInput {
+  const outcome = callOutcome(row);
+  if (columnId === "prompt") return cleanPrompt(row.prompt).trim() || null;
+  if (columnId === "outcome") {
+    return outcome === "competitor_win" && row.primary_brand
+      ? `${row.primary_brand} named most`
+      : OUTCOME_LABELS[outcome];
+  }
+  if (columnId === "engine") return engineLabel(row.engine);
+  if (columnId === "model") return modelLabel(row.model);
+  if (columnId === "category") {
+    return row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category);
+  }
+  if (columnId === "fact") return ACCURACY_LABELS[accuracyState(row)];
+  if (columnId === "cited") return cited;
+  return row.created_at;
+}
 
 const OUTCOME_TONE: Record<CallOutcome, string> = {
   fender_win: "tag-success",
@@ -71,6 +103,9 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     () => sortExplorerRows(applyExplorerFilter(snapshot.calls, filter)),
     [snapshot.calls, filter],
   );
+  const sorted = useClientTableSort(rows, SIM_COLUMNS, (row, columnId) =>
+    simulationSortValue(row, columnId, citations.get(row.id)?.length ?? 0),
+  );
 
   const changeFilter = (next: ExplorerFilter) => {
     setOpenId(null);
@@ -102,48 +137,74 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </p>
       ) : null}
       {rows.length === 0 ? <EmptyRows>No call in this run matches these filters.</EmptyRows> : null}
-      <div id="ai-simulation-list" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {rows.map((row) => {
-          const outcome = callOutcome(row);
-          const open = openId === row.id;
-          const cited = citations.get(row.id) ?? [];
-          return (
-            <Fragment key={row.id}>
-              <button
-                type="button"
-                className="action-card ai-sim-row"
-                data-sim-id={row.sim_id}
-                data-outcome={outcome}
-                data-kind={row.prompt_kind ?? ""}
-                aria-expanded={open}
-                onClick={() => setOpenId(open ? null : row.id)}
-                style={{ textAlign: "left", cursor: "pointer" }}
-              >
-                <div className="action-head" style={{ gap: 8 }}>
-                  <span data-ai-prompt>{cleanPrompt(row.prompt)}</span>
-                  <span className={`tag-badge ${OUTCOME_TONE[outcome]}`}>
-                    {outcome === "competitor_win" && row.primary_brand ? `${row.primary_brand} named most` : OUTCOME_LABELS[outcome]}
-                  </span>
-                </div>
-                <div className="action-details" style={{ fontSize: 11 }}>
-                  {engineLabel(row.engine)} · {modelLabel(row.model)} ·{" "}
-                  {row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)} ·{" "}
-                  {ACCURACY_LABELS[accuracyState(row)]} · {cited.length} cited links · checked {formatRunTime(row.created_at)}
-                </div>
-              </button>
-              {open ? (
-                <SimulationEvidenceDrawer
-                  row={row}
-                  probe={drift.probes.find((p) => p.simId === row.sim_id) ?? null}
-                  citations={cited}
-                  questionsSent={drift.coverage.questionsSent}
-                  onClose={() => setOpenId(null)}
-                />
-              ) : null}
-            </Fragment>
-          );
-        })}
-      </div>
+      {rows.length ? (
+        <div id="ai-simulation-list">
+          <ResizableTable
+            tableId="ai-simulations"
+            columns={SIM_COLUMNS}
+            freezeHeader
+            maxHeight={520}
+            sort={sorted.sort}
+            onSort={sorted.onSort}
+          >
+            <tbody>
+              {sorted.rows.map((row) => {
+                const outcome = callOutcome(row);
+                const open = openId === row.id;
+                const cited = citations.get(row.id) ?? [];
+                const outcomeLabel =
+                  outcome === "competitor_win" && row.primary_brand
+                    ? `${row.primary_brand} named most`
+                    : OUTCOME_LABELS[outcome];
+                return (
+                  <Fragment key={row.id}>
+                    <tr
+                      className="ai-sim-row"
+                      data-sim-id={row.sim_id}
+                      data-outcome={outcome}
+                      data-kind={row.prompt_kind ?? ""}
+                      aria-expanded={open}
+                      tabIndex={0}
+                      onClick={() => setOpenId(open ? null : row.id)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        setOpenId(open ? null : row.id);
+                      }}
+                    >
+                      <td>
+                        <span data-ai-prompt>{cleanPrompt(row.prompt)}</span>
+                      </td>
+                      <td>
+                        <span className={`tag-badge ${OUTCOME_TONE[outcome]}`}>{outcomeLabel}</span>
+                      </td>
+                      <td>{engineLabel(row.engine)}</td>
+                      <td>{modelLabel(row.model)}</td>
+                      <td>{row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)}</td>
+                      <td>{ACCURACY_LABELS[accuracyState(row)]}</td>
+                      <td>{cited.length} cited links</td>
+                      <td>checked {formatRunTime(row.created_at)}</td>
+                    </tr>
+                    {open ? (
+                      <tr>
+                        <td colSpan={SIM_COLUMNS.length}>
+                          <SimulationEvidenceDrawer
+                            row={row}
+                            probe={drift.probes.find((p) => p.simId === row.sim_id) ?? null}
+                            citations={cited}
+                            questionsSent={drift.coverage.questionsSent}
+                            onClose={() => setOpenId(null)}
+                          />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </ResizableTable>
+        </div>
+      ) : null}
     </div>
   );
 }

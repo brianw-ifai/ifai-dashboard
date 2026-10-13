@@ -1,18 +1,41 @@
 "use client";
 
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { AI_TABS, RADAR_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { categoryBattles } from "@/lib/ai-search/competitors";
+import { categoryBattles, type CategoryBattle } from "@/lib/ai-search/competitors";
 import { categoryLabel, isSmallSample, tallyCommercial } from "@/lib/ai-search/run-metrics";
 import { pct } from "@/lib/ai-search/summary";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+
+const COLUMNS = [
+  clientColumn("category", "Category", "text", 160, 110),
+  clientColumn("share", "Fender win share", "number", 170, 120),
+  clientColumn("competitor", "Top competitor", "text", 160, 110),
+  clientColumn("leads", "Competitor leads", "number", 150, 110),
+  clientColumn("leader", "No leader", "number", 110, 80),
+  clientColumn("errors", "Errors", "number", 90, 72),
+];
+
+function battleSortValue(row: CategoryBattle, columnId: string): SortInput {
+  const top = row.leaders[0];
+  if (columnId === "category") return categoryLabel(row.category);
+  if (columnId === "share") return row.resolved ? row.fenderWins / row.resolved : null;
+  if (columnId === "competitor") return top ? `${top.brand} (${top.wins})` : "None";
+  if (columnId === "leads") return row.competitorWins;
+  if (columnId === "leader") return row.unresolved;
+  return row.errors;
+}
 
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const battles = categoryBattles(snapshot.calls);
   const total = tallyCommercial(snapshot.calls);
   const largest = Math.max(0, ...battles.map((b) => b.resolved));
+  const sorted = useClientTableSort(battles, COLUMNS, battleSortValue);
 
   return (
     <>
@@ -30,19 +53,16 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
       <div className="content-box ai-battlecards" style={{ marginTop: 12 }}>
         <div className="content-box-title">Category battlecards</div>
-        <table className="table-sm">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Fender win share</th>
-              <th>Top competitor</th>
-              <th>Competitor leads</th>
-              <th>No leader</th>
-              <th>Errors</th>
-            </tr>
-          </thead>
+        <ResizableTable
+          tableId="category-battlecards"
+          columns={COLUMNS}
+          freezeHeader
+          maxHeight={520}
+          sort={sorted.sort}
+          onSort={sorted.onSort}
+        >
           <tbody>
-            {battles.map((b) => {
+            {sorted.rows.map((b) => {
               const top = b.leaders[0];
               return (
                 <tr key={b.category} data-category={b.category}>
@@ -85,7 +105,7 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
               <td>{total.errors}</td>
             </tr>
           </tbody>
-        </table>
+        </ResizableTable>
       </div>
     </>
   );

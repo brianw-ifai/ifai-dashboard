@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
 import {
   specFenderFoundLabel,
@@ -10,6 +12,24 @@ import {
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, pendingLabel } from "@/lib/fender-canvas/format";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
+
+const SPEC_COLUMNS = [
+  clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
+  clientColumn("model", "Model", "text", 220, 120),
+  clientColumn("amazon", "Amazon completeness", "number", 170, 120),
+  clientColumn("found", "fender.com found", "text", 150, 110),
+  clientColumn("missing", "Missing Amazon fields", "text", 240, 140),
+];
+
+function specSortValue(row: CanvasSpecReadinessRow, columnId: string): SortInput {
+  const chips = (row.amazon_missing_fields ?? "").split(";").map((part) => part.trim()).filter(Boolean);
+  if (columnId === "asin") return row.asin;
+  if (columnId === "model") return specModelTitle(row.title) || null;
+  if (columnId === "amazon") return row.amazon_completeness_pct;
+  if (columnId === "found") return specFenderFoundLabel(row.fender_found) || null;
+  return chips.length ? chips.join(", ") : null;
+}
 
 const MISSING_PAGE_DESC =
   "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
@@ -122,6 +142,7 @@ function CatalogSpecReadiness({
   }, [page, queryMissingPages]);
 
   const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const sorted = useClientTableSort(rows, SPEC_COLUMNS, specSortValue);
 
   return (
     <>
@@ -150,18 +171,15 @@ function CatalogSpecReadiness({
             absent from fender.com.
           </p>
         ) : null}
-        <div style={{ overflowX: "auto" }}>
-          <table className="table-sm">
-            <thead>
-              <tr>
-                <th>ASIN</th>
-                <th>Model</th>
-                <th>Amazon completeness</th>
-                <th>fender.com found</th>
-                <th>Missing Amazon fields</th>
-              </tr>
-            </thead>
-            <tbody>
+        <ResizableTable
+          tableId="spec-readiness"
+          columns={SPEC_COLUMNS}
+          freezeHeader
+          maxHeight={520}
+          sort={sorted.sort}
+          onSort={sorted.onSort}
+        >
+          <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
                   <td colSpan={5}>Loading…</td>
@@ -176,7 +194,7 @@ function CatalogSpecReadiness({
                   </td>
                 </tr>
               ) : null}
-              {rows.map((row) => {
+              {sorted.rows.map((row) => {
                 const chips = (row.amazon_missing_fields ?? "")
                   .split(";")
                   .map((s) => s.trim())
@@ -202,8 +220,7 @@ function CatalogSpecReadiness({
                 );
               })}
             </tbody>
-          </table>
-        </div>
+        </ResizableTable>
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
           <button
             type="button"
