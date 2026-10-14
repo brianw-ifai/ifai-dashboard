@@ -129,16 +129,49 @@ test("the headline bubble shows the finding and the issue count only", () => {
   const face = headlineBubble(source);
   assert.equal(headline?.label, "Suppressed Listings");
   assert.equal(face.subTab, "Retail Overview");
-  // The bubble names the confirmed result in client language, not the tab label.
-  assert.deepEqual(face.stats, [
-    "Featured Offer withheld above Amazon's outside price",
-    "1 listing",
-  ]);
+  assert.equal(source.suppressedListings.issueCount, 1);
+  assert.deepEqual(face.stats, ["1 listing withheld above outside price"]);
   assert.equal(face.meta, undefined);
   assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
   assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
   assert.doesNotMatch(visible(face), /incomplete|unavailable/i);
   assert.doesNotMatch(visible(face), FORBIDDEN);
+
+  const satellite = suppressedBubble(source.suppressedListings);
+  assert.equal(satellite.stats[0], "1 listing");
+  assert.ok((satellite.stats.length ?? 0) > 1);
+  assert.notEqual(satellite.stats.join(" "), face.stats.join(" "));
+});
+
+test("the headline pill follows the stored finding and its count", () => {
+  const withheldOnly = findings({
+    suppressedListings: suppressedListingsFinding([
+      {
+        ...suppressed(),
+        asin: "B0EQNOBEN1",
+        competitive_external_price_state: "unavailable",
+        competitive_price_threshold_cents: null,
+      },
+      {
+        ...suppressed(),
+        asin: "B0EQNOBEN2",
+        competitive_external_price_state: "unavailable",
+        competitive_price_threshold_cents: null,
+      },
+    ]),
+  });
+  const withheldFace = headlineBubble(withheldOnly);
+  assert.equal(withheldOnly.suppressedListings.issueCount, 2);
+  assert.deepEqual(withheldFace.stats, ["2 Featured Offers withheld"]);
+  assert.equal(withheldFace.stats.length, 1);
+
+  const mapSource = findings({
+    suppressedListings: suppressedListingsFinding([present()]),
+  });
+  const mapFace = headlineBubble(mapSource);
+  assert.equal(mapSource.mapLeakage.issueCount, 1);
+  assert.deepEqual(mapFace.stats, ["1 listing below MAP"]);
+  assert.equal(mapBubble(mapSource.mapLeakage).stats[0], "1 below MAP");
 });
 
 test("a stored zero stays zero and an unavailable reading names what is missing", () => {
@@ -193,7 +226,8 @@ test("a higher unfinished reading is not replaced by a later count", () => {
   });
   const face = headlineBubble(source);
   assert.equal(face.subTab, "Retail Overview");
-  assert.equal(face.stats[0], "Suppressed Listings");
+  assert.deepEqual(face.stats, ["Suppressed Listings"]);
+  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
   assert.doesNotMatch(face.stats.join(" "), /2 listings/);
 });
 

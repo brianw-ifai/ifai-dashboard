@@ -7,6 +7,7 @@ import {
   headlineSurface,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
+import { frameTourStep } from "@/lib/fender-canvas/primary-spoke-layout";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 export function buildLiveTourSteps(
@@ -114,5 +115,5 @@ export function buildLiveTourSteps(
       ],
       value: "Follow a 90-day plan from the current retail headline.",
     },
-  ];
+  ].map(frameTourStep);
 }
