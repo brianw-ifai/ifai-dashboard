@@ -129,21 +129,12 @@ type Fixtures = {
    for `page` would otherwise run against about:blank. */
 export const test = base.extend<Fixtures>({
   pageErrors: [
-    async ({ page }, use, testInfo) => {
+    async ({ page }, use) => {
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(String(error).split("\n")[0]));
       page.on("console", (message) => {
         if (message.type() !== "error") return;
         const text = message.text();
-        // The history views are intentionally unapplied. Choosing a live review
-        // run requests them and the browser logs that 404.
-        if (
-          testInfo.file.endsWith("ai-search-history.spec.ts") &&
-          text.includes("Failed to load resource") &&
-          text.includes("404")
-        ) {
-          return;
-        }
         errors.push(`console: ${text}`);
       });
       await use(errors);

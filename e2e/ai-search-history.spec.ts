@@ -29,7 +29,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
   });
 
-  test("selecting another live run does not invent a rate before the views exist", async ({ canvas, page }) => {
+  test("selecting October 11 loads that stored run from the database", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await page.locator("[data-ai-history-trigger]").click();
     await page.locator("[data-ai-history-day='2026-10-11']").click();
@@ -41,23 +41,31 @@ test.describe("AI Search history on the live run", () => {
       "Best 5-string bass guitar for gigging musicians",
     );
     await page.locator("[data-ai-history-view-run]").click();
-    await expect(page.locator("[data-ai-state='unavailable']")).toContainText("have not been applied");
-    await expect(page.locator("[data-ai-state='unavailable']")).toContainText("No rate is shown as zero");
-    await expect(page.locator("[data-ai-history-chart]")).toHaveCount(0);
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveCount(0);
+    await expect(page.locator("[data-ai-history-banner]")).toContainText("Historical run");
+    await expect(page.locator("[data-ai-state='unavailable']")).toHaveCount(0);
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.7%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
+    await expect(page.locator(".ai-run-freshness")).toContainText("Historical run");
+    await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical published run");
     await page.locator("[data-ai-history-return]").click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
   });
 
-  test("all time stays unavailable until the history views are applied", async ({ canvas, page }) => {
+  test("all time draws the three stored runs from the database", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await page.locator("[data-ai-history-trigger]").click();
     await page.getByRole("button", { name: "All time" }).click();
-    await expect(page.locator("[data-ai-history-state='unavailable']")).toContainText("have not been applied");
-    await expect(page.locator("[data-ai-history-state='unavailable']")).toContainText("No trend line is drawn");
-    await expect(page.locator("[data-ai-history-chart]")).toHaveCount(0);
-    await expect(page.locator("[data-ai-win-rate]")).toHaveCount(0);
+    await expect(page.locator(".drilldown-desc")).toContainText("Trends use the stored review runs");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("Copy of the stored runs");
+    await expect(page.locator("[data-ai-history-chart]")).toBeVisible();
+    await expect(page.locator("[data-ai-history-boundary='scoring']")).toContainText("Scoring method changed");
+    const rows = page.locator("[data-ai-trend-row$=':overall']");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toContainText("Oct 11, 2026");
+    await expect(rows.nth(0)).toContainText("56.7% (17 of 30 resolved)");
+    await expect(rows.nth(1)).toContainText("65.0% (13 of 20 resolved)");
+    await expect(rows.nth(2)).toContainText("56.5% (13 of 23 resolved)");
     await page.locator("[data-ai-history-return]").click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
