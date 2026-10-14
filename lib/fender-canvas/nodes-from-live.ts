@@ -3,7 +3,8 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { readinessFindabilityFace, type FindabilityRead } from "@/lib/findability/copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
   headlineSurface,
@@ -18,11 +19,13 @@ export function buildLiveNodes(
   metrics: MetricsMap,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  findability: FindabilityRead = { phase: "loading" },
 ): CanvasNode[] {
   const { m } = bundle;
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
   const headline = headlineSurface(retail);
+  const readinessFace = readinessFindabilityFace(findability, metrics.machineReadableSpecs.value);
 
   return [
     {
@@ -89,7 +92,7 @@ export function buildLiveNodes(
       subTab: "Machine Readability",
       tooltip: {
         title: "Schema.org Structured Data",
-        desc: `${formatPct(m.spec_fender_found_pct)} of audited SKUs have a fender.com page (${formatInt(m.spec_fender_found)} of ${formatInt(m.spec_checked)}). ${formatInt(m.spec_missing_additional_property)} pages lack additionalProperty specs.`,
+        desc: `${formatInt(m.spec_missing_additional_property)} pages in the older spec read lack additionalProperty. That list is on this tab. It is not the Findability count of official pages.`,
       },
     },
     {
@@ -149,16 +152,10 @@ export function buildLiveNodes(
       status: "warning",
       title: "AI Readiness",
       titleSize: 13.5,
-      stats: [
-        `${metrics.fenderFindability.value} Found`,
-        `${metrics.machineReadableSpecs.value} Amazon specs`,
-      ],
-      meta: `${formatInt(m.spec_checked)} SKUs checked`,
+      stats: readinessFace.stats,
+      meta: readinessFace.meta,
       spokeId: "specs",
-      tooltip: {
-        title: "AI Readiness: Product Specs",
-        desc: `fender.com findability ${metrics.fenderFindability.value}. Amazon structured completeness ${metrics.machineReadableSpecs.value} on average.`,
-      },
+      tooltip: { title: readinessFace.tooltipTitle, desc: readinessFace.tooltipDesc },
     },
     {
       id: "spoke-competitors",

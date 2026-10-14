@@ -1,7 +1,8 @@
 import type { TourStep } from "@/lib/canvas-sdk/types";
 import { aiTourLines } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { findabilityTourLine, type FindabilityRead } from "@/lib/findability/copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
   headlineSurface,
@@ -13,6 +14,7 @@ export function buildLiveTourSteps(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  findability: FindabilityRead = { phase: "loading" },
 ): TourStep[] {
   const { m } = bundle;
   const aiLines = aiTourLines(ai);
@@ -68,9 +70,9 @@ export function buildLiveTourSteps(
       subtitle: "Can AI and Amazon read your specs correctly?",
       category: "AI READINESS",
       displays: [
-        `${formatInt(m.spec_missing_additional_property)} fender.com pages missing additionalProperty`,
-        `Product page found on ${formatPct(m.spec_fender_found_pct)} of checked SKUs (${formatInt(m.spec_fender_found)} of ${formatInt(m.spec_checked)})`,
-        `${formatInt(bundle.missing.length)} missing-field rows in the spec read`,
+        `${formatInt(m.spec_missing_additional_property)} pages in the older spec read are missing additionalProperty`,
+        findabilityTourLine(findability),
+        `${formatInt(bundle.missing.length)} missing-field rows are on Machine Readability`,
       ],
       value: "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns.",
     },

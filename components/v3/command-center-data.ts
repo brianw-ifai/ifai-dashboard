@@ -25,7 +25,7 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "schema-coverage",
       title: "fender.com pages are missing machine-readable spec fields",
-      why: "The spec read shows how often a fender.com page was found and how many of those pages are missing additionalProperty. The Machine Readability tab lists the found pages whose stored missing fields include additionalProperty.",
+      why: "Machine Readability lists pages from the older spec read whose stored missing fields include additionalProperty. That list is not the Findability result. Findability counts exact official product pages, family pages, finished searches, ambiguous matches, and unchecked listings separately.",
       severity: "high",
       spokeId: "specs",
       subTab: "Machine Readability",

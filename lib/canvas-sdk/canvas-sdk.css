@@ -3453,3 +3453,65 @@
       overflow-x: auto;
       vertical-align: middle;
     }
+
+    .findability-headline {
+      font-size: 15px;
+      line-height: 1.45;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .findability-note {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .findability-outcomes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+      gap: 10px;
+    }
+
+    .findability-count {
+      appearance: none;
+      background: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      color: var(--text-main);
+      font: inherit;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.15;
+      text-align: left;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .findability-count:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    .findability-outcome[data-selected="true"] {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 1px var(--accent-cyan);
+    }
+
+    .findability-panel .table-sm {
+      font-size: 13px;
+    }
+
+    .findability-panel .table-sm th,
+    .findability-panel .resizable-th .ifai-sort-btn {
+      font-size: 12px;
+      color: var(--text-main);
+    }
+
+    .findability-panel a {
+      color: var(--accent-cyan);
+    }
