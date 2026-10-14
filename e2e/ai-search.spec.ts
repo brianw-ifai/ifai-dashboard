@@ -202,6 +202,11 @@ test.describe("Competitive Radar", () => {
     await expect(body).not.toContainText("51 of 63");
     await expect(body).not.toContainText("All commercial prompts");
     await expect(body).not.toContainText("Fender win share");
+    await expect(body).not.toContainText("Too few to compare");
+    const small = comparison.locator("[data-small-sample='true']").first();
+    await expect(small).toContainText(/%/);
+    await expect(small).toContainText("Small sample");
+    await expect(small).toContainText(/of \d+/);
 
     const cell = await comparison.locator("td").first().evaluate((el) => getComputedStyle(el).fontSize);
     const header = await comparison.locator(".ifai-sort-btn").first().evaluate((el) => getComputedStyle(el).fontSize);

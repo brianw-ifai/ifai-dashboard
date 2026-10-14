@@ -14,8 +14,14 @@ import {
   type RoleGroupTally,
 } from "@/lib/ai-search/question-role";
 import { isSmallSample, type OutcomeTally } from "@/lib/ai-search/run-metrics";
-import { pct, resolvedPhrase, summarizeRun } from "@/lib/ai-search/summary";
-import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import {
+  SMALL_SAMPLE_LABEL,
+  formatObservedRate,
+  pct,
+  resolvedPhrase,
+  roleRateSort,
+  summarizeRun,
+} from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 const SIM = AI_TABS.simulations;
@@ -33,11 +39,7 @@ export function roleColumn(role: HeadlineRole, width = 196): RetailColumn {
   };
 }
 
-/** A ranked rate sorts by its share. A small sample sorts as missing, so it is not ranked. */
-export function roleRateSort(tally: OutcomeTally, largestResolved: number): SortInput {
-  if (tally.resolved <= 0 || isSmallSample(tally.resolved, largestResolved)) return null;
-  return tally.fenderWins / tally.resolved;
-}
+export { roleRateSort };
 
 export function largestResolved(groups: readonly RoleGroupTally[], role: HeadlineRole): number {
   return Math.max(0, ...groups.map((group) => group.roles[role].resolved));
@@ -51,7 +53,7 @@ function roleLink(role: HeadlineRole, outcome: "fender_win" | "resolved", label:
   );
 }
 
-/** One role's Fender leads over its resolved answers. Percent only when the sample can be ranked. */
+/** One role's exact rate. A small sample keeps the percentage and is marked, not hidden. */
 export function RoleCount({
   role,
   tally,
@@ -61,37 +63,27 @@ export function RoleCount({
   tally: OutcomeTally;
   largestResolved: number;
 }) {
-  const small = tally.resolved > 0 && isSmallSample(tally.resolved, largest);
-  if (tally.resolved <= 0) {
+  const figure = formatObservedRate(tally.fenderWins, tally.resolved);
+  if (figure == null) {
     return <span data-ai-role-count={role}>No resolved answers</span>;
   }
-  const name = ROLE_LABELS[role];
-  return (
-    <span data-ai-role-count={role} data-small-sample={small ? "true" : undefined}>
-      {roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins)}
-      {" of "}
-      {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved)}
-      <span className="ai-role-detail">
-        {small ? <AiTerm term="small sample">Too few to compare</AiTerm> : pct(tally.fenderWins, tally.resolved)}
-      </span>
-    </span>
-  );
-}
-
-function pairCount(role: HeadlineRole, tally: OutcomeTally, largest: number) {
-  const name = ROLE_LABELS[role];
-  if (tally.resolved <= 0) return <span data-ai-role-count={role}>None resolved</span>;
   const small = isSmallSample(tally.resolved, largest);
+  const name = ROLE_LABELS[role];
   return (
-    <span data-ai-role-count={role} data-small-sample={small ? "true" : undefined}>
-      {roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins)} of{" "}
-      {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved)}
-      {small ? null : <span className="ai-role-detail">{pct(tally.fenderWins, tally.resolved)}</span>}
+    <span data-ai-role-count={role} data-ai-rate={figure} data-small-sample={small ? "true" : undefined}>
+      {pct(tally.fenderWins, tally.resolved)} ({roleLink(role, "fender_win", `${name}: Fender/Squier leads`, tally.fenderWins)} of{" "}
+      {roleLink(role, "resolved", `${name}: resolved answers`, tally.resolved)})
+      {small ? (
+        <>
+          {" "}
+          <AiTerm term="small sample">{SMALL_SAMPLE_LABEL}</AiTerm>
+        </>
+      ) : null}
     </span>
   );
 }
 
-/** Two counts for one engine-and-category cell. A small cell has no percent, and the two counts are not combined. */
+/** Two rates for one engine-and-category cell. They are not combined into one rate. */
 export function RolePair({
   unbranded,
   branded,
@@ -105,8 +97,14 @@ export function RolePair({
 }) {
   return (
     <>
-      <div>Unbranded {pairCount("unbranded_discovery", unbranded, largestUnbranded)}</div>
-      <div>Branded {pairCount("branded_consideration", branded, largestBranded)}</div>
+      <div>
+        Unbranded{" "}
+        <RoleCount role="unbranded_discovery" tally={unbranded} largestResolved={largestUnbranded} />
+      </div>
+      <div>
+        Branded{" "}
+        <RoleCount role="branded_consideration" tally={branded} largestResolved={largestBranded} />
+      </div>
     </>
   );
 }

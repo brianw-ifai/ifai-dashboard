@@ -1,5 +1,3 @@
-import { MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
-
 /** Plain-language definitions shown on the dotted AI Search terms. */
 export const AI_DEFINITIONS = {
   "Fender lead":
@@ -38,7 +36,8 @@ export const AI_DEFINITIONS = {
     "IntoFocus's grouping of a cited domain as brand-owned, retailer, editorial, community, video, or other.",
   "canonical URL":
     "The cited link with tracking parameters, page fragments, and www removed, so the same page counts once per answer.",
-  "small sample": `Fewer than ${MIN_COMPARABLE_RESOLVED} resolved answers, or less than half of the largest sample beside it. The figure is shown, but it is not ranked against the others.`,
+  "small sample":
+    "The percentage describes this run exactly, but it is based on relatively few answers or substantially fewer answers than another row beside it. A few additional answers could move it sharply, so do not treat it as a stable ranking.",
 } as const;
 
 export type AiTermKey = keyof typeof AI_DEFINITIONS;

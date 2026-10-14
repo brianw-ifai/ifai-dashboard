@@ -37,7 +37,7 @@ import {
   type QuestionRole,
   type RoleGroupTally,
 } from "../lib/ai-search/question-role.ts";
-import { headlineLine, summarizeRun } from "../lib/ai-search/summary.ts";
+import { formatObservedRate, headlineLine, roleRatePlainText, roleRateSort, summarizeRun } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchRead, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 const RUN = "run-current";
@@ -555,4 +555,30 @@ test("shopping questions split into the audited discovery and consideration rate
     roleTally(rows, "unbranded_discovery").competitorWins + roleTally(rows, "branded_consideration").competitorWins,
   );
   assert.equal(headlineWins + keptOutWins, tallyCommercial(rows).competitorWins);
+  assert.equal(formatObservedRate(unbranded.fenderWins, unbranded.resolved), "56.5% (13 of 23)");
+  assert.equal(formatObservedRate(branded.fenderWins, branded.resolved), "95.7% (22 of 23)");
+  assert.equal(roleRatePlainText(unbranded.fenderWins, unbranded.resolved, unbranded.resolved), "56.5% (13 of 23)");
+  assert.equal(roleRatePlainText(branded.fenderWins, branded.resolved, branded.resolved), "95.7% (22 of 23)");
+});
+
+test("a small sample shows its exact percentage and stays unranked", () => {
+  assert.equal(roleRatePlainText(1, 4, 4), "25.0% (1 of 4) Small sample");
+  assert.equal(formatObservedRate(1, 4), "25.0% (1 of 4)");
+  assert.equal(isSmallSample(4, 4), true);
+  assert.equal(roleRateSort({ fenderWins: 1, resolved: 4 }, 4), null);
+  assert.equal(roleRateSort({ fenderWins: 1, resolved: 4 }, 23), null);
+
+  assert.equal(roleRatePlainText(0, 0, 23), "No resolved answers");
+  assert.equal(formatObservedRate(0, 0), null);
+  assert.equal(roleRateSort({ fenderWins: 0, resolved: 0 }, 23), null);
+  assert.doesNotMatch(roleRatePlainText(0, 0, 23), /%|Small sample/);
+
+  assert.equal(roleRatePlainText(13, 23, 23), "56.5% (13 of 23)");
+  assert.equal(roleRatePlainText(22, 23, 23), "95.7% (22 of 23)");
+  assert.equal(roleRateSort({ fenderWins: 13, resolved: 23 }, 23), 13 / 23);
+  assert.equal(roleRateSort({ fenderWins: 22, resolved: 23 }, 23), 22 / 23);
+  assert.equal(
+    AI_DEFINITIONS["small sample"],
+    "The percentage describes this run exactly, but it is based on relatively few answers or substantially fewer answers than another row beside it. A few additional answers could move it sharply, so do not treat it as a stable ranking.",
+  );
 });

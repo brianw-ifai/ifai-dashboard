@@ -107,8 +107,8 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
         <RoleSumLine groups={engines} preface="Fender/Squier leads, by the kind of question." />
         <p className="ai-role-footnote">
           Each engine is compared on its own for <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and for{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="small sample" /> shows its
-          counts and is not ranked. Competitor columns count wins inside those two rates only.
+          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="small sample" /> keeps its
+          percentage and is not ranked. Competitor columns count wins inside those two rates only.
         </p>
         <ResizableTable
           tableId="engine-comparison"
@@ -181,8 +181,8 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          Each cell is two counts. A percent shows only when that count is large enough to compare, and the two counts
-          are not combined into one rate.
+          Each cell shows both rates. A small sample is marked beside its percentage, and the two rates are not combined
+          into one.
         </p>
         <KeptOutNote snapshot={snapshot} />
       </div>
