@@ -49,7 +49,7 @@ function CitedPages({ rows, failed }: { rows: CitationEvidence[]; failed: boolea
 }
 
 function ShoppingEvidence({ row, citations }: { row: AiCallRow; citations: CitationEvidence[] }) {
-  const answer = useAnswerText(row.id);
+  const answer = useAnswerText(row.id, row.answer_text);
   const [showAnswer, setShowAnswer] = useState(false);
   const outcome = callOutcome(row);
   const answerText = answer.status === "ready" ? answer.text : null;

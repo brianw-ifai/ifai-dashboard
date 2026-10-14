@@ -35,7 +35,7 @@ export function FactCheckEvidence({
   probe: ProbeEvidence | null;
   questionsSent: number;
 }) {
-  const answer = useAnswerText(row.id);
+  const answer = useAnswerText(row.id, row.answer_text);
   const failed = row.call_status === "error";
   const result = probe ? PROBE_STATE_LABELS[probe.state] : "Result not recorded";
 

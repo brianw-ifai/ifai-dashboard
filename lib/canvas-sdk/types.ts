@@ -61,6 +61,8 @@ export type SpokeContent = {
   /** Next spoke in left-to-right map order. The panel footer links here. */
   next?: string;
   render: (tabIdx: number) => ReactNode | string;
+  /** Compact control under the panel title. */
+  headerAccessory?: ReactNode;
 };
 
 export type TourStep = {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
+import { buildCanvasSearchParams, tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 
 const hubTabs = [
   "Executive Briefing",
@@ -39,4 +39,22 @@ test("the renamed AI Readiness tabs keep the slugs copied from their old titles"
     assert.equal(tabIndexFromSlug(specTabs, tabSlug(tab)), index);
   }
   assert.equal(tabIndexFromSlug(specTabs, "not-a-tab"), 0);
+});
+
+test("canvas navigation keeps the AI Search fixture query", () => {
+  const built = buildCanvasSearchParams(
+    {
+      spokeId: "aeo",
+      tabSlug: "run-summary",
+      priorities: false,
+      panelLayout: "wide",
+      tourStep: null,
+      tourPaused: false,
+      menuOpen: false,
+      profileOpen: false,
+    },
+    new URLSearchParams("ai-history=fixture&spoke=aeo"),
+  );
+  assert.equal(built.get("ai-history"), "fixture");
+  assert.equal(built.get("spoke"), "aeo");
 });

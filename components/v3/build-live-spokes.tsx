@@ -5,6 +5,8 @@ import { CategoryBattlecardsPanel } from "@/components/v3/live/ai-search/Categor
 import { CitationEcosystemPanel } from "@/components/v3/live/ai-search/CitationEcosystemPanel";
 import { CompetitorWinsPanel } from "@/components/v3/live/ai-search/CompetitorWinsPanel";
 import { EngineComparisonPanel } from "@/components/v3/live/ai-search/EngineComparisonPanel";
+import { AiSearchSurface } from "@/components/v3/live/ai-search/AiSearchSurface";
+import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
@@ -57,10 +59,26 @@ const TAB_OVERRIDES: Partial<
     3: (_bundle, _vars, retail) => <CatalogGovernancePanel read={retail} />,
   },
   aeo: {
-    0: () => <RunSummaryPanel />,
-    1: () => <SimulationsExplorer />,
-    2: () => <AiDriftPanel />,
-    3: () => <CitationEcosystemPanel />,
+    0: () => (
+      <AiSearchSurface>
+        <RunSummaryPanel />
+      </AiSearchSurface>
+    ),
+    1: () => (
+      <AiSearchSurface>
+        <SimulationsExplorer />
+      </AiSearchSurface>
+    ),
+    2: () => (
+      <AiSearchSurface>
+        <AiDriftPanel />
+      </AiSearchSurface>
+    ),
+    3: () => (
+      <AiSearchSurface>
+        <CitationEcosystemPanel />
+      </AiSearchSurface>
+    ),
   },
   specs: {
     0: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
@@ -98,7 +116,7 @@ function wrapSpoke(
           tabs: [...RETAIL_PANEL_TABS],
         }
       : {}),
-    ...(id === "aeo" ? { desc: aiSpokeDesc(ai) } : {}),
+    ...(id === "aeo" ? { desc: aiSpokeDesc(ai), headerAccessory: <RunHistoryControl /> } : {}),
     ...(id === "competitors" ? { desc: competitorsSpokeDesc(ai) } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);
