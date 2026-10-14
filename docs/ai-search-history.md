@@ -1,16 +1,16 @@
 # AI Search history
 
-Status: repository contract only. The migration `supabase/migrations/20261014190000_ai_search_history_views.sql` is not applied. Do not apply it, and do not publish a run, until Brian sends this sentence:
+Status: applied. The read-only views in `supabase/migrations/20261014190000_ai_search_history_views.sql` were created on production on 2026-10-14. An anonymous read of `public.canvas_ai_history_runs` returned exactly three runs. Call rows are 304 (100 + 102 + 102). Citation rows are 713 (468 + 243 + 2). The October 11 run and the earlier October 12 run stayed unpublished. The current published run is still `b28d6086-65f3-4d12-a775-ea724ea58f22`. No stored rows were updated, and no new collection was started.
 
-> I approve applying supabase/migrations/20261014190000_ai_search_history_views.sql so the October 11 run 7c3e9f52-4b1a-4d8e-9a6f-2e5d81b0c4a7 and the unpublished October 12 run e775ee16-ec5b-45b0-8918-579181b44aff become readable in the history views. Do not publish the unpublished run.
+The public site does not include this history screen until a deploy of this branch is approved. Open the pull-request preview, then AI Search, and use the run control. Do not add `?ai-history=fixture` for the Loom. That flag still opens a labeled copy instead of the database.
 
-## What can be reviewed before that approval
+## What the dashboard reads
 
-The default dashboard stays on the published October 12 run `b28d6086-65f3-4d12-a775-ea724ea58f22`. Its headline rates stay 56.5% unbranded discovery and 95.7% branded consideration.
+The default screen stays on the published October 12 run. Its headline rates stay 56.5% unbranded discovery and 95.7% branded consideration. The map stays on that published run.
 
-`?ai-history=fixture` opens a copy of the three stored review runs. The copy is labeled in the panel: it is not a live database read. The calendar, the two rates, the scoring-method marker, the two missing October 11 calls, and the citation caution on the earlier October 12 run can be inspected from that copy. Current and Return to current go back to the live published run. The map stays on that published run.
+The run control lists the three stored runs from the live views. Choosing October 11 or the earlier October 12 run loads that run's calls, probes, and citations. All time draws the trend from those same rows. A later published v11 run that attempted its full battery is included the same way. Fragment runs stay out. After the questions change, the old points stay on the wording that was asked, and the new wording starts its own series once new runs exist.
 
-On the live dashboard, the calendar already lists the same three runs because `canvas_ai_run_history` exposes their summaries. Choosing a run other than the current one says call-level history is unavailable and does not show a zero. All time says the same until the views exist.
+`?ai-history=fixture` remains available as a labeled copy. It is not the Loom path.
 
 ## Review set
 
@@ -28,7 +28,7 @@ The earlier October 12 run can contribute to both rate trends. It is not publish
 
 Every other historical or fragment run stays out of the calendar and the trend.
 
-## Trusted history after approval
+## Later runs
 
 A future published run is readable when it is published, `completed` or `partial`, collector `v11`, has a prompt-set hash, attempted every expected call, and has no `historical_backfill` or `historical_unverified` row. The two runs named in the migration are readable in addition to that rule. The client uses the same `questionRole()` classifier, denominators, small-sample labels, and drill-downs as the current run. The SQL views do not store a second role.
 
