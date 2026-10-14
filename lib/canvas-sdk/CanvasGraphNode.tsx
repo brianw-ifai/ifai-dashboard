@@ -49,11 +49,7 @@ export function CanvasGraphNode({
       title={node.title}
       titleSize={titleSize}
       stats={node.stats}
-      meta={
-        node.id === "spoke-retail" || node.id === "spoke-roadmap" || node.id === "spoke-specs"
-          ? node.meta
-          : undefined
-      }
+      meta={node.id === "spoke-retail" || node.id === "spoke-roadmap" ? node.meta : undefined}
       centered={centered}
       logoSrc={node.logoSrc}
       emphasis={emphasis}

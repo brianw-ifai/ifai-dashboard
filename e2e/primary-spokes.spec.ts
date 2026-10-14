@@ -63,6 +63,12 @@ test.describe("primary spoke map", () => {
       await expect(roadmap).toContainText("90 Days");
       await expect(roadmap).toContainText("3 Phases");
 
+      const readiness = page.locator('[data-graph-node-id="spoke-specs"]');
+      await expect(readiness.locator(".node-meta")).toHaveCount(0);
+      await expect(readiness).not.toContainText("no page");
+      await expect(readiness).not.toContainText("ambiguous");
+      await expect(readiness).not.toContainText("unchecked");
+
       for (const title of PRIMARY_TITLES) {
         const pattern = new RegExp(title.trim().split(/\s+/).join("\\s*"), "i");
         const node = page.locator(".spoke-primary").filter({ hasText: pattern });
