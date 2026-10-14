@@ -13,7 +13,7 @@ export const FENDER_METRICS = {
     value: "See read",
     detail: "Division count loads with the division table",
     tone: "neutral",
-    subTab: "Brand Divisions",
+    subTab: "Division Performance",
     provenance: "live",
   },
   activeOfferCoverage: {
@@ -63,7 +63,7 @@ export const FENDER_METRICS = {
     value: "See read",
     detail: "Split across partner bundle pages",
     tone: "danger",
-    subTab: "Catalog",
+    subTab: "Catalog Governance",
     provenance: "live",
   },
   amazonMapDrift: {
@@ -119,11 +119,11 @@ export const FENDER_METRICS = {
   fenderFindability: {
     id: "fender-findability",
     spokeId: "specs",
-    label: "fender.com Product Findability",
-    value: "29.2%",
-    detail: "21 of 72 pages found",
-    tone: "danger",
-    subTab: "AI Readiness",
+    label: "Exact official product pages",
+    value: "Unavailable",
+    detail: "The official-page read is not available.",
+    tone: "warning",
+    subTab: "Findability",
     provenance: "live",
   },
   machineReadableSpecs: {
@@ -173,7 +173,7 @@ export const FENDER_METRICS = {
     value: "18",
     detail: "Ranked by recovery and visibility impact",
     tone: "warning",
-    subTab: "Priority Matrix",
+    subTab: "Urgent Interventions",
     provenance: "estimate",
   },
   phaseOneLift: {
@@ -183,7 +183,7 @@ export const FENDER_METRICS = {
     value: "+$680K",
     detail: "Phase 1 annual · 14 pilot ASINs",
     tone: "success",
-    subTab: "ROI",
+    subTab: "Interactive ROI Model",
     provenance: "estimate",
   },
   enterprisePotential: {
@@ -193,7 +193,7 @@ export const FENDER_METRICS = {
     value: "+$38M to $62M",
     detail: "Annual · full portfolio",
     tone: "success",
-    subTab: "ROI",
+    subTab: "Interactive ROI Model",
     provenance: "estimate",
   },
   dayNinetyBuyBoxTarget: {
@@ -203,7 +203,7 @@ export const FENDER_METRICS = {
     value: "3 phases",
     detail: "MAP, catalog nesting, and estimated lift",
     tone: "success",
-    subTab: "30-60-90",
+    subTab: "30-60-90 Day Milestones",
     provenance: "live",
   },
 } satisfies Record<string, CanvasMetric>;

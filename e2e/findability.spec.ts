@@ -238,3 +238,121 @@ test("a partial read keeps zero outcomes separate from the rows that were checke
   await expect(page.locator("#findability-listings")).toContainText("No listings in this outcome.");
   await expect(page.locator("#findability-listings")).not.toContainText("B00ZEBRA");
 });
+
+const OUTCOME_LISTINGS: Array<[string, string, string]> = [
+  ["exact_official_product", "2", "B00ZEBRA"],
+  ["official_family_page", "1", "B00FAMILY"],
+  ["completed_not_found", "1", "B00BUNDLE1"],
+  ["ambiguous_candidate", "1", "B00AMBIG"],
+  ["not_checked", "1", "B00UNCHECKED"],
+];
+
+async function selectFindabilityWidget(page: Page) {
+  await page.locator(".canvas-metric-widget").first().locator(".metric-widget-config").click();
+  const picker = page.getByRole("dialog", { name: "Choose metric for widget 1" });
+  const option = picker.locator(".metric-widget-option", { hasText: "Exact official product pages" });
+  await expect(option).toContainText("2");
+  await expect(option).not.toContainText("%");
+  await option.click();
+  const widget = page.locator(".canvas-metric-widget").first();
+  await expect(widget.locator(".metric-widget-value")).toHaveText("2");
+  const detail = widget.locator(".metric-widget-detail");
+  await expect(detail).toContainText("1 family page");
+  await expect(detail).toContainText("1 finished search with no defensible page");
+  await expect(detail).toContainText("1 ambiguous match");
+  await expect(detail).toContainText("1 unchecked listing");
+  await expect(widget).not.toContainText("%");
+  await expect(widget).not.toContainText("50.0%");
+  await expect(widget).not.toContainText("29.2%");
+  await expect(widget).not.toContainText("pages found");
+  return widget;
+}
+
+async function chevronAngle(button: ReturnType<Page["locator"]>) {
+  return button.locator(".retail-explore-chevron").evaluate((el) => {
+    const transform = getComputedStyle(el).transform;
+    if (transform === "none") return 0;
+    const match = transform.match(/matrix\(([^)]+)\)/);
+    if (!match) return Number.NaN;
+    const [a, b] = match[1].split(",").map((part) => Number(part.trim()));
+    const degrees = Math.round((Math.atan2(b, a) * 180) / Math.PI);
+    return ((degrees % 360) + 360) % 360;
+  });
+}
+
+async function expectOutcomeChevron(page: Page, outcome: string, open: boolean) {
+  const button = page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`);
+  await expect(button).toHaveAttribute("aria-expanded", open ? "true" : "false");
+  await expect(button).toHaveAttribute("aria-pressed", open ? "true" : "false");
+  await expect(button.locator(".retail-explore-chevron")).toHaveCount(1);
+  await expect(page.locator(`[data-findability-outcome='${outcome}'] .ifai-term .retail-explore-chevron`)).toHaveCount(0);
+  await expect.poll(() => chevronAngle(button)).toBe(open ? 180 : 0);
+}
+
+async function openOutcomeAndCount(page: Page, outcome: string, count: string, listing: string) {
+  await expectOutcomeChevron(page, outcome, false);
+  await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+  await expectOutcomeChevron(page, outcome, true);
+  await expect(page.locator(".content-box-title .tag-badge")).toHaveText(`${count} listings`);
+  await expect(page.locator("#findability-listings tbody tr")).toHaveCount(Number(count));
+  await expect(page.locator("#findability-listings")).toContainText(listing);
+}
+
+for (const viewport of [
+  { name: "desktop", width: 1600, height: 950 },
+  { name: "laptop", width: 1280, height: 800 },
+]) {
+  test(`the findability widget and outcome chevrons work at ${viewport.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockCanvasRead(page, { findability: ROWS });
+    const canvas = new Canvas(page);
+    await canvas.open();
+
+    const widget = await selectFindabilityWidget(page);
+    await widget.locator(".metric-widget-body").click();
+    await expect(canvas.activeTab).toContainText("Findability");
+    await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
+
+    for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
+      await openOutcomeAndCount(page, outcome, count, listing);
+      await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+      await expectOutcomeChevron(page, outcome, false);
+      await expect(page.locator("#findability-listings")).toHaveCount(0);
+    }
+
+    await page.locator(".hdr-btn[title='Toggle Light / Dark']").click();
+    await expect(page.locator(".ifai-canvas.light-theme")).toHaveCount(1);
+    for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
+      await openOutcomeAndCount(page, outcome, count, listing);
+      await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+    }
+  });
+}
+
+test("a stored other outcome uses the same chevron", async ({ page }) => {
+  await mockCanvasRead(page, {
+    findability: [
+      ...ROWS,
+      {
+        asin: "B00BLOCK",
+        title: "Blocked result",
+        latest_state: "blocked",
+        latest_canonical_url: null,
+        counts_as_blocked: true,
+        counts_as_unchecked: false,
+        counts_as_confirmed: false,
+        counts_as_finished_search: false,
+        counts_as_ambiguous: false,
+        counts_as_completed_not_found: false,
+      },
+    ],
+  });
+  await openFindability(page);
+  const other = page.locator("[data-findability-outcome='other'] [data-findability-count]");
+  await expect(other).toHaveAttribute("data-findability-count", "1");
+  await expectOutcomeChevron(page, "other", false);
+  await other.click();
+  await expectOutcomeChevron(page, "other", true);
+  await expect(page.locator(".content-box-title .tag-badge")).toHaveText("1 listings");
+  await expect(page.locator("#findability-listings")).toContainText("B00BLOCK");
+});

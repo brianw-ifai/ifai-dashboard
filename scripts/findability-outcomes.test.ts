@@ -6,6 +6,7 @@ import {
   findabilityHeadline,
   findabilitySortValue,
   findabilitySpokeDescription,
+  findabilityWidgetCopy,
   readinessFindabilityFace,
 } from "../lib/findability/copy.ts";
 import { orderFullResult } from "../lib/fender-canvas/full-result-sort.ts";
@@ -236,6 +237,106 @@ test("a blocked result stays outside the five outcomes", () => {
       counts.ambiguous_candidate +
       counts.not_checked,
     1,
+  );
+});
+
+test("the findability widget uses the exact count and keeps the older percentage out", () => {
+  const rows = [
+    ...repeat("exact_official_product", 89),
+    ...repeat("official_family_page", 548),
+    ...repeat("completed_not_found", 342),
+    ...repeat("ambiguous_candidate", 8),
+    ...repeat("not_checked", 5),
+  ];
+  const copy = findabilityWidgetCopy({ phase: "ready", rows, dealerBundleLoaded: true });
+  assert.equal(copy.value, "89");
+  assert.match(copy.detail, /548 family pages/);
+  assert.match(copy.detail, /342 finished searches with no defensible page/);
+  assert.match(copy.detail, /8 ambiguous matches/);
+  assert.match(copy.detail, /5 unchecked listings/);
+  assert.doesNotMatch(`${copy.value} ${copy.detail}`, /%|13\.3|29\.2|pages found|one third/i);
+  assert.doesNotMatch(copy.value, /548/);
+
+  const familyConfirmed = findabilityWidgetCopy({
+    phase: "ready",
+    dealerBundleLoaded: true,
+    rows: [
+      row({
+        asin: "B00FAMILY",
+        latest_state: "official_family_page",
+        counts_as_confirmed: true,
+        counts_as_finished_search: true,
+        latest_canonical_url: "https://brand.example/products/family",
+      }),
+      row({
+        asin: "B00EXACT",
+        latest_state: "exact_official_product",
+        counts_as_confirmed: true,
+        counts_as_finished_search: true,
+        latest_canonical_url: "https://brand.example/products/exact",
+      }),
+    ],
+  });
+  assert.equal(familyConfirmed.value, "1");
+  assert.match(familyConfirmed.detail, /1 family page/);
+
+  for (const missing of [
+    findabilityWidgetCopy({ phase: "loading" }),
+    findabilityWidgetCopy({ phase: "error", message: "The read failed." }),
+    findabilityWidgetCopy({ phase: "ready", rows: [], dealerBundleLoaded: false }),
+  ]) {
+    assert.notEqual(missing.value, "0");
+    assert.doesNotMatch(missing.value, /%|13\.3|29\.2/);
+  }
+  assert.equal(findabilityWidgetCopy({ phase: "loading" }).value, "Loading");
+  assert.match(findabilityWidgetCopy({ phase: "loading" }).detail, /loading/i);
+  assert.equal(findabilityWidgetCopy({ phase: "error", message: "down" }).value, "Unavailable");
+  assert.match(findabilityWidgetCopy({ phase: "error", message: "down" }).detail, /did not load/);
+  assert.equal(findabilityWidgetCopy({ phase: "ready", rows: [], dealerBundleLoaded: false }).value, "No listings");
+
+  const zeroExact = findabilityWidgetCopy({
+    phase: "ready",
+    dealerBundleLoaded: true,
+    rows: [flagged("not_checked", 0)],
+  });
+  assert.equal(zeroExact.value, "0");
+  assert.match(zeroExact.detail, /0 family pages/);
+  assert.match(zeroExact.detail, /1 unchecked listing/);
+
+  const withOther = findabilityWidgetCopy({
+    phase: "ready",
+    dealerBundleLoaded: true,
+    rows: [
+      flagged("exact_official_product", 0),
+      row({
+        asin: "B00BLOCK",
+        latest_state: "blocked",
+        counts_as_blocked: true,
+        counts_as_unchecked: false,
+      }),
+    ],
+  });
+  assert.equal(withOther.value, "1");
+  assert.match(withOther.detail, /1 other result/);
+});
+
+test("outcome buttons carry the explore chevron on the button", () => {
+  const root = new URL("..", import.meta.url);
+  const panel = readFileSync(new URL("components/v3/live/findability/FindabilityPanel.tsx", root), "utf8");
+  const css = readFileSync(new URL("lib/canvas-sdk/canvas-sdk.css", root), "utf8");
+  assert.match(panel, /aria-expanded=\{selected\}/);
+  assert.match(panel, /aria-pressed=\{selected\}/);
+  assert.match(panel, /className="retail-explore-chevron"/);
+  assert.match(panel, /strokeWidth="1\.6"/);
+  assert.match(panel, /width="12"/);
+  assert.match(panel, /d="M2\.2 4\.2 6 8l3\.8-3\.8"/);
+  const button = panel.slice(panel.indexOf("className=\"findability-count\""));
+  assert.match(button, /findability-count-value[\s\S]*<OutcomeChevron \/>/);
+  assert.doesNotMatch(panel.slice(0, panel.indexOf("function OutcomeChevron")), /retail-explore-chevron/);
+  assert.doesNotMatch(panel.slice(panel.indexOf("function Term"), panel.indexOf("function OutcomeChevron")), /retail-explore-chevron/);
+  assert.match(
+    css,
+    /\.findability-count\[aria-expanded="true"\] \.retail-explore-chevron \{[^}]*rotate\(180deg\)/s,
   );
 });
 

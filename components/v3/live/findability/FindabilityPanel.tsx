@@ -20,7 +20,6 @@ import {
   findabilityShape,
   rowsForOutcome,
   type FindabilityBucket,
-  type FindabilityOutcome,
 } from "@/lib/findability/outcomes";
 
 function Term({ title, description, children }: { title: string; description: string; children: ReactNode }) {
@@ -37,35 +36,64 @@ function Term({ title, description, children }: { title: string; description: st
   );
 }
 
+function OutcomeChevron() {
+  return (
+    <svg
+      className="retail-explore-chevron"
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.2 4.2 6 8l3.8-3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function OutcomeCount({
   outcome,
   count,
+  label,
+  description,
   selected,
   onSelect,
 }: {
-  outcome: FindabilityOutcome;
+  outcome: FindabilityBucket;
   count: number;
+  label: string;
+  description?: string;
   selected: boolean;
-  onSelect: (outcome: FindabilityOutcome) => void;
+  onSelect: (outcome: FindabilityBucket) => void;
 }) {
-  const label = OUTCOME_LABEL[outcome];
-  const description = OUTCOME_DEFINITION[outcome];
   return (
     <div className="metric-card-sm findability-outcome" data-selected={selected ? "true" : "false"} data-findability-outcome={outcome}>
       <span className="metric-card-label">
-        <Term title={label} description={description}>
-          {label}
-        </Term>
+        {description ? (
+          <Term title={label} description={description}>
+            {label}
+          </Term>
+        ) : (
+          label
+        )}
       </span>
       <button
         type="button"
         className="findability-count"
         aria-pressed={selected}
+        aria-expanded={selected}
         data-findability-count={count}
-        aria-label={`${formatInt(count)} ${label}. ${description}`}
+        aria-label={description ? `${formatInt(count)} ${label}. ${description}` : undefined}
         onClick={() => onSelect(outcome)}
       >
-        {formatInt(count)}
+        <span className="findability-count-value">{formatInt(count)}</span>
+        <OutcomeChevron />
       </button>
     </div>
   );
@@ -105,7 +133,7 @@ export function FindabilityPanel() {
       ? "This official-page read has no listings."
       : findabilityHeadline(counts!);
 
-  const choose = (outcome: FindabilityOutcome) => {
+  const choose = (outcome: FindabilityBucket) => {
     setSelected((current) => (current === outcome ? null : outcome));
   };
 
@@ -124,23 +152,20 @@ export function FindabilityPanel() {
             key={outcome}
             outcome={outcome}
             count={counts![outcome]}
+            label={OUTCOME_LABEL[outcome]}
+            description={OUTCOME_DEFINITION[outcome]}
             selected={selected === outcome}
             onSelect={choose}
           />
         ))}
         {counts!.other > 0 ? (
-          <div className="metric-card-sm findability-outcome" data-selected={selected === "other" ? "true" : "false"} data-findability-outcome="other">
-            <span className="metric-card-label">{bucketLabel("other")}</span>
-            <button
-              type="button"
-              className="findability-count"
-              aria-pressed={selected === "other"}
-              data-findability-count={counts!.other}
-              onClick={() => setSelected((current) => (current === "other" ? null : "other"))}
-            >
-              {formatInt(counts!.other)}
-            </button>
-          </div>
+          <OutcomeCount
+            outcome="other"
+            count={counts!.other}
+            label={bucketLabel("other")}
+            selected={selected === "other"}
+            onSelect={choose}
+          />
         ) : null}
       </div>
       {shape === "partial" ? (

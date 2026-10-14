@@ -3318,6 +3318,10 @@
       transform: rotate(180deg);
     }
 
+    .findability-count[aria-expanded="true"] .retail-explore-chevron {
+      transform: rotate(180deg);
+    }
+
     .resizable-table {
       table-layout: fixed;
       width: max-content;
@@ -3476,6 +3480,9 @@
 
     .findability-count {
       appearance: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: none;
       border: 0;
       padding: 0;
@@ -3487,6 +3494,9 @@
       line-height: 1.15;
       text-align: left;
       cursor: pointer;
+    }
+
+    .findability-count-value {
       text-decoration: underline;
       text-underline-offset: 3px;
     }
