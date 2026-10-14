@@ -33,5 +33,5 @@ All 27 errors are Perplexity ("empty answer" in the collector). Calling Perplexi
 ## Open items
 
 - Probe facts p17, p19, p33 and p34 are pending Brian review. p18 has no fact.
-- Cutover from the v10 weekly collector, and the owner of schedule `cb8b49c5-c605-4098-a6bd-4e2ac53479a1`, are undecided.
+- Weekly schedule `cb8b49c5-c605-4098-a6bd-4e2ac53479a1` was switched to v11 on 2026-10-14. It stays weekly, next fire 2026-10-18 06:00 UTC, and automatically publishes a reconciled run with all 102 cells and at least 68 answers. Qualifying partial runs publish with provider errors visible; structurally incomplete runs do not replace the current dashboard.
 - Re-run Perplexity cells when the provider recovers, then publish a new run (it becomes current, the old one stays as history).

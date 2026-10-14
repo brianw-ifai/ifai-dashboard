@@ -66,7 +66,9 @@ Parsed from the engine response into `fmic_ai_citations`, one row per unique URL
 
 ## 8. Writer and schedule
 
-Collector: wrench `fender_ai_simulation_battery_v11` (actions start, chunk, finalize, status). The live weekly collector is still the older v10 `fender_ai_simulation_battery_real`. Cutover to v11 and the weekly schedule owner are open questions for Brian.
+Collector: wrench `fender_ai_simulation_battery_v11` (actions start, chunk, finalize, status). The wrench never publishes by itself.
+
+Weekly schedule `cb8b49c5-c605-4098-a6bd-4e2ac53479a1` on assistant `AEO_Product_Research-FenderTest` is active. Recurrence is Weekly, anchored at 2026-10-04 06:00 UTC. The last v10 execution observed in run history was 2026-10-11 06:02 UTC, so the next fire is 2026-10-18 06:00 UTC. On 2026-10-14 the schedule prompt was switched from v10 `fender_ai_simulation_battery_real` to v11. It collects one run, finalizes it, and calls `command.fmic_ai_publish_run` when all 102 cells are recorded, the run reconciles, and at least 68 calls answered. A qualifying partial run publishes with provider errors visible. A structurally incomplete or catastrophically failed run remains unpublished and the prior published run stays current.
 
 ## 9. Known limits
 
