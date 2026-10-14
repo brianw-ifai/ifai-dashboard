@@ -34,7 +34,8 @@ function groupSortValue(row: GroupTally, columnId: string, label: string): SortI
   if (columnId === "leader") return row.unresolved;
   return row.errors;
 }
-import { engineModelLine, errorLine, pct, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
+import { ROLE_LABELS, type RoleTally } from "@/lib/ai-search/question-role";
+import { engineModelLine, errorLine, pct, resolvedPhrase, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 const SIM = AI_TABS.simulations;
@@ -87,66 +88,84 @@ function RunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
   );
 }
 
+function RoleRate({ tally, term }: { tally: RoleTally; term: "unbranded discovery" | "branded consideration" }) {
+  const rate = tally.resolved > 0 ? pct(tally.fenderWins, tally.resolved) : "No resolved answers";
+  return (
+    <div className="metric-card-sm" data-ai-role={tally.role}>
+      <span className="metric-card-label"><AiTerm term={term}>{ROLE_LABELS[tally.role]}</AiTerm></span>
+      <div className="metric-card-val" data-ai-win-rate={tally.role}>{rate}</div>
+      <span className="metric-card-sub">
+        {tally.resolved > 0 ? (
+          <>
+            <EvidenceLink focus={{ field: "role", value: `${tally.role}/fender_win` }} tab={SIM}>
+              {tally.fenderWins} Fender/Squier leads
+            </EvidenceLink>{" "}
+            of{" "}
+            <EvidenceLink focus={{ field: "role", value: `${tally.role}/resolved` }} tab={SIM}>
+              {tally.resolved}
+            </EvidenceLink>{" "}
+            <AiTerm term="resolved" /> answers
+          </>
+        ) : (
+          "No resolved answers in this run"
+        )}
+      </span>
+    </div>
+  );
+}
+
+function keptOut(tally: RoleTally): string {
+  const parts = [resolvedPhrase(tally)];
+  if (tally.unresolved > 0) parts.push(`${tally.unresolved} with no clear leader`);
+  if (tally.errors > 0) parts.push(`${tally.errors} provider errors`);
+  return parts.join(", ");
+}
+
 function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const s = summarizeRun(snapshot);
-  const c = s.commercial;
   return (
     <div className="content-box ai-win-card" style={{ marginTop: 12 }}>
       <div className="content-box-title">
-        <span>Commercial prompts: how often Fender/Squier leads</span>
+        <span>How often Fender/Squier is named, by the kind of question</span>
       </div>
       <div className="metric-grid-2">
-        <div className="metric-card-sm">
-          <span className="metric-card-label"><AiTerm term="Fender lead">Fender lead</AiTerm></span>
-          <div className="metric-card-val" data-ai-win-rate>
-            {pct(c.fenderWins, c.resolved)}
-          </div>
-          <span className="metric-card-sub">
-            <EvidenceLink focus={{ field: "outcome", value: "fender_win" }} tab={SIM}>
-              {c.fenderWins} Fender/Squier leads
-            </EvidenceLink>{" "}
-            of{" "}
-            <EvidenceLink focus={{ field: "outcome", value: "resolved" }} tab={SIM}>
-              {c.resolved}
-            </EvidenceLink>{" "}
-            <AiTerm term="resolved" /> answers
-          </span>
-        </div>
-        <div className="metric-card-sm">
-          <span className="metric-card-label">Kept out of the rate</span>
-          <ul style={{ ...mutedText, margin: "4px 0 0", paddingLeft: 16 }}>
-            <li>
-              <EvidenceLink focus={{ field: "outcome", value: "competitor_win" }} tab={SIM}>
-                {c.competitorWins} competitor leads
-              </EvidenceLink>{" "}
-              (in the denominator)
-            </li>
-            <li>
-              <EvidenceLink focus={{ field: "outcome", value: "unresolved" }} tab={SIM}>
-                {c.unresolved} answers
-              </EvidenceLink>{" "}
-              with <AiTerm term="no clear leader" />
-            </li>
-            <li>
-              <EvidenceLink focus={{ field: "outcome", value: "error" }} tab={SIM}>
-                {c.errors} commercial calls
-              </EvidenceLink>{" "}
-              with a <AiTerm term="provider error" />
-            </li>
-            <li>
-              <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
-                {s.probesAnswered} answered
-              </EvidenceLink>{" "}
-              <AiTerm term="product fact check">product fact checks</AiTerm> (not buying prompts)
-            </li>
-            {c.disqualified > 0 ? (
-              <li>
-                {c.disqualified} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
-              </li>
-            ) : null}
-          </ul>
-        </div>
+        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" />
+        <RoleRate tally={s.roles.branded} term="branded consideration" />
       </div>
+      <ul style={{ ...mutedText, margin: "10px 0 0", paddingLeft: 16 }}>
+        <li>
+          <AiTerm term="brand-associated discovery">Brand-associated discovery</AiTerm>:{" "}
+          <EvidenceLink focus={{ field: "role", value: "brand_associated_discovery/resolved" }} tab={SIM}>
+            {keptOut(s.roles.associated)}
+          </EvidenceLink>
+          . Counted on its own, not inside unbranded discovery.
+        </li>
+        <li>
+          <AiTerm term="shopping guidance">Shopping guidance</AiTerm>:{" "}
+          <EvidenceLink focus={{ field: "role", value: "shopping_guidance" }} tab={SIM}>
+            {keptOut(s.roles.guidance)}
+          </EvidenceLink>
+          . Not in either rate above.
+        </li>
+        <li>
+          <AiTerm term="product-fact question">Product-fact questions</AiTerm>:{" "}
+          <EvidenceLink focus={{ field: "role", value: "product_fact" }} tab={SIM}>
+            {keptOut(s.roles.productFact)}
+          </EvidenceLink>
+          . These are still stored as shopping prompts, and they are not in either rate above.
+        </li>
+        <li>
+          <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
+            {s.probesAnswered} answered
+          </EvidenceLink>{" "}
+          <AiTerm term="product fact check">product fact checks</AiTerm> stay on their own tab.
+        </li>
+        {s.commercial.disqualified > 0 ? (
+          <li>
+            {s.commercial.disqualified} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
+          </li>
+        ) : null}
+      </ul>
     </div>
   );
 }
@@ -231,7 +250,7 @@ function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </tbody>
       </ResizableTable>
       <p style={{ ...mutedText, marginTop: 8 }}>
-        Product fact checks are not a shopping category. They are on the Product Fact Checks tab.
+        These rows mix discovery, consideration, and product-fact questions in a category. The rates at the top keep those questions apart. Product fact checks are on their own tab.
       </p>
     </div>
   );

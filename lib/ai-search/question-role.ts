@@ -1,0 +1,76 @@
+import { tallyCommercial, type OutcomeTally } from "@/lib/ai-search/run-metrics";
+import type { AiCallRow } from "@/lib/ai-search/types";
+
+/**
+ * What kind of question a stored prompt is, read from its text.
+ * Product-fact probes (`prompt_kind = probe`) stay their own bucket.
+ * The other five roles are commercial prompts that must not share one win rate.
+ */
+export const QUESTION_ROLES = [
+  "unbranded_discovery",
+  "brand_associated_discovery",
+  "branded_consideration",
+  "shopping_guidance",
+  "product_fact",
+  "probe",
+  "other",
+] as const;
+
+export type QuestionRole = (typeof QUESTION_ROLES)[number];
+
+export const ROLE_LABELS: Record<QuestionRole, string> = {
+  unbranded_discovery: "Unbranded discovery",
+  brand_associated_discovery: "Brand-associated discovery",
+  branded_consideration: "Branded consideration",
+  shopping_guidance: "Shopping guidance",
+  product_fact: "Product-fact question",
+  probe: "Product fact check",
+  other: "Unclassified shopping question",
+};
+
+/** The two rates the AI Search headline leads with. */
+export const HEADLINE_ROLES = ["unbranded_discovery", "branded_consideration"] as const;
+
+/** Named brands and model lines. A model line such as Stratocaster counts as brand-associated. */
+const BRAND =
+  /\b(fender|squier|stratocaster|telecaster|acoustasonic|yamaha|gibson|epiphone|prs|sire|ibanez|taylor|boss|katana|spark|les paul|jaguar|mustang|precision bass|jazz bass|affinity)\b/i;
+
+/** Asks how a named product is built, or how two models differ, rather than which to buy. */
+const PRODUCT_FACT = /pickup types?|tube types?|biasing|tonal differences?|\bdifferences?\b|different from/i;
+
+/** Asks how to shop, not which product to choose. */
+const SHOPPING_GUIDANCE = /how much should|should .+ spend/i;
+
+/** Names options and asks the shopper to choose, or asks whether a named product is a good buy. */
+const CONSIDERATION = /\bvs\.?\b|\bversus\b|\bcomparison\b|\bis\b.+\bgood\b/i;
+
+/** Asks what to buy, without naming the contenders. */
+const DISCOVERY = /\bbest\b|\balternative\b/i;
+
+export function questionRole(row: {
+  prompt_kind?: string | null;
+  prompt?: string | null;
+}): QuestionRole {
+  if (row.prompt_kind === "probe") return "probe";
+  const text = row.prompt ?? "";
+  if (PRODUCT_FACT.test(text)) return "product_fact";
+  if (SHOPPING_GUIDANCE.test(text)) return "shopping_guidance";
+  const named = BRAND.test(text);
+  if (named && CONSIDERATION.test(text)) return "branded_consideration";
+  if (named && DISCOVERY.test(text)) return "brand_associated_discovery";
+  if (!named && DISCOVERY.test(text)) return "unbranded_discovery";
+  return "other";
+}
+
+export type RoleTally = OutcomeTally & { role: QuestionRole };
+
+export function roleTallies(rows: AiCallRow[]): RoleTally[] {
+  return QUESTION_ROLES.map((role) => ({
+    role,
+    ...tallyCommercial(rows.filter((row) => questionRole(row) === role)),
+  })).filter((tally) => tally.calls > 0 || tally.role === "unbranded_discovery" || tally.role === "branded_consideration");
+}
+
+export function roleTally(rows: AiCallRow[], role: QuestionRole): RoleTally {
+  return { role, ...tallyCommercial(rows.filter((row) => questionRole(row) === role)) };
+}

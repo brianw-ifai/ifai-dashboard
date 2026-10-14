@@ -10,6 +10,7 @@ import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilt
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
 import { driftRead } from "@/lib/ai-search/drift";
+import { questionRole, ROLE_LABELS } from "@/lib/ai-search/question-role";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
   ACCURACY_LABELS,
@@ -128,6 +129,12 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
         neither a win nor a loss.
       </p>
       <SimulationFilters rows={snapshot.calls} filter={filter} onChange={changeFilter} />
+      {filter.role ? (
+        <p style={mutedText} data-ai-role-filter={filter.role}>
+          Showing {ROLE_LABELS[filter.role]}
+          {filter.outcome === "resolved" ? " with a clear leader" : filter.outcome === "fender_win" ? " where Fender/Squier was named most" : ""}.
+        </p>
+      ) : null}
       {filter.brand ? (
         <p style={mutedText}>
           Showing answers where {filter.brand} was named most.{" "}
@@ -163,6 +170,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       data-sim-id={row.sim_id}
                       data-outcome={outcome}
                       data-kind={row.prompt_kind ?? ""}
+                      data-role={questionRole(row)}
                       aria-expanded={open}
                       tabIndex={0}
                       onClick={() => setOpenId(open ? null : row.id)}

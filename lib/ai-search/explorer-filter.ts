@@ -1,4 +1,5 @@
 import type { EvidenceFocus } from "@/lib/ai-search/evidence-focus";
+import { questionRole, type QuestionRole } from "@/lib/ai-search/question-role";
 import { callOutcome, type CallOutcome } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
@@ -35,6 +36,7 @@ export type ExplorerFilter = {
   outcome: CallOutcome | "resolved" | "";
   accuracy: AccuracyState | "";
   brand: string;
+  role: QuestionRole | "";
   simId: number | null;
 };
 
@@ -46,6 +48,7 @@ export const DEFAULT_FILTER: ExplorerFilter = {
   outcome: "",
   accuracy: "",
   brand: "",
+  role: "",
   simId: null,
 };
 
@@ -76,6 +79,15 @@ export function filterFromEvidence(focus: EvidenceFocus | null): ExplorerFilter 
       return { ...DEFAULT_FILTER, scope: "all", accuracy: value as AccuracyState };
     case "competitor":
       return { ...DEFAULT_FILTER, outcome: "competitor_win", brand: value };
+    case "role": {
+      const [role, outcome = ""] = value.split("/");
+      return {
+        ...DEFAULT_FILTER,
+        scope: "commercial",
+        role: role as QuestionRole,
+        outcome: outcome as ExplorerFilter["outcome"],
+      };
+    }
     default:
       return DEFAULT_FILTER;
   }
@@ -101,6 +113,7 @@ export function applyExplorerFilter(rows: AiCallRow[], filter: ExplorerFilter): 
     }
     if (filter.accuracy && accuracyState(row) !== filter.accuracy) return false;
     if (filter.brand && (row.primary_brand ?? "") !== filter.brand) return false;
+    if (filter.role && questionRole(row) !== filter.role) return false;
     return true;
   });
 }

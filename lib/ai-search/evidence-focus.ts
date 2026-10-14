@@ -17,6 +17,7 @@ export const EVIDENCE_FIELDS = [
   "competitor",
   "domain",
   "class",
+  "role",
 ] as const;
 
 export type EvidenceField = (typeof EVIDENCE_FIELDS)[number];
