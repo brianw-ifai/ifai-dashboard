@@ -111,7 +111,6 @@ export const fenderStaticNodes: CanvasNode[] = [
       status: "success",
       title: "Strategy Roadmap",
       stats: ["90 Days", "3 Phases"],
-      meta: retailFaces.main.stats[0] ?? "Retail reading",
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",

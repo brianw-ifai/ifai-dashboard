@@ -58,6 +58,11 @@ test.describe("primary spoke map", () => {
         }
       }
 
+      const roadmap = page.locator('[data-graph-node-id="spoke-roadmap"]');
+      await expect(roadmap.locator(".node-meta")).toHaveCount(0);
+      await expect(roadmap).toContainText("90 Days");
+      await expect(roadmap).toContainText("3 Phases");
+
       for (const title of PRIMARY_TITLES) {
         const pattern = new RegExp(title.trim().split(/\s+/).join("\\s*"), "i");
         const node = page.locator(".spoke-primary").filter({ hasText: pattern });

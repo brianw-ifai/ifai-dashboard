@@ -109,6 +109,29 @@ test("the map uses the grown spokes and leaves satellites and the hub alone", ()
   assert.equal(mapSatellite?.r, SATELLITE_LAYOUT["sat-map"].r);
 });
 
+test("Strategy Roadmap has no retail metadata line", () => {
+  const staticRoadmap = fenderStaticNodes.find((node) => node.id === "spoke-roadmap");
+  assert.ok(staticRoadmap);
+  assert.equal(Object.hasOwn(staticRoadmap, "meta"), false);
+  assert.equal(staticRoadmap.meta, undefined);
+  assert.deepEqual(staticRoadmap.stats, ["90 Days", "3 Phases"]);
+  assert.equal(staticRoadmap.title, "Strategy Roadmap");
+  assert.ok(staticRoadmap.tooltip?.desc);
+
+  const bundle = { m: {}, divisions: [], cats: [], engines: [], sov: [], missing: [], fresh: [] } as CanvasBundle;
+  const liveRoadmap = buildLiveNodes(bundle, buildLiveMetrics(bundle)).find((node) => node.id === "spoke-roadmap");
+  assert.ok(liveRoadmap);
+  assert.equal(Object.hasOwn(liveRoadmap, "meta"), false);
+  assert.equal(liveRoadmap.meta, undefined);
+  assert.deepEqual(liveRoadmap.stats, ["90 Days", "3 Phases"]);
+  assert.equal(liveRoadmap.spokeId, "roadmap");
+  assert.ok(liveRoadmap.tooltip?.title);
+  assert.ok(liveRoadmap.tooltip?.desc);
+
+  const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
+  assert.equal(specs?.meta, "Spec read");
+});
+
 test("connectors and camera targets land on the new spoke centers", () => {
   const centers = new Set(fenderStaticNodes.map((node) => `${node.x},${node.y}`));
   for (const edge of fenderCanvasEdges()) {

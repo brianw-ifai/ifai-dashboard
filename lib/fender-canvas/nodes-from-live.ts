@@ -141,7 +141,6 @@ export function buildLiveNodes(
       status: "success",
       title: "Strategy Roadmap",
       stats: ["90 Days", "3 Phases"],
-      meta: headline.countLabel ? `${headline.label}: ${headline.countLabel}` : headline.label,
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",
