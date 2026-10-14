@@ -9,16 +9,23 @@ export type AnswerRead =
   | { status: "ready"; text: string | null }
   | { status: "error"; message: string };
 
-/** The stored answer for one call, read when its evidence view opens. */
-export function useAnswerText(id: string): AnswerRead {
-  const [answer, setAnswer] = useState<AnswerRead>({ status: "loading" });
+/**
+ * The stored answer for one call, read when its evidence view opens.
+ * A history row that already carries `stored` does not query the current-run view.
+ */
+export function useAnswerText(id: string, stored?: string | null): AnswerRead {
+  const hasStored = stored !== undefined;
+  const [answer, setAnswer] = useState<AnswerRead>(
+    hasStored ? { status: "ready", text: stored ?? null } : { status: "loading" },
+  );
   const [readId, setReadId] = useState(id);
   if (readId !== id) {
     setReadId(id);
-    setAnswer({ status: "loading" });
+    setAnswer(hasStored ? { status: "ready", text: stored ?? null } : { status: "loading" });
   }
 
   useEffect(() => {
+    if (stored !== undefined) return;
     let cancelled = false;
     void answerTextQuery(getCanvasSupabase() as never, id).then(({ answer: text, error }) => {
       if (cancelled) return;
@@ -27,7 +34,7 @@ export function useAnswerText(id: string): AnswerRead {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, stored]);
 
   return answer;
 }

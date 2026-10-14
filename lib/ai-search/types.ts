@@ -15,6 +15,9 @@ export type AiCurrentRun = {
   completed_at: string | null;
   published_at: string | null;
   missing_calls: number | null;
+  /** Present on history rows. The current-run view omits it. */
+  is_published?: boolean | null;
+  run_kind?: string | null;
 };
 
 export type AiOutcome = "fender_win" | "competitor_win" | "unresolved" | "error" | "not_scored";
@@ -49,6 +52,8 @@ export type AiCallRow = {
   attempt_no: number | null;
   repeat_no: number | null;
   created_at: string | null;
+  /** Set when a history read already returned the stored answer. */
+  answer_text?: string | null;
 };
 
 export type AiProbeRow = {

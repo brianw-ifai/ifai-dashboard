@@ -17,4 +17,6 @@ export type SpokeDefinition = {
   navLabel: string;
   next: SpokeId;
   render: (tabIdx: number) => ReactNode | string;
+  /** Compact control under the panel title. Used by AI Search history. */
+  headerAccessory?: ReactNode;
 };

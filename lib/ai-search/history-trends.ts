@@ -1,0 +1,353 @@
+import type { HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { compareRuns, isTrustworthyRun, utcDay } from "@/lib/ai-search/history-eligibility";
+import { questionRole, roleTally, type HeadlineRole } from "@/lib/ai-search/question-role";
+import { queryVersionKey } from "@/lib/ai-search/query-version";
+import { callOutcome, engineLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
+import { formatObservedRate, SMALL_SAMPLE_LABEL } from "@/lib/ai-search/summary";
+import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+
+export type TrendMetric = HeadlineRole;
+export type TrendBreakdown = "overall" | "engine";
+
+export type QueryChoice =
+  | { kind: "all" }
+  | { kind: "version"; versionKey: string; promptKey: string; promptText: string }
+  | { kind: "lineage"; promptKey: string };
+
+export type QuestionVersion = {
+  versionKey: string;
+  promptKey: string;
+  promptText: string;
+  promptKind: string | null;
+  role: ReturnType<typeof questionRole>;
+};
+
+export type TrendPoint = {
+  runId: string;
+  day: string;
+  promptSetHash: string;
+  engine: string | null;
+  wins: number;
+  resolved: number;
+  unresolved: number;
+  errors: number;
+  winPct: number | null;
+  smallSample: boolean;
+  /** False when the run returned no call rows. The point is not plotted as zero. */
+  callsLoaded: boolean;
+  partial: boolean;
+};
+
+export type TrendBoundary = {
+  afterRunId: string;
+  beforeRunId: string;
+  afterDay: string;
+  beforeDay: string;
+  promptSetChanged: boolean;
+  queryVersionChanged: boolean;
+  beforeQuestions: QuestionVersion[];
+  afterQuestions: QuestionVersion[];
+};
+
+export type TrendSeries = {
+  key: string;
+  label: string;
+  points: TrendPoint[];
+};
+
+export type TrendModel = {
+  status: "loading" | "unavailable" | "empty" | "one-run" | "ready";
+  message: string | null;
+  series: TrendSeries[];
+  boundaries: TrendBoundary[];
+  /** Run ids that were eligible to plot, in time order. */
+  runIds: string[];
+};
+
+export const ONE_RUN_TREND_MESSAGE = "Trend begins after the next comparable published run.";
+
+const EMPTY_RANGE = "No trustworthy published run falls in this range.";
+const NONE_YET = "No trustworthy published run is available for a trend yet.";
+
+export function questionsInRun(calls: readonly AiCallRow[]): QuestionVersion[] {
+  const seen = new Map<string, QuestionVersion>();
+  for (const call of calls) {
+    if (call.prompt_kind !== "commercial" && call.prompt_kind !== "probe") continue;
+    const versionKey = queryVersionKey(call.prompt_key, call.prompt);
+    if (seen.has(versionKey)) continue;
+    seen.set(versionKey, {
+      versionKey,
+      promptKey: call.prompt_key ?? "",
+      promptText: call.prompt ?? "",
+      promptKind: call.prompt_kind,
+      role: questionRole(call),
+    });
+  }
+  return [...seen.values()].sort((a, b) => a.promptKey.localeCompare(b.promptKey) || a.versionKey.localeCompare(b.versionKey));
+}
+
+export function callsForRun(snapshot: AiSearchSnapshot): AiCallRow[] {
+  return snapshot.calls.filter((call) => call.audit_run_id === snapshot.run.audit_run_id);
+}
+
+function dayOf(snapshot: AiSearchSnapshot): string | null {
+  return utcDay(snapshot.run.published_at ?? snapshot.run.completed_at);
+}
+
+function inRange(day: string, from: string | null, to: string | null): boolean {
+  if (from && day < from) return false;
+  if (to && day > to) return false;
+  return true;
+}
+
+function versionOnRun(calls: readonly AiCallRow[], promptKey: string): string | null {
+  const keys = new Set(
+    calls.filter((call) => call.prompt_key === promptKey).map((call) => queryVersionKey(call.prompt_key, call.prompt)),
+  );
+  if (keys.size !== 1) return null;
+  return [...keys][0];
+}
+
+function runMatchesQuery(calls: readonly AiCallRow[], query: QueryChoice): boolean {
+  if (query.kind === "all") return true;
+  if (query.kind === "version") {
+    return calls.some((call) => queryVersionKey(call.prompt_key, call.prompt) === query.versionKey);
+  }
+  const versions = new Set(
+    calls.filter((call) => call.prompt_key === query.promptKey).map((call) => queryVersionKey(call.prompt_key, call.prompt)),
+  );
+  return versions.size === 1;
+}
+
+function metricCalls(calls: readonly AiCallRow[], metric: TrendMetric, engine: string | null, query: QueryChoice): AiCallRow[] {
+  return calls.filter((call) => {
+    if (questionRole(call) !== metric) return false;
+    if (engine && (call.engine ?? "").toLowerCase() !== engine) return false;
+    if (query.kind === "version" && queryVersionKey(call.prompt_key, call.prompt) !== query.versionKey) return false;
+    if (query.kind === "lineage" && call.prompt_key !== query.promptKey) return false;
+    return true;
+  });
+}
+
+function pointFor(
+  snapshot: AiSearchSnapshot,
+  calls: readonly AiCallRow[],
+  metric: TrendMetric,
+  engine: string | null,
+  query: QueryChoice,
+): TrendPoint {
+  const day = dayOf(snapshot) ?? "";
+  const scoped = metricCalls(calls, metric, engine, query);
+  const tally = roleTally(scoped, metric);
+  return {
+    runId: snapshot.run.audit_run_id,
+    day,
+    promptSetHash: snapshot.run.prompt_set_hash ?? "",
+    engine,
+    wins: tally.fenderWins,
+    resolved: tally.resolved,
+    unresolved: tally.unresolved,
+    errors: tally.errors,
+    winPct: calls.length === 0 ? null : tally.winPct,
+    smallSample: false,
+    callsLoaded: calls.length > 0,
+    partial: snapshot.run.run_state === "partial",
+  };
+}
+
+function withSample(points: TrendPoint[]): TrendPoint[] {
+  const largest = Math.max(0, ...points.map((point) => point.resolved));
+  return points.map((point) => ({
+    ...point,
+    smallSample: point.callsLoaded && point.resolved > 0 && isSmallSample(point.resolved, largest),
+  }));
+}
+
+export function rateLabel(point: Pick<TrendPoint, "wins" | "resolved" | "smallSample" | "callsLoaded" | "winPct">): string {
+  if (!point.callsLoaded) return "Calls not available";
+  const figure = formatObservedRate(point.wins, point.resolved);
+  if (figure == null) return "No resolved answers";
+  const labeled = figure.replace(/\)$/, " resolved)");
+  return point.smallSample ? `${labeled} ${SMALL_SAMPLE_LABEL}` : labeled;
+}
+
+export function coverageLabel(point: Pick<TrendPoint, "unresolved" | "errors" | "callsLoaded">): string {
+  if (!point.callsLoaded) return "Not available";
+  const parts: string[] = [];
+  if (point.unresolved > 0) parts.push(`${point.unresolved} unresolved`);
+  if (point.errors > 0) parts.push(`${point.errors} provider ${point.errors === 1 ? "error" : "errors"}`);
+  return parts.length ? parts.join(", ") : "None";
+}
+
+function enginesIn(snapshots: readonly AiSearchSnapshot[]): string[] {
+  const engines = new Set<string>();
+  for (const snapshot of snapshots) {
+    for (const call of callsForRun(snapshot)) {
+      if (call.prompt_kind !== "commercial") continue;
+      engines.add((call.engine ?? "").toLowerCase());
+    }
+  }
+  return [...engines].sort((a, b) => engineLabel(a).localeCompare(engineLabel(b)));
+}
+
+function adjacentBreak(
+  previous: AiSearchSnapshot,
+  next: AiSearchSnapshot,
+  orderedIds: readonly string[],
+  query: QueryChoice,
+): { promptSetChanged: boolean; queryVersionChanged: boolean; gap: boolean } {
+  const previousIndex = orderedIds.indexOf(previous.run.audit_run_id);
+  const nextIndex = orderedIds.indexOf(next.run.audit_run_id);
+  const gap = nextIndex - previousIndex > 1;
+  const promptSetChanged = (previous.run.prompt_set_hash ?? "") !== (next.run.prompt_set_hash ?? "");
+  let queryVersionChanged = false;
+  if (query.kind === "lineage") {
+    const before = versionOnRun(callsForRun(previous), query.promptKey);
+    const after = versionOnRun(callsForRun(next), query.promptKey);
+    queryVersionChanged = before != null && after != null && before !== after;
+  }
+  return { promptSetChanged, queryVersionChanged, gap };
+}
+
+export function buildHistoryTrend(input: {
+  snapshots: readonly AiSearchSnapshot[];
+  metric: TrendMetric;
+  breakdown: TrendBreakdown;
+  fromDay: string | null;
+  toDay: string | null;
+  query: QueryChoice;
+}): TrendModel {
+  const trusted = input.snapshots
+    .filter((snapshot) => isTrustworthyRun(snapshot.run as HistoryRunSummary))
+    .map((snapshot) => ({ ...snapshot, calls: callsForRun(snapshot) }))
+    .filter((snapshot) => {
+      const day = dayOf(snapshot);
+      return day != null && inRange(day, input.fromDay, input.toDay);
+    })
+    .sort((a, b) => compareRuns(a.run as HistoryRunSummary, b.run as HistoryRunSummary));
+
+  const matching = trusted.filter((snapshot) => runMatchesQuery(snapshot.calls, input.query));
+  const runIds = matching.map((snapshot) => snapshot.run.audit_run_id);
+  if (matching.length === 0) {
+    return { status: "empty", message: input.fromDay || input.toDay ? EMPTY_RANGE : NONE_YET, series: [], boundaries: [], runIds };
+  }
+  if (matching.length === 1) {
+    return { status: "one-run", message: ONE_RUN_TREND_MESSAGE, series: [], boundaries: [], runIds };
+  }
+
+  const orderedIds = trusted.map((snapshot) => snapshot.run.audit_run_id);
+  const boundaries: TrendBoundary[] = [];
+  const breakAfter = new Set<string>();
+  for (let index = 1; index < matching.length; index += 1) {
+    const before = matching[index - 1];
+    const after = matching[index];
+    const change = adjacentBreak(before, after, orderedIds, input.query);
+    if (!change.promptSetChanged && !change.queryVersionChanged && !change.gap) continue;
+    breakAfter.add(before.run.audit_run_id);
+    boundaries.push({
+      afterRunId: before.run.audit_run_id,
+      beforeRunId: after.run.audit_run_id,
+      afterDay: dayOf(before) ?? "",
+      beforeDay: dayOf(after) ?? "",
+      promptSetChanged: change.promptSetChanged,
+      queryVersionChanged: change.queryVersionChanged,
+      beforeQuestions: questionsInRun(before.calls),
+      afterQuestions: questionsInRun(after.calls),
+    });
+  }
+
+  const groups: Array<{ key: string; label: string; engine: string | null }> =
+    input.breakdown === "overall"
+      ? [{ key: "overall", label: "Overall", engine: null }]
+      : enginesIn(matching).map((engine) => ({ key: engine, label: engineLabel(engine), engine }));
+
+  const series = groups.map((group) => ({
+    key: group.key,
+    label: group.label,
+    points: withSample(matching.map((snapshot) => pointFor(snapshot, snapshot.calls, input.metric, group.engine, input.query))),
+    breakAfter,
+  }));
+
+  return {
+    status: "ready",
+    message: null,
+    series: series.map(({ key, label, points }) => ({ key, label, points })),
+    boundaries,
+    runIds,
+  };
+}
+
+/** Straight segments only. A boundary, a gap, or a missing rate ends the segment. */
+export function trendSegments(points: readonly TrendPoint[], breakAfter: ReadonlySet<string>): TrendPoint[][] {
+  const segments: TrendPoint[][] = [];
+  let current: TrendPoint[] = [];
+  for (const point of points) {
+    const plottable = point.callsLoaded && point.winPct != null;
+    if (!plottable) {
+      if (current.length) segments.push(current);
+      current = [];
+      continue;
+    }
+    current.push(point);
+    if (breakAfter.has(point.runId)) {
+      segments.push(current);
+      current = [];
+    }
+  }
+  if (current.length) segments.push(current);
+  return segments;
+}
+
+export function boundaryBreaks(boundaries: readonly TrendBoundary[]): Set<string> {
+  return new Set(boundaries.map((boundary) => boundary.afterRunId));
+}
+
+export function callsBehindPoint(
+  snapshot: AiSearchSnapshot,
+  point: TrendPoint,
+  metric: TrendMetric,
+  query: QueryChoice,
+): { inRate: AiCallRow[]; outside: AiCallRow[] } {
+  const scoped = metricCalls(callsForRun(snapshot), metric, point.engine, query);
+  const inRate: AiCallRow[] = [];
+  const outside: AiCallRow[] = [];
+  for (const call of scoped) {
+    const outcome = callOutcome(call);
+    if (outcome === "fender_win" || outcome === "fender_win_disqualified" || outcome === "competitor_win") inRate.push(call);
+    else if (outcome === "unresolved" || outcome === "error") outside.push(call);
+  }
+  return { inRate, outside };
+}
+
+export function queryChoices(snapshots: readonly AiSearchSnapshot[], metric: TrendMetric): QueryChoice[] {
+  const versions = new Map<string, { promptKey: string; promptText: string }>();
+  const lineages = new Set<string>();
+  for (const snapshot of snapshots) {
+    if (!isTrustworthyRun(snapshot.run as HistoryRunSummary)) continue;
+    for (const call of callsForRun(snapshot)) {
+      if (questionRole(call) !== metric) continue;
+      const promptKey = call.prompt_key ?? "";
+      const versionKey = queryVersionKey(call.prompt_key, call.prompt);
+      versions.set(versionKey, { promptKey, promptText: call.prompt ?? "" });
+      lineages.add(promptKey);
+    }
+  }
+  const choices: QueryChoice[] = [{ kind: "all" }];
+  for (const promptKey of [...lineages].sort()) {
+    const wordings = [...versions.entries()].filter(([, value]) => value.promptKey === promptKey);
+    if (wordings.length > 1) choices.push({ kind: "lineage", promptKey });
+    for (const [versionKey, value] of wordings.sort((a, b) => a[1].promptText.localeCompare(b[1].promptText))) {
+      choices.push({ kind: "version", versionKey, promptKey: value.promptKey, promptText: value.promptText });
+    }
+  }
+  return choices;
+}
+
+export function boundaryLabel(boundary: TrendBoundary): string {
+  if (boundary.promptSetChanged && boundary.queryVersionChanged) {
+    return "Question set changed. The exact question wording also changed.";
+  }
+  if (boundary.queryVersionChanged) return "Question wording changed";
+  if (boundary.promptSetChanged) return "Question set changed";
+  return "No run with this exact question between these dates";
+}

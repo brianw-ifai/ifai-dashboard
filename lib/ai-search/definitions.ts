@@ -27,7 +27,11 @@ export const AI_DEFINITIONS = {
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",
   "published run":
-    "The one audit run IntoFocus has published as current. Earlier and unpublished runs are kept as history and never mixed into these figures.",
+    "The one audit run IntoFocus has published as current. Figures use that run unless you open a historical run from the run control. Unpublished runs and development fragments are not mixed in.",
+  "question set":
+    "The full list of questions sent in one AI Search run. A change means a later run asked a different list, so the rates on each side are not one continuous series.",
+  "query version":
+    "One exact wording of a question. Editing the wording starts a new version. A trend for one version includes only runs that asked that wording.",
   "confirmed contradiction":
     "The answer contradicts a fact IntoFocus verified on a Fender page, and the stored evidence quotes the conflicting text.",
   "no contradiction found":
