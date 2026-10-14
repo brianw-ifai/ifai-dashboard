@@ -18,6 +18,58 @@ function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number)
   return "success" as const;
 }
 
+function suppressedListingsMetric(retail: RetailCanvasRead): CanvasMetric {
+  const base = {
+    id: "suppressed-listings",
+    spokeId: "ecommerce" as const,
+    label: "Suppressed Listings",
+    subTab: "Suppressed Listings",
+    provenance: "live" as const,
+  };
+  if (retail.phase === "loading") {
+    return {
+      ...base,
+      value: "Loading",
+      detail: "The Suppressed Listings read is still loading.",
+      tone: "warning",
+    };
+  }
+  if (retail.phase === "error") {
+    return {
+      ...base,
+      value: "Unavailable",
+      detail: "The Suppressed Listings read did not succeed.",
+      tone: "warning",
+    };
+  }
+  const reading = retail.snapshot.suppressedListings;
+  if (reading.status === "unavailable" || reading.issueCount == null) {
+    return {
+      ...base,
+      value: "Unavailable",
+      detail: reading.missingMessage ?? "The Suppressed Listings read did not succeed.",
+      tone: "warning",
+    };
+  }
+  if (reading.status === "incomplete") {
+    return {
+      ...base,
+      value: formatInt(reading.issueCount),
+      detail: "Suppressed listings in this partial listing read. This is not a final count.",
+      tone: reading.issueCount > 0 ? "danger" : "warning",
+    };
+  }
+  return {
+    ...base,
+    value: formatInt(reading.issueCount),
+    detail:
+      reading.issueCount > 0
+        ? "Suppressed listings in this listing read"
+        : "No suppressed listings in this listing read",
+    tone: reading.issueCount > 0 ? "danger" : "success",
+  };
+}
+
 function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
   const base = {
     id: "flagged-asins",
@@ -114,6 +166,7 @@ export function buildLiveMetrics(
       provenance: "live",
     },
     flaggedAsins: mapViolationsMetric(retail),
+    suppressedListings: suppressedListingsMetric(retail),
     strandedReviews: {
       id: "stranded-reviews",
       spokeId: "ecommerce",

@@ -12,7 +12,15 @@ export type CanvasNode = {
   r: number;
   status: NodeStatus;
   title: string;
+  /** Title size on the full map. */
   titleSize?: number;
+  /** Title size in the wide-panel column rail, when it should not follow the map size. */
+  railTitleSize?: number;
+  /**
+   * Face layout radius for the column rail. The map circle uses `r`.
+   * Set when `r` grows for the map so the rail face stays the previous size.
+   */
+  faceRadius?: number;
   stats: string[];
   meta?: string;
   /** Opens this spoke on click. Omit to reset the camera. Set on the hub when it has its own drilldown. */

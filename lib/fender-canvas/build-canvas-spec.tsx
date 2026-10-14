@@ -17,30 +17,14 @@ import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { fenderCanvasEdges, frameTourStep, withPrimaryFocusTargets } from "@/lib/fender-canvas/primary-spoke-layout";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
-const FOCUS_TARGETS = graphLayout.focusTargets as Record<string, { x: number; y: number }>;
-const tourSteps = staticTourSteps as TourStep[];
-
-const STATIC_EDGES = [
-  { x1: 800, y1: 500, x2: 440, y2: 320 },
-  { x1: 800, y1: 500, x2: 1160, y2: 320 },
-  { x1: 800, y1: 500, x2: 440, y2: 680 },
-  { x1: 800, y1: 500, x2: 1160, y2: 680 },
-  { x1: 800, y1: 500, x2: 800, y2: 180 },
-  { x1: 800, y1: 500, x2: 800, y2: 820, kind: "active" as const },
-  { x1: 440, y1: 320, x2: 240, y2: 200 },
-  { x1: 440, y1: 320, x2: 180, y2: 360 },
-  { x1: 440, y1: 320, x2: 260, y2: 480 },
-  { x1: 1160, y1: 320, x2: 1360, y2: 200, kind: "critical" as const },
-  { x1: 1160, y1: 320, x2: 1420, y2: 360, kind: "critical" as const },
-  { x1: 1160, y1: 320, x2: 1340, y2: 480 },
-  { x1: 440, y1: 680, x2: 230, y2: 720 },
-  { x1: 440, y1: 680, x2: 320, y2: 870 },
-  { x1: 1160, y1: 680, x2: 1370, y2: 720 },
-  { x1: 1160, y1: 680, x2: 1280, y2: 870 },
-];
+const FOCUS_TARGETS = withPrimaryFocusTargets(
+  graphLayout.focusTargets as Record<string, { x: number; y: number }>,
+);
+const tourSteps = (staticTourSteps as TourStep[]).map(frameTourStep);
 
 export type BuildCanvasSpecOptions = {
   userMenu?: CanvasUserMenu;
@@ -142,7 +126,7 @@ export function buildFenderCanvasSpec(
       { status: "success", label: "On Track / Lift Target" },
     ],
     badges: [],
-    edges: STATIC_EDGES,
+    edges: fenderCanvasEdges(),
     nodes: bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch) : fenderStaticNodes,
     spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch) : spokeData,
     focusTargets: FOCUS_TARGETS,

@@ -56,6 +56,16 @@ export const FENDER_METRICS = {
     subTab: "MAP",
     provenance: "live",
   },
+  suppressedListings: {
+    id: "suppressed-listings",
+    spokeId: "ecommerce",
+    label: "Suppressed Listings",
+    value: "Loading",
+    detail: "The Suppressed Listings read is still loading.",
+    tone: "warning",
+    subTab: "Suppressed Listings",
+    provenance: "live",
+  },
   strandedReviews: {
     id: "stranded-reviews",
     spokeId: "ecommerce",

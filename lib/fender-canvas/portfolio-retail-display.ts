@@ -4,6 +4,7 @@
  */
 
 import type { NodeStatus } from "../canvas-sdk/types";
+import { CONFIRMED_HIGH_PRICE_LABEL, WITHHELD_LABEL } from "./featured-offer-copy";
 import { formatInt, formatUsd } from "./format";
 import {
   RETAIL_FINDING_LABELS,
@@ -11,6 +12,7 @@ import {
   type MapLeakageDetail,
   type PortfolioRetailFindings,
   type PortfolioRetailSnapshot,
+  type RetailHeadline,
   type RetailReading,
 } from "./portfolio-retail";
 
@@ -154,6 +156,41 @@ export function headlineSentence(surface: HeadlineSurface): string {
   return surface.missingMessage ? `${lead}. ${surface.missingMessage}` : `${lead}.`;
 }
 
+function countNoun(count: number, singular: string, plural = `${singular}s`): string {
+  return `${formatInt(count)} ${count === 1 ? singular : plural}`;
+}
+
+/**
+ * One pill for the main Portfolio Retail bubble. The count comes from the reading.
+ * An unfinished read keeps its coverage in the tooltip, not in a second pill.
+ */
+function combinedHeadlineStat(headline: RetailHeadline): string {
+  const count = headline.reading.issueCount;
+  const label = readingLabel(headline.reading, headline.label);
+  if (count == null) return label;
+
+  if (headline.findingId === "suppressed_listings") {
+    if (headline.reading.headlineLabel === CONFIRMED_HIGH_PRICE_LABEL) {
+      return `${countNoun(count, "listing")} withheld above outside price`;
+    }
+    if (headline.reading.headlineLabel === WITHHELD_LABEL) {
+      return `${countNoun(count, "Featured Offer")} withheld`;
+    }
+  }
+
+  if (headline.findingId === "map_leakage") {
+    return `${countNoun(count, "listing")} below MAP`;
+  }
+
+  if (headline.findingId === "unnested_bundles") {
+    return countNoun(count, "unnested bundle");
+  }
+
+  const noun = headline.reading.headlineNoun ?? "listing";
+  const counted = countPhrase(headline.reading, noun);
+  return counted ? `${label}: ${counted}` : label;
+}
+
 export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleFace {
   const headline = selectRetailHeadline(findings);
   if (!headline) {
@@ -170,16 +207,12 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
     };
   }
 
-  const noun =
-    headline.reading.headlineNoun ??
-    (headline.findingId === "unnested_bundles" ? "bundle" : "listing");
-  const count = countPhrase(headline.reading, noun);
   const label = readingLabel(headline.reading, headline.label);
   const tooltip = headline.reading.missingMessage ?? `${label} is the current retail headline.`;
 
   return {
     title: "Portfolio Retail",
-    stats: [label, ...(count ? [count] : [])],
+    stats: [combinedHeadlineStat(headline)],
     status: tone(headline.reading),
     subTab: RETAIL_OVERVIEW_TAB,
     tooltip: { title: label, desc: tooltip },

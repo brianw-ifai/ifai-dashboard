@@ -1,180 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
-import {
-  ConnLine,
-  GraphBubble,
-  GraphHub,
-  TourSpotlight,
-} from "@/lib/canvas-sdk/GraphPrimitives";
-import {
-  buildColumnLayout,
-  isColumnNode,
-  scrollColumnLayoutToCenter,
-} from "@/lib/canvas-sdk/column-layout";
+import { CanvasGraphNode } from "@/lib/canvas-sdk/CanvasGraphNode";
+import { ConnLine, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
+import { IomGraphBackdrop } from "@/lib/canvas-sdk/IomGraphBackdrop";
+import { buildColumnLayout, isColumnNode } from "@/lib/canvas-sdk/column-layout";
 import { iomMotionMs } from "@/lib/canvas-sdk/iom-motion";
+import { MAIN_BUBBLES, satelliteClusters } from "@/lib/canvas-sdk/satellite-clusters";
+import { useColumnRailScroll } from "@/lib/canvas-sdk/useColumnRailScroll";
 import type { CanvasEdge, CanvasNode, CanvasSpec } from "@/lib/canvas-sdk/types";
-
-const MAIN_BUBBLES = new Set([
-  "hub",
-  "spoke-aeo",
-  "spoke-fixes",
-  "spoke-roadmap",
-  "spoke-retail",
-  "spoke-competitors",
-  "spoke-specs",
-]);
-
-function satelliteClusters(spec: CanvasSpec) {
-  const nodes = spec.nodes ?? [];
-  const at = new Map(nodes.map((node) => [`${node.x},${node.y}`, node]));
-  const groups = new Map<string, { parent: CanvasNode; nodes: CanvasNode[]; edges: CanvasEdge[] }>();
-  const trunk: CanvasEdge[] = [];
-
-  for (const edge of spec.edges ?? []) {
-    const start = at.get(`${edge.x1},${edge.y1}`);
-    const end = at.get(`${edge.x2},${edge.y2}`);
-    if (!start || !end) {
-      trunk.push(edge);
-      continue;
-    }
-    const startMain = MAIN_BUBBLES.has(start.id);
-    const endMain = MAIN_BUBBLES.has(end.id);
-    const parent = startMain && !endMain ? start : endMain && !startMain ? end : null;
-    const child = parent === start ? end : parent === end ? start : null;
-    if (!parent || !child) {
-      trunk.push(edge);
-      continue;
-    }
-    const group = groups.get(parent.id) ?? { parent, nodes: [], edges: [] };
-    group.nodes.push(child);
-    group.edges.push(edge);
-    groups.set(parent.id, group);
-  }
-
-  return { groups: [...groups.values()], trunk };
-}
-
-function GraphStage({ spec }: { spec: CanvasSpec }) {
-  if (spec.appearance !== "iom") return null;
-  const hub = spec.nodes?.find((node) => node.variant === "hub");
-  const cx = hub?.x ?? 800;
-  const cy = hub?.y ?? 500;
-  // Swirl occupies the upper mark; pin that center on the hub and clip the wordmark off.
-  const swirlWidth = 720;
-  const imgW = swirlWidth / 0.366;
-  const imgH = imgW * (4500 / 8000);
-  const imgX = cx - imgW / 2;
-  const imgY = cy - imgH * 0.4436;
-
-  return (
-    <g className="graph-stage" pointerEvents="none">
-      <g className="stage-washes stage-washes-dark">
-        <ellipse cx={cx} cy={cy} rx={980} ry={680} fill="url(#iomStageCore)" />
-        <ellipse cx={cx - 560} cy={cy - 350} rx={720} ry={540} fill="url(#iomStageBlue)" />
-        <ellipse cx={cx + 560} cy={cy + 350} rx={800} ry={580} fill="url(#iomStageLilac)" />
-      </g>
-      <g className="stage-washes stage-washes-light">
-        <ellipse cx={cx} cy={cy} rx={980} ry={680} fill="url(#iomStageCoreLight)" />
-        <ellipse cx={cx - 560} cy={cy - 350} rx={720} ry={540} fill="url(#iomStageBlueLight)" />
-        <ellipse cx={cx + 560} cy={cy + 350} rx={800} ry={580} fill="url(#iomStageLilacLight)" />
-      </g>
-      <g clipPath="url(#iomWatermarkClip)">
-        <image
-          href="/intofocus-ai-logo-stacked-full-color.png"
-          x={imgX}
-          y={imgY}
-          width={imgW}
-          height={imgH}
-          opacity={0.13}
-        />
-      </g>
-    </g>
-  );
-}
-
-function GraphNode({
-  node,
-  centered,
-  onFocusNode,
-  onResetView,
-  onShowTooltip,
-  onHideTooltip,
-  onGroupEnter,
-  onGroupLeave,
-  onSelect,
-  emphasis,
-  selected,
-  dimmed,
-  enterDelay,
-  contentRadius,
-}: {
-  node: CanvasNode;
-  contentRadius?: number;
-  centered: boolean;
-  onFocusNode: (spokeId: string, subTab?: string) => void;
-  onResetView: () => void;
-  onShowTooltip: (evt: MouseEvent, title: string, desc: string, hasMoreInfo?: boolean) => void;
-  onHideTooltip: () => void;
-  onGroupEnter?: () => void;
-  onGroupLeave?: () => void;
-  onSelect?: () => void;
-  emphasis?: boolean;
-  selected?: boolean;
-  dimmed?: boolean;
-  enterDelay?: number;
-}) {
-  const Node = node.variant === "hub" ? GraphHub : GraphBubble;
-  return (
-    <Node
-      id={node.id}
-      x={node.x}
-      y={node.y}
-      r={node.r}
-      contentRadius={contentRadius}
-      status={node.status}
-      title={node.title}
-      titleSize={node.titleSize}
-      stats={node.stats}
-      meta={node.id === "spoke-retail" || node.id === "spoke-roadmap" ? node.meta : undefined}
-      centered={centered}
-      logoSrc={node.logoSrc}
-      emphasis={emphasis}
-      selected={selected}
-      dimmed={dimmed}
-      enterDelay={enterDelay}
-      onClick={() => {
-        onSelect?.();
-        // The center node is the portfolio overview. A click always reopens it,
-        // including when the camera is already framed on the hub.
-        if (node.spokeId) onFocusNode(node.spokeId, node.subTab);
-        else onResetView();
-        onHideTooltip();
-      }}
-      onMouseEnter={(evt) => {
-        onGroupEnter?.();
-        onShowTooltip(
-          evt,
-          node.tooltip.title,
-          node.tooltip.desc,
-          node.tooltip.hasMoreInfo ?? Boolean(node.spokeId),
-        );
-      }}
-      onMouseMove={(evt) => {
-        onShowTooltip(
-          evt,
-          node.tooltip.title,
-          node.tooltip.desc,
-          node.tooltip.hasMoreInfo ?? Boolean(node.spokeId),
-        );
-      }}
-      onMouseLeave={() => {
-        onGroupLeave?.();
-        onHideTooltip();
-      }}
-    />
-  );
-}
 
 type Props = {
   spec: CanvasSpec;
@@ -236,7 +70,9 @@ export function CanvasGraph({
     () => (revealSatellites ? satelliteClusters(spec) : null),
     [revealSatellites, spec],
   );
-  const satelliteIds = new Set(clusters?.groups.flatMap((group) => group.nodes.map((node) => node.id)) ?? []);
+  const satelliteIds = new Set(
+    clusters?.groups.flatMap((group) => group.nodes.map((node) => node.id)) ?? [],
+  );
   /* Which satellite cluster is showing. The camera reset bumps `overviewNonce`,
      and stamping that onto the state lets a reset collapse the clusters by
      derivation — no reset effect, and a hide timer that fires afterwards is
@@ -248,8 +84,6 @@ export function CanvasGraph({
   }>({ nonce: overviewNonce, open: null, pinned: null });
   const hideTimer = useRef(0);
   const columnLayoutWasActiveRef = useRef(false);
-  const columnScrollReadyRef = useRef(false);
-  const columnScrollSpokeRef = useRef<string | null>(null);
   const [columnRailEnterKey, setColumnRailEnterKey] = useState(0);
 
   useEffect(() => {
@@ -285,7 +119,8 @@ export function CanvasGraph({
 
   const emphasis = spec.appearance === "iom";
   const focusedNode = focusedSpokeId
-    ? (spec.nodes ?? []).find((node) => node.spokeId === focusedSpokeId && MAIN_BUBBLES.has(node.id)) ?? null
+    ? (spec.nodes ?? []).find((node) => node.spokeId === focusedSpokeId && MAIN_BUBBLES.has(node.id)) ??
+      null
     : null;
 
   const touchesFocus = (edge: CanvasEdge) =>
@@ -300,92 +135,41 @@ export function CanvasGraph({
     return slot ?? { x: node.x, y: node.y };
   };
 
-  useEffect(() => {
-    if (!columnLayout) {
-      columnScrollReadyRef.current = false;
-      columnScrollSpokeRef.current = null;
-      return;
-    }
-    if (!focusedSpokeId || !columnPlan) return;
-    const viewport = viewportRef.current;
-    const svg = svgRef.current;
-    if (!viewport || !svg) return;
-
-    const match =
-      (spec.nodes ?? []).find(
-        (node) => node.spokeId === focusedSpokeId && isColumnNode(node),
-      ) ?? null;
-    if (!match) return;
-
-    const slot = columnPlan.positions.get(match.id);
-    if (!slot) return;
-
-    const scrollActive = (behavior: ScrollBehavior = "smooth") => {
-      scrollColumnLayoutToCenter(viewport, svg, slot.y, behavior);
-    };
-
-    const spokeChanged =
-      columnScrollReadyRef.current &&
-      columnScrollSpokeRef.current !== null &&
-      columnScrollSpokeRef.current !== focusedSpokeId;
-    columnScrollSpokeRef.current = focusedSpokeId;
-
-    if (spokeChanged) {
-      scrollActive("smooth");
-      const retry = window.setTimeout(
-        () => scrollActive("smooth"),
-        revealSatellites ? iomMotionMs(120) : 120,
-      );
-      return () => window.clearTimeout(retry);
-    }
-
-    columnScrollReadyRef.current = true;
-    scrollActive("auto");
-    let innerFrame = 0;
-    const frame = requestAnimationFrame(() => {
-      innerFrame = requestAnimationFrame(() => scrollActive("smooth"));
-    });
-    const retryMs = [80, 320, 520].map((ms) => motionMs(ms));
-    const timers = retryMs.map((ms) => window.setTimeout(() => scrollActive("smooth"), ms));
-
-    return () => {
-      cancelAnimationFrame(frame);
-      cancelAnimationFrame(innerFrame);
-      timers.forEach((id) => window.clearTimeout(id));
-    };
-  }, [
+  useColumnRailScroll({
     columnLayout,
     columnPlan,
     columnScrollKey,
     focusedSpokeId,
     revealSatellites,
-    spec.nodes,
+    nodes: spec.nodes ?? [],
     svgRef,
     viewportRef,
-  ]);
+  });
 
   const renderNode = (node: CanvasNode, parentId?: string, delayMs = 0) => {
     const { x, y } = nodePosition(node);
     const inColumn = Boolean(columnPlan && isColumnNode(node));
     const r = inColumn ? columnPlan!.bubbleR : node.r;
-    const contentRadius = inColumn ? node.r : undefined;
+    // The map radius is `node.r`. The rail lays the face out at `faceRadius`
+    // (the pre-expansion size) and scales it up to the rail bubble.
+    const contentRadius = inColumn ? (node.faceRadius ?? node.r) : undefined;
     return (
-    <GraphNode
-      key={node.id}
-      node={{ ...node, x, y, r }}
-      contentRadius={contentRadius}
-      centered={emphasis}
-      emphasis={emphasis && (!columnLayout || node.variant === "hub")}
-      selected={Boolean(focusedNode && node.id === focusedNode.id)}
-      enterDelay={delayMs}
-      onFocusNode={onFocusNode}
-      onResetView={onResetView}
-      onShowTooltip={onShowTooltip}
-      onHideTooltip={onHideTooltip}
-      onGroupEnter={parentId ? () => revealGroup(parentId) : undefined}
-      onGroupLeave={parentId ? holdGroup : undefined}
-      onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
-    />
+      <CanvasGraphNode
+        key={node.id}
+        node={{ ...node, x, y, r }}
+        contentRadius={contentRadius}
+        centered={emphasis}
+        emphasis={emphasis && (!columnLayout || node.variant === "hub")}
+        selected={Boolean(focusedNode && node.id === focusedNode.id)}
+        enterDelay={delayMs}
+        onFocusNode={onFocusNode}
+        onResetView={onResetView}
+        onShowTooltip={onShowTooltip}
+        onHideTooltip={onHideTooltip}
+        onGroupEnter={parentId ? () => revealGroup(parentId) : undefined}
+        onGroupLeave={parentId ? holdGroup : undefined}
+        onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
+      />
     );
   };
 
@@ -466,9 +250,7 @@ export function CanvasGraph({
               {group.edges.map((edge, idx) => (
                 <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} hot={touchesFocus(edge)} />
               ))}
-              {group.nodes.map((node, idx) =>
-                renderNode(node, group.parent.id, idx * motionMs(80)),
-              )}
+              {group.nodes.map((node, idx) => renderNode(node, group.parent.id, idx * motionMs(80)))}
             </g>
           ))
         : null}
@@ -492,7 +274,12 @@ export function CanvasGraph({
             !satelliteIds.has(node.id) &&
             (!columnLayout || isColumnNode(node)),
         )
-        .map((node) => renderNode(node, clusters?.groups.some((group) => group.parent.id === node.id) ? node.id : undefined))}
+        .map((node) =>
+          renderNode(
+            node,
+            clusters?.groups.some((group) => group.parent.id === node.id) ? node.id : undefined,
+          ),
+        )}
 
       {(spec.badges ?? []).map((badge, idx) => (
         <g key={`badge-${idx}`} transform={`translate(${badge.x}, ${badge.y})`}>
@@ -505,13 +292,7 @@ export function CanvasGraph({
             rx={badge.height / 2}
             filter="url(#nodeShadow)"
           />
-          <text
-            className="correlation-badge-text"
-            x="0"
-            y="4"
-            textAnchor="middle"
-            fontSize="10.5"
-          >
+          <text className="correlation-badge-text" x="0" y="4" textAnchor="middle" fontSize="10.5">
             {badge.text}
           </text>
         </g>
@@ -533,53 +314,6 @@ export function CanvasGraph({
     </svg>
   );
 
-  const mapViewBoxAttr = `0 0 ${mapViewBox.w} ${mapViewBox.h}`;
-  const mapStage =
-    spec.appearance === "iom" ? (
-      <svg
-        className="canvas-stage"
-        viewBox={mapViewBoxAttr}
-        preserveAspectRatio="xMidYMid meet"
-        aria-hidden="true"
-      >
-          <defs>
-            <radialGradient id="iomStageCore" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#143458" stopOpacity="0.62" />
-              <stop offset="72%" stopColor="#143458" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageBlue" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
-              <stop offset="60%" stopColor="#2563eb" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageLilac" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.12" />
-              <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageCoreLight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity="0.16" />
-              <stop offset="72%" stopColor="#2563eb" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageBlueLight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.18" />
-              <stop offset="60%" stopColor="#38bdf8" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="iomStageLilacLight" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.16" />
-              <stop offset="65%" stopColor="#a78bfa" stopOpacity="0" />
-            </radialGradient>
-            <clipPath id="iomWatermarkClip">
-              <rect
-                x={(spec.nodes?.find((node) => node.variant === "hub")?.x ?? 800) - 400}
-                y={(spec.nodes?.find((node) => node.variant === "hub")?.y ?? 500) - 300}
-                width={800}
-                height={580}
-              />
-            </clipPath>
-          </defs>
-          <GraphStage spec={spec} />
-      </svg>
-    ) : null;
-
   const showMapLayer = !columnLayout || mapExiting || mapEntering;
 
   return (
@@ -589,7 +323,7 @@ export function CanvasGraph({
           <div
             className={`iom-map-layer${mapExiting ? " iom-map-exiting" : ""}${mapEntering ? " iom-map-entering" : ""}`}
           >
-            {mapStage}
+            <IomGraphBackdrop spec={spec} />
             {graphSvg}
           </div>
         ) : (
