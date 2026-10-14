@@ -84,6 +84,46 @@ export type FindabilityRead =
   | { phase: "error"; message: string }
   | { phase: "ready"; rows: FindabilityRow[]; dealerBundleLoaded: boolean };
 
+export type FindabilityWidgetCopy = {
+  value: string;
+  detail: string;
+};
+
+const WIDGET_DETAIL: Array<{ key: FindabilityOutcome; singular: string; plural: string }> = [
+  { key: "official_family_page", singular: "family page", plural: "family pages" },
+  {
+    key: "completed_not_found",
+    singular: "finished search with no defensible page",
+    plural: "finished searches with no defensible page",
+  },
+  { key: "ambiguous_candidate", singular: "ambiguous match", plural: "ambiguous matches" },
+  { key: "not_checked", singular: "unchecked listing", plural: "unchecked listings" },
+];
+
+/**
+ * Compact signal for the findability widget.
+ * The value is the exact-page count. Family pages stay in the detail.
+ * A missing, failed, or empty read stays a sentence, never a zero.
+ */
+export function findabilityWidgetCopy(read: FindabilityRead): FindabilityWidgetCopy {
+  if (read.phase === "loading") {
+    return { value: "Loading", detail: "Official-page outcomes are loading." };
+  }
+  if (read.phase === "error") {
+    return { value: "Unavailable", detail: "The official-page read did not load." };
+  }
+  const counts = countFindability(read.rows);
+  if (counts.total === 0) {
+    return { value: "No listings", detail: "This official-page read has no listings." };
+  }
+  const parts = WIDGET_DETAIL.map(({ key, singular, plural }) => phrase(counts[key], singular, plural));
+  if (counts.other > 0) parts.push(phrase(counts.other, "other result", "other results"));
+  return {
+    value: formatInt(counts.exact_official_product),
+    detail: parts.join(", "),
+  };
+}
+
 export function findabilitySpokeDescription(read: FindabilityRead): string {
   const tail = `${FAMILY_IS_NOT_EXACT} ${MACHINE_READABILITY_DISTINCTION}`;
   if (read.phase === "loading") {
