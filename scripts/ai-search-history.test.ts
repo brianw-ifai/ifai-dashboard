@@ -2,20 +2,28 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { isTrustworthyRun, previousTrustworthyRun, utcDay } from "../lib/ai-search/history-eligibility.ts";
-import {
-  FIXTURE_BEGINNER_A,
-  FIXTURE_BEGINNER_B,
-  historyFixtureSnapshot,
-  historyFixtureSnapshots,
-  historyFixtureSummaries,
-} from "../lib/ai-search/history-fixtures.ts";
+import { isTrustworthyRun, utcDay, type HistoryRunSummary } from "../lib/ai-search/history-eligibility.ts";
+import { historyFixtureSnapshot, historyFixtureSnapshots, historyFixtureSummaries } from "../lib/ai-search/history-fixtures.ts";
 import { historyControlLabel, historySpokeDescription } from "../lib/ai-search/history-mode.ts";
 import { historyViewMissing } from "../lib/ai-search/history-queries.ts";
-import { questionRole, roleTally } from "../lib/ai-search/question-role.ts";
+import { batteryGaps, batteryPrompt } from "../lib/ai-search/prompt-battery.ts";
 import { queryVersionKey } from "../lib/ai-search/query-version.ts";
+import {
+  CITATION_STORAGE_CAUTION,
+  EARLIER_OCTOBER_12_RUN_ID,
+  OCTOBER_11_RUN_ID,
+  PUBLISHED_OCTOBER_12_RUN_ID,
+  REVIEW_RUN_IDS,
+  STORED_RUN_COPY_LABEL,
+  citationStorageCaution,
+  previousReviewRun,
+  reviewCatalog,
+  scoringLabel,
+} from "../lib/ai-search/review-runs.ts";
+import { questionRole, roleTally } from "../lib/ai-search/question-role.ts";
 import { callOutcome } from "../lib/ai-search/run-metrics.ts";
 import {
+  boundaryBreaks,
   boundaryLabel,
   buildHistoryTrend,
   callsBehindPoint,
@@ -25,13 +33,21 @@ import {
   queryChoices,
   rateLabel,
   trendSegments,
-  boundaryBreaks,
 } from "../lib/ai-search/history-trends.ts";
 import type { AiCallRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(`${root}${path}`, "utf8");
-const fixtures = historyFixtureSnapshots().filter((snapshot) => isTrustworthyRun(snapshot.run));
+const snapshots = historyFixtureSnapshots();
+const byId = (id: string) => {
+  const snapshot = historyFixtureSnapshot(id);
+  assert.ok(snapshot);
+  return snapshot;
+};
+
+const october11 = byId(OCTOBER_11_RUN_ID);
+const earlier = byId(EARLIER_OCTOBER_12_RUN_ID);
+const published = byId(PUBLISHED_OCTOBER_12_RUN_ID);
 
 test("default history label stays on the current run", () => {
   assert.equal(historyControlLabel({ kind: "current" }, "2026-10-12", null), "Current run · Oct 12, 2026");
@@ -41,64 +57,143 @@ test("default history label stays on the current run", () => {
 test("the current-run loader does not read history views", () => {
   assert.doesNotMatch(read("lib/ai-search/queries.ts"), /canvas_ai_history/);
   assert.match(read("supabase/migrations/20261012150400_ai_search_truth_4_current_views.sql"), /LIMIT 1/);
+  assert.doesNotMatch(read("supabase/migrations/20261014190000_ai_search_history_views.sql"), /CREATE[^;]*canvas_ai_current_run/);
 });
 
-test("only a published full v11 battery is trustworthy", () => {
-  const summaries = historyFixtureSummaries();
-  const trusted = summaries.filter(isTrustworthyRun);
-  assert.deepEqual(trusted.map((run) => run.audit_run_id), [
-    "fx-2026-09-07",
-    "fx-2026-09-14",
-    "fx-2026-09-21",
-    "fx-2026-09-28",
-    "fx-2026-10-05",
-  ]);
-  assert.equal(summaries.some((run) => run.audit_run_id === "fx-legacy-2026-08-01" && isTrustworthyRun(run)), false);
-  assert.equal(previousTrustworthyRun(trusted, "fx-2026-10-05")?.audit_run_id, "fx-2026-09-28");
-  assert.equal(previousTrustworthyRun([trusted[0]], trusted[0].audit_run_id), null);
+test("the review copy is the three stored runs, in date order, and nothing else", () => {
+  assert.match(read("lib/ai-search/stored-run-copy-data.ts"), /Copy of the stored AI Search runs/);
+  assert.match(read("lib/ai-search/history-fixtures.ts"), /STORED_RUN_COPY_LABEL|stored runs/);
+  assert.equal(STORED_RUN_COPY_LABEL.includes("Copy of the stored runs"), true);
+  assert.doesNotMatch(read("lib/ai-search/history-fixtures.ts"), /fx-2026|September/);
+  assert.deepEqual(
+    snapshots.map((snapshot) => snapshot.run.audit_run_id),
+    [...REVIEW_RUN_IDS],
+  );
+  assert.deepEqual(
+    snapshots.map((snapshot) => utcDay(snapshot.run.published_at ?? snapshot.run.completed_at)),
+    ["2026-10-11", "2026-10-12", "2026-10-12"],
+  );
+  assert.equal(october11.run.is_published, false);
+  assert.equal(earlier.run.is_published, false);
+  assert.equal(published.run.is_published, true);
+  assert.equal(published.run.collector_version, "v11");
+  assert.equal(isTrustworthyRun(published.run), true);
+  assert.equal(isTrustworthyRun(october11.run), false);
+  assert.equal(isTrustworthyRun(earlier.run), false);
 });
 
-test("a historical snapshot never keeps another run's calls", () => {
-  const [first, second] = fixtures;
-  const mixed: AiSearchSnapshot = {
-    ...first,
-    calls: [...first.calls, { ...second.calls[0], audit_run_id: second.run.audit_run_id }],
+test("other historical fragments stay out of the review catalog", () => {
+  const fragment: HistoryRunSummary = {
+    audit_run_id: "396aaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    run_kind: "ai_simulation",
+    run_state: "historical",
+    collector_version: "v8",
+    prompt_set_hash: null,
+    expected_calls: null,
+    attempted_calls: 12,
+    answered_calls: 12,
+    error_calls: 0,
+    is_published: false,
+    published_at: null,
+    completed_at: "2026-10-03T12:00:00.000Z",
   };
-  const kept = callsForRun(mixed);
-  assert.ok(kept.every((call) => call.audit_run_id === first.run.audit_run_id));
-  assert.equal(kept.length, first.calls.length);
+  const staleEarlier: HistoryRunSummary = {
+    ...historyFixtureSummaries().find((run) => run.audit_run_id === EARLIER_OCTOBER_12_RUN_ID)!,
+    answered_calls: 72,
+    error_calls: 30,
+  };
+  const catalog = reviewCatalog([fragment, ...historyFixtureSummaries().filter((run) => run.audit_run_id !== EARLIER_OCTOBER_12_RUN_ID), staleEarlier]);
+  assert.deepEqual(
+    catalog.map((run) => run.audit_run_id),
+    [...REVIEW_RUN_IDS],
+  );
+  const earlierSummary = catalog.find((run) => run.audit_run_id === EARLIER_OCTOBER_12_RUN_ID);
+  assert.equal(earlierSummary?.answered_calls, 73);
+  assert.equal(earlierSummary?.error_calls, 29);
+  assert.equal(previousReviewRun(catalog, PUBLISHED_OCTOBER_12_RUN_ID)?.audit_run_id, EARLIER_OCTOBER_12_RUN_ID);
+  assert.equal(scoringLabel(october11.run), "Original winner labels");
+  assert.equal(scoringLabel(earlier.run), "Mention-based scoring");
+  assert.equal(scoringLabel(published.run), "Mention-based scoring");
 });
 
-test("the two role rates keep the existing denominator", () => {
-  const run = historyFixtureSnapshot("fx-2026-09-14");
-  assert.ok(run);
-  const calls = callsForRun(run);
-  const unbranded = roleTally(calls, "unbranded_discovery");
-  const branded = roleTally(calls, "branded_consideration");
-  assert.deepEqual([unbranded.fenderWins, unbranded.resolved, unbranded.unresolved, unbranded.errors], [1, 4, 1, 1]);
-  assert.equal(unbranded.winPct, 25);
-  assert.notEqual(branded.resolved, unbranded.resolved);
-  assert.equal(unbranded.calls, calls.filter((call) => questionRole(call) === "unbranded_discovery").length);
-  assert.equal(branded.calls, calls.filter((call) => questionRole(call) === "branded_consideration").length);
-  const keptOut = calls.filter((call) => {
-    const role = questionRole(call);
-    return role === "brand_associated_discovery" || role === "shopping_guidance" || role === "product_fact" || role === "probe";
-  });
-  assert.ok(keptOut.length > 0);
-  assert.equal(unbranded.calls + branded.calls + keptOut.length, calls.filter((call) => call.prompt_kind === "commercial" || call.prompt_kind === "probe").length);
-});
-
-test("overall and engine series reconcile to the same calls", () => {
+test("October 11 keeps the two named calls as gaps", () => {
+  assert.equal(october11.calls.length, 100);
+  assert.equal(october11.calls.filter((call) => call.call_status === "error").length, 0);
+  assert.equal(october11.calls.filter((call) => call.material_hallucination === "historical_unverified").length, 6);
+  const gaps = batteryGaps(october11.calls);
+  assert.deepEqual(
+    gaps.map((gap) => `${gap.promptKey}:${gap.engine}:${gap.promptText}`),
+    [
+      "p15:perplexity:What is the best first electric guitar for a total beginner?",
+      "p24:chatgpt:Best 5-string bass guitar for gigging musicians",
+    ],
+  );
+  assert.ok(gaps.every((gap) => questionRole({ prompt_kind: gap.promptKind, prompt: gap.promptText }) === "unbranded_discovery"));
   const model = buildHistoryTrend({
-    snapshots: fixtures,
+    snapshots,
     metric: "unbranded_discovery",
-    breakdown: "engine",
+    breakdown: "overall",
     fromDay: null,
     toDay: null,
     query: { kind: "all" },
   });
-  const overall = buildHistoryTrend({
-    snapshots: fixtures,
+  const point = model.series[0].points.find((item) => item.runId === OCTOBER_11_RUN_ID);
+  assert.ok(point);
+  assert.equal(point.notStored, 2);
+  assert.notEqual(point.winPct, 0);
+  assert.notEqual(point.winPct, null);
+  assert.match(coverageLabel(point), /2 not stored/);
+  assert.doesNotMatch(rateLabel(point), /0 of 0/);
+  const beginner = batteryPrompt("p15");
+  const bass = batteryPrompt("p24");
+  assert.ok(beginner);
+  assert.ok(bass);
+  const byEngine = buildHistoryTrend({
+    snapshots,
+    metric: "unbranded_discovery",
+    breakdown: "engine",
+    fromDay: null,
+    toDay: null,
+    query: { kind: "version", versionKey: queryVersionKey("p15", beginner.text), promptKey: "p15", promptText: beginner.text },
+  });
+  const missingPerplexity = byEngine.series.find((series) => series.key === "perplexity")?.points.find((item) => item.runId === OCTOBER_11_RUN_ID);
+  assert.ok(missingPerplexity);
+  assert.equal(missingPerplexity.notStored, 1);
+  assert.equal(missingPerplexity.wins, 0);
+  assert.equal(missingPerplexity.resolved, 0);
+  assert.equal(missingPerplexity.winPct, null);
+  assert.equal(rateLabel(missingPerplexity), "Not stored");
+  const bassTrend = buildHistoryTrend({
+    snapshots,
+    metric: "unbranded_discovery",
+    breakdown: "engine",
+    fromDay: null,
+    toDay: null,
+    query: { kind: "version", versionKey: queryVersionKey("p24", bass.text), promptKey: "p24", promptText: bass.text },
+  });
+  const missingChatgpt = bassTrend.series.find((series) => series.key === "chatgpt")?.points.find((item) => item.runId === OCTOBER_11_RUN_ID);
+  assert.ok(missingChatgpt);
+  assert.equal(missingChatgpt.winPct, null);
+  assert.equal(rateLabel(missingChatgpt), "Not stored");
+});
+
+test("stored prompt text matches across the review set, so no question boundary is drawn", () => {
+  const keys = new Set<string>();
+  for (const snapshot of snapshots) {
+    for (const call of snapshot.calls) {
+      const prompt = batteryPrompt(call.prompt_key);
+      assert.ok(prompt, call.prompt_key ?? "");
+      assert.equal(call.prompt, prompt.text);
+      keys.add(`${call.prompt_key}|${(call.engine ?? "").toLowerCase()}`);
+    }
+  }
+  const earlierPairs = new Set(earlier.calls.map((call) => `${call.prompt_key}|${(call.engine ?? "").toLowerCase()}`));
+  const publishedPairs = new Set(published.calls.map((call) => `${call.prompt_key}|${(call.engine ?? "").toLowerCase()}`));
+  assert.equal(earlierPairs.size, 102);
+  assert.deepEqual([...earlierPairs].sort(), [...publishedPairs].sort());
+  assert.equal(keys.size, 102);
+  const model = buildHistoryTrend({
+    snapshots,
     metric: "unbranded_discovery",
     breakdown: "overall",
     fromDay: null,
@@ -106,107 +201,171 @@ test("overall and engine series reconcile to the same calls", () => {
     query: { kind: "all" },
   });
   assert.equal(model.status, "ready");
-  for (const runId of overall.runIds) {
-    const overallPoint = overall.series[0].points.find((point) => point.runId === runId);
-    const enginePoints = model.series.flatMap((series) => series.points.filter((point) => point.runId === runId));
-    assert.ok(overallPoint);
-    assert.equal(
-      enginePoints.reduce((sum, point) => sum + point.wins, 0),
-      overallPoint.wins,
-    );
-    assert.equal(
-      enginePoints.reduce((sum, point) => sum + point.resolved, 0),
-      overallPoint.resolved,
-    );
-    const snapshot = fixtures.find((item) => item.run.audit_run_id === runId);
-    assert.ok(snapshot);
-    const behind = callsBehindPoint(snapshot, overallPoint, "unbranded_discovery", { kind: "all" });
-    assert.equal(behind.inRate.filter((call) => callOutcome(call) === "fender_win").length, overallPoint.wins);
-    assert.equal(behind.inRate.length, overallPoint.resolved);
-    assert.equal(behind.outside.length, overallPoint.unresolved + overallPoint.errors);
-    assert.ok(behind.inRate.every((call) => call.audit_run_id === runId));
-    assert.ok(behind.outside.every((call) => call.audit_run_id === runId));
-  }
+  assert.equal(model.boundaries.length, 1);
+  assert.equal(model.boundaries[0].scoringMethodChanged, true);
+  assert.equal(model.boundaries[0].promptSetChanged, false);
+  assert.equal(model.boundaries[0].queryVersionChanged, false);
+  assert.equal(boundaryLabel(model.boundaries[0]), "Scoring method changed");
+  assert.equal(model.boundaries[0].afterRunId, OCTOBER_11_RUN_ID);
+  assert.equal(model.boundaries[0].beforeRunId, EARLIER_OCTOBER_12_RUN_ID);
+  assert.deepEqual(boundaryBreaks(model.boundaries), new Set());
+  assert.deepEqual(
+    trendSegments(model.series[0].points, boundaryBreaks(model.boundaries)).map((segment) => segment.map((point) => point.runId)),
+    [[OCTOBER_11_RUN_ID, EARLIER_OCTOBER_12_RUN_ID, PUBLISHED_OCTOBER_12_RUN_ID]],
+  );
+  assert.equal(queryChoices(snapshots, "unbranded_discovery").some((choice) => choice.kind === "lineage"), false);
 });
 
-test("exact query versions do not cross a wording change", () => {
-  const before = queryVersionKey("p-beginner", FIXTURE_BEGINNER_A);
-  const after = queryVersionKey("p-beginner", FIXTURE_BEGINNER_B);
-  assert.notEqual(before, after);
-  const exact = buildHistoryTrend({
-    snapshots: fixtures,
-    metric: "unbranded_discovery",
-    breakdown: "overall",
-    fromDay: null,
-    toDay: null,
-    query: { kind: "version", versionKey: before, promptKey: "p-beginner", promptText: FIXTURE_BEGINNER_A },
-  });
-  assert.deepEqual(exact.runIds, ["fx-2026-09-07", "fx-2026-09-14", "fx-2026-09-21"]);
-  const lineage = buildHistoryTrend({
-    snapshots: fixtures,
-    metric: "unbranded_discovery",
-    breakdown: "overall",
-    fromDay: null,
-    toDay: null,
-    query: { kind: "lineage", promptKey: "p-beginner" },
-  });
-  assert.equal(lineage.boundaries.some((boundary) => boundary.queryVersionChanged), true);
-  assert.match(boundaryLabel(lineage.boundaries[0]), /wording changed|Question set changed/);
-});
-
-test("a prompt-set change is a visible boundary and the line breaks", () => {
+test("a future wording change still breaks the line and is not listed as a gap", () => {
+  const changedText = "What is the best first electric guitar for a classroom?";
+  const changed: AiSearchSnapshot = {
+    ...earlier,
+    run: { ...earlier.run, prompt_set_hash: "future-wording" },
+    calls: earlier.calls.map((call) => (call.prompt_key === "p15" ? { ...call, prompt: changedText } : call)),
+  };
+  assert.deepEqual(batteryGaps(changed.calls), []);
   const model = buildHistoryTrend({
-    snapshots: fixtures,
+    snapshots: [october11, changed],
     metric: "unbranded_discovery",
     breakdown: "overall",
-    fromDay: "2026-09-07",
-    toDay: "2026-10-05",
+    fromDay: null,
+    toDay: null,
     query: { kind: "all" },
   });
-  const boundary = model.boundaries.find((item) => item.promptSetChanged);
-  assert.ok(boundary);
-  assert.equal(boundaryLabel(boundary), "Question set changed");
-  assert.equal(boundary.afterDay, "2026-09-21");
-  assert.equal(boundary.beforeDay, "2026-09-28");
+  assert.equal(model.boundaries.some((boundary) => boundary.promptSetChanged), true);
+  assert.match(boundaryLabel(model.boundaries[0]), /Question set changed|wording changed/);
   const segments = trendSegments(model.series[0].points, boundaryBreaks(model.boundaries));
   assert.ok(segments.length >= 2);
-  assert.ok(segments.every((segment) => new Set(segment.map((point) => point.promptSetHash)).size === 1));
+  const lineage = buildHistoryTrend({
+    snapshots: [october11, changed],
+    metric: "unbranded_discovery",
+    breakdown: "overall",
+    fromDay: null,
+    toDay: null,
+    query: { kind: "lineage", promptKey: "p15" },
+  });
+  assert.equal(lineage.boundaries.some((boundary) => boundary.queryVersionChanged), true);
 });
 
-test("small samples stay visible and missing calls are not zero", () => {
+test("the earlier October 12 run joins both rates and cautions its two citations", () => {
+  assert.equal(earlier.calls.length, 102);
+  assert.equal(earlier.calls.filter((call) => call.call_status === "answered").length, 73);
+  assert.equal(earlier.calls.filter((call) => call.call_status === "error").length, 29);
+  assert.equal(earlier.citations.length, 2);
+  assert.equal(earlier.storedCitationCount, 2);
+  assert.equal(citationStorageCaution(EARLIER_OCTOBER_12_RUN_ID), CITATION_STORAGE_CAUTION);
+  assert.match(CITATION_STORAGE_CAUTION, /mostly not stored/);
+  assert.match(CITATION_STORAGE_CAUTION, /not evidence that the citation ecosystem changed/);
+  assert.equal(citationStorageCaution(PUBLISHED_OCTOBER_12_RUN_ID), null);
+  assert.equal(citationStorageCaution(OCTOBER_11_RUN_ID), null);
+  assert.equal(october11.citations.length, 0);
+  assert.equal(october11.storedCitationCount, 468);
+  assert.equal(published.citations.length, 243);
+  assert.equal(published.storedCitationCount, 243);
+  for (const metric of ["unbranded_discovery", "branded_consideration"] as const) {
+    const model = buildHistoryTrend({
+      snapshots,
+      metric,
+      breakdown: "overall",
+      fromDay: null,
+      toDay: null,
+      query: { kind: "all" },
+    });
+    assert.deepEqual(model.runIds, [...REVIEW_RUN_IDS]);
+  }
+  assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /data-ai-citation-caution/);
+  assert.match(read("components/v3/live/ai-search/CitationEcosystemPanel.tsx"), /data-ai-citation-count/);
+});
+
+test("the published October 12 rates stay the current-run rates", () => {
+  const unbranded = roleTally(published.calls, "unbranded_discovery");
+  const branded = roleTally(published.calls, "branded_consideration");
+  assert.deepEqual([unbranded.fenderWins, unbranded.resolved], [13, 23]);
+  assert.deepEqual([branded.fenderWins, branded.resolved], [22, 23]);
+  assert.equal(unbranded.winPct != null && unbranded.winPct.toFixed(1), "56.5");
+  assert.equal(branded.winPct != null && branded.winPct.toFixed(1), "95.7");
   const model = buildHistoryTrend({
-    snapshots: fixtures,
+    snapshots,
     metric: "unbranded_discovery",
     breakdown: "overall",
     fromDay: null,
     toDay: null,
     query: { kind: "all" },
   });
-  const small = model.series[0].points.find((point) => point.runId === "fx-2026-09-14");
+  const point = model.series[0].points.find((item) => item.runId === PUBLISHED_OCTOBER_12_RUN_ID);
+  assert.ok(point);
+  assert.equal(rateLabel(point), "56.5% (13 of 23 resolved)");
+  assert.equal(point.notStored, 0);
+  const behind = callsBehindPoint(published, point, "unbranded_discovery", { kind: "all" });
+  assert.equal(behind.inRate.filter((call) => callOutcome(call) === "fender_win").length, point.wins);
+  assert.equal(behind.inRate.length, point.resolved);
+  assert.ok(behind.inRate.every((call) => call.audit_run_id === PUBLISHED_OCTOBER_12_RUN_ID));
+  assert.ok(behind.outside.every((call) => call.audit_run_id === PUBLISHED_OCTOBER_12_RUN_ID));
+  const keptOut = published.calls.filter((call) => {
+    const role = questionRole(call);
+    return role !== "unbranded_discovery" && role !== "branded_consideration";
+  });
+  assert.ok(keptOut.length > 0);
+});
+
+test("engine series reconcile, and a small engine sample stays labeled", () => {
+  const overall = buildHistoryTrend({
+    snapshots,
+    metric: "unbranded_discovery",
+    breakdown: "overall",
+    fromDay: null,
+    toDay: null,
+    query: { kind: "all" },
+  });
+  const engines = buildHistoryTrend({
+    snapshots,
+    metric: "unbranded_discovery",
+    breakdown: "engine",
+    fromDay: null,
+    toDay: null,
+    query: { kind: "all" },
+  });
+  for (const runId of overall.runIds) {
+    const overallPoint = overall.series[0].points.find((point) => point.runId === runId);
+    const enginePoints = engines.series.flatMap((series) => series.points.filter((point) => point.runId === runId));
+    assert.ok(overallPoint);
+    assert.equal(enginePoints.reduce((sum, point) => sum + point.wins, 0), overallPoint.wins);
+    assert.equal(enginePoints.reduce((sum, point) => sum + point.resolved, 0), overallPoint.resolved);
+    assert.equal(enginePoints.reduce((sum, point) => sum + point.notStored, 0), overallPoint.notStored);
+  }
+  const small = engines.series
+    .flatMap((series) => series.points)
+    .find((point) => point.runId === EARLIER_OCTOBER_12_RUN_ID && point.engine === "chatgpt");
   assert.ok(small);
   assert.equal(small.smallSample, true);
-  assert.match(rateLabel(small), /25\.0% \(1 of 4 resolved\)/);
   assert.match(rateLabel(small), /Small sample/);
-  assert.match(coverageLabel(small), /1 unresolved/);
-  assert.match(coverageLabel(small), /1 provider error/);
-  const unloaded = rateLabel({ wins: 0, resolved: 0, smallSample: false, callsLoaded: false, winPct: null });
-  assert.equal(unloaded, "Calls not available");
-  assert.doesNotMatch(unloaded, /0%/);
 });
 
-test("legacy runs and a single trustworthy run do not draw a line", () => {
-  const withLegacy = buildHistoryTrend({
-    snapshots: historyFixtureSnapshots(),
-    metric: "unbranded_discovery",
+test("a historical snapshot never keeps another run's calls, and an empty list is not zero", () => {
+  const mixed: AiSearchSnapshot = {
+    ...october11,
+    calls: [...october11.calls, { ...published.calls[0], audit_run_id: published.run.audit_run_id }],
+  };
+  const kept = callsForRun(mixed);
+  assert.equal(kept.length, october11.calls.length);
+  assert.ok(kept.every((call) => call.audit_run_id === OCTOBER_11_RUN_ID));
+  const empty: AiSearchSnapshot = { ...published, calls: [], probes: [], citations: [] };
+  const model = buildHistoryTrend({
+    snapshots: [october11, empty],
+    metric: "branded_consideration",
     breakdown: "overall",
     fromDay: null,
     toDay: null,
     query: { kind: "all" },
   });
-  assert.ok(!withLegacy.runIds.includes("fx-legacy-2026-08-01"));
+  const point = model.series[0].points.find((item) => item.runId === PUBLISHED_OCTOBER_12_RUN_ID);
+  assert.ok(point);
+  assert.equal(point.callsLoaded, false);
+  assert.equal(point.winPct, null);
+  assert.equal(rateLabel(point), "Calls not available");
   const one = buildHistoryTrend({
-    snapshots: fixtures.slice(0, 1),
-    metric: "branded_consideration",
+    snapshots: [published],
+    metric: "unbranded_discovery",
     breakdown: "overall",
     fromDay: null,
     toDay: null,
@@ -214,57 +373,28 @@ test("legacy runs and a single trustworthy run do not draw a line", () => {
   });
   assert.equal(one.status, "one-run");
   assert.equal(one.message, ONE_RUN_TREND_MESSAGE);
-  assert.deepEqual(one.series, []);
 });
 
-test("query choices offer exact wordings and a lineage only when the wording changed", () => {
-  const choices = queryChoices(fixtures, "unbranded_discovery");
-  assert.ok(choices.some((choice) => choice.kind === "version" && choice.promptText === FIXTURE_BEGINNER_A));
-  assert.ok(choices.some((choice) => choice.kind === "version" && choice.promptText === FIXTURE_BEGINNER_B));
-  assert.ok(choices.some((choice) => choice.kind === "lineage" && choice.promptKey === "p-beginner"));
-});
-
-test("a partial run stays partial and an empty call list is not a zero rate", () => {
-  const partial = historyFixtureSnapshot("fx-2026-09-14");
-  assert.equal(partial?.run.run_state, "partial");
-  const empty: AiSearchSnapshot = {
-    ...fixtures[0],
-    calls: [],
-    probes: [],
-    citations: [],
-  };
-  const model = buildHistoryTrend({
-    snapshots: [empty, fixtures[1], fixtures[2]],
-    metric: "unbranded_discovery",
-    breakdown: "overall",
-    fromDay: null,
-    toDay: null,
-    query: { kind: "all" },
-  });
-  const point = model.series[0]?.points.find((item) => item.runId === empty.run.audit_run_id);
-  assert.ok(point);
-  assert.equal(point.callsLoaded, false);
-  assert.equal(point.winPct, null);
-  assert.equal(rateLabel(point), "Calls not available");
-});
-
-test("history views are select-only and do not mix runs", () => {
+test("the migration names only the two additional runs and does not write rows", () => {
   const sql = read("supabase/migrations/20261014190000_ai_search_history_views.sql");
+  const named = [...sql.matchAll(/'([0-9a-f-]{36})'::uuid/g)].map((match) => match[1]);
+  assert.deepEqual([...new Set(named)].sort(), [OCTOBER_11_RUN_ID, EARLIER_OCTOBER_12_RUN_ID].sort());
+  assert.equal(named.includes(PUBLISHED_OCTOBER_12_RUN_ID), false);
   assert.match(sql, /JOIN canvas_private\.ai_history_runs r ON r\.id = s\.audit_run_id/);
-  assert.match(sql, /JOIN canvas_private\.ai_history_calls s ON s\.id = ci\.simulation_id/);
   assert.match(sql, /record_origin = 'historical_backfill'/);
   assert.match(sql, /historical_unverified/);
   assert.match(sql, /collector_version = 'v11'/);
   assert.match(sql, /r\.is_published/);
+  assert.match(sql, /count\(\*\) FILTER \(WHERE s\.call_status = 'answered'\)/);
   assert.match(sql, /GRANT SELECT ON TABLE public\.%I TO anon, authenticated, service_role/);
+  assert.doesNotMatch(sql, /^\s*(UPDATE|INSERT|DELETE|ALTER TABLE)\b/m);
   assert.doesNotMatch(sql, /GRANT INSERT|GRANT UPDATE|GRANT DELETE|GRANT ALL/);
   assert.match(sql, /Question role is not stored/);
-  assert.match(sql, /prompt_key plus the exact prompt_text/);
   assert.equal(historyViewMissing({ message: "Could not find the table public.canvas_ai_history_runs in the schema cache", code: "PGRST205" }), true);
   assert.equal(utcDay("2026-10-12T17:02:36.755Z"), "2026-10-12");
 });
 
-test("the panel introduction changes with the history mode and the map copy does not", () => {
+test("the panel introduction names the stored-run copy and leaves the map copy alone", () => {
   assert.equal(
     historySpokeDescription({
       mode: "current",
@@ -277,23 +407,13 @@ test("the panel introduction changes with the history mode and the map copy does
   );
   assert.match(
     historySpokeDescription({
-      mode: "run",
-      source: "fixture",
-      selectedPhase: "ready",
-      selectedMessage: null,
-      runDescription: "25.0% of resolved answers",
-    }) ?? "",
-    /Historical run\. 25\.0% of resolved answers/,
-  );
-  assert.match(
-    historySpokeDescription({
       mode: "all",
       source: "fixture",
       selectedPhase: "idle",
       selectedMessage: null,
       runDescription: "56.5%",
     }) ?? "",
-    /fixture runs/,
+    /Copy of the stored runs/,
   );
   assert.doesNotMatch(
     historySpokeDescription({
@@ -317,25 +437,23 @@ test("the panel introduction changes with the history mode and the map copy does
   );
 });
 
-test("errors and unresolved answers are outside the plotted denominator", () => {
-  const run = fixtures.find((snapshot) => snapshot.run.audit_run_id === "fx-2026-09-14");
-  assert.ok(run);
+test("errors stay outside the plotted denominator", () => {
   const point = buildHistoryTrend({
-    snapshots: fixtures,
+    snapshots,
     metric: "unbranded_discovery",
     breakdown: "overall",
-    fromDay: "2026-09-14",
-    toDay: "2026-10-05",
+    fromDay: null,
+    toDay: null,
     query: { kind: "all" },
-  }).series[0].points.find((item) => item.runId === "fx-2026-09-14");
+  }).series[0].points.find((item) => item.runId === EARLIER_OCTOBER_12_RUN_ID);
   assert.ok(point);
-  const behind = callsBehindPoint(run, point, "unbranded_discovery", { kind: "all" });
-  assert.equal(behind.inRate.some((call) => call.outcome === "unresolved" || call.outcome === "error"), false);
-  assert.ok(behind.outside.some((call) => call.outcome === "unresolved"));
+  assert.equal(point.errors, 9);
+  const behind = callsBehindPoint(earlier, point, "unbranded_discovery", { kind: "all" });
+  assert.equal(behind.inRate.some((call) => call.outcome === "error" || call.outcome === "unresolved"), false);
   assert.ok(behind.outside.some((call) => call.outcome === "error"));
-  const stray = { ...run.calls[0], audit_run_id: "other-run" } as AiCallRow;
-  const polluted: AiSearchSnapshot = { ...run, calls: [...run.calls, stray] };
+  const stray = { ...earlier.calls[0], audit_run_id: "other-run" } as AiCallRow;
+  const polluted: AiSearchSnapshot = { ...earlier, calls: [...earlier.calls, stray] };
   const kept = callsBehindPoint(polluted, point, "unbranded_discovery", { kind: "all" });
-  assert.ok(kept.inRate.every((call) => call.audit_run_id === run.run.audit_run_id));
-  assert.ok(kept.outside.every((call) => call.audit_run_id === run.run.audit_run_id));
+  assert.ok(kept.inRate.every((call) => call.audit_run_id === EARLIER_OCTOBER_12_RUN_ID));
+  assert.ok(kept.outside.every((call) => call.audit_run_id === EARLIER_OCTOBER_12_RUN_ID));
 });

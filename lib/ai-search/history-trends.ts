@@ -1,7 +1,9 @@
 import type { HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { compareRuns, isTrustworthyRun, utcDay } from "@/lib/ai-search/history-eligibility";
+import { compareRuns, utcDay } from "@/lib/ai-search/history-eligibility";
+import { batteryGaps } from "@/lib/ai-search/prompt-battery";
 import { questionRole, roleTally, type HeadlineRole } from "@/lib/ai-search/question-role";
 import { queryVersionKey } from "@/lib/ai-search/query-version";
+import { isReviewHistoryRun, scoringMethodFor, type ScoringMethod } from "@/lib/ai-search/review-runs";
 import { callOutcome, engineLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import { formatObservedRate, SMALL_SAMPLE_LABEL } from "@/lib/ai-search/summary";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -36,6 +38,9 @@ export type TrendPoint = {
   /** False when the run returned no call rows. The point is not plotted as zero. */
   callsLoaded: boolean;
   partial: boolean;
+  /** Question-engine pairs that were not stored. They are not wins, losses, or zeros. */
+  notStored: number;
+  scoringMethod: ScoringMethod | null;
 };
 
 export type TrendBoundary = {
@@ -45,6 +50,8 @@ export type TrendBoundary = {
   beforeDay: string;
   promptSetChanged: boolean;
   queryVersionChanged: boolean;
+  /** Visible marker. The line may still connect the two scoring methods. */
+  scoringMethodChanged: boolean;
   beforeQuestions: QuestionVersion[];
   afterQuestions: QuestionVersion[];
 };
@@ -66,8 +73,8 @@ export type TrendModel = {
 
 export const ONE_RUN_TREND_MESSAGE = "Trend begins after the next comparable published run.";
 
-const EMPTY_RANGE = "No trustworthy published run falls in this range.";
-const NONE_YET = "No trustworthy published run is available for a trend yet.";
+const EMPTY_RANGE = "No review run falls in this range.";
+const NONE_YET = "No review run is available for a trend yet.";
 
 export function questionsInRun(calls: readonly AiCallRow[]): QuestionVersion[] {
   const seen = new Map<string, QuestionVersion>();
@@ -129,6 +136,16 @@ function metricCalls(calls: readonly AiCallRow[], metric: TrendMetric, engine: s
   });
 }
 
+function scopedGaps(calls: readonly AiCallRow[], metric: TrendMetric, engine: string | null, query: QueryChoice): number {
+  return batteryGaps(calls).filter((gap) => {
+    if (questionRole({ prompt_kind: gap.promptKind, prompt: gap.promptText }) !== metric) return false;
+    if (engine && gap.engine !== engine) return false;
+    if (query.kind === "version" && gap.promptKey !== query.promptKey) return false;
+    if (query.kind === "lineage" && gap.promptKey !== query.promptKey) return false;
+    return true;
+  }).length;
+}
+
 function pointFor(
   snapshot: AiSearchSnapshot,
   calls: readonly AiCallRow[],
@@ -139,6 +156,8 @@ function pointFor(
   const day = dayOf(snapshot) ?? "";
   const scoped = metricCalls(calls, metric, engine, query);
   const tally = roleTally(scoped, metric);
+  const notStored = scopedGaps(calls, metric, engine, query);
+  const pureGap = notStored > 0 && tally.resolved === 0 && tally.unresolved === 0 && tally.errors === 0;
   return {
     runId: snapshot.run.audit_run_id,
     day,
@@ -148,10 +167,12 @@ function pointFor(
     resolved: tally.resolved,
     unresolved: tally.unresolved,
     errors: tally.errors,
-    winPct: calls.length === 0 ? null : tally.winPct,
+    winPct: calls.length === 0 || pureGap ? null : tally.winPct,
     smallSample: false,
     callsLoaded: calls.length > 0,
     partial: snapshot.run.run_state === "partial",
+    notStored,
+    scoringMethod: scoringMethodFor(snapshot.run),
   };
 }
 
@@ -163,17 +184,28 @@ function withSample(points: TrendPoint[]): TrendPoint[] {
   }));
 }
 
-export function rateLabel(point: Pick<TrendPoint, "wins" | "resolved" | "smallSample" | "callsLoaded" | "winPct">): string {
+export function rateLabel(
+  point: Pick<TrendPoint, "wins" | "resolved" | "smallSample" | "callsLoaded" | "winPct"> & {
+    notStored?: number;
+    unresolved?: number;
+    errors?: number;
+  },
+): string {
   if (!point.callsLoaded) return "Calls not available";
+  const notStored = point.notStored ?? 0;
+  const unresolved = point.unresolved ?? 0;
+  const errors = point.errors ?? 0;
+  if (notStored > 0 && point.resolved === 0 && point.wins === 0 && unresolved === 0 && errors === 0) return "Not stored";
   const figure = formatObservedRate(point.wins, point.resolved);
   if (figure == null) return "No resolved answers";
   const labeled = figure.replace(/\)$/, " resolved)");
   return point.smallSample ? `${labeled} ${SMALL_SAMPLE_LABEL}` : labeled;
 }
 
-export function coverageLabel(point: Pick<TrendPoint, "unresolved" | "errors" | "callsLoaded">): string {
+export function coverageLabel(point: Pick<TrendPoint, "unresolved" | "errors" | "callsLoaded"> & { notStored?: number }): string {
   if (!point.callsLoaded) return "Not available";
   const parts: string[] = [];
+  if ((point.notStored ?? 0) > 0) parts.push(`${point.notStored} not stored`);
   if (point.unresolved > 0) parts.push(`${point.unresolved} unresolved`);
   if (point.errors > 0) parts.push(`${point.errors} provider ${point.errors === 1 ? "error" : "errors"}`);
   return parts.length ? parts.join(", ") : "None";
@@ -190,6 +222,13 @@ function enginesIn(snapshots: readonly AiSearchSnapshot[]): string[] {
   return [...engines].sort((a, b) => engineLabel(a).localeCompare(engineLabel(b)));
 }
 
+function questionIdentity(calls: readonly AiCallRow[]): string {
+  return questionsInRun(calls)
+    .map((question) => question.versionKey)
+    .sort()
+    .join("\n");
+}
+
 function adjacentBreak(
   previous: AiSearchSnapshot,
   next: AiSearchSnapshot,
@@ -199,11 +238,20 @@ function adjacentBreak(
   const previousIndex = orderedIds.indexOf(previous.run.audit_run_id);
   const nextIndex = orderedIds.indexOf(next.run.audit_run_id);
   const gap = nextIndex - previousIndex > 1;
-  const promptSetChanged = (previous.run.prompt_set_hash ?? "") !== (next.run.prompt_set_hash ?? "");
+  const previousCalls = callsForRun(previous);
+  const nextCalls = callsForRun(next);
+  const previousHash = previous.run.prompt_set_hash ?? "";
+  const nextHash = next.run.prompt_set_hash ?? "";
+  const callsLoaded = previousCalls.length > 0 && nextCalls.length > 0;
+  // Matching stored wording is the same question set, even when an older run
+  // never recorded a prompt-set hash. A future wording change still breaks.
+  const promptSetChanged = callsLoaded
+    ? questionIdentity(previousCalls) !== questionIdentity(nextCalls)
+    : previousHash !== nextHash && previousHash !== "" && nextHash !== "";
   let queryVersionChanged = false;
   if (query.kind === "lineage") {
-    const before = versionOnRun(callsForRun(previous), query.promptKey);
-    const after = versionOnRun(callsForRun(next), query.promptKey);
+    const before = versionOnRun(previousCalls, query.promptKey);
+    const after = versionOnRun(nextCalls, query.promptKey);
     queryVersionChanged = before != null && after != null && before !== after;
   }
   return { promptSetChanged, queryVersionChanged, gap };
@@ -218,7 +266,7 @@ export function buildHistoryTrend(input: {
   query: QueryChoice;
 }): TrendModel {
   const trusted = input.snapshots
-    .filter((snapshot) => isTrustworthyRun(snapshot.run as HistoryRunSummary))
+    .filter((snapshot) => isReviewHistoryRun(snapshot.run as HistoryRunSummary))
     .map((snapshot) => ({ ...snapshot, calls: callsForRun(snapshot) }))
     .filter((snapshot) => {
       const day = dayOf(snapshot);
@@ -242,8 +290,11 @@ export function buildHistoryTrend(input: {
     const before = matching[index - 1];
     const after = matching[index];
     const change = adjacentBreak(before, after, orderedIds, input.query);
-    if (!change.promptSetChanged && !change.queryVersionChanged && !change.gap) continue;
-    breakAfter.add(before.run.audit_run_id);
+    const beforeMethod = scoringMethodFor(before.run);
+    const afterMethod = scoringMethodFor(after.run);
+    const scoringMethodChanged = beforeMethod != null && afterMethod != null && beforeMethod !== afterMethod;
+    if (!change.promptSetChanged && !change.queryVersionChanged && !change.gap && !scoringMethodChanged) continue;
+    if (change.promptSetChanged || change.queryVersionChanged || change.gap) breakAfter.add(before.run.audit_run_id);
     boundaries.push({
       afterRunId: before.run.audit_run_id,
       beforeRunId: after.run.audit_run_id,
@@ -251,6 +302,7 @@ export function buildHistoryTrend(input: {
       beforeDay: dayOf(after) ?? "",
       promptSetChanged: change.promptSetChanged,
       queryVersionChanged: change.queryVersionChanged,
+      scoringMethodChanged,
       beforeQuestions: questionsInRun(before.calls),
       afterQuestions: questionsInRun(after.calls),
     });
@@ -298,8 +350,13 @@ export function trendSegments(points: readonly TrendPoint[], breakAfter: Readonl
   return segments;
 }
 
+/** Question-set and wording breaks end a line. A scoring-method marker does not. */
 export function boundaryBreaks(boundaries: readonly TrendBoundary[]): Set<string> {
-  return new Set(boundaries.map((boundary) => boundary.afterRunId));
+  return new Set(
+    boundaries
+      .filter((boundary) => boundary.promptSetChanged || boundary.queryVersionChanged)
+      .map((boundary) => boundary.afterRunId),
+  );
 }
 
 export function callsBehindPoint(
@@ -323,7 +380,7 @@ export function queryChoices(snapshots: readonly AiSearchSnapshot[], metric: Tre
   const versions = new Map<string, { promptKey: string; promptText: string }>();
   const lineages = new Set<string>();
   for (const snapshot of snapshots) {
-    if (!isTrustworthyRun(snapshot.run as HistoryRunSummary)) continue;
+    if (!isReviewHistoryRun(snapshot.run as HistoryRunSummary)) continue;
     for (const call of callsForRun(snapshot)) {
       if (questionRole(call) !== metric) continue;
       const promptKey = call.prompt_key ?? "";
@@ -344,6 +401,9 @@ export function queryChoices(snapshots: readonly AiSearchSnapshot[], metric: Tre
 }
 
 export function boundaryLabel(boundary: TrendBoundary): string {
+  if (boundary.scoringMethodChanged && !boundary.promptSetChanged && !boundary.queryVersionChanged) {
+    return "Scoring method changed";
+  }
   if (boundary.promptSetChanged && boundary.queryVersionChanged) {
     return "Question set changed. The exact question wording also changed.";
   }

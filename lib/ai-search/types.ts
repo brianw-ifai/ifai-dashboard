@@ -91,6 +91,12 @@ export type AiSearchSnapshot = {
   calls: AiCallRow[];
   probes: AiProbeRow[];
   citations: AiCitationRow[];
+  /**
+   * Citation rows stored with the run. The copy may list fewer URLs than this
+   * count. When it does, the citation panel says the rows were stored and does
+   * not treat the shorter list as a change in the citation ecosystem.
+   */
+  storedCitationCount?: number;
 };
 
 /** Every surface renders one of these. A failed or missing read is never shown as zero. */

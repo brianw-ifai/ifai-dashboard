@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatDay, runsOnDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { hasPartialCoverage } from "@/lib/ai-search/review-runs";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -89,6 +90,7 @@ export function RunHistoryCalendar({
           if (!day) return <span key={`empty-${index}`} />;
           const present = byDay.get(day) ?? [];
           const enabledDay = present.length > 0;
+          const partial = present.some(hasPartialCoverage);
           const inRange = rangeStart && rangeEnd ? day >= rangeStart && day <= rangeEnd : false;
           const selected = day === selectedDay || day === rangeStart || day === rangeEnd;
           return (
@@ -101,12 +103,13 @@ export function RunHistoryCalendar({
               aria-selected={selected}
               aria-label={
                 enabledDay
-                  ? `${formatDay(day)}, ${present.length} ${present.length === 1 ? "run" : "runs"}`
+                  ? `${formatDay(day)}, ${present.length} ${present.length === 1 ? "run" : "runs"}${partial ? ", partial coverage" : ""}`
                   : `${formatDay(day)}, no run`
               }
-              className={`ai-history-day${enabledDay ? " has-run" : ""}${selected ? " selected" : ""}${inRange ? " in-range" : ""}`}
+              className={`ai-history-day${enabledDay ? " has-run" : ""}${partial ? " partial" : ""}${selected ? " selected" : ""}${inRange ? " in-range" : ""}`}
               data-ai-history-day={day}
               data-ai-history-enabled={enabledDay ? "true" : "false"}
+              data-ai-history-coverage={enabledDay ? (partial ? "partial" : "full") : "none"}
               onClick={() => {
                 if (!enabledDay) return;
                 setFocusOverride(day);

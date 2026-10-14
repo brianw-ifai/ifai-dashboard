@@ -32,7 +32,12 @@ export function RunFreshness({ snapshot, stale, historical }: { snapshot: AiSear
         {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
       </span>
       <span>
-        {historical ? "Historical published run" : <AiTerm term="published run">Published run</AiTerm>} {s.shortRunId} · completed {s.completedAt}
+        {historical
+          ? snapshot.run.is_published
+            ? "Historical published run"
+            : "Historical run"
+          : <AiTerm term="published run">Published run</AiTerm>}{" "}
+        {s.shortRunId} · completed {s.completedAt}
       </span>
       <span>
         {run.answered ?? "Unknown"} of {run.expected ?? "unknown"} calls answered · {errorLine(s)}
