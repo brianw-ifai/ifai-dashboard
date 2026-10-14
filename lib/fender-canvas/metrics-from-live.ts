@@ -10,6 +10,7 @@ import {
   formatUsd,
   pendingLabel,
 } from "@/lib/fender-canvas/format";
+import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
   if (pct == null) return "neutral" as const;
@@ -114,9 +115,24 @@ function mapViolationsMetric(retail: RetailCanvasRead): CanvasMetric {
   };
 }
 
+function findabilityMetric(read: FindabilityRead): CanvasMetric {
+  const copy = findabilityWidgetCopy(read);
+  return {
+    id: "fender-findability",
+    spokeId: "specs",
+    label: "Exact official product pages",
+    value: copy.value,
+    detail: copy.detail,
+    tone: read.phase === "ready" && read.rows.length > 0 ? "neutral" : "warning",
+    subTab: "Findability",
+    provenance: "live",
+  };
+}
+
 export function buildLiveMetrics(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
+  findability: FindabilityRead = { phase: "loading" },
 ): Record<string, CanvasMetric> {
   const { m, cats } = bundle;
   const beginner = cats.find((c) => c.category === "beginner");
@@ -132,7 +148,7 @@ export function buildLiveMetrics(
       value: formatInt(m.catalog_skus),
       detail: `${formatInt(m.catalog_bundles)} bundles · ${formatInt(bundle.divisions.length || m.division_count)} divisions`,
       tone: "neutral",
-      subTab: "Brand Divisions",
+      subTab: "Division Performance",
       provenance: "live",
     },
     activeOfferCoverage: {
@@ -174,7 +190,7 @@ export function buildLiveMetrics(
       value: strandedReviews,
       detail: "Split across partner bundle pages",
       tone: m.bundle_reviews == null ? "warning" : "danger",
-      subTab: "Catalog",
+      subTab: "Catalog Governance",
       provenance: "live",
     },
     amazonMapDrift:
@@ -206,7 +222,7 @@ export function buildLiveMetrics(
       value: formatPct(m.sim_win_pct),
       detail: `${formatInt(m.sim_resolved)} resolved answers`,
       tone: toneFromPct(m.sim_win_pct, 65, 80),
-      subTab: "Dual-Index",
+      subTab: "Run Summary",
       provenance: "live",
     },
     beginnerAiWinRate: {
@@ -236,19 +252,10 @@ export function buildLiveMetrics(
       value: formatInt(m.sim_hallucinations),
       detail: `Of ${formatInt(m.sim_hallucination_risk)} hallucination-risk answers`,
       tone: "danger",
-      subTab: "Hallucination",
+      subTab: "Product Fact Checks",
       provenance: "live",
     },
-    fenderFindability: {
-      id: "fender-findability",
-      spokeId: "specs",
-      label: "fender.com Product Findability",
-      value: formatPct(m.spec_fender_found_pct),
-      detail: formatRatio(m.spec_fender_found, m.spec_checked),
-      tone: toneFromPct(m.spec_fender_found_pct, 25, 50),
-      subTab: "AI Readiness",
-      provenance: "live",
-    },
+    fenderFindability: findabilityMetric(findability),
     machineReadableSpecs: {
       id: "machine-readable-specs",
       spokeId: "specs",
@@ -278,7 +285,7 @@ export function buildLiveMetrics(
         beginnerSovLine(bundle.sov) ??
         `vs ${m.weakest_top_competitor ?? pendingLabel()} in ${m.weakest_category ?? pendingLabel()}`,
       tone: "danger",
-      subTab: "Battlecards",
+      subTab: "Category Battlecards",
       provenance: "live",
     },
     strongestCategorySov: {
@@ -288,7 +295,7 @@ export function buildLiveMetrics(
       value: formatPct(m.strongest_win_pct),
       detail: `${m.strongest_category ?? pendingLabel()} · ${formatRatio(m.strongest_wins, m.strongest_resolved)}`,
       tone: "success",
-      subTab: "Battlecards",
+      subTab: "Category Battlecards",
       provenance: "live",
     },
     prioritizedFixes: {
@@ -298,7 +305,7 @@ export function buildLiveMetrics(
       value: "Estimates",
       detail: "Revenue figures on this spoke are estimates",
       tone: "warning",
-      subTab: "Priority Matrix",
+      subTab: "Urgent Interventions",
       provenance: "estimate",
     },
     phaseOneLift: {
@@ -308,7 +315,7 @@ export function buildLiveMetrics(
       value: "+$680K",
       detail: "Phase 1 annual estimate",
       tone: "success",
-      subTab: "ROI",
+      subTab: "Interactive ROI Model",
       provenance: "estimate",
     },
     enterprisePotential: {
@@ -318,7 +325,7 @@ export function buildLiveMetrics(
       value: "+$38M to $62M",
       detail: "Annual estimate · full portfolio",
       tone: "success",
-      subTab: "ROI",
+      subTab: "Interactive ROI Model",
       provenance: "estimate",
     },
     dayNinetyBuyBoxTarget: {
@@ -328,7 +335,7 @@ export function buildLiveMetrics(
       value: "3 phases",
       detail: "MAP, catalog nesting, and estimated lift",
       tone: "success",
-      subTab: "30-60-90",
+      subTab: "30-60-90 Day Milestones",
       provenance: "live",
     },
   };

@@ -1,0 +1,358 @@
+import { expect, test, type Page } from "@playwright/test";
+import { Canvas } from "./fixtures";
+import { mockCanvasRead, type Row } from "./spec-read-mock";
+
+const EXACT = "https://brand.example/products/zebra";
+
+const ROWS: Row[] = [
+  {
+    asin: "B00ZEBRA",
+    title: "Zebra Exact",
+    category: "Solid Body",
+    product_kind: "instrument",
+    latest_state: "exact_official_product",
+    latest_canonical_url: EXACT,
+    latest_variant_sku: "0140000001",
+    confidence: "sku",
+    explanation: "Official page has one variant.",
+    source_method: "derived_handle",
+    http_status: 200,
+    latest_attempt_at: "2026-10-12T20:27:42.000Z",
+    jsonld_status: "not_checked",
+    counts_as_confirmed: true,
+    counts_as_finished_search: true,
+    counts_as_ambiguous: false,
+    counts_as_unchecked: false,
+    counts_as_completed_not_found: false,
+  },
+  {
+    asin: "B00ALPHA",
+    title: "Alpha Exact",
+    category: "Solid Body",
+    product_kind: "instrument",
+    latest_state: "exact_official_product",
+    latest_canonical_url: "https://brand.example/products/alpha",
+    latest_variant_sku: "0140000002",
+    confidence: "gtin",
+    explanation: "Official page has one variant.",
+    source_method: "model_number_search",
+    http_status: 200,
+    latest_attempt_at: "2026-10-12T20:27:43.000Z",
+    jsonld_status: "not_checked",
+    counts_as_confirmed: true,
+    counts_as_finished_search: true,
+    counts_as_ambiguous: false,
+    counts_as_unchecked: false,
+    counts_as_completed_not_found: false,
+  },
+  {
+    asin: "B00FAMILY",
+    title: "Family Page Guitar",
+    category: "Solid Body",
+    product_kind: "instrument",
+    latest_state: "official_family_page",
+    latest_canonical_url: "https://brand.example/products/family",
+    latest_variant_sku: "0117602805",
+    confidence: "sku",
+    explanation: "Official family page with 4 variants.",
+    source_method: "derived_handle",
+    http_status: 200,
+    latest_attempt_at: "2026-10-12T20:27:44.000Z",
+    jsonld_status: "not_checked",
+    counts_as_confirmed: true,
+    counts_as_finished_search: true,
+    counts_as_ambiguous: false,
+    counts_as_unchecked: false,
+    counts_as_completed_not_found: false,
+  },
+  {
+    asin: "B00BUNDLE1",
+    title: "Finished Without A Page",
+    category: "Solid Body",
+    product_kind: "instrument",
+    latest_state: "completed_not_found",
+    latest_canonical_url: null,
+    latest_variant_sku: null,
+    confidence: "none",
+    explanation: "Search finished without a defensible official page.",
+    source_method: null,
+    http_status: 200,
+    latest_attempt_at: "2026-10-12T20:27:45.000Z",
+    jsonld_status: "not_checked",
+    counts_as_confirmed: false,
+    counts_as_finished_search: true,
+    counts_as_ambiguous: false,
+    counts_as_unchecked: false,
+    counts_as_completed_not_found: true,
+  },
+  {
+    asin: "B00AMBIG",
+    title: "Ambiguous Finish",
+    category: "Solid Body",
+    product_kind: "instrument",
+    latest_state: "ambiguous_candidate",
+    latest_canonical_url: null,
+    latest_variant_sku: null,
+    confidence: "none",
+    explanation: "More than one official page fits the listing.",
+    source_method: null,
+    http_status: 200,
+    latest_attempt_at: "2026-10-12T20:27:46.000Z",
+    jsonld_status: "not_checked",
+    counts_as_confirmed: false,
+    counts_as_finished_search: true,
+    counts_as_ambiguous: true,
+    counts_as_unchecked: false,
+    counts_as_completed_not_found: false,
+  },
+  {
+    asin: "B00UNCHECKED",
+    title: "Unchecked Listing",
+    category: "Solid Body",
+    product_kind: null,
+    latest_state: "not_checked",
+    latest_canonical_url: null,
+    latest_variant_sku: null,
+    confidence: null,
+    explanation: null,
+    source_method: null,
+    http_status: null,
+    latest_attempt_at: null,
+    jsonld_status: null,
+    counts_as_confirmed: false,
+    counts_as_finished_search: false,
+    counts_as_ambiguous: false,
+    counts_as_unchecked: true,
+    counts_as_completed_not_found: false,
+  },
+];
+
+async function openFindability(page: Page) {
+  const canvas = new Canvas(page);
+  await canvas.open();
+  await canvas.openSpokeFromMap("AI Readiness");
+  await canvas.openTab("Findability");
+  await expect(page.locator("[data-findability-headline]")).toBeVisible();
+  return canvas;
+}
+
+test("the five outcome counts stay distinct and open the listings behind them", async ({ page }) => {
+  await mockCanvasRead(page, { findability: ROWS });
+  await openFindability(page);
+
+  const headline = page.locator("[data-findability-headline]");
+  await expect(headline).toContainText("2 exact official product pages");
+  await expect(headline).toContainText("1 official family page");
+  await expect(headline).toContainText("1 finished search with no defensible page");
+  await expect(headline).toContainText("1 ambiguous match");
+  await expect(headline).toContainText("1 unchecked listing");
+  await expect(headline).not.toContainText("13.3%");
+  await expect(headline).not.toContainText("one third");
+  await expect(page.locator(".drilldown-desc")).not.toContainText("13.3%");
+  await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
+  await expect(page.locator(".findability-note").filter({ hasText: "JSON-LD was not audited" })).toBeVisible();
+  await expect(page.locator(".findability-note").filter({ hasText: "older spec read" })).toBeVisible();
+
+  const exact = page.locator("[data-findability-outcome='exact_official_product']");
+  await expect(exact.locator("[data-findability-count]")).toHaveAttribute("data-findability-count", "2");
+  await exact.locator("[data-findability-count]").click();
+  const table = page.locator("#findability-listings");
+  await expect(table).toContainText("B00ZEBRA");
+  await expect(table).toContainText("B00ALPHA");
+  await expect(table).not.toContainText("B00FAMILY");
+  await expect(table.locator("thead")).toContainText("Listing");
+  await expect(table.locator("thead")).toContainText("Official page");
+
+  const link = table.locator("[data-findability-official-url]").first();
+  await expect(link).toHaveAttribute("href", /brand\.example/);
+  await expect(link).toHaveAttribute("target", "_blank");
+
+  await table.locator("thead").getByRole("button", { name: "Listing" }).click();
+  await expect(table.locator("tbody tr").first()).toContainText("Alpha Exact");
+
+  await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
+  await expect(table).toContainText("B00FAMILY");
+  await expect(table).toContainText("Not an exact product page");
+  await expect(table).not.toContainText("B00ZEBRA");
+  await expect(table.locator("[data-findability-official-url]")).toHaveAttribute(
+    "href",
+    "https://brand.example/products/family",
+  );
+
+  await page.locator("[data-findability-outcome='completed_not_found'] [data-findability-count]").click();
+  await expect(table).toContainText("B00BUNDLE1");
+  await expect(table).toContainText("no defensible page");
+  await expect(table).toContainText("Yes");
+
+  await page.locator("[data-findability-outcome='ambiguous_candidate'] [data-findability-count]").click();
+  await expect(table).toContainText("B00AMBIG");
+  await expect(table).toContainText("No official page was accepted");
+
+  await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
+  await expect(table).toContainText("B00UNCHECKED");
+  await expect(table.locator("[data-findability-address='unchecked']")).toContainText("Not checked yet");
+  await expect(table.locator("[data-findability-address='unchecked']")).not.toContainText("no defensible page");
+  await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");
+});
+
+test("an empty official-page read does not describe unchecked as a finished search", async ({ page }) => {
+  await mockCanvasRead(page, { findability: [] });
+  await openFindability(page);
+
+  await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "empty");
+  await expect(page.locator("[data-findability-headline]")).toContainText("no listings");
+  await expect(page.locator("[data-findability-headline]")).not.toContainText("%");
+  for (const outcome of [
+    "exact_official_product",
+    "official_family_page",
+    "completed_not_found",
+    "ambiguous_candidate",
+    "not_checked",
+  ]) {
+    await expect(page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`)).toHaveAttribute(
+      "data-findability-count",
+      "0",
+    );
+  }
+
+  await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
+  const table = page.locator("#findability-listings");
+  await expect(table).toContainText("No listings in this outcome.");
+  await expect(table).not.toContainText("no defensible page");
+  await expect(table).not.toContainText("unsuccessful");
+});
+
+test("a partial read keeps zero outcomes separate from the rows that were checked", async ({ page }) => {
+  await mockCanvasRead(page, {
+    findability: ROWS.filter((row) => row.latest_state === "exact_official_product" || row.latest_state === "not_checked"),
+  });
+  await openFindability(page);
+
+  await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "partial");
+  await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "3");
+  await expect(page.locator("[data-findability-headline]")).toContainText("0 official family pages");
+  await expect(page.locator("[data-findability-headline]")).toContainText("0 finished searches with no defensible page");
+  await expect(page.getByText("A zero is a real count.")).toBeVisible();
+
+  await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
+  await expect(page.locator("#findability-listings")).toContainText("No listings in this outcome.");
+  await expect(page.locator("#findability-listings")).not.toContainText("B00ZEBRA");
+});
+
+const OUTCOME_LISTINGS: Array<[string, string, string]> = [
+  ["exact_official_product", "2", "B00ZEBRA"],
+  ["official_family_page", "1", "B00FAMILY"],
+  ["completed_not_found", "1", "B00BUNDLE1"],
+  ["ambiguous_candidate", "1", "B00AMBIG"],
+  ["not_checked", "1", "B00UNCHECKED"],
+];
+
+async function selectFindabilityWidget(page: Page) {
+  await page.locator(".canvas-metric-widget").first().locator(".metric-widget-config").click();
+  const picker = page.getByRole("dialog", { name: "Choose metric for widget 1" });
+  const option = picker.locator(".metric-widget-option", { hasText: "Exact official product pages" });
+  await expect(option).toContainText("2");
+  await expect(option).not.toContainText("%");
+  await option.click();
+  const widget = page.locator(".canvas-metric-widget").first();
+  await expect(widget.locator(".metric-widget-value")).toHaveText("2");
+  const detail = widget.locator(".metric-widget-detail");
+  await expect(detail).toContainText("1 family page");
+  await expect(detail).toContainText("1 finished search with no defensible page");
+  await expect(detail).toContainText("1 ambiguous match");
+  await expect(detail).toContainText("1 unchecked listing");
+  await expect(widget).not.toContainText("%");
+  await expect(widget).not.toContainText("50.0%");
+  await expect(widget).not.toContainText("29.2%");
+  await expect(widget).not.toContainText("pages found");
+  return widget;
+}
+
+async function chevronAngle(button: ReturnType<Page["locator"]>) {
+  return button.locator(".retail-explore-chevron").evaluate((el) => {
+    const transform = getComputedStyle(el).transform;
+    if (transform === "none") return 0;
+    const match = transform.match(/matrix\(([^)]+)\)/);
+    if (!match) return Number.NaN;
+    const [a, b] = match[1].split(",").map((part) => Number(part.trim()));
+    const degrees = Math.round((Math.atan2(b, a) * 180) / Math.PI);
+    return ((degrees % 360) + 360) % 360;
+  });
+}
+
+async function expectOutcomeChevron(page: Page, outcome: string, open: boolean) {
+  const button = page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`);
+  await expect(button).toHaveAttribute("aria-expanded", open ? "true" : "false");
+  await expect(button).toHaveAttribute("aria-pressed", open ? "true" : "false");
+  await expect(button.locator(".retail-explore-chevron")).toHaveCount(1);
+  await expect(page.locator(`[data-findability-outcome='${outcome}'] .ifai-term .retail-explore-chevron`)).toHaveCount(0);
+  await expect.poll(() => chevronAngle(button)).toBe(open ? 180 : 0);
+}
+
+async function openOutcomeAndCount(page: Page, outcome: string, count: string, listing: string) {
+  await expectOutcomeChevron(page, outcome, false);
+  await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+  await expectOutcomeChevron(page, outcome, true);
+  await expect(page.locator(".content-box-title .tag-badge")).toHaveText(`${count} listings`);
+  await expect(page.locator("#findability-listings tbody tr")).toHaveCount(Number(count));
+  await expect(page.locator("#findability-listings")).toContainText(listing);
+}
+
+for (const viewport of [
+  { name: "desktop", width: 1600, height: 950 },
+  { name: "laptop", width: 1280, height: 800 },
+]) {
+  test(`the findability widget and outcome chevrons work at ${viewport.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await mockCanvasRead(page, { findability: ROWS });
+    const canvas = new Canvas(page);
+    await canvas.open();
+
+    const widget = await selectFindabilityWidget(page);
+    await widget.locator(".metric-widget-body").click();
+    await expect(canvas.activeTab).toContainText("Findability");
+    await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
+
+    for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
+      await openOutcomeAndCount(page, outcome, count, listing);
+      await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+      await expectOutcomeChevron(page, outcome, false);
+      await expect(page.locator("#findability-listings")).toHaveCount(0);
+    }
+
+    await page.locator(".hdr-btn[title='Toggle Light / Dark']").click();
+    await expect(page.locator(".ifai-canvas.light-theme")).toHaveCount(1);
+    for (const [outcome, count, listing] of OUTCOME_LISTINGS) {
+      await openOutcomeAndCount(page, outcome, count, listing);
+      await page.locator(`[data-findability-outcome='${outcome}'] [data-findability-count]`).click();
+    }
+  });
+}
+
+test("a stored other outcome uses the same chevron", async ({ page }) => {
+  await mockCanvasRead(page, {
+    findability: [
+      ...ROWS,
+      {
+        asin: "B00BLOCK",
+        title: "Blocked result",
+        latest_state: "blocked",
+        latest_canonical_url: null,
+        counts_as_blocked: true,
+        counts_as_unchecked: false,
+        counts_as_confirmed: false,
+        counts_as_finished_search: false,
+        counts_as_ambiguous: false,
+        counts_as_completed_not_found: false,
+      },
+    ],
+  });
+  await openFindability(page);
+  const other = page.locator("[data-findability-outcome='other'] [data-findability-count]");
+  await expect(other).toHaveAttribute("data-findability-count", "1");
+  await expectOutcomeChevron(page, "other", false);
+  await other.click();
+  await expectOutcomeChevron(page, "other", true);
+  await expect(page.locator(".content-box-title .tag-badge")).toHaveText("1 listings");
+  await expect(page.locator("#findability-listings")).toContainText("B00BLOCK");
+});

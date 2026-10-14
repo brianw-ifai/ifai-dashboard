@@ -8,7 +8,7 @@ const hubTabs = [
   "Commercial Sizing: $680K Pilot vs $38M to $62M Enterprise",
 ];
 
-const specTabs = ["AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
+const specTabs = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
 
 test("the renamed executive briefing keeps the earlier Buy Box tab slug", () => {
   assert.equal(tabSlug(hubTabs[0]), "executive-briefing");
@@ -20,15 +20,16 @@ test("the renamed executive briefing keeps the earlier Buy Box tab slug", () => 
 
 test("the renamed AI Readiness tabs keep the slugs copied from their old titles", () => {
   assert.deepEqual(specTabs.map(tabSlug), [
+    "findability",
     "ai-readiness",
     "machine-readability",
     "amazon-a-matrix",
   ]);
 
   const copied: Array<[string, number]> = [
-    ["catalog-readiness-executive-guide", 0],
-    ["machine-readable-schema-org-json-ld-audit", 1],
-    ["amazon-a-comparison-matrix-blueprint", 2],
+    ["catalog-readiness-executive-guide", 1],
+    ["machine-readable-schema-org-json-ld-audit", 2],
+    ["amazon-a-comparison-matrix-blueprint", 3],
   ];
   for (const [slug, index] of copied) {
     assert.equal(tabIndexFromSlug(specTabs, slug), index, slug);

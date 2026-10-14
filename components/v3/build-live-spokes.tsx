@@ -14,12 +14,14 @@ import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
+import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
 import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/FenderSpecNarratives";
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import { findabilitySpokeDescription, type FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
@@ -81,14 +83,15 @@ const TAB_OVERRIDES: Partial<
     ),
   },
   specs: {
-    0: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
-    1: () => (
+    0: () => <FindabilityPanel />,
+    1: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
+    2: () => (
       <div className="readiness-surface">
         <SchemaExplanation />
         <SchemaAdditionalPropertyList />
       </div>
     ),
-    2: () => <AplusExplanation />,
+    3: () => <AplusExplanation />,
   },
   competitors: {
     0: () => <CategoryBattlecardsPanel />,
@@ -103,6 +106,7 @@ function wrapSpoke(
   vars: Record<string, string>,
   retail: RetailCanvasRead,
   ai: AiSearchRead,
+  findability: FindabilityRead,
 ): SpokeDefinition {
   const bound = bindNarrativeSpoke(spokeData[id], vars);
   const overrides = TAB_OVERRIDES[id] ?? {};
@@ -118,6 +122,7 @@ function wrapSpoke(
       : {}),
     ...(id === "aeo" ? { desc: aiSpokeDesc(ai), headerAccessory: <RunHistoryControl /> } : {}),
     ...(id === "competitors" ? { desc: competitorsSpokeDesc(ai) } : {}),
+    ...(id === "specs" ? { desc: findabilitySpokeDescription(findability) } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
@@ -132,6 +137,7 @@ export function buildLiveSpokes(
   bundle: CanvasBundle,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  findability: FindabilityRead = { phase: "loading" },
 ): Record<SpokeId, SpokeDefinition> {
   const vars = {
     ...buildTemplateVars(bundle),
@@ -140,6 +146,6 @@ export function buildLiveSpokes(
   };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;
-  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail, ai);
+  for (const id of ids) out[id] = wrapSpoke(id, bundle, vars, retail, ai, findability);
   return out;
 }

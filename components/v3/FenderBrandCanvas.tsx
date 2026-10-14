@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { AiHistoryProvider, useAiHistory, useDisplayedAiSearch } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiSearchProvider, useAiSearchRead } from "@/components/v3/live/ai-search/AiSearchContext";
+import { FindabilityProvider, useFindabilityRead } from "@/components/v3/live/findability/FindabilityContext";
 import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
 import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
@@ -13,6 +14,7 @@ import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
 import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
@@ -59,6 +61,7 @@ function FenderBrandCanvasBody({
   error,
   retail,
   aiSearch,
+  findability,
 }: {
   userMenu?: CanvasUserMenu;
   viewerId?: string;
@@ -68,6 +71,7 @@ function FenderBrandCanvasBody({
   error: Error | null;
   retail: RetailCanvasRead;
   aiSearch: AiSearchRead;
+  findability: FindabilityRead;
 }) {
   const history = useAiHistory();
   const displayedAiSearch = useDisplayedAiSearch(aiSearch);
@@ -87,6 +91,7 @@ function FenderBrandCanvasBody({
       viewerId,
       retail,
       aiSearch,
+      findability,
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: <DataFreshnessBar fresh={bundle.fresh} stale={stale} />,
     });
@@ -98,7 +103,7 @@ function FenderBrandCanvasBody({
         aeo: { ...built.spokes.aeo, desc: panelDescription },
       },
     };
-  }, [aiSearch, bundle, panelDescription, retail, stale, userMenu, viewerId]);
+  }, [aiSearch, bundle, findability, panelDescription, retail, stale, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {
@@ -110,9 +115,11 @@ function FenderBrandCanvasBody({
   }
 
   return (
-    <AiSearchProvider read={displayedAiSearch}>
-      <IntelligenceCanvas spec={spec} />
-    </AiSearchProvider>
+    <FindabilityProvider read={findability}>
+      <AiSearchProvider read={displayedAiSearch}>
+        <IntelligenceCanvas spec={spec} />
+      </AiSearchProvider>
+    </FindabilityProvider>
   );
 }
 
@@ -126,6 +133,7 @@ export function FenderBrandCanvas({
   const { bundle, loading, stale, error } = useFenderCanvasData();
   const retail = usePortfolioRetailSnapshot();
   const aiSearch = useAiSearchRead();
+  const findability = useFindabilityRead();
 
   useEffect(() => {
     window.toggleRoiMode = (mode) => {
@@ -170,6 +178,7 @@ export function FenderBrandCanvas({
         error={error}
         retail={retail}
         aiSearch={aiSearch}
+        findability={findability}
       />
     </AiHistoryProvider>
   );

@@ -129,7 +129,8 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.ok(liveRoadmap.tooltip?.desc);
 
   const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
-  assert.equal(specs?.meta, "Spec read");
+  assert.equal(specs?.meta, "Exact, family, no page, ambiguous, unchecked");
+  assert.deepEqual(specs?.stats, ["Official pages", "Five outcomes"]);
 });
 
 test("connectors and camera targets land on the new spoke centers", () => {

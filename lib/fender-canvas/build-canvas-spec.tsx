@@ -12,6 +12,7 @@ import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { defineCanvas } from "@/lib/canvas-sdk/types";
 import { aiMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import type { FindabilityRead } from "@/lib/findability/copy";
 import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
@@ -33,6 +34,7 @@ export type BuildCanvasSpecOptions = {
   metricStorageSuffix?: string;
   retail?: RetailCanvasRead;
   aiSearch?: AiSearchRead;
+  findability?: FindabilityRead;
 };
 
 function viewerStorageScope(viewerId?: string) {
@@ -56,7 +58,8 @@ export function buildFenderCanvasSpec(
 ) {
   const retail = options.retail ?? { phase: "loading" as const };
   const aiSearch = options.aiSearch ?? { phase: "loading" as const };
-  const live = bundle ? buildLiveMetrics(bundle, retail) : null;
+  const findability = options.findability ?? { phase: "loading" as const };
+  const live = bundle ? buildLiveMetrics(bundle, retail, findability) : null;
   const metrics = live ? (Object.assign({}, live, aiMetrics(aiSearch)) as typeof live) : FENDER_METRICS;
   const widgetList = bundle
     ? Object.values(metrics)
@@ -127,10 +130,10 @@ export function buildFenderCanvasSpec(
     ],
     badges: [],
     edges: fenderCanvasEdges(),
-    nodes: bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch) : fenderStaticNodes,
-    spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch) : spokeData,
+    nodes: bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch, findability) : fenderStaticNodes,
+    spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch, findability) : spokeData,
     focusTargets: FOCUS_TARGETS,
-    tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch) : tourSteps,
+    tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch, findability) : tourSteps,
     ...(options.userMenu
       ? { userMenu: options.userMenu, userEmail: options.userMenu.email }
       : {}),

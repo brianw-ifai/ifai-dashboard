@@ -7,7 +7,7 @@ import { fenderCommandCenter } from "../components/v3/command-center-data.ts";
 import { fenderWidgetMetrics } from "../components/v3/fender-metrics.ts";
 import { tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 
-const SPEC_TABS = ["AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
+const SPEC_TABS = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
 
 const root = new URL("..", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -18,7 +18,7 @@ function resolveSubTab(tabs: string[], subTab: string): number {
   return tabs.findIndex((tab) => tab.toLowerCase().includes(subTab.toLowerCase()));
 }
 
-test("the spoke carries the three renamed tabs and no earlier title", () => {
+test("the spoke carries Findability plus the renamed tabs and no earlier title", () => {
   const spec = json("data/fender-v3-spec.json");
   assert.deepEqual(spec.spokes.specs.tabs, SPEC_TABS);
   assert.equal(spec.spokes.specs.navLabel, "AI Readiness");
@@ -74,7 +74,7 @@ test("every stored deep link into the spoke still resolves to a tab", () => {
   const governance = read("components/v3/live/CatalogGovernancePanel.tsx");
   const tabAttr = governance.match(/data-ifai-tab="([^"]+)"/)?.[1];
   assert.equal(tabAttr, "AI Readiness");
-  assert.equal(resolveSubTab(SPEC_TABS, tabAttr), 0);
+  assert.equal(resolveSubTab(SPEC_TABS, tabAttr), 1);
 });
 
 test("a URL copied from an earlier tab title opens the same tab", () => {
@@ -88,6 +88,7 @@ test("a URL copied from an earlier tab title opens the same tab", () => {
   }
   // "schema" alone no longer names a tab, so nothing may still link by it.
   assert.equal(resolveSubTab(SPEC_TABS, "schema"), -1);
-  assert.equal(resolveSubTab(SPEC_TABS, "a+"), 2);
-  assert.equal(tabSlug(SPEC_TABS[1]), "machine-readability");
+  assert.equal(resolveSubTab(SPEC_TABS, "a+"), 3);
+  assert.equal(tabSlug(SPEC_TABS[0]), "findability");
+  assert.equal(tabSlug(SPEC_TABS[2]), "machine-readability");
 });

@@ -81,13 +81,13 @@ export const fenderStaticNodes: CanvasNode[] = [
       ...primarySpoke("spoke-specs"),
       status: "warning",
       title: "AI Readiness",
-      stats: [
-        `${FENDER_METRICS.fenderFindability.value} Found`,
-        `${FENDER_METRICS.machineReadableSpecs.value} Specs`,
-      ],
-      meta: "Spec read",
+      stats: ["Official pages", "Five outcomes"],
+      meta: "Exact, family, no page, ambiguous, unchecked",
       spokeId: "specs",
-      tooltip: {"title": "AI Readiness: Product Specs", "desc": "Site search found a fender.com product page only 29.2% of the time (21 of 72), and none of the pages found have Schema.org additionalProperty spec fields (0%). Amazon-side structured fields average 91.7% complete."},
+      tooltip: {
+        title: "Official product pages",
+        desc: "Exact official product pages, official family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings are counted separately. A family page is not an exact product page. Those counts load with the official-page read.",
+      },
     },
     {
       ...aiFaces.spokeCompetitors,
