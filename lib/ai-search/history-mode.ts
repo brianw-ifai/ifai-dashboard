@@ -41,10 +41,10 @@ export function historySpokeDescription(input: {
   }
   if (input.mode === "range" || input.mode === "all") {
     return input.source === "fixture"
-      ? "Sample history for review. The chart uses fixture runs, not the live published run."
-      : "Trends use trustworthy published runs only. The map stays on the current published run.";
+      ? "Copy of the stored runs for review. The chart uses that copy, not a live read. Current returns to the live published run."
+      : "Trends use the stored review runs. The map stays on the current published run.";
   }
-  if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected published run.";
+  if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected run.";
   if (input.selectedPhase === "unavailable" || input.selectedPhase === "error") return input.selectedMessage;
   return input.runDescription ? `Historical run. ${input.runDescription}` : "Historical run.";
 }

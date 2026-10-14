@@ -1,5 +1,5 @@
 import type { HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { isTrustworthyRun } from "@/lib/ai-search/history-eligibility";
+import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
 /** Columns on the live `canvas_ai_run_history` view. It has no missing_calls column. */
@@ -94,10 +94,10 @@ export async function loadHistorySnapshot(client: HistoryReadClient, runId: stri
   }
   const runs = (runResult.data ?? []) as Array<HistoryRunSummary & { missing_calls?: number | null }>;
   const run = runs.find((row) => row.audit_run_id === runId) ?? null;
-  if (!run || !isTrustworthyRun(run)) {
+  if (!run || !isReviewHistoryRun(run)) {
     return {
       phase: "unavailable",
-      message: "This run is outside the trusted history. It is not mixed into the current figures.",
+      message: "This run is outside the review history. It is not mixed into the current figures.",
     };
   }
 
@@ -135,7 +135,7 @@ export async function loadHistorySnapshot(client: HistoryReadClient, runId: stri
       completed_at: run.completed_at,
       published_at: run.published_at,
       missing_calls: run.missing_calls ?? null,
-      is_published: true,
+      is_published: run.is_published === true,
       run_kind: run.run_kind ?? "ai_simulation",
     };
     return {

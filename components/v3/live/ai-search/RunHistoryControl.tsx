@@ -3,13 +3,18 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { RunHistoryCalendar } from "@/components/v3/live/ai-search/RunHistoryCalendar";
+import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { batteryGaps } from "@/lib/ai-search/prompt-battery";
 import {
-  formatDay,
-  isTrustworthyRun,
-  previousTrustworthyRun,
-  utcDay,
-  type HistoryRunSummary,
-} from "@/lib/ai-search/history-eligibility";
+  citationStorageCaution,
+  hasPartialCoverage,
+  previousReviewRun,
+  reviewCatalog,
+  scoringLabel,
+  STORED_RUN_COPY_LABEL,
+} from "@/lib/ai-search/review-runs";
+import { historyFixtureSnapshot } from "@/lib/ai-search/history-fixtures";
+import { engineLabel } from "@/lib/ai-search/run-metrics";
 import { runStateLabel } from "@/lib/ai-search/summary";
 
 function monthOf(day: string | null): { year: number; month: number } {
@@ -23,20 +28,37 @@ function monthOf(day: string | null): { year: number; month: number } {
 
 function RunDetail({ run }: { run: HistoryRunSummary }) {
   const day = utcDay(run.published_at ?? run.completed_at);
-  const answered = run.answered_calls == null || run.expected_calls == null
-    ? "Not recorded"
-    : `${run.answered_calls} of ${run.expected_calls}`;
+  const answered = run.answered_calls == null ? "Not recorded" : `${run.answered_calls} answered`;
+  const expected = run.expected_calls == null ? null : `${run.expected_calls} expected`;
+  const scoring = scoringLabel(run);
+  const caution = citationStorageCaution(run.audit_run_id);
+  const snapshot = historyFixtureSnapshot(run.audit_run_id);
+  const gaps = snapshot ? batteryGaps(snapshot.calls) : [];
   return (
     <div className="ai-history-detail" data-ai-history-run={run.audit_run_id}>
       <strong>{day ? formatDay(day) : "Date not recorded"}</strong>
       <ul>
-        <li>State: {run.run_state ? runStateLabel(run.run_state) : "Not recorded"}</li>
+        <li>State: {run.run_state ? runStateLabel(run.run_state) : "Not recorded"}{hasPartialCoverage(run) ? " · Partial coverage" : ""}</li>
         <li>Published: {run.published_at ? formatDay(utcDay(run.published_at) ?? "") : "Not published"}</li>
         <li>Collector: {run.collector_version ?? "Not recorded"}</li>
-        <li>Answered of expected: {answered}</li>
+        {scoring ? <li data-ai-history-scoring={run.audit_run_id}>{scoring}</li> : null}
+        <li>Answered: {answered}{expected ? ` of ${expected}` : ""}</li>
         <li>Provider errors: {run.error_calls == null ? "Not recorded" : run.error_calls}</li>
         <li>Prompt set: {run.prompt_set_hash ?? "Not recorded"}</li>
+        {caution ? <li data-ai-citation-caution={run.audit_run_id}>{caution}</li> : null}
       </ul>
+      {gaps.length > 0 ? (
+        <div data-ai-history-gaps={run.audit_run_id}>
+          <p>Not stored. These calls are gaps, not wins, losses, or zeros.</p>
+          <ul>
+            {gaps.map((gap) => (
+              <li key={`${gap.promptKey}:${gap.engine}`} data-ai-history-gap={`${gap.promptKey}:${gap.engine}`}>
+                {engineLabel(gap.engine)}: {gap.promptText}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -53,12 +75,11 @@ export function RunHistoryControl() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const runs = history.catalog.phase === "ready" ? history.catalog.runs : [];
-  const visible = history.includeLegacy ? runs : runs.filter(isTrustworthyRun);
+  const visible = reviewCatalog(runs);
   const anchorId = history.current.phase === "ready" ? history.current.snapshot.run.audit_run_id : null;
-  const previous = previousTrustworthyRun(visible.filter(isTrustworthyRun), history.source === "live" ? anchorId : null);
-  const latestDay = utcDay(
-    [...visible].filter(isTrustworthyRun).sort((a, b) => (a.published_at ?? "").localeCompare(b.published_at ?? "")).at(-1)?.published_at ?? null,
-  );
+  const previous = previousReviewRun(visible, history.source === "live" ? anchorId : null);
+  const latest = [...visible].at(-1);
+  const latestDay = utcDay(latest?.published_at ?? latest?.completed_at ?? null);
   const [month, setMonth] = useState(monthOf(latestDay));
 
   useEffect(() => {
@@ -122,7 +143,6 @@ export function RunHistoryControl() {
     ? visible.filter((run) => utcDay(run.published_at ?? run.completed_at) === selectedDay)
     : [];
   const chosenRun = chosen.find((run) => run.audit_run_id === pickedId) ?? (chosen.length === 1 ? chosen[0] : null);
-  const trustworthyChoice = chosenRun != null && isTrustworthyRun(chosenRun);
 
   return (
     <div className="ai-history-control">
@@ -150,7 +170,7 @@ export function RunHistoryControl() {
           <div className="ai-history-dialog-body">
           {history.source === "fixture" ? (
             <p className="ai-history-note" data-ai-history-fixture>
-              Sample history for review. These runs are fixtures, not the live database. Current returns to the live published run.
+              {STORED_RUN_COPY_LABEL} Current returns to the live published run.
             </p>
           ) : null}
           <div className="ai-history-quick" role="group" aria-label="Quick choices">
@@ -171,14 +191,6 @@ export function RunHistoryControl() {
             </button>
             <button type="button" onClick={() => { history.viewAll(); setOpen(false); }}>All time</button>
           </div>
-          <label className="ai-history-legacy">
-            <input
-              type="checkbox"
-              checked={history.includeLegacy}
-              onChange={(event) => history.setIncludeLegacy(event.target.checked)}
-            />
-            Include legacy test runs
-          </label>
           {history.catalog.phase === "loading" ? <p className="ai-history-note">Loading runs.</p> : null}
           {history.catalog.phase === "error" ? (
             <p className="ai-history-note">Run history did not load. {history.catalog.message}</p>
@@ -203,7 +215,7 @@ export function RunHistoryControl() {
                   aria-pressed={chosenRun?.audit_run_id === run.audit_run_id}
                   onClick={() => setPickedId(run.audit_run_id)}
                 >
-                  {run.collector_version ?? "Collector not recorded"} · {run.is_published ? "Published" : "Unpublished"}
+                  {scoringLabel(run) ?? run.collector_version ?? "Run"} · {run.is_published ? "Published" : "Unpublished"}
                 </button>
               ))}
             </div>
@@ -232,12 +244,11 @@ export function RunHistoryControl() {
                 data-ai-history-view-run
                 onClick={() => {
                   if (!chosenRun) return;
-                  if (trustworthyChoice) history.viewRun(chosenRun.audit_run_id);
-                  else history.viewLegacy(chosenRun.audit_run_id);
+                  history.viewRun(chosenRun.audit_run_id);
                   setOpen(false);
                 }}
               >
-                {chosenRun && !trustworthyChoice ? "Inspect legacy run" : "View run"}
+                View run
               </button>
             )}
           </div>

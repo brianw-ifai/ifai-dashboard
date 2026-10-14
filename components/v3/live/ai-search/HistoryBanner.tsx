@@ -1,6 +1,7 @@
 "use client";
 
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { STORED_RUN_COPY_LABEL } from "@/lib/ai-search/review-runs";
 
 export function HistoryBanner({ heading, detail }: { heading: string; detail: string }) {
   const history = useAiHistory();
@@ -10,7 +11,7 @@ export function HistoryBanner({ heading, detail }: { heading: string; detail: st
         <strong>{heading}</strong> {detail}
       </p>
       {history.source === "fixture" ? (
-        <p data-ai-history-fixture>Sample history for review, not the live database.</p>
+        <p data-ai-history-fixture>{STORED_RUN_COPY_LABEL}</p>
       ) : null}
       <button type="button" data-ai-history-return onClick={history.viewCurrent}>
         Return to current

@@ -2,10 +2,11 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { compareRuns, isTrustworthyRun, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { historyFixtureSnapshot, historyFixtureSummaries } from "@/lib/ai-search/history-fixtures";
 import { historyControlLabel, rangeFromMode, type HistoryMode } from "@/lib/ai-search/history-mode";
 import { loadHistoryCatalog, loadHistorySnapshot, type HistorySnapshotResult } from "@/lib/ai-search/history-queries";
+import { isReviewHistoryRun } from "@/lib/ai-search/review-runs";
 import type { AiSearchRead, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 
@@ -27,8 +28,6 @@ type AiHistoryValue = {
   source: "live" | "fixture";
   mode: HistoryMode;
   catalog: CatalogState;
-  includeLegacy: boolean;
-  setIncludeLegacy: (value: boolean) => void;
   current: AiSearchRead;
   selected: SelectedState;
   trend: TrendLoad;
@@ -44,7 +43,7 @@ const AiHistoryContext = createContext<AiHistoryValue | null>(null);
 
 function runsInScope(runs: readonly HistoryRunSummary[], mode: HistoryMode): HistoryRunSummary[] {
   const { from, to } = rangeFromMode(mode);
-  return runs.filter(isTrustworthyRun).filter((run) => {
+  return runs.filter(isReviewHistoryRun).filter((run) => {
     const day = utcDay(run.published_at ?? run.completed_at);
     if (!day) return false;
     if (from && day < from) return false;
@@ -57,7 +56,6 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
   const params = useSearchParams();
   const source = params.get("ai-history") === "fixture" ? "fixture" : "live";
   const [mode, setMode] = useState<HistoryMode>({ kind: "current" });
-  const [includeLegacy, setIncludeLegacy] = useState(false);
   const [liveCatalog, setLiveCatalog] = useState<CatalogState>({ phase: "loading" });
   const [selected, setSelected] = useState<SelectedState>({ phase: "idle" });
   const [remoteTrend, setRemoteTrend] = useState<{ key: string; trend: TrendLoad }>({
@@ -191,8 +189,6 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       source,
       mode,
       catalog,
-      includeLegacy,
-      setIncludeLegacy,
       current,
       selected,
       trend,
@@ -203,7 +199,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       viewRange,
       viewAll,
     }),
-    [catalog, current, currentDay, includeLegacy, mode, selected, selectedDay, source, trend, viewAll, viewCurrent, viewLegacy, viewRange, viewRun],
+    [catalog, current, currentDay, mode, selected, selectedDay, source, trend, viewAll, viewCurrent, viewLegacy, viewRange, viewRun],
   );
 
   return <AiHistoryContext.Provider value={value}>{children}</AiHistoryContext.Provider>;

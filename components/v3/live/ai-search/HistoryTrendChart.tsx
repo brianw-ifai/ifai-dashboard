@@ -15,6 +15,33 @@ function yFor(pct: number): number {
   return 16 + (1 - pct / 100) * 68;
 }
 
+function sameDayShift(points: readonly TrendPoint[]): Map<string, number> {
+  const byDay = new Map<string, string[]>();
+  for (const point of points) {
+    const list = byDay.get(point.day) ?? [];
+    if (!list.includes(point.runId)) list.push(point.runId);
+    byDay.set(point.day, list);
+  }
+  const shifts = new Map<string, number>();
+  for (const [day, ids] of byDay) {
+    ids.forEach((id, index) => {
+      shifts.set(`${day}:${id}`, ids.length < 2 ? 0 : (index - (ids.length - 1) / 2) * 4);
+    });
+  }
+  return shifts;
+}
+
+function pointX(
+  point: TrendPoint,
+  seriesIndex: number,
+  seriesCount: number,
+  min: number,
+  max: number,
+  shifts: Map<string, number>,
+): number {
+  return xFor(point.day, min, max) + (shifts.get(`${point.day}:${point.runId}`) ?? 0) + seriesIndex * 1.4 - (seriesCount - 1) * 0.7;
+}
+
 export function HistoryTrendChart({
   model,
   onPick,
@@ -30,6 +57,7 @@ export function HistoryTrendChart({
   const min = Math.min(...times);
   const max = Math.max(...times);
   const breaks = boundaryBreaks(model.boundaries);
+  const shifts = sameDayShift(model.series[0]?.points ?? []);
 
   return (
     <div className="ai-history-chart" data-ai-history-chart>
@@ -62,7 +90,7 @@ export function HistoryTrendChart({
                 strokeWidth="0.8"
                 points={segment
                   .map((point) => {
-                    const x = xFor(point.day, min, max) + seriesIndex * 1.4 - (model.series.length - 1) * 0.7;
+                    const x = pointX(point, seriesIndex, model.series.length, min, max, shifts);
                     return `${x},${yFor(point.winPct ?? 0)}`;
                   })
                   .join(" ")}
@@ -79,7 +107,7 @@ export function HistoryTrendChart({
       {model.series.map((series, seriesIndex) =>
         series.points.map((point) => {
           const plottable = point.callsLoaded && point.winPct != null;
-          const x = xFor(point.day, min, max) + seriesIndex * 1.4 - (model.series.length - 1) * 0.7;
+          const x = pointX(point, seriesIndex, model.series.length, min, max, shifts);
           const y = plottable ? yFor(point.winPct ?? 0) : 94;
           const key = `${point.runId}:${series.key}`;
           return (
@@ -98,7 +126,7 @@ export function HistoryTrendChart({
           );
         }),
       )}
-      <p className="ai-history-note">Each point is one published run. Nothing is estimated between runs.</p>
+      <p className="ai-history-note">Each point is one stored run. Nothing is estimated between runs.</p>
     </div>
   );
 }

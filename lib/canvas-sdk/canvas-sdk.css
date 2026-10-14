@@ -3649,6 +3649,10 @@
       font-weight: 700;
     }
 
+    .ai-history-day.partial.has-run {
+      box-shadow: inset 0 -2px 0 var(--warning-amber);
+    }
+
     .ai-history-day.in-range {
       background: var(--warning-bg);
     }
