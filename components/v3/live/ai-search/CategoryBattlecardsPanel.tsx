@@ -2,57 +2,79 @@
 
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
-import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { AI_TABS, RADAR_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { categoryBattles, type CategoryBattle } from "@/lib/ai-search/competitors";
-import { categoryLabel, isSmallSample, tallyCommercial } from "@/lib/ai-search/run-metrics";
-import { pct } from "@/lib/ai-search/summary";
+import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
+import {
+  categoryRoleTallies,
+  headlineAside,
+  headlineCompetitorWins,
+  type RoleGroupTally,
+} from "@/lib/ai-search/question-role";
+import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
-  clientColumn("share", "Fender win share", "number", 170, 120),
-  clientColumn("competitor", "Top competitor", "text", 160, 110),
+  roleColumn("unbranded_discovery"),
+  roleColumn("branded_consideration"),
+  clientColumn("competitor", "Top competitor", "text", 170, 120),
   clientColumn("leads", "Competitor leads", "number", 150, 110),
   clientColumn("leader", "No leader", "number", 110, 80),
   clientColumn("errors", "Errors", "number", 90, 72),
 ];
 
-function battleSortValue(row: CategoryBattle, columnId: string): SortInput {
-  const top = row.leaders[0];
-  if (columnId === "category") return categoryLabel(row.category);
-  if (columnId === "share") return row.resolved ? row.fenderWins / row.resolved : null;
+function battleSortValue(
+  row: RoleGroupTally,
+  columnId: string,
+  top: { brand: string; wins: number } | undefined,
+  largest: { unbranded: number; branded: number },
+): SortInput {
+  const aside = headlineAside(row);
+  if (columnId === "category") return categoryLabel(row.key);
+  if (columnId === "unbranded_discovery") return roleRateSort(row.roles.unbranded_discovery, largest.unbranded);
+  if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
   if (columnId === "competitor") return top ? `${top.brand} (${top.wins})` : "None";
-  if (columnId === "leads") return row.competitorWins;
-  if (columnId === "leader") return row.unresolved;
-  return row.errors;
+  if (columnId === "leads") return aside.competitorWins;
+  if (columnId === "leader") return aside.unresolved;
+  return aside.errors;
 }
 
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
-  const battles = categoryBattles(snapshot.calls);
-  const total = tallyCommercial(snapshot.calls);
-  const largest = Math.max(0, ...battles.map((b) => b.resolved));
-  const sorted = useClientTableSort(battles, COLUMNS, battleSortValue);
+  const battles = [...categoryRoleTallies(snapshot.calls)].sort((a, b) => {
+    const wins = (row: RoleGroupTally) => headlineAside(row).competitorWins;
+    return wins(b) - wins(a) || a.key.localeCompare(b.key);
+  });
+  const largest = {
+    unbranded: largestResolved(battles, "unbranded_discovery"),
+    branded: largestResolved(battles, "branded_consideration"),
+  };
+  const leadersFor = (category: string) =>
+    headlineCompetitorWins(snapshot.calls.filter((row) => (row.category ?? "") === category));
+  const sorted = useClientTableSort(battles, COLUMNS, (row, columnId) =>
+    battleSortValue(row, columnId, leadersFor(row.key)[0], largest),
+  );
 
   return (
-    <>
+    <div className="ai-role-rates">
       <div className="ceo-callout">
         <div className="ceo-callout-header">
           <span>Who out-mentions Fender/Squier in AI buying answers?</span>
         </div>
         <div className="ceo-callout-body">
-          Each row is one product category of shopping prompts in the published run. A{" "}
-          <AiTerm term="Fender lead" /> means Fender or Squier was named more than any other brand. Squier counts with
-          Fender because it is Fender&apos;s entry-level line against Yamaha and Ibanez. Product fact checks, provider
-          errors, and answers with no clear leader are not in these shares.
+          Each category shows two Fender-lead rates, <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and{" "}
+          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
+          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
+          entry-level line against Yamaha and Ibanez. The top competitor is the brand named most inside those two rates.
         </div>
       </div>
 
       <div className="content-box ai-battlecards" style={{ marginTop: 12 }}>
         <div className="content-box-title">Category battlecards</div>
+        <RoleSumLine groups={battles} preface="Fender/Squier leads, by the kind of question." />
         <ResizableTable
           tableId="category-battlecards"
           columns={COLUMNS}
@@ -62,52 +84,38 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           onSort={sorted.onSort}
         >
           <tbody>
-            {sorted.rows.map((b) => {
-              const top = b.leaders[0];
+            {sorted.rows.map((battle) => {
+              const top = leadersFor(battle.key)[0];
+              const aside = headlineAside(battle);
               return (
-                <tr key={b.category} data-category={b.category}>
+                <tr key={battle.key} data-category={battle.key}>
                   <td>
-                    <EvidenceLink focus={{ field: "category", value: b.category }} tab={AI_TABS.simulations}>
-                      {categoryLabel(b.category)}
+                    <EvidenceLink focus={{ field: "category", value: battle.key }} tab={AI_TABS.simulations}>
+                      {categoryLabel(battle.key)}
                     </EvidenceLink>
                   </td>
                   <td>
-                    {b.resolved ? `${pct(b.fenderWins, b.resolved)} (${b.fenderWins} of ${b.resolved})` : "No resolved answers"}
-                    {b.resolved && isSmallSample(b.resolved, largest) ? (
-                      <div style={mutedText}><AiTerm term="small sample" /></div>
-                    ) : null}
+                    <RoleCount role="unbranded_discovery" tally={battle.roles.unbranded_discovery} largestResolved={largest.unbranded} />
                   </td>
                   <td>
-                    {top ? (
-                      <EvidenceLink focus={{ field: "competitor", value: top.brand }} spokeId="competitors" tab={RADAR_TABS.wins}>
-                        {`${top.brand} (${top.wins})`}
-                      </EvidenceLink>
-                    ) : (
-                      "None"
-                    )}
+                    <RoleCount role="branded_consideration" tally={battle.roles.branded_consideration} largestResolved={largest.branded} />
                   </td>
-                  <td>{b.competitorWins} of {b.resolved}</td>
-                  <td>{b.unresolved}</td>
-                  <td>{b.errors}</td>
+                  <td>{top ? `${top.brand} (${top.wins})` : "None"}</td>
+                  <td>{aside.competitorWins}</td>
+                  <td>{aside.unresolved}</td>
+                  <td>{aside.errors}</td>
                 </tr>
               );
             })}
-            <tr data-category="all">
-              <td><strong>All commercial prompts</strong></td>
-              <td><strong>{pct(total.fenderWins, total.resolved)} ({total.fenderWins} of {total.resolved})</strong></td>
-              <td>
-                <EvidenceLink focus={{ field: "outcome", value: "competitor_win" }} spokeId="competitors" tab={RADAR_TABS.wins}>
-                  All competitors
-                </EvidenceLink>
-              </td>
-              <td>{total.competitorWins} of {total.resolved}</td>
-              <td>{total.unresolved}</td>
-              <td>{total.errors}</td>
-            </tr>
           </tbody>
         </ResizableTable>
+        <p className="ai-role-footnote">
+          Competitor leads count wins inside the two rates only. A competitor win on a question kept out below does not
+          appear in these columns.
+        </p>
+        <KeptOutNote snapshot={snapshot} />
       </div>
-    </>
+    </div>
   );
 }
 

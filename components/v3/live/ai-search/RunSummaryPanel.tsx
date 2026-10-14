@@ -5,38 +5,45 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { categoryLabel, engineLabel, formatRunTime, type GroupTally } from "@/lib/ai-search/run-metrics";
+import { categoryRoleTallies, engineRoleTallies, headlineAside, ROLE_LABELS, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
+import { categoryLabel, engineLabel, formatRunTime } from "@/lib/ai-search/run-metrics";
+import { engineModelLine, errorLine, pct, resolvedPhrase, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
+import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
   clientColumn("model", "Model", "text", 180, 110),
-  clientColumn("lead", "Fender lead", "number", 160, 110),
-  clientColumn("resolved", "Resolved", "number", 120, 90),
+  roleColumn("unbranded_discovery"),
+  roleColumn("branded_consideration"),
   clientColumn("leader", "No leader", "number", 110, 80),
   clientColumn("errors", "Errors", "number", 90, 72),
 ];
 
 const CATEGORY_COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
-  clientColumn("lead", "Fender lead", "number", 160, 110),
-  clientColumn("resolved", "Resolved", "number", 120, 90),
+  roleColumn("unbranded_discovery"),
+  roleColumn("branded_consideration"),
   clientColumn("leader", "No leader", "number", 110, 80),
   clientColumn("errors", "Errors", "number", 90, 72),
 ];
 
-function groupSortValue(row: GroupTally, columnId: string, label: string): SortInput {
+function groupSortValue(
+  row: RoleGroupTally,
+  columnId: string,
+  label: string,
+  largest: { unbranded: number; branded: number },
+): SortInput {
+  const aside = headlineAside(row);
   if (columnId === "engine" || columnId === "category") return label;
   if (columnId === "model") return row.models.join(", ") || null;
-  if (columnId === "lead") return row.winPct;
-  if (columnId === "resolved") return row.resolved;
-  if (columnId === "leader") return row.unresolved;
-  return row.errors;
+  if (columnId === "unbranded_discovery") return roleRateSort(row.roles.unbranded_discovery, largest.unbranded);
+  if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
+  if (columnId === "leader") return aside.unresolved;
+  return aside.errors;
 }
-import { ROLE_LABELS, type RoleTally } from "@/lib/ai-search/question-role";
-import { engineModelLine, errorLine, pct, resolvedPhrase, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
-import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 const SIM = AI_TABS.simulations;
 
@@ -171,14 +178,18 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
-  const s = summarizeRun(snapshot);
-  const small = new Set(s.smallSampleEngines);
-  const sorted = useClientTableSort(s.engines, ENGINE_COLUMNS, (row, columnId) =>
-    groupSortValue(row, columnId, engineLabel(row.key)),
+  const engines = engineRoleTallies(snapshot.calls);
+  const largest = {
+    unbranded: largestResolved(engines, "unbranded_discovery"),
+    branded: largestResolved(engines, "branded_consideration"),
+  };
+  const sorted = useClientTableSort(engines, ENGINE_COLUMNS, (row, columnId) =>
+    groupSortValue(row, columnId, engineLabel(row.key), largest),
   );
   return (
-    <div className="content-box ai-engine-table" style={{ marginTop: 12 }}>
+    <div className="content-box ai-engine-table ai-role-rates" style={{ marginTop: 12 }}>
       <div className="content-box-title">By engine and model</div>
+      <RoleSumLine groups={engines} preface="These rows add up to the two rates above." />
       <ResizableTable
         tableId="ai-run-engines"
         columns={ENGINE_COLUMNS}
@@ -188,29 +199,27 @@ function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
         onSort={sorted.onSort}
       >
         <tbody>
-          {sorted.rows.map((engine) => (
-            <tr key={engine.key} data-engine={engine.key}>
-              <td>
-                <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={SIM}>
-                  {engineLabel(engine.key)}
-                </EvidenceLink>
-              </td>
-              <td>{engine.models.join(", ")}</td>
-              <td>
-                {small.has(engine.key) ? (
-                  <span data-small-sample>
-                    {engine.fenderWins} of {engine.resolved},{" "}
-                    <AiTerm term="small sample">too few to compare</AiTerm>
-                  </span>
-                ) : (
-                  `${pct(engine.fenderWins, engine.resolved)} (${engine.fenderWins} of ${engine.resolved})`
-                )}
-              </td>
-              <td>{engine.resolved} of {engine.calls}</td>
-              <td>{engine.unresolved}</td>
-              <td>{engine.errors}</td>
-            </tr>
-          ))}
+          {sorted.rows.map((engine) => {
+            const aside = headlineAside(engine);
+            return (
+              <tr key={engine.key} data-engine={engine.key}>
+                <td>
+                  <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={SIM}>
+                    {engineLabel(engine.key)}
+                  </EvidenceLink>
+                </td>
+                <td>{engine.models.join(", ")}</td>
+                <td>
+                  <RoleCount role="unbranded_discovery" tally={engine.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                </td>
+                <td>
+                  <RoleCount role="branded_consideration" tally={engine.roles.branded_consideration} largestResolved={largest.branded} />
+                </td>
+                <td>{aside.unresolved}</td>
+                <td>{aside.errors}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </ResizableTable>
     </div>
@@ -218,13 +227,18 @@ function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
 }
 
 function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
-  const s = summarizeRun(snapshot);
-  const sorted = useClientTableSort(s.categories, CATEGORY_COLUMNS, (row, columnId) =>
-    groupSortValue(row, columnId, categoryLabel(row.key)),
+  const categories = categoryRoleTallies(snapshot.calls);
+  const largest = {
+    unbranded: largestResolved(categories, "unbranded_discovery"),
+    branded: largestResolved(categories, "branded_consideration"),
+  };
+  const sorted = useClientTableSort(categories, CATEGORY_COLUMNS, (row, columnId) =>
+    groupSortValue(row, columnId, categoryLabel(row.key), largest),
   );
   return (
-    <div className="content-box ai-category-table" style={{ marginTop: 12 }}>
+    <div className="content-box ai-category-table ai-role-rates" style={{ marginTop: 12 }}>
       <div className="content-box-title">By commercial category</div>
+      <RoleSumLine groups={categories} preface="These rows add up to the two rates above." />
       <ResizableTable
         tableId="ai-run-categories"
         columns={CATEGORY_COLUMNS}
@@ -234,24 +248,29 @@ function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
         onSort={sorted.onSort}
       >
         <tbody>
-          {sorted.rows.map((row) => (
-            <tr key={row.key} data-category={row.key}>
-              <td>
-                <EvidenceLink focus={{ field: "category", value: row.key }} tab={SIM}>
-                  {categoryLabel(row.key)}
-                </EvidenceLink>
-              </td>
-              <td>{row.resolved ? `${pct(row.fenderWins, row.resolved)} (${row.fenderWins} of ${row.resolved})` : "No resolved answers"}</td>
-              <td>{row.resolved} of {row.calls}</td>
-              <td>{row.unresolved}</td>
-              <td>{row.errors}</td>
-            </tr>
-          ))}
+          {sorted.rows.map((row) => {
+            const aside = headlineAside(row);
+            return (
+              <tr key={row.key} data-category={row.key}>
+                <td>
+                  <EvidenceLink focus={{ field: "category", value: row.key }} tab={SIM}>
+                    {categoryLabel(row.key)}
+                  </EvidenceLink>
+                </td>
+                <td>
+                  <RoleCount role="unbranded_discovery" tally={row.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                </td>
+                <td>
+                  <RoleCount role="branded_consideration" tally={row.roles.branded_consideration} largestResolved={largest.branded} />
+                </td>
+                <td>{aside.unresolved}</td>
+                <td>{aside.errors}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </ResizableTable>
-      <p style={{ ...mutedText, marginTop: 8 }}>
-        These rows mix discovery, consideration, and product-fact questions in a category. The rates at the top keep those questions apart. Product fact checks are on their own tab.
-      </p>
+      <KeptOutNote snapshot={snapshot} />
     </div>
   );
 }

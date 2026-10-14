@@ -2,21 +2,19 @@
 
 import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
-import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { KeptOutNote, RoleCount, RolePair, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { competitorTallies } from "@/lib/ai-search/competitors";
 import {
-  categoryLabel,
-  engineLabel,
-  engineTallies,
-  isCommercial,
-  isSmallSample,
-  tallyCommercial,
-  type GroupTally,
-} from "@/lib/ai-search/run-metrics";
-import { pct } from "@/lib/ai-search/summary";
+  engineRoleTallies,
+  headlineAside,
+  headlineCompetitorWins,
+  roleTally,
+  type RoleGroupTally,
+} from "@/lib/ai-search/question-role";
+import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -27,64 +25,90 @@ function brandId(brand: string): string {
 function engineColumns(brands: string[]): RetailColumn[] {
   return [
     clientColumn("engine", "Engine", "text", 160, 110),
-    clientColumn("fender", "Fender leads", "number", 140, 110),
+    roleColumn("unbranded_discovery"),
+    roleColumn("branded_consideration"),
     ...brands.map((brand) => clientColumn(brandId(brand), brand, "number", 110, 80)),
     clientColumn("unresolved", "No leader", "number", 110, 80),
     clientColumn("errors", "Errors", "number", 90, 72),
   ];
 }
 
+function brandWins(rows: AiCallRow[], engine: string, brand: string): number {
+  return headlineCompetitorWins(rows.filter((row) => (row.engine ?? "").toLowerCase() === engine)).find(
+    (entry) => entry.brand === brand,
+  )?.wins ?? 0;
+}
+
 function engineSortValue(
-  row: GroupTally,
+  row: RoleGroupTally,
   columnId: string,
-  brandWins: (engine: string, brand: string) => number,
+  rows: AiCallRow[],
+  largest: { unbranded: number; branded: number },
 ): SortInput {
   if (columnId === "engine") return engineLabel(row.key);
-  if (columnId === "fender") return row.fenderWins;
-  if (columnId === "unresolved") return row.unresolved;
-  if (columnId === "errors") return row.errors;
-  if (columnId.startsWith("brand:")) return brandWins(row.key, columnId.slice("brand:".length));
+  if (columnId === "unbranded_discovery") return roleRateSort(row.roles.unbranded_discovery, largest.unbranded);
+  if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
+  if (columnId === "unresolved") return headlineAside(row).unresolved;
+  if (columnId === "errors") return headlineAside(row).errors;
+  if (columnId.startsWith("brand:")) return brandWins(rows, row.key, columnId.slice("brand:".length));
   return null;
 }
 
 function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
-  const engines = engineTallies(snapshot.calls);
-  const largest = Math.max(0, ...engines.map((e) => e.resolved));
-  const brands = competitorTallies(snapshot.calls).map((t) => t.brand);
-  const categories = [...new Set(snapshot.calls.filter(isCommercial).map((r) => r.category ?? ""))].sort();
+  const engines = engineRoleTallies(snapshot.calls);
+  const largest = {
+    unbranded: largestResolved(engines, "unbranded_discovery"),
+    branded: largestResolved(engines, "branded_consideration"),
+  };
+  const brands = headlineCompetitorWins(snapshot.calls).map((entry) => entry.brand);
+  const categories = [
+    ...new Set(
+      snapshot.calls.filter((row) => row.prompt_kind === "commercial").map((row) => row.category ?? ""),
+    ),
+  ].sort();
   const columns = engineColumns(brands);
   const categoryColumns = [
     clientColumn("category", "Category", "text", 160, 110),
-    ...engines.map((engine) => clientColumn(engine.key, engineLabel(engine.key), "number", 140, 100)),
+    ...engines.map((engine) => clientColumn(engine.key, engineLabel(engine.key), "number", 210, 160)),
   ];
-  const losses = (engine: string, brand: string) =>
-    snapshot.calls.filter(
-      (row) =>
-        isCommercial(row) &&
-        (row.engine ?? "").toLowerCase() === engine &&
-        row.outcome === "competitor_win" &&
-        row.primary_brand === brand,
-    ).length;
   const sortedEngines = useClientTableSort(engines, columns, (row, columnId) =>
-    engineSortValue(row, columnId, losses),
+    engineSortValue(row, columnId, snapshot.calls, largest),
+  );
+  const cellOf = (category: string, engine: string) => {
+    const bucket = snapshot.calls.filter(
+      (row) => (row.category ?? "") === category && (row.engine ?? "").toLowerCase() === engine,
+    );
+    return {
+      unbranded: roleTally(bucket, "unbranded_discovery"),
+      branded: roleTally(bucket, "branded_consideration"),
+    };
+  };
+  const cellLargest = categories.reduce(
+    (max, category) => {
+      for (const engine of engines) {
+        const cell = cellOf(category, engine.key);
+        max.unbranded = Math.max(max.unbranded, cell.unbranded.resolved);
+        max.branded = Math.max(max.branded, cell.branded.resolved);
+      }
+      return max;
+    },
+    { unbranded: 0, branded: 0 },
   );
   const sortedCategories = useClientTableSort(categories, categoryColumns, (category, columnId) => {
     if (columnId === "category") return categoryLabel(category);
-    const tally = tallyCommercial(
-      snapshot.calls.filter(
-        (row) => row.category === category && (row.engine ?? "").toLowerCase() === columnId,
-      ),
-    );
-    return tally.resolved ? tally.fenderWins : null;
+    const cell = cellOf(category, columnId);
+    return cell.unbranded.resolved + cell.branded.resolved > 0 ? cell.unbranded.fenderWins : null;
   });
 
   return (
     <>
-      <div className="content-box ai-engine-comparison">
+      <div className="content-box ai-engine-comparison ai-role-rates">
         <div className="content-box-title">Commercial outcomes by engine</div>
-        <p style={mutedText}>
-          Engines are compared only when each has a comparable number of <AiTerm term="resolved" /> answers. An engine
-          marked <AiTerm term="small sample" /> is listed with its counts and is not ranked.
+        <RoleSumLine groups={engines} preface="Fender/Squier leads, by the kind of question." />
+        <p className="ai-role-footnote">
+          Each engine is compared on its own for <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and for{" "}
+          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="small sample" /> shows its
+          counts and is not ranked. Competitor columns count wins inside those two rates only.
         </p>
         <ResizableTable
           tableId="engine-comparison"
@@ -95,29 +119,27 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
           onSort={sortedEngines.onSort}
         >
           <tbody>
-            {sortedEngines.rows.map((e) => {
-              const small = isSmallSample(e.resolved, largest);
-              const engineLosses = snapshot.calls.filter(
-                (r: AiCallRow) =>
-                  isCommercial(r) && (r.engine ?? "").toLowerCase() === e.key && r.outcome === "competitor_win",
-              );
+            {sortedEngines.rows.map((engine) => {
+              const aside = headlineAside(engine);
               return (
-                <tr key={e.key} data-engine={e.key} data-small-sample={small ? "true" : undefined}>
+                <tr key={engine.key} data-engine={engine.key}>
                   <td>
-                    <EvidenceLink focus={{ field: "engine", value: e.key }} tab={AI_TABS.simulations}>
-                      {engineLabel(e.key)}
+                    <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={AI_TABS.simulations}>
+                      {engineLabel(engine.key)}
                     </EvidenceLink>
-                    <div style={mutedText}>{e.models.join(", ")}</div>
+                    <div className="ai-role-detail">{engine.models.join(", ")}</div>
                   </td>
                   <td>
-                    {e.fenderWins} of {e.resolved}
-                    <div style={mutedText}>{small ? "Too few to compare" : pct(e.fenderWins, e.resolved)}</div>
+                    <RoleCount role="unbranded_discovery" tally={engine.roles.unbranded_discovery} largestResolved={largest.unbranded} />
                   </td>
-                  {brands.map((b) => (
-                    <td key={b}>{engineLosses.filter((r) => r.primary_brand === b).length}</td>
+                  <td>
+                    <RoleCount role="branded_consideration" tally={engine.roles.branded_consideration} largestResolved={largest.branded} />
+                  </td>
+                  {brands.map((brand) => (
+                    <td key={brand}>{brandWins(snapshot.calls, engine.key, brand)}</td>
                   ))}
-                  <td>{e.unresolved}</td>
-                  <td>{e.errors}</td>
+                  <td>{aside.unresolved}</td>
+                  <td>{aside.errors}</td>
                 </tr>
               );
             })}
@@ -125,7 +147,7 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </ResizableTable>
       </div>
 
-      <div className="content-box" style={{ marginTop: 12 }}>
+      <div className="content-box ai-engine-category ai-role-rates" style={{ marginTop: 12 }}>
         <div className="content-box-title">Fender leads by engine and category</div>
         <ResizableTable
           tableId="engine-category"
@@ -139,16 +161,18 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
             {sortedCategories.rows.map((category) => (
               <tr key={category} data-category={category}>
                 <td>{categoryLabel(category)}</td>
-                {engines.map((e) => {
-                  const t = tallyCommercial(
-                    snapshot.calls.filter(
-                      (r) => r.category === category && (r.engine ?? "").toLowerCase() === e.key,
-                    ),
-                  );
+                {engines.map((engine) => {
+                  const cell = cellOf(category, engine.key);
+                  const errors = cell.unbranded.errors + cell.branded.errors;
                   return (
-                    <td key={e.key}>
-                      {t.resolved ? `${t.fenderWins} of ${t.resolved}` : "None resolved"}
-                      {t.errors ? <div style={mutedText}>{t.errors} errors</div> : null}
+                    <td key={engine.key}>
+                      <RolePair
+                        unbranded={cell.unbranded}
+                        branded={cell.branded}
+                        largestUnbranded={cellLargest.unbranded}
+                        largestBranded={cellLargest.branded}
+                      />
+                      {errors ? <div className="ai-role-detail">{errors} provider errors</div> : null}
                     </td>
                   );
                 })}
@@ -156,9 +180,11 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
             ))}
           </tbody>
         </ResizableTable>
-        <p style={{ ...mutedText, marginTop: 8 }}>
-          Counts, not rates: most cells hold only a few resolved answers.
+        <p className="ai-role-footnote">
+          Each cell is two counts. A percent shows only when that count is large enough to compare, and the two counts
+          are not combined into one rate.
         </p>
+        <KeptOutNote snapshot={snapshot} />
       </div>
     </>
   );

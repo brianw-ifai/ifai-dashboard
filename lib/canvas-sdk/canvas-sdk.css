@@ -1735,6 +1735,38 @@
       color: var(--text-main);
     }
 
+    /* AI Search role tables only. Retail tables, the hub, and metric widgets stay on .table-sm. */
+    .ai-search-panel .ai-role-rates .table-sm,
+    .ai-search-panel .ai-role-rates .table-sm td {
+      font-size: 15px;
+    }
+
+    .ai-search-panel .ai-role-rates .table-sm th,
+    .ai-search-panel .ai-role-rates .table-sm .ifai-sort-btn {
+      font-size: 13px;
+    }
+
+    .ai-search-panel .ai-role-rates .ai-role-footnote,
+    .ai-search-panel .ai-role-rates .ceo-callout-body {
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .ai-search-panel .ai-role-rates .ai-role-footnote {
+      color: var(--text-muted);
+      margin: 8px 0 0;
+    }
+
+    .ai-search-panel .ai-role-rates ul.ai-role-footnote {
+      padding-left: 18px;
+    }
+
+    .ai-search-panel .ai-role-rates .ai-role-detail {
+      display: block;
+      margin-top: 2px;
+      color: var(--text-muted);
+    }
+
     .tag-badge {
       display: inline-block;
       padding: 6px 12px;

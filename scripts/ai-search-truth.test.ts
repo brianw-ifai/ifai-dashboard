@@ -27,7 +27,16 @@ import {
   tallyCommercial,
 } from "../lib/ai-search/run-metrics.ts";
 import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
-import { questionRole, roleTally } from "../lib/ai-search/question-role.ts";
+import {
+  categoryRoleTallies,
+  engineRoleTallies,
+  headlineCompetitorWins,
+  questionRole,
+  roleTally,
+  sumRoleTallies,
+  type QuestionRole,
+  type RoleGroupTally,
+} from "../lib/ai-search/question-role.ts";
 import { headlineLine, summarizeRun } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchRead, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
@@ -447,19 +456,47 @@ const PUBLISHED_PROMPTS: Array<[string, string, string, Array<AiCallRow["outcome
   ["p32", "commercial", "Is Squier a good brand or just a cheap knockoff", ["fender_win", "fender_win", "error"]],
 ];
 
-test("shopping questions split into the audited discovery and consideration rates", () => {
-  const rows = PUBLISHED_PROMPTS.flatMap(([key, kind, prompt, outcomes], promptIndex) =>
+const PUBLISHED_ENGINES = ["chatgpt", "gemini", "perplexity"] as const;
+const PUBLISHED_CATEGORIES = ["electrics", "acoustics", "basses", "amps"] as const;
+
+function publishedRows(): AiCallRow[] {
+  return PUBLISHED_PROMPTS.flatMap(([key, kind, prompt, outcomes], promptIndex) =>
     outcomes.map((outcome, index) =>
       call(`p${promptIndex}-${index}`, {
         prompt_key: key,
         prompt_kind: kind,
         prompt,
+        engine: PUBLISHED_ENGINES[index] ?? "chatgpt",
+        category: kind === "probe" ? "hallucinations" : PUBLISHED_CATEGORIES[promptIndex % PUBLISHED_CATEGORIES.length],
         call_status: outcome === "error" ? "error" : "answered",
         outcome,
         primary_brand: outcome === "fender_win" ? "Fender/Squier" : outcome === "competitor_win" ? "Yamaha" : null,
       }),
     ),
   );
+}
+
+function assertRoleSums(groups: RoleGroupTally[]) {
+  const summed = (role: QuestionRole) => sumRoleTallies(groups, role);
+  assert.equal(summed("unbranded_discovery").fenderWins, 13);
+  assert.equal(summed("unbranded_discovery").resolved, 23);
+  assert.equal(summed("branded_consideration").fenderWins, 22);
+  assert.equal(summed("branded_consideration").resolved, 23);
+  assert.equal(summed("brand_associated_discovery").fenderWins, 2);
+  assert.equal(summed("brand_associated_discovery").resolved, 2);
+  const guidance = summed("shopping_guidance");
+  assert.equal(guidance.fenderWins, 0);
+  assert.equal(guidance.resolved, 1);
+  assert.equal(guidance.unresolved, 1);
+  assert.equal(guidance.errors, 1);
+  assert.equal(summed("product_fact").fenderWins, 14);
+  assert.equal(summed("product_fact").resolved, 14);
+  assert.equal(summed("other").calls, 0);
+  assert.equal(summed("other").resolved, 0);
+}
+
+test("shopping questions split into the audited discovery and consideration rates", () => {
+  const rows = publishedRows();
   const unbranded = roleTally(rows, "unbranded_discovery");
   const branded = roleTally(rows, "branded_consideration");
   const associated = roleTally(rows, "brand_associated_discovery");
@@ -488,4 +525,34 @@ test("shopping questions split into the audited discovery and consideration rate
   assert.equal(opened.length, 23);
   assert.ok(opened.every((row) => questionRole(row) === "unbranded_discovery"));
   assert.equal(opened.filter((row) => row.outcome === "unresolved" || row.outcome === "error").length, 0);
+
+  const engines = engineRoleTallies(rows);
+  const categories = categoryRoleTallies(rows);
+  assert.ok(engines.length > 1);
+  assert.ok(categories.length > 1);
+  assertRoleSums(engines);
+  assertRoleSums(categories);
+  for (const role of ["unbranded_discovery", "branded_consideration", "brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const) {
+    const direct = roleTally(rows, role);
+    assert.equal(sumRoleTallies(engines, role).fenderWins, direct.fenderWins, role);
+    assert.equal(sumRoleTallies(engines, role).resolved, direct.resolved, role);
+    assert.equal(sumRoleTallies(engines, role).unresolved, direct.unresolved, role);
+    assert.equal(sumRoleTallies(engines, role).errors, direct.errors, role);
+    assert.equal(sumRoleTallies(categories, role).calls, direct.calls, role);
+    assert.equal(sumRoleTallies(categories, role).competitorWins, direct.competitorWins, role);
+  }
+  assert.ok(categories.every((group) => group.key !== "hallucinations"));
+  assert.equal(rows.filter((row) => questionRole(row) === "other").length, 0);
+
+  const headlineWins = headlineCompetitorWins(rows).reduce((sum, brand) => sum + brand.wins, 0);
+  const keptOutWins = (["brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const).reduce(
+    (sum, role) => sum + roleTally(rows, role).competitorWins,
+    0,
+  );
+  assert.ok(keptOutWins > 0, "a kept-out question has a competitor win");
+  assert.equal(
+    headlineWins,
+    roleTally(rows, "unbranded_discovery").competitorWins + roleTally(rows, "branded_consideration").competitorWins,
+  );
+  assert.equal(headlineWins + keptOutWins, tallyCommercial(rows).competitorWins);
 });
