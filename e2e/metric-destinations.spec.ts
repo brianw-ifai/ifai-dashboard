@@ -9,6 +9,7 @@ const DESTINATIONS: Array<[string, string]> = [
   ["Confirmed Amazon 1P Buy Box", "Retail Overview"],
   ["Seller Data Harvested", "Retail Overview"],
   ["MAP violations", "MAP"],
+  ["Suppressed Listings", "Suppressed Listings"],
   ["Stranded Customer Reviews", "Catalog Governance"],
   ["Average Amazon Price Drift", "MAP"],
   ["Unbranded discovery", "Run Summary"],

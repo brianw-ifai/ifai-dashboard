@@ -28,6 +28,7 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "buy-box-retention": "Retail Overview",
   "seller-data-coverage": "Retail Overview",
   "flagged-asins": "MAP",
+  "suppressed-listings": "Suppressed Listings",
   "stranded-reviews": "Catalog Governance",
   "amazon-map-drift": "MAP",
   "overall-ai-win-rate": "Run Summary",

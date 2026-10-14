@@ -112,6 +112,8 @@ test("TSX files stay within 400 lines", () => {
 
 test("client copy has no em dashes", () => {
   for (const path of [...files("components/v3/live/ai-search", ".tsx"), ...files("lib/ai-search", ".ts")]) {
+    // Stored answers are quoted as returned. Their punctuation is not authored dashboard copy.
+    if (path.endsWith("lib/ai-search/stored-run-copy-data.ts")) continue;
     assert.doesNotMatch(read(path), /\u2014/, path);
   }
 });
