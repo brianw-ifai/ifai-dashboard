@@ -11,8 +11,12 @@
  * (through scripts/register-alias.mjs), and the unit tests.
  */
 
-/** Mirrors the `repo` constant in next.config.ts, which sets basePath for the static export. */
-export const STATIC_REPO = "ifai-dashboard";
+/**
+ * Mirrors the `repo` constant in next.config.ts, which sets basePath for the static export.
+ * NEXT_PUBLIC_PAGES_REPO lets the same branch publish under another repo's Pages site
+ * (the dashboard-v2 preview); Next inlines the literal lookup in client bundles.
+ */
+export const STATIC_REPO = process.env.NEXT_PUBLIC_PAGES_REPO || "ifai-dashboard";
 export const STATIC_BASE_PATH = `/${STATIC_REPO}`;
 
 /** Folder under public/ that the export script fills. */
