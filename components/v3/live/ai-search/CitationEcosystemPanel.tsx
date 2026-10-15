@@ -21,6 +21,7 @@ import {
   type SourceClass,
 } from "@/lib/ai-search/citations";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import { pct } from "@/lib/ai-search/summary";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -145,6 +146,10 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
           ? categoryLabel(pick.value)
           : pick.value;
 
+  const caution = citationStorageCaution(snapshot.run.audit_run_id);
+  const declaredCitations = snapshot.storedCitationCount ?? snapshot.citations.length;
+  const citationUrlsLoaded = snapshot.citations.length >= declaredCitations;
+
   return (
     <>
       <div className="content-box ai-citation-summary">
@@ -167,6 +172,13 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
             ))}
           </div>
         </div>
+        {caution ? (
+          <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-caution>
+            {caution}
+          </p>
+        ) : null}
+        {citationUrlsLoaded ? (
+          <>
         <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-cited-answers>
           {read.answersWithCitation} of {read.answered} {scopeNoun} cited web sources ({pct(read.answersWithCitation, read.answered)}).
         </p>
@@ -204,11 +216,18 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
           A cited link appears alongside an answer. This read does not measure whether the page caused the
           recommendation, and a citation is not an endorsement of Fender by that source.
         </p>
+          </>
+        ) : (
+          <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-count>
+            This run stores {declaredCitations} citation rows. This copy does not list each URL, so those rows are not
+            read as a change in the citation ecosystem.
+          </p>
+        )}
       </div>
 
       <CitationRoleNote />
 
-      {read.rows.length === 0 ? (
+      {!citationUrlsLoaded ? null : read.rows.length === 0 ? (
         <div className="content-box" style={{ marginTop: 12 }}>
           <EmptyRows>No answer in this view returned a cited link.</EmptyRows>
         </div>
@@ -312,7 +331,9 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </>
       )}
 
-      <CitationEvidenceTable rows={filtered} label={pickLabel} onClear={pick ? () => setPick(null) : undefined} />
+      {citationUrlsLoaded ? (
+        <CitationEvidenceTable rows={filtered} label={pickLabel} onClear={pick ? () => setPick(null) : undefined} />
+      ) : null}
     </>
   );
 }

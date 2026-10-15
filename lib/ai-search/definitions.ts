@@ -1,5 +1,3 @@
-import { MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
-
 /** Plain-language definitions shown on the dotted AI Search terms. */
 export const AI_DEFINITIONS = {
   "Fender lead":
@@ -29,7 +27,11 @@ export const AI_DEFINITIONS = {
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",
   "published run":
-    "The one audit run IntoFocus has published as current. Earlier and unpublished runs are kept as history and never mixed into these figures.",
+    "The one audit run IntoFocus has published as current. Figures use that run unless you open a historical run from the run control. Unpublished runs and development fragments are not mixed in.",
+  "question set":
+    "The full list of questions sent in one AI Search run. A change means a later run asked a different list, so the rates on each side are not one continuous series.",
+  "query version":
+    "One exact wording of a question. Editing the wording starts a new version. A trend for one version includes only runs that asked that wording.",
   "confirmed contradiction":
     "The answer contradicts a fact IntoFocus verified on a Fender page, and the stored evidence quotes the conflicting text.",
   "no contradiction found":
@@ -38,7 +40,8 @@ export const AI_DEFINITIONS = {
     "IntoFocus's grouping of a cited domain as brand-owned, retailer, editorial, community, video, or other.",
   "canonical URL":
     "The cited link with tracking parameters, page fragments, and www removed, so the same page counts once per answer.",
-  "small sample": `Fewer than ${MIN_COMPARABLE_RESOLVED} resolved answers, or less than half of the largest sample beside it. The figure is shown, but it is not ranked against the others.`,
+  "small sample":
+    "The percentage describes this run exactly, but it is based on relatively few answers or substantially fewer answers than another row beside it. A few additional answers could move it sharply, so do not treat it as a stable ranking.",
 } as const;
 
 export type AiTermKey = keyof typeof AI_DEFINITIONS;

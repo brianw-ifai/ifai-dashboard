@@ -1290,6 +1290,7 @@ export function CanvasShell({ spec, children }: Props) {
               <p className="drilldown-desc">
                 {showingCommand ? commandCenter?.desc : (spoke?.desc ?? "")}
               </p>
+              {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
             </div>
 
             <div className="drilldown-header-actions">

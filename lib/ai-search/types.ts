@@ -15,6 +15,9 @@ export type AiCurrentRun = {
   completed_at: string | null;
   published_at: string | null;
   missing_calls: number | null;
+  /** Present on history rows. The current-run view omits it. */
+  is_published?: boolean | null;
+  run_kind?: string | null;
 };
 
 export type AiOutcome = "fender_win" | "competitor_win" | "unresolved" | "error" | "not_scored";
@@ -49,6 +52,8 @@ export type AiCallRow = {
   attempt_no: number | null;
   repeat_no: number | null;
   created_at: string | null;
+  /** Set when a history read already returned the stored answer. */
+  answer_text?: string | null;
 };
 
 export type AiProbeRow = {
@@ -86,6 +91,12 @@ export type AiSearchSnapshot = {
   calls: AiCallRow[];
   probes: AiProbeRow[];
   citations: AiCitationRow[];
+  /**
+   * Citation rows stored with the run. The copy may list fewer URLs than this
+   * count. When it does, the citation panel says the rows were stored and does
+   * not treat the shorter list as a change in the citation ecosystem.
+   */
+  storedCitationCount?: number;
 };
 
 /** Every surface renders one of these. A failed or missing read is never shown as zero. */

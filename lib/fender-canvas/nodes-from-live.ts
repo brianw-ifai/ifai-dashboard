@@ -3,13 +3,15 @@ import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { readinessFindabilityFace, type FindabilityRead } from "@/lib/findability/copy";
+import { formatInt } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
   headlineSurface,
   retailBubbleFaces,
   type RetailCanvasRead,
 } from "@/lib/fender-canvas/portfolio-retail-display";
+import { primarySpoke, satelliteNode } from "@/lib/fender-canvas/primary-spoke-layout";
 
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
@@ -18,66 +20,47 @@ export function buildLiveNodes(
   metrics: MetricsMap,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  findability: FindabilityRead = { phase: "loading" },
 ): CanvasNode[] {
   const { m } = bundle;
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
   const headline = headlineSurface(retail);
+  const readinessFace = readinessFindabilityFace(findability, metrics.machineReadableSpecs.value);
 
   return [
     {
-      id: "sat-prompts",
-      x: 240,
-      y: 200,
-      r: 52,
+      ...satelliteNode("sat-prompts"),
       spokeId: "aeo",
       ...aiFaces.satPrompts,
     },
     {
-      id: "sat-citations",
-      x: 180,
-      y: 360,
-      r: 52,
+      ...satelliteNode("sat-citations"),
       spokeId: "aeo",
       ...aiFaces.satCitations,
     },
     {
-      id: "sat-drift",
-      x: 260,
-      y: 480,
-      r: 52,
+      ...satelliteNode("sat-drift"),
       spokeId: "aeo",
       ...aiFaces.satDrift,
     },
     {
-      id: "sat-buybox",
-      x: 1360,
-      y: 200,
-      r: 54,
+      ...satelliteNode("sat-buybox"),
       spokeId: "ecommerce",
       ...retailFaces.suppressed,
     },
     {
-      id: "sat-asin",
-      x: 1420,
-      y: 360,
-      r: 54,
+      ...satelliteNode("sat-asin"),
       spokeId: "ecommerce",
       ...retailFaces.catalog,
     },
     {
-      id: "sat-map",
-      x: 1340,
-      y: 480,
-      r: 60,
+      ...satelliteNode("sat-map"),
       spokeId: "ecommerce",
       ...retailFaces.map,
     },
     {
-      id: "sat-schema",
-      x: 230,
-      y: 720,
-      r: 50,
+      ...satelliteNode("sat-schema"),
       status: "danger",
       title: "Machine Readability",
       stats: [
@@ -89,14 +72,11 @@ export function buildLiveNodes(
       subTab: "Machine Readability",
       tooltip: {
         title: "Schema.org Structured Data",
-        desc: `${formatPct(m.spec_fender_found_pct)} of audited SKUs have a fender.com page (${formatInt(m.spec_fender_found)} of ${formatInt(m.spec_checked)}). ${formatInt(m.spec_missing_additional_property)} pages lack additionalProperty specs.`,
+        desc: `${formatInt(m.spec_missing_additional_property)} pages in the older spec read lack additionalProperty. That list is on this tab. It is not the Findability count of official pages.`,
       },
     },
     {
-      id: "sat-tables",
-      x: 320,
-      y: 870,
-      r: 48,
+      ...satelliteNode("sat-tables"),
       status: "neutral",
       title: "Amazon A+ Matrix",
       stats: ["Not measured yet"],
@@ -108,75 +88,43 @@ export function buildLiveNodes(
       },
     },
     {
-      id: "sat-taylor",
-      x: 1370,
-      y: 720,
-      r: 51,
+      ...satelliteNode("sat-taylor"),
       spokeId: "competitors",
       ...aiFaces.satGap,
     },
     {
-      id: "sat-amps",
-      x: 1280,
-      y: 870,
-      r: 48,
+      ...satelliteNode("sat-amps"),
       spokeId: "competitors",
       ...aiFaces.satLead,
     },
     {
-      id: "spoke-aeo",
-      x: 440,
-      y: 320,
-      r: 86,
-      titleSize: 14.5,
-      spokeId: "aeo",
       ...aiFaces.spokeAeo,
+      spokeId: "aeo",
+      ...primarySpoke("spoke-aeo"),
     },
     {
-      id: "spoke-retail",
-      x: 1160,
-      y: 320,
-      r: 96,
-      titleSize: 13.5,
-      spokeId: "ecommerce",
       ...retailFaces.main,
+      spokeId: "ecommerce",
+      ...primarySpoke("spoke-retail"),
     },
     {
-      id: "spoke-specs",
-      x: 440,
-      y: 680,
-      r: 78,
+      ...primarySpoke("spoke-specs"),
       status: "warning",
       title: "AI Readiness",
-      titleSize: 13.5,
-      stats: [
-        `${metrics.fenderFindability.value} Found`,
-        `${metrics.machineReadableSpecs.value} Amazon specs`,
-      ],
-      meta: `${formatInt(m.spec_checked)} SKUs checked`,
+      stats: readinessFace.stats,
+      meta: readinessFace.meta,
       spokeId: "specs",
-      tooltip: {
-        title: "AI Readiness: Product Specs",
-        desc: `fender.com findability ${metrics.fenderFindability.value}. Amazon structured completeness ${metrics.machineReadableSpecs.value} on average.`,
-      },
+      tooltip: { title: readinessFace.tooltipTitle, desc: readinessFace.tooltipDesc },
     },
     {
-      id: "spoke-competitors",
-      x: 1160,
-      y: 680,
-      r: 78,
-      titleSize: 13,
-      spokeId: "competitors",
       ...aiFaces.spokeCompetitors,
+      spokeId: "competitors",
+      ...primarySpoke("spoke-competitors"),
     },
     {
-      id: "spoke-fixes",
-      x: 800,
-      y: 180,
-      r: 74,
+      ...primarySpoke("spoke-fixes"),
       status: "success",
       title: "Action Items",
-      titleSize: 14,
       stats: [`${metrics.phaseOneLift.value} est.`, metrics.enterprisePotential.value],
       meta: metrics.enterprisePotential.value + " Enterprise",
       spokeId: "suggestions",
@@ -186,15 +134,10 @@ export function buildLiveNodes(
       },
     },
     {
-      id: "spoke-roadmap",
-      x: 800,
-      y: 820,
-      r: 74,
+      ...primarySpoke("spoke-roadmap"),
       status: "success",
       title: "Strategy Roadmap",
-      titleSize: 14,
       stats: ["90 Days", "3 Phases"],
-      meta: headline.countLabel ? `${headline.label}: ${headline.countLabel}` : headline.label,
       spokeId: "roadmap",
       tooltip: {
         title: "90-Day Portfolio Roadmap",

@@ -188,6 +188,41 @@ test.describe("Competitive Radar", () => {
     await expect(page.locator(".ai-engine-comparison tbody tr")).not.toHaveCount(0);
   });
 
+  test("engine comparison shows the two rates, not one pooled commercial win rate", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("Competitive Radar");
+    await canvas.openTab("Engine Comparison");
+    const comparison = page.locator(".ai-engine-comparison");
+    await expect(comparison).toContainText("Unbranded discovery");
+    await expect(comparison).toContainText("Branded consideration");
+    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText("13 of 23");
+    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText("56.5%");
+    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText("22 of 23");
+    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText("95.7%");
+    const body = page.locator(".drilldown-body");
+    await expect(body).not.toContainText("51 of 63");
+    await expect(body).not.toContainText("All commercial prompts");
+    await expect(body).not.toContainText("Fender win share");
+    await expect(body).not.toContainText("Too few to compare");
+    const small = comparison.locator("[data-small-sample='true']").first();
+    await expect(small).toContainText(/%/);
+    await expect(small).toContainText("Small sample");
+    await expect(small).toContainText(/of \d+/);
+
+    const cell = await comparison.locator("td").first().evaluate((el) => getComputedStyle(el).fontSize);
+    const header = await comparison.locator(".ifai-sort-btn").first().evaluate((el) => getComputedStyle(el).fontSize);
+    const note = await comparison.locator(".ai-role-footnote").last().evaluate((el) => getComputedStyle(el).fontSize);
+    expect(parseFloat(cell)).toBeGreaterThanOrEqual(15);
+    expect(parseFloat(header)).toBeGreaterThanOrEqual(13);
+    expect(parseFloat(note)).toBeGreaterThanOrEqual(14);
+
+    await comparison.locator("[data-ai-role-total='unbranded_discovery'] .ifai-evidence-link").first().click();
+    await expect(canvas.activeTab).toHaveText("Simulations");
+    await expect(page.locator("[data-ai-role-filter='unbranded_discovery']")).toBeVisible();
+    const roles = await canvas.simulations.evaluateAll((els) => els.map((el) => el.getAttribute("data-role")));
+    expect(roles.length).toBeGreaterThan(0);
+    for (const role of roles) expect(role).toBe("unbranded_discovery");
+  });
+
   test("old tab slugs still open the renamed tabs", async ({ page }) => {
     for (const [spoke, slug, tab] of [
       ["competitors", "multi-marketplace-channel-scope-sweetwater-reverb-walmart", "Engine Comparison"],

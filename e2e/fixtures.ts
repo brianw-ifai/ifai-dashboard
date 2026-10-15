@@ -133,7 +133,9 @@ export const test = base.extend<Fixtures>({
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(String(error).split("\n")[0]));
       page.on("console", (message) => {
-        if (message.type() === "error") errors.push(`console: ${message.text()}`);
+        if (message.type() !== "error") return;
+        const text = message.text();
+        errors.push(`console: ${text}`);
       });
       await use(errors);
       // A dashboard that throws in the console is broken even if the assertion passed.

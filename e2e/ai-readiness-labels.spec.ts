@@ -3,12 +3,12 @@ import { Canvas } from "./fixtures";
 import { FOUND_RESULT, MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
 
 /**
- * The AI Readiness bubble, its two satellites, and its three tabs share one set
+ * The AI Readiness bubble, its two satellites, and its tabs share one set
  * of names. A link copied from an earlier tab title still opens the same tab,
  * and the two controls on the first tab read as controls before they are used.
  */
 
-const TAB_NAMES = ["AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
+const TAB_NAMES = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
 
 /** Bubble titles are drawn as separate SVG lines, so the DOM text has no space. */
 function mapNode(page: Page, title: string) {

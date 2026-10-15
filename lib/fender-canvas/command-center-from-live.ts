@@ -1,7 +1,7 @@
 import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
+import { formatInt } from "@/lib/fender-canvas/format";
 import {
   headlineSentence,
   headlineSurface,
@@ -77,7 +77,7 @@ export function buildLiveCommandCenter(
       {
         id: "schema-coverage",
         title: "fender.com pages are missing machine-readable spec fields",
-        why: `Site search found a fender.com page for ${formatRatio(m.spec_fender_found, m.spec_checked)} checked SKUs (${formatPct(m.spec_fender_found_pct)}). additionalProperty is missing on ${formatInt(m.spec_missing_additional_property)} of the found pages, so an assistant still has no spec block to read there. The Machine Readability tab lists the found pages whose stored missing fields include additionalProperty.`,
+        why: `Machine Readability lists ${formatInt(m.spec_missing_additional_property)} pages from the older spec read whose stored missing fields include additionalProperty, so an assistant still has no spec block to read there. That list is not the Findability result. Findability counts exact official product pages, family pages, finished searches, ambiguous matches, and unchecked listings separately.`,
         severity: "high",
         spokeId: "specs",
         subTab: "Machine Readability",

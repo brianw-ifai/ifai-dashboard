@@ -109,6 +109,32 @@ export function pct(numerator: number, denominator: number): string {
   return denominator > 0 ? `${((100 * numerator) / denominator).toFixed(1)}%` : "No resolved answers";
 }
 
+/** Visible label on a rate that is too small to rank against the rows beside it. */
+export const SMALL_SAMPLE_LABEL = "Small sample";
+
+/** Exact observed rate, such as "25.0% (1 of 4)". Null when the denominator is zero. */
+export function formatObservedRate(wins: number, resolved: number): string | null {
+  if (resolved <= 0) return null;
+  return `${pct(wins, resolved)} (${wins} of ${resolved})`;
+}
+
+/** The words a role cell shows. A small sample keeps its percentage and is marked. */
+export function roleRatePlainText(wins: number, resolved: number, largestResolved: number): string {
+  const figure = formatObservedRate(wins, resolved);
+  if (figure == null) return "No resolved answers";
+  if (isSmallSample(resolved, largestResolved)) return `${figure} ${SMALL_SAMPLE_LABEL}`;
+  return figure;
+}
+
+/** A ranked rate sorts by its share. A small sample sorts as missing, so it is not ranked. */
+export function roleRateSort(
+  tally: { fenderWins: number; resolved: number },
+  largestResolved: number,
+): number | null {
+  if (tally.resolved <= 0 || isSmallSample(tally.resolved, largestResolved)) return null;
+  return tally.fenderWins / tally.resolved;
+}
+
 /** "ChatGPT (model not recorded), Gemini (3.6 Flash), Perplexity (turbo)" */
 export function engineModelLine(list: EngineModel[]): string {
   return list

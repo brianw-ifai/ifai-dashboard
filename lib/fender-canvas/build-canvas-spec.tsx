@@ -12,35 +12,20 @@ import type { CanvasUserMenu } from "@/lib/canvas-sdk/types";
 import { defineCanvas } from "@/lib/canvas-sdk/types";
 import { aiMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import type { FindabilityRead } from "@/lib/findability/copy";
 import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { buildLiveNodes } from "@/lib/fender-canvas/nodes-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { fenderCanvasEdges, frameTourStep, withPrimaryFocusTargets } from "@/lib/fender-canvas/primary-spoke-layout";
 import { buildLiveTourSteps } from "@/lib/fender-canvas/tour-from-live";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
-const FOCUS_TARGETS = graphLayout.focusTargets as Record<string, { x: number; y: number }>;
-const tourSteps = staticTourSteps as TourStep[];
-
-const STATIC_EDGES = [
-  { x1: 800, y1: 500, x2: 440, y2: 320 },
-  { x1: 800, y1: 500, x2: 1160, y2: 320 },
-  { x1: 800, y1: 500, x2: 440, y2: 680 },
-  { x1: 800, y1: 500, x2: 1160, y2: 680 },
-  { x1: 800, y1: 500, x2: 800, y2: 180 },
-  { x1: 800, y1: 500, x2: 800, y2: 820, kind: "active" as const },
-  { x1: 440, y1: 320, x2: 240, y2: 200 },
-  { x1: 440, y1: 320, x2: 180, y2: 360 },
-  { x1: 440, y1: 320, x2: 260, y2: 480 },
-  { x1: 1160, y1: 320, x2: 1360, y2: 200, kind: "critical" as const },
-  { x1: 1160, y1: 320, x2: 1420, y2: 360, kind: "critical" as const },
-  { x1: 1160, y1: 320, x2: 1340, y2: 480 },
-  { x1: 440, y1: 680, x2: 230, y2: 720 },
-  { x1: 440, y1: 680, x2: 320, y2: 870 },
-  { x1: 1160, y1: 680, x2: 1370, y2: 720 },
-  { x1: 1160, y1: 680, x2: 1280, y2: 870 },
-];
+const FOCUS_TARGETS = withPrimaryFocusTargets(
+  graphLayout.focusTargets as Record<string, { x: number; y: number }>,
+);
+const tourSteps = (staticTourSteps as TourStep[]).map(frameTourStep);
 
 export type BuildCanvasSpecOptions = {
   userMenu?: CanvasUserMenu;
@@ -49,6 +34,7 @@ export type BuildCanvasSpecOptions = {
   metricStorageSuffix?: string;
   retail?: RetailCanvasRead;
   aiSearch?: AiSearchRead;
+  findability?: FindabilityRead;
 };
 
 function viewerStorageScope(viewerId?: string) {
@@ -72,7 +58,8 @@ export function buildFenderCanvasSpec(
 ) {
   const retail = options.retail ?? { phase: "loading" as const };
   const aiSearch = options.aiSearch ?? { phase: "loading" as const };
-  const live = bundle ? buildLiveMetrics(bundle, retail) : null;
+  const findability = options.findability ?? { phase: "loading" as const };
+  const live = bundle ? buildLiveMetrics(bundle, retail, findability) : null;
   const metrics = live ? (Object.assign({}, live, aiMetrics(aiSearch)) as typeof live) : FENDER_METRICS;
   const widgetList = bundle
     ? Object.values(metrics)
@@ -142,11 +129,11 @@ export function buildFenderCanvasSpec(
       { status: "success", label: "On Track / Lift Target" },
     ],
     badges: [],
-    edges: STATIC_EDGES,
-    nodes: bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch) : fenderStaticNodes,
-    spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch) : spokeData,
+    edges: fenderCanvasEdges(),
+    nodes: bundle ? buildLiveNodes(bundle, metrics, retail, aiSearch, findability) : fenderStaticNodes,
+    spokes: bundle ? buildLiveSpokes(bundle, retail, aiSearch, findability) : spokeData,
     focusTargets: FOCUS_TARGETS,
-    tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch) : tourSteps,
+    tour: bundle ? buildLiveTourSteps(bundle, retail, aiSearch, findability) : tourSteps,
     ...(options.userMenu
       ? { userMenu: options.userMenu, userEmail: options.userMenu.email }
       : {}),

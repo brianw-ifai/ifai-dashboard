@@ -27,8 +27,17 @@ import {
   tallyCommercial,
 } from "../lib/ai-search/run-metrics.ts";
 import { AI_DEFINITIONS } from "../lib/ai-search/definitions.ts";
-import { questionRole, roleTally } from "../lib/ai-search/question-role.ts";
-import { headlineLine, summarizeRun } from "../lib/ai-search/summary.ts";
+import {
+  categoryRoleTallies,
+  engineRoleTallies,
+  headlineCompetitorWins,
+  questionRole,
+  roleTally,
+  sumRoleTallies,
+  type QuestionRole,
+  type RoleGroupTally,
+} from "../lib/ai-search/question-role.ts";
+import { formatObservedRate, headlineLine, roleRatePlainText, roleRateSort, summarizeRun } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiCitationRow, AiCurrentRun, AiProbeRow, AiSearchRead, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 const RUN = "run-current";
@@ -447,19 +456,47 @@ const PUBLISHED_PROMPTS: Array<[string, string, string, Array<AiCallRow["outcome
   ["p32", "commercial", "Is Squier a good brand or just a cheap knockoff", ["fender_win", "fender_win", "error"]],
 ];
 
-test("shopping questions split into the audited discovery and consideration rates", () => {
-  const rows = PUBLISHED_PROMPTS.flatMap(([key, kind, prompt, outcomes], promptIndex) =>
+const PUBLISHED_ENGINES = ["chatgpt", "gemini", "perplexity"] as const;
+const PUBLISHED_CATEGORIES = ["electrics", "acoustics", "basses", "amps"] as const;
+
+function publishedRows(): AiCallRow[] {
+  return PUBLISHED_PROMPTS.flatMap(([key, kind, prompt, outcomes], promptIndex) =>
     outcomes.map((outcome, index) =>
       call(`p${promptIndex}-${index}`, {
         prompt_key: key,
         prompt_kind: kind,
         prompt,
+        engine: PUBLISHED_ENGINES[index] ?? "chatgpt",
+        category: kind === "probe" ? "hallucinations" : PUBLISHED_CATEGORIES[promptIndex % PUBLISHED_CATEGORIES.length],
         call_status: outcome === "error" ? "error" : "answered",
         outcome,
         primary_brand: outcome === "fender_win" ? "Fender/Squier" : outcome === "competitor_win" ? "Yamaha" : null,
       }),
     ),
   );
+}
+
+function assertRoleSums(groups: RoleGroupTally[]) {
+  const summed = (role: QuestionRole) => sumRoleTallies(groups, role);
+  assert.equal(summed("unbranded_discovery").fenderWins, 13);
+  assert.equal(summed("unbranded_discovery").resolved, 23);
+  assert.equal(summed("branded_consideration").fenderWins, 22);
+  assert.equal(summed("branded_consideration").resolved, 23);
+  assert.equal(summed("brand_associated_discovery").fenderWins, 2);
+  assert.equal(summed("brand_associated_discovery").resolved, 2);
+  const guidance = summed("shopping_guidance");
+  assert.equal(guidance.fenderWins, 0);
+  assert.equal(guidance.resolved, 1);
+  assert.equal(guidance.unresolved, 1);
+  assert.equal(guidance.errors, 1);
+  assert.equal(summed("product_fact").fenderWins, 14);
+  assert.equal(summed("product_fact").resolved, 14);
+  assert.equal(summed("other").calls, 0);
+  assert.equal(summed("other").resolved, 0);
+}
+
+test("shopping questions split into the audited discovery and consideration rates", () => {
+  const rows = publishedRows();
   const unbranded = roleTally(rows, "unbranded_discovery");
   const branded = roleTally(rows, "branded_consideration");
   const associated = roleTally(rows, "brand_associated_discovery");
@@ -488,4 +525,60 @@ test("shopping questions split into the audited discovery and consideration rate
   assert.equal(opened.length, 23);
   assert.ok(opened.every((row) => questionRole(row) === "unbranded_discovery"));
   assert.equal(opened.filter((row) => row.outcome === "unresolved" || row.outcome === "error").length, 0);
+
+  const engines = engineRoleTallies(rows);
+  const categories = categoryRoleTallies(rows);
+  assert.ok(engines.length > 1);
+  assert.ok(categories.length > 1);
+  assertRoleSums(engines);
+  assertRoleSums(categories);
+  for (const role of ["unbranded_discovery", "branded_consideration", "brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const) {
+    const direct = roleTally(rows, role);
+    assert.equal(sumRoleTallies(engines, role).fenderWins, direct.fenderWins, role);
+    assert.equal(sumRoleTallies(engines, role).resolved, direct.resolved, role);
+    assert.equal(sumRoleTallies(engines, role).unresolved, direct.unresolved, role);
+    assert.equal(sumRoleTallies(engines, role).errors, direct.errors, role);
+    assert.equal(sumRoleTallies(categories, role).calls, direct.calls, role);
+    assert.equal(sumRoleTallies(categories, role).competitorWins, direct.competitorWins, role);
+  }
+  assert.ok(categories.every((group) => group.key !== "hallucinations"));
+  assert.equal(rows.filter((row) => questionRole(row) === "other").length, 0);
+
+  const headlineWins = headlineCompetitorWins(rows).reduce((sum, brand) => sum + brand.wins, 0);
+  const keptOutWins = (["brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const).reduce(
+    (sum, role) => sum + roleTally(rows, role).competitorWins,
+    0,
+  );
+  assert.ok(keptOutWins > 0, "a kept-out question has a competitor win");
+  assert.equal(
+    headlineWins,
+    roleTally(rows, "unbranded_discovery").competitorWins + roleTally(rows, "branded_consideration").competitorWins,
+  );
+  assert.equal(headlineWins + keptOutWins, tallyCommercial(rows).competitorWins);
+  assert.equal(formatObservedRate(unbranded.fenderWins, unbranded.resolved), "56.5% (13 of 23)");
+  assert.equal(formatObservedRate(branded.fenderWins, branded.resolved), "95.7% (22 of 23)");
+  assert.equal(roleRatePlainText(unbranded.fenderWins, unbranded.resolved, unbranded.resolved), "56.5% (13 of 23)");
+  assert.equal(roleRatePlainText(branded.fenderWins, branded.resolved, branded.resolved), "95.7% (22 of 23)");
+});
+
+test("a small sample shows its exact percentage and stays unranked", () => {
+  assert.equal(roleRatePlainText(1, 4, 4), "25.0% (1 of 4) Small sample");
+  assert.equal(formatObservedRate(1, 4), "25.0% (1 of 4)");
+  assert.equal(isSmallSample(4, 4), true);
+  assert.equal(roleRateSort({ fenderWins: 1, resolved: 4 }, 4), null);
+  assert.equal(roleRateSort({ fenderWins: 1, resolved: 4 }, 23), null);
+
+  assert.equal(roleRatePlainText(0, 0, 23), "No resolved answers");
+  assert.equal(formatObservedRate(0, 0), null);
+  assert.equal(roleRateSort({ fenderWins: 0, resolved: 0 }, 23), null);
+  assert.doesNotMatch(roleRatePlainText(0, 0, 23), /%|Small sample/);
+
+  assert.equal(roleRatePlainText(13, 23, 23), "56.5% (13 of 23)");
+  assert.equal(roleRatePlainText(22, 23, 23), "95.7% (22 of 23)");
+  assert.equal(roleRateSort({ fenderWins: 13, resolved: 23 }, 23), 13 / 23);
+  assert.equal(roleRateSort({ fenderWins: 22, resolved: 23 }, 23), 22 / 23);
+  assert.equal(
+    AI_DEFINITIONS["small sample"],
+    "The percentage describes this run exactly, but it is based on relatively few answers or substantially fewer answers than another row beside it. A few additional answers could move it sharply, so do not treat it as a stable ranking.",
+  );
 });

@@ -140,7 +140,7 @@ test("every copied surface carries the same Featured Offer label and count", () 
   assert.equal(surface.countLabel, "1 listing");
   const sentence = headlineSentence(surface);
 
-  // Command center priority, 90-day roadmap meta, guided tour, and the briefing var.
+  // Command center priority, roadmap tooltip, guided tour, and the briefing var.
   const command = buildLiveCommandCenter(bundle(), READ);
   const priority = command.items.find((item) => item.id === "buybox-suppression");
   assert.equal(priority?.title, `${surface.label}: ${surface.countLabel}`);
@@ -148,7 +148,8 @@ test("every copied surface carries the same Featured Offer label and count", () 
 
   const nodes = buildLiveNodes(bundle(), buildLiveMetrics(bundle()), READ);
   const roadmap = nodes.find((node) => node.id === "spoke-roadmap");
-  assert.equal(roadmap?.meta, `${surface.label}: ${surface.countLabel}`);
+  assert.equal(roadmap?.meta, undefined);
+  assert.equal(Object.hasOwn(roadmap ?? {}, "meta"), false);
   assert.equal(roadmap?.tooltip?.desc, sentence);
 
   const tour = buildLiveTourSteps(bundle(), READ);
@@ -245,7 +246,6 @@ const PRE_EXISTING_OVERSIZED = [
   "components/intofocus-portal/PortalView.tsx",
   "components/sdk/docs/DesignSystemContent.tsx",
   "components/sdk/sdk-canvas-spec.tsx",
-  "lib/canvas-sdk/CanvasGraph.tsx",
   "lib/canvas-sdk/CanvasShell.tsx",
   "lib/canvas-sdk/GraphPrimitives.tsx",
 ];
