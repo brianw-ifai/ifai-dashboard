@@ -32,7 +32,15 @@ const mcpConfigPath = join(root, ".cursor/mcp.json");
 
 function fenderMcpUrl() {
   const fromEnv = process.env.FENDERTEST_TOOLBELT_MCP_URL?.trim();
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    // Accept a pasted client config snippet as well as a bare URL.
+    const found = fromEnv.match(/https:\/\/[^\s"'<>]+/)?.[0];
+    if (!found || !URL.canParse(found)) {
+      console.error("FENDERTEST_TOOLBELT_MCP_URL does not contain a valid https URL.");
+      process.exit(1);
+    }
+    return found;
+  }
   if (!existsSync(mcpConfigPath)) {
     console.error(
       "Missing FenderTest Toolbelt connection. Set FENDERTEST_TOOLBELT_MCP_URL or create .cursor/mcp.json.",
