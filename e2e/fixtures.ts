@@ -103,16 +103,16 @@ export class Canvas {
   }
 
   get simulations() {
-    return this.page.locator("#simulation-list .action-card");
+    return this.page.locator("#ai-simulation-list .ai-sim-row");
   }
 
   filterChip(label: string) {
     return this.page.locator(".segmented-btn", { hasText: label });
   }
 
-  /** AI Search Visibility -> the 100-prompt explorer, where stars and filters live. */
+  /** AI Search Visibility -> the explorer over every call in the published run. */
   async openSimulations() {
-    await this.openPriority("AI assistants are quoting specs");
+    await this.openSpokeFromMap("AI Search Visibility");
     await this.openTab("Simulations");
     await expect(this.simulations.first()).toBeVisible();
   }
@@ -133,7 +133,9 @@ export const test = base.extend<Fixtures>({
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(String(error).split("\n")[0]));
       page.on("console", (message) => {
-        if (message.type() === "error") errors.push(`console: ${message.text()}`);
+        if (message.type() !== "error") return;
+        const text = message.text();
+        errors.push(`console: ${text}`);
       });
       await use(errors);
       // A dashboard that throws in the console is broken even if the assertion passed.

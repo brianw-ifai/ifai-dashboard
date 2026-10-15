@@ -1,5 +1,5 @@
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
-import { SUPPRESSED_LISTING_COLUMNS } from "@/lib/fender-canvas/suppressed-listings";
+import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 export async function loadCanvas(): Promise<CanvasBundle> {
@@ -80,10 +80,10 @@ export function listingChannelPricesQuery(page = 0, size = 1000) {
 }
 
 /**
- * One existing row, so a missing Competitive External Price column stays a normal
+ * One existing row, so a view without the Featured Offer state columns stays a normal
  * listing read instead of a filtered request for a column the view does not have yet.
  */
-export async function competitivePriceColumnProbe(): Promise<{
+export async function featuredOfferColumnProbe(): Promise<{
   present: boolean;
   error: { message: string } | null;
 }> {
@@ -91,27 +91,31 @@ export async function competitivePriceColumnProbe(): Promise<{
   const { data, error } = await supabase.from("canvas_retail_listings").select("*").limit(1);
   if (error) return { present: false, error };
   const sample = (data ?? [])[0] as Record<string, unknown> | undefined;
-  return { present: sample != null && "competitive_price_threshold_cents" in sample, error: null };
+  return { present: sample != null && "featured_offer_state" in sample, error: null };
 }
 
-/** Listings whose stored offer is above the Competitive External Price with no Featured Offer. */
+/**
+ * Every listing whose current Featured Offer state is withheld. Confirmed high-price
+ * suppression is the subset the reading can compare against Amazon's outside price,
+ * and the table marks it. A withheld listing with no benchmark still belongs here.
+ */
 export function suppressedListingsQuery(page = 0, size = 1000) {
   const supabase = getCanvasSupabase();
   return supabase
     .from("canvas_retail_listings")
-    .select(SUPPRESSED_LISTING_COLUMNS, { count: "exact" })
-    .eq("competitive_offer_suppressed", true)
+    .select(FEATURED_OFFER_COLUMNS, { count: "exact" })
+    .eq("featured_offer_state", "withheld")
     .order("asin")
     .range(page * size, page * size + size - 1);
 }
 
-/** Positive Competitive External Price values already written. Zero means the reading is not stored yet. */
-export function competitivePriceReadingCountQuery() {
+/** Listings the Featured Offer collector has classified. Zero means no reading is stored yet. */
+export function featuredOfferReadingCountQuery() {
   const supabase = getCanvasSupabase();
   return supabase
     .from("canvas_retail_listings")
     .select("asin", { count: "exact", head: true })
-    .gt("competitive_price_threshold_cents", 0);
+    .not("featured_offer_state", "is", null);
 }
 
 /** Flagged simulation rows, including stored root_cause text. Pages through the read. */

@@ -4,8 +4,8 @@ test.describe("configurable metric widgets", () => {
   test("starts with three decision signals and spoke-derived categories", async ({ page }) => {
     const widgets = page.locator(".canvas-metric-widget");
     await expect(widgets).toHaveCount(3);
-    await expect(widgets.nth(0)).toContainText("Featured Offers Suppressed");
-    await expect(widgets.nth(1)).toContainText("Confirmed Spec Hallucinations");
+    await expect(widgets.nth(0)).toContainText("MAP violations");
+    await expect(widgets.nth(1)).toContainText("Product Fact Checks");
     await expect(widgets.nth(2)).toContainText("Recoverable Revenue");
 
     const firstBox = await widgets.first().boundingBox();
@@ -31,12 +31,28 @@ test.describe("configurable metric widgets", () => {
     await widgets.nth(0).locator(".metric-widget-config").click();
     await page
       .getByRole("dialog", { name: "Choose metric for widget 1" })
-      .locator(".metric-widget-option", { hasText: "Confirmed Spec Hallucinations" })
+      .locator(".metric-widget-option", { hasText: "Product Fact Checks" })
       .click();
 
     await expect(
-      page.locator(".metric-widget-label", { hasText: "Confirmed Spec Hallucinations" }),
+      page.locator(".metric-widget-label", { hasText: "Product Fact Checks" }),
     ).toHaveCount(2);
+  });
+
+  test("Suppressed Listings opens its evidence tab and leaves MAP in the picker", async ({
+    canvas,
+    page,
+  }) => {
+    const widgets = page.locator(".canvas-metric-widget");
+    await widgets.nth(0).locator(".metric-widget-config").click();
+    const picker = page.getByRole("dialog", { name: "Choose metric for widget 1" });
+    await expect(picker.locator(".metric-widget-option", { hasText: "MAP violations" })).toBeVisible();
+    await picker.locator(".metric-widget-option", { hasText: "Suppressed Listings" }).click();
+
+    await expect(widgets.nth(0).locator(".metric-widget-label")).toHaveText("Suppressed Listings");
+    await widgets.nth(0).locator(".metric-widget-body").click();
+    await expect(canvas.activeTab).toContainText("Suppressed Listings");
+    await expect(page.locator(".drilldown-tab-btn", { hasText: "MAP" })).toBeVisible();
   });
 
   test("supports an empty add bubble and persists it across reloads", async ({ canvas, page }) => {

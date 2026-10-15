@@ -3,27 +3,51 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   columnWidthStorageKey,
+  filledColumnWidths,
   mergeColumnWidths,
   type ColumnWidthSpec,
 } from "@/lib/fender-canvas/retail-column-layout";
+import {
+  ariaSortValue,
+  tableScrollClass,
+  type SortKind,
+  type TableSort,
+} from "@/lib/fender-canvas/table-sort";
 
 export type RetailColumn = ColumnWidthSpec & {
   label: ReactNode;
   /** Spoken name for the resize control. */
   name: string;
   className?: string;
+  /** When set, the header sorts this column. Currency and counts use "number". */
+  sort?: SortKind;
 };
+
+export function clientColumn(
+  id: string,
+  name: string,
+  sort: SortKind,
+  width: number,
+  minWidth = 72,
+  className?: string,
+): RetailColumn {
+  return { id, name, label: name, sort, width, minWidth, className };
+}
 
 const KEY_STEP = 16;
 
-function readStored(tableId: string, columns: readonly RetailColumn[]): Record<string, number> {
-  if (typeof window === "undefined") return mergeColumnWidths(columns, null);
+function readStoredRaw(tableId: string): unknown {
+  if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(columnWidthStorageKey(tableId));
-    return mergeColumnWidths(columns, raw ? JSON.parse(raw) : null);
+    return raw ? JSON.parse(raw) : null;
   } catch {
-    return mergeColumnWidths(columns, null);
+    return null;
   }
+}
+
+function readStored(tableId: string, columns: readonly RetailColumn[]): Record<string, number> {
+  return mergeColumnWidths(columns, readStoredRaw(tableId));
 }
 
 function useColumnWidths(tableId: string, columns: readonly RetailColumn[]) {
@@ -38,9 +62,9 @@ function useColumnWidths(tableId: string, columns: readonly RetailColumn[]) {
     setWidths(readStored(tableId, columnsRef.current));
   }, [tableId, signature]);
 
-  const setWidth = useCallback((id: string, width: number) => {
+  const setWidth = useCallback((id: string, width: number, base?: Record<string, number>) => {
     setWidths((current) => {
-      const next = mergeColumnWidths(columnsRef.current, { ...current, [id]: width });
+      const next = mergeColumnWidths(columnsRef.current, { ...(base ?? current), [id]: width });
       try {
         window.localStorage.setItem(columnWidthStorageKey(tableId), JSON.stringify(next));
       } catch {
@@ -117,21 +141,48 @@ function ColumnResizeHandle({
 export function ResizableTable({
   tableId,
   columns,
-  freezeHeader = false,
-  maxHeight,
+  fillColumnId,
+  freezeHeader = true,
+  maxHeight = 520,
+  sort = null,
+  onSort,
   children,
 }: {
   tableId: string;
   columns: readonly RetailColumn[];
+  /** Column that grows so the table fills the panel until someone resizes. */
+  fillColumnId?: string;
   freezeHeader?: boolean;
   maxHeight?: number;
+  sort?: TableSort | null;
+  onSort?: (columnId: string) => void;
   children: ReactNode;
 }) {
   const { widths, setWidth } = useColumnWidths(tableId, columns);
   const tableRef = useRef<HTMLTableElement>(null);
-  const widthsRef = useRef(widths);
-  widthsRef.current = widths;
-  const total = columns.reduce((sum, column) => sum + (widths[column.id] ?? column.width), 0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [manual, setManual] = useState(false);
+
+  useEffect(() => {
+    setManual(readStoredRaw(tableId) != null);
+  }, [tableId]);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node || !fillColumnId) return;
+    const measure = () => setContainerWidth(node.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fillColumnId]);
+
+  const displayWidths =
+    fillColumnId && !manual ? filledColumnWidths(columns, fillColumnId, containerWidth) : widths;
+  const displayRef = useRef(displayWidths);
+  displayRef.current = displayWidths;
+  const total = columns.reduce((sum, column) => sum + (displayWidths[column.id] ?? column.width), 0);
 
   useEffect(() => {
     const table = tableRef.current;
@@ -149,7 +200,7 @@ export function ResizableTable({
     if (header instanceof HTMLElement) header.style.width = `${width}px`;
     const nextTotal = columns.reduce((sum, column) => {
       if (column.id === id) return sum + width;
-      return sum + (widthsRef.current[column.id] ?? column.width);
+      return sum + (displayRef.current[column.id] ?? column.width);
     }, 0);
     table.style.width = `${nextTotal}px`;
   };
@@ -160,9 +211,12 @@ export function ResizableTable({
 
   return (
     <div
-      className={`table-scroll${freezeHeader ? " table-freeze-head" : ""}`}
+      ref={scrollRef}
+      className={tableScrollClass(freezeHeader)}
       style={maxHeight != null ? { maxHeight } : undefined}
       data-table-id={tableId}
+      data-freeze-header={freezeHeader ? "true" : "false"}
+      data-fill-column={fillColumnId}
     >
       <table ref={tableRef} className="table-sm resizable-table" style={{ width: total }}>
         <colgroup>
@@ -170,28 +224,47 @@ export function ResizableTable({
             <col
               key={column.id}
               data-col-id={column.id}
-              style={{ width: widths[column.id] ?? column.width }}
+              style={{ width: displayWidths[column.id] ?? column.width }}
             />
           ))}
         </colgroup>
         <thead>
           <tr>
             {columns.map((column) => {
-              const width = widths[column.id] ?? column.width;
+              const width = displayWidths[column.id] ?? column.width;
               return (
                 <th
                   key={column.id}
+                  scope="col"
                   data-col-id={column.id}
                   className={`resizable-th${column.className ? ` ${column.className}` : ""}`}
                   style={{ width }}
+                  aria-sort={column.sort ? ariaSortValue(sort, column.id) : undefined}
                 >
-                  <span className="resizable-th-label">{column.label}</span>
+                  {column.sort ? (
+                    <button
+                      type="button"
+                      className="ifai-sort-btn"
+                      data-sort-dir={sort?.columnId === column.id ? sort.direction : undefined}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSort?.(column.id);
+                      }}
+                    >
+                      {column.label}
+                    </button>
+                  ) : (
+                    <span className="resizable-th-label">{column.label}</span>
+                  )}
                   <ColumnResizeHandle
                     name={column.name}
                     width={width}
                     minWidth={column.minWidth ?? 72}
                     onPreview={(next) => preview(column.id, next)}
-                    onCommit={(next) => setWidth(column.id, next)}
+                    onCommit={(next) => {
+                      setManual(true);
+                      setWidth(column.id, next, displayRef.current);
+                    }}
                     onDragChange={setDragging}
                   />
                 </th>

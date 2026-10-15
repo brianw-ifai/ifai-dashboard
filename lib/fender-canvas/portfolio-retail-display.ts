@@ -4,6 +4,7 @@
  */
 
 import type { NodeStatus } from "../canvas-sdk/types";
+import { CONFIRMED_HIGH_PRICE_LABEL, WITHHELD_LABEL } from "./featured-offer-copy";
 import { formatInt, formatUsd } from "./format";
 import {
   RETAIL_FINDING_LABELS,
@@ -11,6 +12,7 @@ import {
   type MapLeakageDetail,
   type PortfolioRetailFindings,
   type PortfolioRetailSnapshot,
+  type RetailHeadline,
   type RetailReading,
 } from "./portfolio-retail";
 
@@ -57,6 +59,15 @@ export function countPhrase(
   if (reading.issueCount == null) return null;
   const noun = reading.issueCount === 1 ? singular : plural;
   return `${formatInt(reading.issueCount)} ${noun}`;
+}
+
+/**
+ * The name every copied surface uses for this finding. A reading that confirmed a
+ * specific result names it; otherwise the tab label stands in. Keeps the briefing,
+ * bubble, satellite, command center, roadmap, and tour on one meaning.
+ */
+export function readingLabel(reading: RetailReading<unknown>, fallback: string): string {
+  return reading.headlineLabel ?? fallback;
 }
 
 function tone(reading: RetailReading<unknown>): NodeStatus {
@@ -125,11 +136,13 @@ export function headlineSurface(read: RetailCanvasRead): HeadlineSurface {
     };
   }
 
-  const noun = headline.findingId === "unnested_bundles" ? "bundle" : "listing";
+  const noun =
+    headline.reading.headlineNoun ??
+    (headline.findingId === "unnested_bundles" ? "bundle" : "listing");
   const unfinished =
     headline.reading.status === "incomplete" || headline.reading.status === "unavailable";
   return {
-    label: headline.label,
+    label: readingLabel(headline.reading, headline.label),
     countLabel: countPhrase(headline.reading, noun),
     missingMessage: unfinished ? headline.reading.missingMessage : null,
     tab: headline.label,
@@ -141,6 +154,41 @@ export function headlineSurface(read: RetailCanvasRead): HeadlineSurface {
 export function headlineSentence(surface: HeadlineSurface): string {
   const lead = surface.countLabel ? `${surface.label}: ${surface.countLabel}` : surface.label;
   return surface.missingMessage ? `${lead}. ${surface.missingMessage}` : `${lead}.`;
+}
+
+function countNoun(count: number, singular: string, plural = `${singular}s`): string {
+  return `${formatInt(count)} ${count === 1 ? singular : plural}`;
+}
+
+/**
+ * One pill for the main Portfolio Retail bubble. The count comes from the reading.
+ * An unfinished read keeps its coverage in the tooltip, not in a second pill.
+ */
+function combinedHeadlineStat(headline: RetailHeadline): string {
+  const count = headline.reading.issueCount;
+  const label = readingLabel(headline.reading, headline.label);
+  if (count == null) return label;
+
+  if (headline.findingId === "suppressed_listings") {
+    if (headline.reading.headlineLabel === CONFIRMED_HIGH_PRICE_LABEL) {
+      return `${countNoun(count, "listing")} withheld above outside price`;
+    }
+    if (headline.reading.headlineLabel === WITHHELD_LABEL) {
+      return `${countNoun(count, "Featured Offer")} withheld`;
+    }
+  }
+
+  if (headline.findingId === "map_leakage") {
+    return `${countNoun(count, "listing")} below MAP`;
+  }
+
+  if (headline.findingId === "unnested_bundles") {
+    return countNoun(count, "unnested bundle");
+  }
+
+  const noun = headline.reading.headlineNoun ?? "listing";
+  const counted = countPhrase(headline.reading, noun);
+  return counted ? `${label}: ${counted}` : label;
 }
 
 export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleFace {
@@ -159,30 +207,28 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
     };
   }
 
-  const noun = headline.findingId === "unnested_bundles" ? "bundle" : "listing";
-  const count = countPhrase(headline.reading, noun);
-  const tooltip =
-    headline.reading.missingMessage ??
-    `${headline.label} is the current retail headline.`;
+  const label = readingLabel(headline.reading, headline.label);
+  const tooltip = headline.reading.missingMessage ?? `${label} is the current retail headline.`;
 
   return {
     title: "Portfolio Retail",
-    stats: [headline.label, ...(count ? [count] : [])],
+    stats: [combinedHeadlineStat(headline)],
     status: tone(headline.reading),
     subTab: RETAIL_OVERVIEW_TAB,
-    tooltip: { title: headline.label, desc: tooltip },
+    tooltip: { title: label, desc: tooltip },
   };
 }
 
 export function suppressedBubble(reading: RetailReading<unknown>): RetailBubbleFace {
-  const count = countPhrase(reading, "listing");
+  const count = countPhrase(reading, reading.headlineNoun ?? "listing");
   const coverage = coveragePill(reading);
+  const label = readingLabel(reading, "Suppressed Listings");
   return face(
-    "Suppressed Listings",
+    label,
     reading,
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     reading.missingMessage ??
-      "Listings above the stored Competitive External Price with the Featured Offer withheld.",
+      "Amazon withholds the Featured Offer when the offer it observed is above the lowest price it recently found outside Amazon. Amazon does not name that retailer.",
     "Suppressed Listings",
   );
 }

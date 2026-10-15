@@ -3,13 +3,18 @@
 import { formatUsd } from "@/lib/fender-canvas/format";
 import type { ChannelFact } from "@/lib/fender-canvas/map-channels";
 
-/** Price and signed gap on one line. A missing price stays blank. */
+/**
+ * Price and signed gap on one line. A missing price stays blank.
+ * `note` marks a stored price that is not a current observation.
+ */
 export function ChannelPriceCell({
   fact,
   href,
+  note = null,
 }: {
   fact: ChannelFact | undefined;
   href?: string | null;
+  note?: string | null;
 }) {
   if (!fact || (fact.price == null && fact.gap == null)) return <td className="money channel-fact" />;
   const below = fact.gap != null && fact.gap < 0;
@@ -33,6 +38,7 @@ export function ChannelPriceCell({
           {formatUsd(fact.gap, { signed: true })}
         </span>
       ) : null}
+      {note ? <span className="channel-note">{note}</span> : null}
     </td>
   );
 }

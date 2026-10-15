@@ -76,7 +76,8 @@ export function useCanvasUrlSync({
   useEffect(() => {
     if (!onDashboard || !enabled || !hydrated) return;
     const state = snapshotToUrlState(snapshot);
-    const built = buildCanvasSearchParams(state, searchParams);
+    // window.location also carries keys a panel wrote with history.replaceState this tick.
+    const built = buildCanvasSearchParams(state, new URLSearchParams(window.location.search));
     const current = new URLSearchParams(searchParams.toString());
     const spokeTab = `${state.spokeId ?? ""}|${state.tabSlug ?? ""}`;
     const spokeTabChanged = lastSpokeTab.current !== null && lastSpokeTab.current !== spokeTab;

@@ -37,3 +37,33 @@ export function mergeColumnWidths(
   }
   return next;
 }
+
+function hasStoredWidth(columns: readonly ColumnWidthSpec[], raw: unknown): boolean {
+  if (!raw || typeof raw !== "object") return false;
+  const stored = raw as Record<string, unknown>;
+  return columns.some((column) => typeof stored[column.id] === "number" && Number.isFinite(stored[column.id]));
+}
+
+/**
+ * Default widths that fill the panel. One column absorbs leftover space.
+ * A stored resize wins, and the other columns stay at their own widths.
+ */
+export function filledColumnWidths(
+  columns: readonly ColumnWidthSpec[],
+  fillColumnId: string,
+  containerWidth: number,
+  stored?: unknown,
+): Record<string, number> {
+  const base = mergeColumnWidths(columns, stored ?? null);
+  if (hasStoredWidth(columns, stored) || containerWidth <= 0) return base;
+  if (!columns.some((column) => column.id === fillColumnId)) return base;
+  const others = columns.reduce(
+    (sum, column) => (column.id === fillColumnId ? sum : sum + base[column.id]),
+    0,
+  );
+  const room = Math.floor(containerWidth) - others;
+  return {
+    ...base,
+    [fillColumnId]: Math.max(base[fillColumnId], room),
+  };
+}

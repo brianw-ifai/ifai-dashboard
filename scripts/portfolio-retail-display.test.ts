@@ -26,13 +26,51 @@ import {
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 
-const FORBIDDEN = /buy box|partner-led|\b1p\b|unknown seller|active offer/i;
+/* Internal seller jargon stays off client surfaces. "No active offer" is a Featured
+   Offer state Fender does see, so only the seller-share phrasing is forbidden. */
+const FORBIDDEN = /buy box|partner-led|\b1p\b|unknown seller|(?<!no )active offers?\b/i;
 
-function suppressed(withheld: boolean | null, price = 200): SuppressionSupportRow {
+const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
+
+/** Confirmed withheld above a benchmark from the same observation. */
+function suppressed(price = 200): SuppressionSupportRow {
   return {
+    asin: "B0EQ000000",
     offer_price: price,
+    featured_offer_state: "withheld",
+    featured_offer_withheld: true,
+    featured_offer_source: "keepa",
+    featured_offer_checked_at: CHECKED_AT,
+    featured_offer_attempted_at: CHECKED_AT,
+    featured_offer_last_error: null,
+    competitive_external_price_state: "present",
     competitive_price_threshold_cents: 10000,
-    featured_offer_withheld: withheld,
+    featured_offer_observed_price_cents: 20000,
+    featured_offer_observed_shipping_cents: null,
+    featured_offer_observed_seller: null,
+  };
+}
+
+function present(): SuppressionSupportRow {
+  return {
+    ...suppressed(),
+    featured_offer_state: "present",
+    featured_offer_withheld: false,
+    featured_offer_observed_price_cents: 9000,
+  };
+}
+
+function notChecked(): SuppressionSupportRow {
+  return {
+    ...suppressed(),
+    featured_offer_state: null,
+    featured_offer_withheld: null,
+    featured_offer_source: null,
+    featured_offer_checked_at: null,
+    featured_offer_attempted_at: null,
+    competitive_external_price_state: null,
+    competitive_price_threshold_cents: null,
+    featured_offer_observed_price_cents: null,
   };
 }
 
@@ -60,7 +98,7 @@ function bundle(asin: string, parent: string | null): CatalogBundleRow {
 
 function findings(partial: Partial<PortfolioRetailFindings> = {}): PortfolioRetailFindings {
   return {
-    suppressedListings: suppressedListingsFinding([suppressed(true), suppressed(null)]),
+    suppressedListings: suppressedListingsFinding([suppressed(), notChecked()]),
     mapLeakage: mapLeakageFinding([mapRow(-12.5), mapRow(4)]),
     unnestedBundles: unnestedBundlesFinding([bundle("B000000001", null), bundle("B000000002", "B000000099")]),
     amazonSpecGaps: { status: "unavailable", issueCount: null, missingMessage: "Amazon spec-field readings have not been stored.", detail: null },
@@ -91,16 +129,53 @@ test("the headline bubble shows the finding and the issue count only", () => {
   const face = headlineBubble(source);
   assert.equal(headline?.label, "Suppressed Listings");
   assert.equal(face.subTab, "Retail Overview");
-  assert.deepEqual(face.stats, ["Suppressed Listings", "1 listing"]);
+  assert.equal(source.suppressedListings.issueCount, 1);
+  assert.deepEqual(face.stats, ["1 listing withheld above outside price"]);
   assert.equal(face.meta, undefined);
   assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
   assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
   assert.doesNotMatch(visible(face), /incomplete|unavailable/i);
   assert.doesNotMatch(visible(face), FORBIDDEN);
+
+  const satellite = suppressedBubble(source.suppressedListings);
+  assert.equal(satellite.stats[0], "1 listing");
+  assert.ok((satellite.stats.length ?? 0) > 1);
+  assert.notEqual(satellite.stats.join(" "), face.stats.join(" "));
+});
+
+test("the headline pill follows the stored finding and its count", () => {
+  const withheldOnly = findings({
+    suppressedListings: suppressedListingsFinding([
+      {
+        ...suppressed(),
+        asin: "B0EQNOBEN1",
+        competitive_external_price_state: "unavailable",
+        competitive_price_threshold_cents: null,
+      },
+      {
+        ...suppressed(),
+        asin: "B0EQNOBEN2",
+        competitive_external_price_state: "unavailable",
+        competitive_price_threshold_cents: null,
+      },
+    ]),
+  });
+  const withheldFace = headlineBubble(withheldOnly);
+  assert.equal(withheldOnly.suppressedListings.issueCount, 2);
+  assert.deepEqual(withheldFace.stats, ["2 Featured Offers withheld"]);
+  assert.equal(withheldFace.stats.length, 1);
+
+  const mapSource = findings({
+    suppressedListings: suppressedListingsFinding([present()]),
+  });
+  const mapFace = headlineBubble(mapSource);
+  assert.equal(mapSource.mapLeakage.issueCount, 1);
+  assert.deepEqual(mapFace.stats, ["1 listing below MAP"]);
+  assert.equal(mapBubble(mapSource.mapLeakage).stats[0], "1 below MAP");
 });
 
 test("a stored zero stays zero and an unavailable reading names what is missing", () => {
-  const zero = suppressedListingsFinding([suppressed(false)]);
+  const zero = suppressedListingsFinding([present()]);
   assert.equal(zero.issueCount, 0);
   const zeroFace = suppressedBubble(zero);
   assert.deepEqual(zeroFace.stats, ["0 listings"]);
@@ -109,7 +184,7 @@ test("a stored zero stays zero and an unavailable reading names what is missing"
   const missingFace = suppressedBubble(missing);
   assert.equal(missing.issueCount, null);
   assert.doesNotMatch(missingFace.stats.join(" "), /\b0\b/);
-  assert.match(missingFace.stats.join(" "), /not been stored/i);
+  assert.match(missingFace.stats.join(" "), /not stored a reading/i);
   assert.equal(missingFace.stats.join(" "), shortCoverageLine(missing.missingMessage));
 });
 
@@ -151,14 +226,15 @@ test("a higher unfinished reading is not replaced by a later count", () => {
   });
   const face = headlineBubble(source);
   assert.equal(face.subTab, "Retail Overview");
-  assert.equal(face.stats[0], "Suppressed Listings");
+  assert.deepEqual(face.stats, ["Suppressed Listings"]);
+  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
   assert.doesNotMatch(face.stats.join(" "), /2 listings/);
 });
 
 test("the shared headline keeps the count, the missing message, and the command-center tab", () => {
   const source = findings();
   const surface = headlineSurface({ phase: "ready", snapshot: { ...source, headline: null } });
-  assert.equal(surface.label, "Suppressed Listings");
+  assert.equal(surface.label, "Featured Offer withheld above Amazon's outside price");
   assert.equal(surface.countLabel, "1 listing");
   assert.equal(surface.missingMessage, source.suppressedListings.missingMessage);
   assert.equal(surface.tab, "Suppressed Listings");
@@ -172,7 +248,7 @@ test("the shared headline keeps the count, the missing message, and the command-
     phase: "ready",
     snapshot: {
       ...findings({
-        suppressedListings: suppressedListingsFinding([suppressed(false)]),
+        suppressedListings: suppressedListingsFinding([present()]),
       }),
       headline: null,
     },

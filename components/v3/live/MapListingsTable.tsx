@@ -1,0 +1,146 @@
+"use client";
+
+import { ChannelPriceCell } from "@/components/v3/live/ChannelPriceCell";
+import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { formatUsd, pendingLabel } from "@/lib/fender-canvas/format";
+import { mapListingSortValue } from "@/lib/fender-canvas/listing-table-sort";
+import {
+  channelPriceLookup,
+  listingChannelFacts,
+  listingLabel,
+  type ChannelPriceRow,
+  type MapSourceRow,
+  type MapTabModel,
+  type PricedChannelCell,
+} from "@/lib/fender-canvas/map-channels";
+import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layout";
+
+function amazonHref(asin: string): string | null {
+  return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
+}
+
+function httpUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function mapColumns(model: MapTabModel): RetailColumn[] {
+  const money = (id: string, name: string, width = 164): RetailColumn => ({
+    id,
+    name,
+    label: name,
+    width,
+    minWidth: 148,
+    className: "money",
+    sort: "number",
+  });
+  const columns: RetailColumn[] = [
+    {
+      id: "listing",
+      name: "Listing",
+      label: "Listing",
+      width: MAP_LISTING_COLUMN_WIDTH,
+      minWidth: 96,
+      className: "listing-col",
+      sort: "text",
+    },
+    { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
+    { id: "map", name: "MAP", label: "MAP", width: 104, minWidth: 88, className: "money", sort: "number" },
+  ];
+  if (model.showAmazon) columns.push(money("amazon", "Amazon"));
+  if (model.showWalmart) columns.push(money("walmart", "Walmart"));
+  if (model.showMusiciansFriend) columns.push(money("musicians-friend", "Musician's Friend", 176));
+  for (const channel of model.extraChannels) columns.push(money(channel.channel, channel.name));
+  return columns;
+}
+
+export function MapListingsTable({
+  rows,
+  model,
+  channelPrices,
+  pricesNotStored,
+}: {
+  rows: MapSourceRow[];
+  model: MapTabModel;
+  channelPrices: ChannelPriceRow[];
+  pricesNotStored: boolean;
+}) {
+  const prices = channelPriceLookup(channelPrices);
+  const columns = mapColumns(model);
+  const sorted = useClientTableSort(rows, columns, (row, columnId) =>
+    mapListingSortValue(row, columnId, (id) => {
+      const facts = listingChannelFacts(row, prices.get(row.asin.trim()));
+      return facts.find((fact) => fact.key === id)?.price;
+    }),
+  );
+
+  return (
+    <ResizableTable
+      tableId="map-listings"
+      columns={columns}
+      freezeHeader
+      maxHeight={520}
+      sort={sorted.sort}
+      onSort={sorted.onSort}
+    >
+      <tbody>
+        {rows.length === 0 ? (
+          <tr>
+            <td colSpan={columns.length}>
+              {pricesNotStored
+                ? "No stored channel prices were returned."
+                : "No active offers are under MAP."}
+            </td>
+          </tr>
+        ) : (
+          sorted.rows.map((row) => {
+            const href = amazonHref(row.asin);
+            const facts = new Map(
+              listingChannelFacts(row, prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
+            );
+            const walmartUrl = httpUrl(row.wmt_url);
+            return (
+              <tr key={row.asin}>
+                <td className="listing-col">
+                  <span className="listing-title-scroll">
+                    <strong>{listingLabel(row)}</strong>
+                  </span>
+                </td>
+                <td className="asin-col">
+                  {href ? (
+                    <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer">
+                      <span className="asin-chip">{row.asin}</span>
+                    </a>
+                  ) : (
+                    <span className="asin-chip">{row.asin}</span>
+                  )}
+                </td>
+                <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
+                {model.showAmazon ? <ChannelPriceCell fact={facts.get("amazon")} /> : null}
+                {model.showWalmart ? <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} /> : null}
+                {model.showMusiciansFriend ? <ChannelPriceCell fact={facts.get("musicians-friend")} /> : null}
+                {model.extraChannels.map((channel) => {
+                  const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.channel);
+                  return (
+                    <ChannelPriceCell
+                      key={channel.channel}
+                      fact={facts.get(channel.channel)}
+                      href={cell ? httpUrl(cell.url) : null}
+                    />
+                  );
+                })}
+              </tr>
+            );
+          })
+        )}
+      </tbody>
+    </ResizableTable>
+  );
+}

@@ -98,7 +98,7 @@ export function specRowsFor(url: URL): Row[] {
   return rows;
 }
 
-function bodyFor(url: URL, accept: string): { body: unknown; count: number } {
+function bodyFor(url: URL, accept: string, findability: Row[]): { body: unknown; count: number } {
   const table = url.pathname.split("/").pop() ?? "";
   if (table === "canvas_metrics") {
     if (accept.includes("vnd.pgrst.object")) return { body: METRICS, count: 1 };
@@ -122,11 +122,15 @@ function bodyFor(url: URL, accept: string): { body: unknown; count: number } {
     const rows = specRowsFor(url);
     return { body: rows, count: rows.length };
   }
+  if (table === "canvas_spec_findability") {
+    return { body: findability, count: findability.length };
+  }
   return { body: [], count: 0 };
 }
 
 /** Routes every Supabase call to the fixture above. Returns the URLs seen. */
-export async function mockCanvasRead(page: Page): Promise<string[]> {
+export async function mockCanvasRead(page: Page, options?: { findability?: Row[] }): Promise<string[]> {
+  const findability = options?.findability ?? [];
   const seen: string[] = [];
   await page.route("**/*supabase.co/**", async (route) => {
     const request = route.request();
@@ -140,7 +144,7 @@ export async function mockCanvasRead(page: Page): Promise<string[]> {
       });
       return;
     }
-    const { body, count } = bodyFor(url, request.headers().accept ?? "");
+    const { body, count } = bodyFor(url, request.headers().accept ?? "", findability);
     const rows = Array.isArray(body) ? body : [body];
     const range = rows.length === 0 ? `*/${count}` : `0-${rows.length - 1}/${count}`;
     await route.fulfill({

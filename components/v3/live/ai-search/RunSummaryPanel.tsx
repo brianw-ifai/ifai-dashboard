@@ -1,0 +1,293 @@
+"use client";
+
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
+import { categoryRoleTallies, engineRoleTallies, headlineAside, ROLE_LABELS, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
+import { categoryLabel, engineLabel, formatRunTime } from "@/lib/ai-search/run-metrics";
+import { engineModelLine, errorLine, pct, resolvedPhrase, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
+import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
+
+const ENGINE_COLUMNS = [
+  clientColumn("engine", "Engine", "text", 140, 100),
+  clientColumn("model", "Model", "text", 180, 110),
+  roleColumn("unbranded_discovery"),
+  roleColumn("branded_consideration"),
+  clientColumn("leader", "No leader", "number", 110, 80),
+  clientColumn("errors", "Errors", "number", 90, 72),
+];
+
+const CATEGORY_COLUMNS = [
+  clientColumn("category", "Category", "text", 160, 110),
+  roleColumn("unbranded_discovery"),
+  roleColumn("branded_consideration"),
+  clientColumn("leader", "No leader", "number", 110, 80),
+  clientColumn("errors", "Errors", "number", 90, 72),
+];
+
+function groupSortValue(
+  row: RoleGroupTally,
+  columnId: string,
+  label: string,
+  largest: { unbranded: number; branded: number },
+): SortInput {
+  const aside = headlineAside(row);
+  if (columnId === "engine" || columnId === "category") return label;
+  if (columnId === "model") return row.models.join(", ") || null;
+  if (columnId === "unbranded_discovery") return roleRateSort(row.roles.unbranded_discovery, largest.unbranded);
+  if (columnId === "branded_consideration") return roleRateSort(row.roles.branded_consideration, largest.branded);
+  if (columnId === "leader") return aside.unresolved;
+  return aside.errors;
+}
+
+const SIM = AI_TABS.simulations;
+
+function RunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const s = summarizeRun(snapshot);
+  const { run } = snapshot;
+  const rowsShort = s.completeness.expected != null && s.completeness.rowsRead < s.completeness.expected;
+  return (
+    <div className="content-box ai-run-card">
+      <div className="content-box-title">
+        <span>Run completeness</span>
+        <span className={`tag-badge ${s.completeness.isPartial ? "tag-warning" : "tag-success"}`}>
+          {runStateLabel(s.completeness.state)}
+        </span>
+      </div>
+      <table className="table-sm">
+        <tbody>
+          <tr><td>Run</td><td style={{ wordBreak: "break-all" }}>{run.audit_run_id}</td></tr>
+          <tr><td>Prompt set</td><td style={{ wordBreak: "break-all" }}>{run.prompt_set_hash ?? "Not recorded"}</td></tr>
+          <tr><td>Collector</td><td>{run.collector_version ?? "Not recorded"}</td></tr>
+          <tr><td>Started</td><td>{formatRunTime(run.started_at)}</td></tr>
+          <tr><td>Completed</td><td>{formatRunTime(run.completed_at)}</td></tr>
+          <tr><td>Published</td><td>{formatRunTime(run.published_at)}</td></tr>
+          <tr><td>Expected calls</td><td>{run.expected_calls ?? "Not recorded"}</td></tr>
+          <tr><td>Answered calls</td><td>{run.answered_calls ?? "Not recorded"}</td></tr>
+          <tr>
+            <td>Provider errors</td>
+            <td>
+              <EvidenceLink focus={{ field: "outcome", value: "error" }} tab={SIM}>
+                {errorLine(s)}
+              </EvidenceLink>
+            </td>
+          </tr>
+          <tr><td>Missing answers</td><td>{run.missing_calls ?? "Not recorded"}</td></tr>
+          <tr><td>Engines and models</td><td>{engineModelLine(s.enginesAndModels)}</td></tr>
+        </tbody>
+      </table>
+      {s.completeness.isPartial ? (
+        <p style={{ ...mutedText, marginTop: 8 }}>
+          This run is partial. Every figure below covers answered calls only. Unanswered calls are not losses.
+        </p>
+      ) : null}
+      {rowsShort ? (
+        <p style={{ ...mutedText, marginTop: 8, color: "var(--warning-text)" }}>
+          The read returned {s.completeness.rowsRead} call rows for {s.completeness.expected} expected calls.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function RoleRate({ tally, term }: { tally: RoleTally; term: "unbranded discovery" | "branded consideration" }) {
+  const rate = tally.resolved > 0 ? pct(tally.fenderWins, tally.resolved) : "No resolved answers";
+  return (
+    <div className="metric-card-sm" data-ai-role={tally.role}>
+      <span className="metric-card-label"><AiTerm term={term}>{ROLE_LABELS[tally.role]}</AiTerm></span>
+      <div className="metric-card-val" data-ai-win-rate={tally.role}>{rate}</div>
+      <span className="metric-card-sub">
+        {tally.resolved > 0 ? (
+          <>
+            <EvidenceLink focus={{ field: "role", value: `${tally.role}/fender_win` }} tab={SIM}>
+              {tally.fenderWins} Fender/Squier leads
+            </EvidenceLink>{" "}
+            of{" "}
+            <EvidenceLink focus={{ field: "role", value: `${tally.role}/resolved` }} tab={SIM}>
+              {tally.resolved}
+            </EvidenceLink>{" "}
+            <AiTerm term="resolved" /> answers
+          </>
+        ) : (
+          "No resolved answers in this run"
+        )}
+      </span>
+    </div>
+  );
+}
+
+function keptOut(tally: RoleTally): string {
+  const parts = [resolvedPhrase(tally)];
+  if (tally.unresolved > 0) parts.push(`${tally.unresolved} with no clear leader`);
+  if (tally.errors > 0) parts.push(`${tally.errors} provider errors`);
+  return parts.join(", ");
+}
+
+function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const s = summarizeRun(snapshot);
+  return (
+    <div className="content-box ai-win-card" style={{ marginTop: 12 }}>
+      <div className="content-box-title">
+        <span>How often Fender/Squier is named, by the kind of question</span>
+      </div>
+      <div className="metric-grid-2">
+        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" />
+        <RoleRate tally={s.roles.branded} term="branded consideration" />
+      </div>
+      <ul style={{ ...mutedText, margin: "10px 0 0", paddingLeft: 16 }}>
+        <li>
+          <AiTerm term="brand-associated discovery">Brand-associated discovery</AiTerm>:{" "}
+          <EvidenceLink focus={{ field: "role", value: "brand_associated_discovery/resolved" }} tab={SIM}>
+            {keptOut(s.roles.associated)}
+          </EvidenceLink>
+          . Counted on its own, not inside unbranded discovery.
+        </li>
+        <li>
+          <AiTerm term="shopping guidance">Shopping guidance</AiTerm>:{" "}
+          <EvidenceLink focus={{ field: "role", value: "shopping_guidance" }} tab={SIM}>
+            {keptOut(s.roles.guidance)}
+          </EvidenceLink>
+          . Not in either rate above.
+        </li>
+        <li>
+          <AiTerm term="product-fact question">Product-fact questions</AiTerm>:{" "}
+          <EvidenceLink focus={{ field: "role", value: "product_fact" }} tab={SIM}>
+            {keptOut(s.roles.productFact)}
+          </EvidenceLink>
+          . These are still stored as shopping prompts, and they are not in either rate above.
+        </li>
+        <li>
+          <EvidenceLink focus={{ field: "kind", value: "probe" }} tab={SIM}>
+            {s.probesAnswered} answered
+          </EvidenceLink>{" "}
+          <AiTerm term="product fact check">product fact checks</AiTerm> stay on their own tab.
+        </li>
+        {s.commercial.disqualified > 0 ? (
+          <li>
+            {s.commercial.disqualified} Fender leads with a <AiTerm term="confirmed contradiction" />, not counted as wins
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  );
+}
+
+function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const engines = engineRoleTallies(snapshot.calls);
+  const largest = {
+    unbranded: largestResolved(engines, "unbranded_discovery"),
+    branded: largestResolved(engines, "branded_consideration"),
+  };
+  const sorted = useClientTableSort(engines, ENGINE_COLUMNS, (row, columnId) =>
+    groupSortValue(row, columnId, engineLabel(row.key), largest),
+  );
+  return (
+    <div className="content-box ai-engine-table ai-role-rates" style={{ marginTop: 12 }}>
+      <div className="content-box-title">By engine and model</div>
+      <RoleSumLine groups={engines} preface="These rows add up to the two rates above." />
+      <ResizableTable
+        tableId="ai-run-engines"
+        columns={ENGINE_COLUMNS}
+        freezeHeader
+        maxHeight={520}
+        sort={sorted.sort}
+        onSort={sorted.onSort}
+      >
+        <tbody>
+          {sorted.rows.map((engine) => {
+            const aside = headlineAside(engine);
+            return (
+              <tr key={engine.key} data-engine={engine.key}>
+                <td>
+                  <EvidenceLink focus={{ field: "engine", value: engine.key }} tab={SIM}>
+                    {engineLabel(engine.key)}
+                  </EvidenceLink>
+                </td>
+                <td>{engine.models.join(", ")}</td>
+                <td>
+                  <RoleCount role="unbranded_discovery" tally={engine.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                </td>
+                <td>
+                  <RoleCount role="branded_consideration" tally={engine.roles.branded_consideration} largestResolved={largest.branded} />
+                </td>
+                <td>{aside.unresolved}</td>
+                <td>{aside.errors}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </ResizableTable>
+    </div>
+  );
+}
+
+function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const categories = categoryRoleTallies(snapshot.calls);
+  const largest = {
+    unbranded: largestResolved(categories, "unbranded_discovery"),
+    branded: largestResolved(categories, "branded_consideration"),
+  };
+  const sorted = useClientTableSort(categories, CATEGORY_COLUMNS, (row, columnId) =>
+    groupSortValue(row, columnId, categoryLabel(row.key), largest),
+  );
+  return (
+    <div className="content-box ai-category-table ai-role-rates" style={{ marginTop: 12 }}>
+      <div className="content-box-title">By commercial category</div>
+      <RoleSumLine groups={categories} preface="These rows add up to the two rates above." />
+      <ResizableTable
+        tableId="ai-run-categories"
+        columns={CATEGORY_COLUMNS}
+        freezeHeader
+        maxHeight={520}
+        sort={sorted.sort}
+        onSort={sorted.onSort}
+      >
+        <tbody>
+          {sorted.rows.map((row) => {
+            const aside = headlineAside(row);
+            return (
+              <tr key={row.key} data-category={row.key}>
+                <td>
+                  <EvidenceLink focus={{ field: "category", value: row.key }} tab={SIM}>
+                    {categoryLabel(row.key)}
+                  </EvidenceLink>
+                </td>
+                <td>
+                  <RoleCount role="unbranded_discovery" tally={row.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                </td>
+                <td>
+                  <RoleCount role="branded_consideration" tally={row.roles.branded_consideration} largestResolved={largest.branded} />
+                </td>
+                <td>{aside.unresolved}</td>
+                <td>{aside.errors}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </ResizableTable>
+      <KeptOutNote snapshot={snapshot} />
+    </div>
+  );
+}
+
+export function RunSummaryPanel() {
+  return (
+    <AiReadGate>
+      {(snapshot) => (
+        <>
+          <WinCard snapshot={snapshot} />
+          <EngineTable snapshot={snapshot} />
+          <CategoryTable snapshot={snapshot} />
+          <div style={{ marginTop: 12 }}>
+            <RunCard snapshot={snapshot} />
+          </div>
+        </>
+      )}
+    </AiReadGate>
+  );
+}

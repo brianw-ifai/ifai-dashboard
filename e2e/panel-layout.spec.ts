@@ -71,7 +71,7 @@ test.describe("panel layout", () => {
   });
 
   test("the tab strip wraps rather than side-scrolling", async ({ canvas, page }) => {
-    await canvas.openPriority("AI assistants are quoting specs");
+    await canvas.openSpokeFromMap("AI Search Visibility");
     const overflow = await page
       .locator(".drilldown-tabs")
       .evaluate((el) => el.scrollWidth - el.clientWidth);
@@ -79,7 +79,7 @@ test.describe("panel layout", () => {
   });
 
   test("panel content never scrolls sideways", async ({ canvas, page }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     const tabs = await page.locator(".drilldown-tab-btn").count();
     for (let i = 0; i < tabs; i += 1) {
       await page.locator(".drilldown-tab-btn").nth(i).click();

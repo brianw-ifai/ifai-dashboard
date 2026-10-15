@@ -177,12 +177,15 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   assert.match(text, /3,598/);
   assert.ok(text.includes(headline));
   assert.match(text, /13 divisions/);
-  assert.match(text, /Yamaha 66\.7% vs Fender\/Squier 33\.3%/);
-  assert.match(text, /222/);
+  // AI Search lines come from the published run only, never the pooled canvas_metrics sim_* fields.
+  assert.doesNotMatch(text, /222|630|hallucination|Yamaha 66\.7%/i);
   assert.doesNotMatch(text, /8\.3%/);
   assert.doesNotMatch(text, /3,430|993|7\.4%|16\.7%|Fourteen|14 catalog|2,420|fingerboard|dual humbucker/i);
   assert.doesNotMatch(text, /discounted bundles are dragging/i);
-  assert.equal(spec.items.length, 6);
+  assert.deepEqual(
+    spec.items.map((item) => item.id),
+    ["buybox-suppression", "schema-coverage", "map-leakage", "aplus-tables"],
+  );
   assert.equal(map?.title, "555 listings are below MAP in this listing read");
   assert.equal(map?.subTab, "MAP");
   assert.match(map?.why ?? "", /Open the MAP tab/);

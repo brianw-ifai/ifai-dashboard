@@ -88,7 +88,9 @@ export function FenderSpecSummary({
       </table>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
         The rows under this summary are the missing-field and per-ASIN reads. Amazon attribute
-        completeness is the average stored on the catalog spec read.
+        completeness is the average stored on the catalog spec read. The page-found figure in this
+        table is that older spec read. Official-page outcomes are on the Findability tab. A family
+        page there is not an exact product page, and this percentage is not that result.
       </p>
     </div>
   );
@@ -121,7 +123,9 @@ export function SchemaExplanation() {
         When people visit fender.com, they read marketing copy. AI crawlers need a machine-readable
         block, Schema.org JSON-LD, to take a spec as a fact. <AdditionalPropertyTerm /> is the part
         of that block that can carry neck, pickup, and hardware specs. The list below is the found
-        pages whose stored missing-field text includes <AdditionalPropertyTerm />.
+        pages whose stored missing-field text includes <AdditionalPropertyTerm />. This list is a
+        separate, older spec read. The Findability tab counts whether each listing resolves to an
+        official product page. JSON-LD on that official-page read was not audited.
       </div>
     </div>
   );

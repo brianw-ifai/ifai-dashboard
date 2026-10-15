@@ -22,7 +22,10 @@ const CANVAS_PARAM_KEYS = [
   "profile",
 ] as const;
 
-const PRESERVED_QUERY_KEYS = ["next"] as const;
+const PRESERVED_QUERY_KEYS = ["next", "ai-history"] as const;
+
+/** Row-level drill-down inside an open spoke, e.g. `evidence=sim:1161`. Dropped with the spoke. */
+const SPOKE_QUERY_KEYS = ["evidence"] as const;
 
 export function tabSlug(label: string): string {
   return label
@@ -37,6 +40,18 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "catalog-readiness-executive-guide": "ai-readiness",
   "machine-readable-schema-org-json-ld-audit": "machine-readability",
   "amazon-a-comparison-matrix-blueprint": "amazon-a-matrix",
+  "dual-index-scoring-executive-callout": "run-summary",
+  "dual-index": "run-summary",
+  "100-ai-simulations-interactive-explorer": "simulations",
+  "ai-spec-hallucination-engine-root-causes": "product-fact-checks",
+  hallucination: "product-fact-checks",
+  "ai-drift": "product-fact-checks",
+  "citation-ecosystem-fender-dtc-opportunity": "citation-ecosystem",
+  citation: "citation-ecosystem",
+  "head-to-head-category-battlecards": "category-battlecards",
+  "head-to-head": "category-battlecards",
+  "rival-strategies-countermeasures": "competitor-wins",
+  "multi-marketplace-channel-scope-sweetwater-reverb-walmart": "engine-comparison",
 };
 
 export function tabIndexFromSlug(tabs: string[], slug: string | null): number {
@@ -92,6 +107,12 @@ export function buildCanvasSearchParams(
   if (state.priorities) params.set("priorities", "1");
   if (state.spokeId) params.set("spoke", state.spokeId);
   if (state.spokeId && state.tabSlug) params.set("tab", state.tabSlug);
+  if (state.spokeId) {
+    for (const key of SPOKE_QUERY_KEYS) {
+      const value = preserve.get(key);
+      if (value) params.set(key, value);
+    }
+  }
   if (state.panelLayout) params.set("layout", state.panelLayout);
   if (state.tourStep !== null) params.set("tour", String(state.tourStep));
   if (state.tourPaused) params.set("tourPaused", "1");

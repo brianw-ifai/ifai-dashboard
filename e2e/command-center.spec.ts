@@ -6,7 +6,7 @@ test.describe("command center", () => {
   test("opens from the priorities control", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await expect(canvas.commandCenter).toBeVisible();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(5);
     await expect(canvas.commandCenter).not.toContainText("3,430");
     await expect(canvas.commandCenter).not.toContainText("993");
     await expect(canvas.commandCenter).not.toContainText("7.4%");
@@ -23,7 +23,7 @@ test.describe("command center", () => {
   test("every priority explains why it is top of the list", async ({ canvas }) => {
     await canvas.openCommandCenter();
     const whys = canvas.page.locator(".cc-why p");
-    await expect(whys).toHaveCount(6);
+    await expect(whys).toHaveCount(5);
     for (const text of await whys.allInnerTexts()) {
       expect(text.trim().length).toBeGreaterThan(40);
     }
@@ -32,28 +32,28 @@ test.describe("command center", () => {
   test("counts reflect the queue", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     const quadrants = page.locator(".cc-quadrant");
-    await expect(quadrants.nth(1)).toContainText("6");
-    await expect(quadrants.nth(0)).toContainText("2"); // critical
-
-    await canvas.priority("Suppressed Listings").locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(5);
     await expect(quadrants.nth(1)).toContainText("5");
+    await expect(quadrants.nth(0)).toContainText("1"); // critical
+
+    await canvas.priority("Featured Offer withheld").locator(".cc-done-btn").click();
+    await expect(canvas.priorities).toHaveCount(4);
+    await expect(quadrants.nth(1)).toContainText("4");
     await expect(page.locator(".cc-cleared summary")).toContainText("1 cleared");
   });
 
   test("a cleared item can be reopened", async ({ canvas, page }) => {
     await canvas.openCommandCenter();
     await canvas.priorities.first().locator(".cc-done-btn").click();
-    await expect(canvas.priorities).toHaveCount(5);
+    await expect(canvas.priorities).toHaveCount(4);
 
     await page.locator(".cc-cleared summary").click();
     await page.locator(".cc-undo-btn").first().click();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(5);
   });
 
   test("work can be assigned and survives a reload", async ({ canvas }) => {
     await canvas.openCommandCenter();
-    const item = canvas.priority("Suppressed Listings");
+    const item = canvas.priority("Featured Offer withheld");
     await expect(item.locator(".cc-owner-btn.active")).toHaveText("IntoFocus AI");
 
     await item.locator(".cc-owner-btn", { hasText: "Client team" }).click();
@@ -62,7 +62,7 @@ test.describe("command center", () => {
     await canvas.reload();
     await canvas.openCommandCenter();
     await expect(
-      canvas.priority("Suppressed Listings").locator(".cc-owner-btn.active"),
+      canvas.priority("Featured Offer withheld").locator(".cc-owner-btn.active"),
     ).toHaveText("Client team");
   });
 
@@ -75,11 +75,10 @@ test.describe("command center", () => {
 
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
-    ["Suppressed Listings", "Retail Overview"],
-    ["AI assistants are quoting specs", "Hallucination"],
+    ["Featured Offer withheld", "Retail Overview"],
     ["machine-readable spec", "Machine Readability"],
     ["Fender MAP prices have not been stored", "MAP"],
-    ["Beginner share of voice", "Battlecards"],
+    ["out-mention Fender/Squier", "Competitor Wins"],
     ["A+ comparison tables", "A+"],
   ] as const;
 
@@ -91,16 +90,16 @@ test.describe("command center", () => {
   }
 
   test("the back control returns to the queue", async ({ canvas }) => {
-    await canvas.openPriority("Suppressed Listings");
+    await canvas.openPriority("Featured Offer withheld");
     await canvas.backToPriorities();
-    await expect(canvas.priorities).toHaveCount(6);
+    await expect(canvas.priorities).toHaveCount(5);
   });
 
   test("the header Priorities button reopens the queue from a spoke", async ({
     canvas,
     page,
   }) => {
-    await canvas.openPriority("AI assistants are quoting specs");
+    await canvas.openPriority("out-mention Fender/Squier");
     await page.locator(".hdr-btn", { hasText: "Priorities" }).click();
     await expect(canvas.commandCenter).toBeVisible();
   });

@@ -1,57 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
+import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import {
   isFoundAdditionalPropertyGap,
   schemaGapRowsQuery,
   type SchemaGapRow,
 } from "@/lib/canvasData";
 import { AdditionalPropertyTerm } from "@/components/v3/live/FenderSpecNarratives";
+import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
+import { schemaGapSortValue, schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 import { specModelTitle } from "@/lib/fender-canvas/types";
 import { formatInt } from "@/lib/fender-canvas/format";
 
-function pageHref(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
+const COLUMNS = [
+  clientColumn("asin", "ASIN", "text", 120, 108, "asin-col"),
+  clientColumn("model", "Model", "text", 420, 220),
+  clientColumn("page", "fender.com page", "text", 150, 128),
+  clientColumn("fields", "Stored missing fields", "text", 180, 150),
+];
 
 export function SchemaAdditionalPropertyList() {
   const [rows, setRows] = useState<SchemaGapRow[]>([]);
-  const [page, setPage] = useState(0);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const [seenPage, setSeenPage] = useState(page);
-  const pageSize = 50;
-
-  if (seenPage !== page) {
-    setSeenPage(page);
-    setFailed(false);
-    setLoading(true);
-    setRows([]);
-    setTotal(null);
-  }
+  const visible = useMemo(() => rows.filter((row) => isFoundAdditionalPropertyGap(row)), [rows]);
+  const population = useFullPopulationSort(
+    visible,
+    COLUMNS,
+    schemaGapSortValue,
+    (row) => row.asin,
+    CLIENT_TABLE_PAGE_SIZE,
+  );
 
   useEffect(() => {
     let cancelled = false;
-    void schemaGapRowsQuery(page, pageSize).then(
-      ({ data, count, error }) => {
+    void loadFilteredPages(async (page, size) => {
+      const result = await schemaGapRowsQuery(page, size);
+      return {
+        data: (result.data ?? []) as SchemaGapRow[],
+        error: result.error,
+        count: result.count,
+      };
+    }).then(
+      (result) => {
         if (cancelled) return;
-        if (error) {
+        if (result.error) {
           setRows([]);
           setTotal(null);
           setFailed(true);
           setLoading(false);
           return;
         }
-        setRows((data ?? []) as SchemaGapRow[]);
-        setTotal(count ?? null);
+        setRows(result.rows);
+        setTotal(result.total);
         setFailed(false);
         setLoading(false);
       },
@@ -66,10 +70,7 @@ export function SchemaAdditionalPropertyList() {
     return () => {
       cancelled = true;
     };
-  }, [page]);
-
-  const visible = rows.filter((row) => isFoundAdditionalPropertyGap(row));
-  const pages = total != null ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  }, []);
 
   return (
     <div className="content-box" style={{ marginTop: 12 }} id="schema-additional-property">
@@ -87,17 +88,16 @@ export function SchemaAdditionalPropertyList() {
         Each row is a found fender.com page whose stored missing-field text includes{" "}
         <AdditionalPropertyTerm />. The row count is the number of those pages in this read.
       </p>
-      <div style={{ overflowX: "auto" }}>
-        <table className="table-sm">
-          <thead>
-            <tr>
-              <th>ASIN</th>
-              <th>Model</th>
-              <th>fender.com page</th>
-              <th>Stored missing fields</th>
-            </tr>
-          </thead>
-          <tbody>
+      <ResizableTable
+        tableId="schema-additional-property"
+        columns={COLUMNS}
+        fillColumnId="model"
+        freezeHeader
+        maxHeight={520}
+        sort={population.sort}
+        onSort={population.onSort}
+      >
+        <tbody>
             {loading && visible.length === 0 ? (
               <tr>
                 <td colSpan={4}>Loading…</td>
@@ -115,8 +115,8 @@ export function SchemaAdditionalPropertyList() {
                 </td>
               </tr>
             ) : null}
-            {visible.map((row) => {
-              const href = pageHref(row.fender_url);
+            {population.pageRows.map((row) => {
+              const href = schemaPageHref(row.fender_url);
               return (
                 <tr key={row.asin} data-schema-gap="additionalProperty">
                   <td>
@@ -137,25 +137,24 @@ export function SchemaAdditionalPropertyList() {
               );
             })}
           </tbody>
-        </table>
-      </div>
+      </ResizableTable>
       <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <button
           type="button"
           className="segmented-btn"
-          disabled={page <= 0}
-          onClick={() => setPage((current) => current - 1)}
+          disabled={population.page <= 0}
+          onClick={() => population.setPage((current) => current - 1)}
         >
           Previous
         </button>
         <span style={{ fontSize: 11 }}>
-          {page + 1} / {pages}
+          {population.page + 1} / {population.pages}
         </span>
         <button
           type="button"
           className="segmented-btn"
-          disabled={page + 1 >= pages}
-          onClick={() => setPage((current) => current + 1)}
+          disabled={population.page + 1 >= population.pages}
+          onClick={() => population.setPage((current) => current + 1)}
         >
           Next
         </button>
