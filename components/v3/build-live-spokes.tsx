@@ -62,7 +62,7 @@ const TAB_OVERRIDES: Partial<
   },
   aeo: {
     0: () => (
-      <AiSearchSurface>
+      <AiSearchSurface trend>
         <RunSummaryPanel />
       </AiSearchSurface>
     ),
