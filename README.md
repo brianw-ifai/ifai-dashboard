@@ -2,7 +2,9 @@
 
 The v3 dashboard is a Fender brand-intelligence canvas at `/`. It shows how Fender Musical Instruments Corporation (FMIC) is discovered and recommended in AI search, and how catalog, retail, and product-data problems on the open web change that outcome.
 
-It is built as an executive briefing for portfolio health, not a live operations console. Figures are authored in the source files listed under [Writing dashboard copy](#writing-dashboard-copy) and will move to daily data feeds, so this README describes what each area covers rather than repeating its numbers.
+It is built as an executive briefing for portfolio health, not a live operations console. Most figures now come from the `public.canvas_*` views; the rest are authored in the source files listed under [Writing dashboard copy](#writing-dashboard-copy). This README describes what each area covers rather than repeating its numbers.
+
+Before you change, cite, or build on any figure, read [`docs/dashboard-truth-map.md`](docs/dashboard-truth-map.md). It records for every client-visible output which view and column feeds it, who writes it, how fresh it is, what population it covers, whether it is confirmed, partial, stale, failed, estimated, or not measured, and what acquisition step would make it reliable. It also holds the prioritized data-acquisition backlog.
 
 ## How it works
 
@@ -73,7 +75,7 @@ Don't bring back the retired labels Brand AEO, Brand Fixes, Spec Readiness, Sugg
 
 **Voice.** Write for an e-commerce or marketing operator. Use plain language, active voice, contractions, and short sentences. Command center items speak to the reader as "you". Explain any unavoidable jargon in `glossary.ts`.
 
-**Figures.** Keep numbers in the source files above, not in documentation. Label analyst estimates and targets at the point of use ("est.", "analyst estimate", "not yet measured"), and give a rate's sample or denominator next to it.
+**Figures.** Keep numbers in the source files above, not in documentation. The exception is a source map such as `docs/dashboard-truth-map.md`, where a dated reading is the point. Label analyst estimates and targets at the point of use ("est.", "analyst estimate", "not yet measured"), and give a rate's sample or denominator next to it. Check the truth map before writing a new figure into copy: several readings are partial or stale in ways the number alone does not show.
 
 **IntoFocus fees.** Client-facing copy never mentions IntoFocus fees, retainers, monthly charges, or whether the estimated lift justifies IntoFocus's price. Do not show a service-fee multiple. Opening an estimate to its inputs is a later pass. Until then, label the figure as an analyst estimate and do not invent the formula.
 

@@ -1,5 +1,17 @@
 # V3 canvas data inventory
 
+> ## Retired. Do not cite any figure in this file.
+>
+> This is a **17 September 2026 inventory of authored demo copy**, kept as a historical record of what the canvas said before it read live data. Nothing below was ever measured, and nothing below matches the current product.
+>
+> **For current truth, read [`dashboard-truth-map.md`](dashboard-truth-map.md).** It records, for every client-visible output, the view and column behind it, the writer, the source timestamp, the population and denominator, whether the reading is confirmed, partial, stale, failed, estimated, or not measured, the known input defect, and the acquisition step that would make it reliable.
+>
+> Every headline figure below has been superseded. The canvas now monitors 3,604 catalog SKUs rather than 124 ASINs, reports 13 divisions rather than 5, and reads `public.canvas_*` views rather than TypeScript literals. The Buy Box, readiness, schema, A+, MAP, review, and competitive numbers below have no database source and should never be quoted as measurements.
+>
+> Two further cautions. The ROI section records an internal service-fee multiple; per standing policy the client portal never shows IntoFocus fees, retainers, or a fee multiple. And the Phase 1 and enterprise dollar figures below survive on the current canvas only as labelled analyst estimates, not as anything computed from the current listing count.
+>
+> This file is kept intact for history. It is not maintained.
+
 Exhaustive catalogue of every data point on the **Fender Brand Intelligence Canvas** (`/v3`): where each value appears, and any calculation behind it.
 
 **As of:** 17 Sep 2026 (ported from Toolbelt `fender-brand-canvas.html` v33, updated 13:57 UTC)  
