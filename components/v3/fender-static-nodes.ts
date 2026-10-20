@@ -104,7 +104,13 @@ export const fenderStaticNodes: CanvasNode[] = [
       ],
       meta: "Pilot ➔ $38M to $62M Ent.",
       spokeId: "suggestions",
-      tooltip: {"title": "Action Items", "desc": "18 high-impact brand interventions. Compare the Phase 1 Quick-Win ($680K) with the full enterprise portfolio potential ($38M to $62M GMV)."},
+      tooltip: {
+        // title: "Action Items",
+        // desc: "18 high-impact brand interventions. Compare the Phase 1 Quick-Win ($680K) with the full enterprise portfolio potential ($38M to $62M GMV).",
+        title: "",
+        desc: "The information in this bubble is not optimized to live data, and is simply a visual example of what will eventually be displayed.",
+        hasMoreInfo: false,
+      },
     },
     {
       ...primarySpoke("spoke-roadmap"),
@@ -113,8 +119,11 @@ export const fenderStaticNodes: CanvasNode[] = [
       stats: ["90 Days", "3 Phases"],
       spokeId: "roadmap",
       tooltip: {
-        title: "90-Day Portfolio Roadmap",
-        desc: retailFaces.main.tooltip.desc,
+        // title: "90-Day Portfolio Roadmap",
+        // desc: retailFaces.main.tooltip.desc,
+        title: "",
+        desc: "The information in this bubble is not optimized to live data, and is simply a visual example of what will eventually be displayed.",
+        hasMoreInfo: false,
       },
     },
     {

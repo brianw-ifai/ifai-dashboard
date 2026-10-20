@@ -125,8 +125,7 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.equal(liveRoadmap.meta, undefined);
   assert.deepEqual(liveRoadmap.stats, ["90 Days", "3 Phases"]);
   assert.equal(liveRoadmap.spokeId, "roadmap");
-  assert.ok(liveRoadmap.tooltip?.title);
-  assert.ok(liveRoadmap.tooltip?.desc);
+  assert.match(liveRoadmap.tooltip?.desc ?? "", /not optimized to live data/);
 
   const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
   assert.equal(specs?.meta, "Exact, family, no page, ambiguous, unchecked");

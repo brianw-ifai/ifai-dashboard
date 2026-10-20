@@ -140,7 +140,7 @@ test("every copied surface carries the same Featured Offer label and count", () 
   assert.equal(surface.countLabel, "1 listing");
   const sentence = headlineSentence(surface);
 
-  // Command center priority, roadmap tooltip, guided tour, and the briefing var.
+  // Command center priority, guided tour, and the briefing var. The roadmap bubble is an example notice.
   const command = buildLiveCommandCenter(bundle(), READ);
   const priority = command.items.find((item) => item.id === "buybox-suppression");
   assert.equal(priority?.title, `${surface.label}: ${surface.countLabel}`);
@@ -150,7 +150,10 @@ test("every copied surface carries the same Featured Offer label and count", () 
   const roadmap = nodes.find((node) => node.id === "spoke-roadmap");
   assert.equal(roadmap?.meta, undefined);
   assert.equal(Object.hasOwn(roadmap ?? {}, "meta"), false);
-  assert.equal(roadmap?.tooltip?.desc, sentence);
+  assert.match(
+    roadmap?.tooltip?.desc ?? "",
+    /not optimized to live data/,
+  );
 
   const tour = buildLiveTourSteps(bundle(), READ);
   assert.ok(tour.some((step) => step.displays?.includes(sentence)));

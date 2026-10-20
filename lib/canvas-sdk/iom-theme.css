@@ -1685,3 +1685,30 @@
     transform: none;
   }
 }
+
+/* Action Items and Strategy Roadmap are example bubbles until they read live data. */
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"] .node-circle,
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"] .node-circle,
+.ifai-canvas.theme-iom.light-theme .graph-node[data-graph-node-id="spoke-fixes"] .node-circle,
+.ifai-canvas.theme-iom.light-theme .graph-node[data-graph-node-id="spoke-roadmap"] .node-circle {
+  fill: #4a1219;
+  stroke: #fb7185;
+}
+
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"] .node-halo,
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"] .node-halo,
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-fixes"].node-selected .node-circle,
+.ifai-canvas.theme-iom .graph-node[data-graph-node-id="spoke-roadmap"].node-selected .node-circle {
+  stroke: #fb7185;
+}
+
+.ifai-canvas.theme-iom .node-tooltip.node-tooltip-example {
+  background: #4a1219;
+  border-color: #fb7185;
+  color: #fff1f2;
+  box-shadow: 0 18px 36px rgba(74, 18, 25, 0.45);
+}
+
+.ifai-canvas.theme-iom .node-tooltip.node-tooltip-example .node-tooltip-desc {
+  color: #ffe4e6;
+}

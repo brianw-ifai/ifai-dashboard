@@ -73,6 +73,7 @@ type TooltipState = {
   y: number;
   hasMoreInfo: boolean;
   anchor: "cursor" | "column-right" | "definition";
+  example?: boolean;
 };
 
 type Props = {
@@ -634,6 +635,12 @@ export function CanvasShell({ spec, children }: Props) {
       const host = canvasBodyRef.current;
       if (!host) return;
       const hostRect = host.getBoundingClientRect();
+      const eventTarget = evt.currentTarget;
+      const nodeId =
+        eventTarget instanceof Element
+          ? (eventTarget.closest("[data-graph-node-id]") ?? eventTarget).getAttribute("data-graph-node-id")
+          : null;
+      const example = nodeId === "spoke-fixes" || nodeId === "spoke-roadmap";
 
       if (columnLayoutRef.current) {
         const target = evt.currentTarget;
@@ -644,6 +651,7 @@ export function CanvasShell({ spec, children }: Props) {
           title,
           desc,
           hasMoreInfo,
+          example,
           x: nodeRect.right - hostRect.left + 14,
           y: nodeRect.top - hostRect.top + nodeRect.height / 2,
           anchor: "column-right",
@@ -654,6 +662,7 @@ export function CanvasShell({ spec, children }: Props) {
           title,
           desc,
           hasMoreInfo,
+          example,
           x: evt.clientX - hostRect.left + 10,
           y: evt.clientY - hostRect.top + 10,
           anchor: "cursor",
@@ -1237,13 +1246,17 @@ export function CanvasShell({ spec, children }: Props) {
         ) : null}
 
         <div
-          className={`node-tooltip${tooltip?.anchor === "column-right" ? " node-tooltip-column" : ""}${tooltip?.anchor === "definition" ? " node-tooltip-definition" : ""}${tooltipVisible ? " visible" : ""}`}
+          className={`node-tooltip${tooltip?.anchor === "column-right" ? " node-tooltip-column" : ""}${tooltip?.anchor === "definition" ? " node-tooltip-definition" : ""}${tooltip?.example ? " node-tooltip-example" : ""}${tooltipVisible ? " visible" : ""}`}
           style={{ left: tooltip?.x ?? 0, top: tooltip?.y ?? 0 }}
         >
-          <div style={{ fontWeight: 700, marginBottom: 2 }}>{tooltip?.title ?? "Title"}</div>
-          <div style={{ color: "var(--text-muted)", fontSize: 11 }}>
-            {tooltip?.desc ?? "Description"}
-          </div>
+          {tooltip?.title ? (
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>{tooltip.title}</div>
+          ) : null}
+          {tooltip?.desc ? (
+            <div className="node-tooltip-desc" style={{ color: "var(--text-muted)", fontSize: 11 }}>
+              {tooltip.desc}
+            </div>
+          ) : null}
           {tooltip?.hasMoreInfo ? (
             <div
               style={{
