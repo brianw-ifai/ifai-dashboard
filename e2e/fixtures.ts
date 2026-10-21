@@ -113,7 +113,7 @@ export class Canvas {
   /** AI Search Visibility -> the explorer over every call in the published run. */
   async openSimulations() {
     await this.openSpokeFromMap("AI Search Visibility");
-    await this.openTab("Simulations");
+    await this.openTab("Run Details");
     await expect(this.simulations.first()).toBeVisible();
   }
 }

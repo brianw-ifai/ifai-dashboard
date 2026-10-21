@@ -136,7 +136,7 @@ test("coverage counts current classifications, not the older withheld boolean", 
   assert.equal(reading.detail?.counts.requiresKeepa, 4);
   assert.match(reading.missingMessage ?? "", /not been checked yet/);
   assert.match(reading.missingMessage ?? "", /failed/);
-  assert.doesNotMatch(reading.missingMessage ?? "", /partner-led|Buy Box/i);
+  assert.doesNotMatch(reading.missingMessage ?? "", /partner-led/i);
 });
 
 test("the older withheld boolean on its own is not coverage", () => {
@@ -186,7 +186,7 @@ test("a finished reading with a confirmed suppression is available", () => {
   assert.equal(reading.missingMessage, null);
   assert.equal(reading.detail?.audited, reading.detail?.population);
   // Every withheld listing has a benchmark here, so the stronger label applies.
-  assert.equal(reading.headlineLabel, "Featured Offer withheld above Amazon's outside price");
+  assert.equal(reading.headlineLabel, "Buy Box withheld above Amazon's outside price");
 });
 
 test("a withheld listing with no benchmark keeps the plain withheld headline", () => {
@@ -194,7 +194,7 @@ test("a withheld listing with no benchmark keeps the plain withheld headline", (
     suppression({ featured_offer_observed_price_cents: 10000, competitive_price_threshold_cents: 9000 }),
     suppression({ competitive_external_price_state: "unavailable", competitive_price_threshold_cents: null }),
   ]);
-  assert.equal(reading.headlineLabel, "Featured Offer withheld");
+  assert.equal(reading.headlineLabel, "Buy Box withheld");
   // The headline is the confirmed withheld count, not the comparable subset.
   assert.equal(reading.issueCount, 2);
   assert.equal(reading.detail?.counts.confirmedHighPrice, 1);
@@ -215,7 +215,7 @@ test("MAP violations are stored leakage below zero, and a missing price is not z
   assert.equal(reading.detail?.undecided, 1);
   assert.equal(reading.detail?.averageLeakage, -30);
   assert.match(reading.missingMessage ?? "", /not counted as zero/);
-  assert.doesNotMatch(reading.missingMessage ?? "", /partner-led|Buy Box/i);
+  assert.doesNotMatch(reading.missingMessage ?? "", /partner-led/i);
 });
 
 test("MAP average leakage is omitted when no violation stores a leakage", () => {

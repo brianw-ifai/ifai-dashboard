@@ -117,7 +117,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <div className="content-box ai-simulations">
       <div className="content-box-title">
-        <span>Simulations in the published run</span>
+        <span>Run Details</span>
         <span className="tag-badge tag-neutral" data-ai-row-count>
           {rows.length} of {snapshot.calls.length} calls
         </span>

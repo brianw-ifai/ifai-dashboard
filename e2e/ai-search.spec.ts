@@ -48,7 +48,7 @@ test.describe("AI Search Visibility", () => {
   test("a headline count opens the rows behind it", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await page.locator("[data-ifai-evidence='outcome:error']").first().click();
-    await expect(canvas.activeTab).toHaveText("Simulations");
+    await expect(canvas.activeTab).toHaveText("Run Details");
     await expect(page).toHaveURL(/evidence=outcome(%3A|:)error/);
     const outcomes = await canvas.simulations.evaluateAll((els) => els.map((el) => el.getAttribute("data-outcome")));
     expect(outcomes.length).toBeGreaterThan(0);
@@ -216,7 +216,7 @@ test.describe("Competitive Radar", () => {
     expect(parseFloat(note)).toBeGreaterThanOrEqual(14);
 
     await comparison.locator("[data-ai-role-total='unbranded_discovery'] .ifai-evidence-link").first().click();
-    await expect(canvas.activeTab).toHaveText("Simulations");
+    await expect(canvas.activeTab).toHaveText("Run Details");
     await expect(page.locator("[data-ai-role-filter='unbranded_discovery']")).toBeVisible();
     const roles = await canvas.simulations.evaluateAll((els) => els.map((el) => el.getAttribute("data-role")));
     expect(roles.length).toBeGreaterThan(0);
@@ -228,10 +228,16 @@ test.describe("Competitive Radar", () => {
       ["competitors", "multi-marketplace-channel-scope-sweetwater-reverb-walmart", "Engine Comparison"],
       ["competitors", "head-to-head-category-battlecards", "Category Battlecards"],
       ["aeo", "dual-index-scoring-executive-callout", "Run Summary"],
+      ["aeo", "simulations", "Run Details"],
+      ["aeo", "100-ai-simulations-interactive-explorer", "Run Details"],
       ["aeo", "ai-spec-hallucination-engine-root-causes", "Product Fact Checks"],
       ["aeo", "ai-drift", "Product Fact Checks"],
       ["aeo", "hallucination", "Product Fact Checks"],
       ["aeo", "citation-ecosystem-fender-dtc-opportunity", "Citation Ecosystem"],
+      ["hub", "executive-briefing-buy-box-coverage", "Briefing"],
+      ["hub", "executive-briefing", "Briefing"],
+      ["hub", "division-performance-3-598-skus", "Performance"],
+      ["hub", "commercial-sizing-680k-pilot-vs-38m-to-62m-enterprise", "Opportunity"],
     ]) {
       await page.goto(`/dashboard?spoke=${spoke}&tab=${slug}`);
       await expect(page.locator(".drilldown-tab-btn.active")).toHaveText(tab);

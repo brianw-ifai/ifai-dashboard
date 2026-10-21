@@ -36,13 +36,16 @@ export function tabSlug(label: string): string {
 
 /** Slugs already copied from an earlier tab title. They still open that tab. */
 const TAB_SLUG_ALIASES: Record<string, string> = {
-  "executive-briefing-buy-box-coverage": "executive-briefing",
+  "executive-briefing-buy-box-coverage": "briefing",
+  "executive-briefing": "briefing",
+  "commercial-sizing-680k-pilot-vs-38m-to-62m-enterprise": "opportunity",
   "catalog-readiness-executive-guide": "ai-readiness",
   "machine-readable-schema-org-json-ld-audit": "machine-readability",
   "amazon-a-comparison-matrix-blueprint": "amazon-a-matrix",
   "dual-index-scoring-executive-callout": "run-summary",
   "dual-index": "run-summary",
-  "100-ai-simulations-interactive-explorer": "simulations",
+  simulations: "run-details",
+  "100-ai-simulations-interactive-explorer": "run-details",
   "ai-spec-hallucination-engine-root-causes": "product-fact-checks",
   hallucination: "product-fact-checks",
   "ai-drift": "product-fact-checks",
@@ -54,9 +57,19 @@ const TAB_SLUG_ALIASES: Record<string, string> = {
   "multi-marketplace-channel-scope-sweetwater-reverb-walmart": "engine-comparison",
 };
 
+/**
+ * Old Division Performance titles embedded a live SKU count in the slug.
+ * Any slug that starts with that prefix still opens Performance.
+ */
+function resolveTabSlugAlias(slug: string): string {
+  const lower = slug.toLowerCase();
+  if (lower.startsWith("division-performance")) return "performance";
+  return (TAB_SLUG_ALIASES[lower] ?? lower).toLowerCase();
+}
+
 export function tabIndexFromSlug(tabs: string[], slug: string | null): number {
   if (!slug) return 0;
-  const normalized = (TAB_SLUG_ALIASES[slug.toLowerCase()] ?? slug).toLowerCase();
+  const normalized = resolveTabSlugAlias(slug);
   const exact = tabs.findIndex((tab) => tabSlug(tab) === normalized);
   if (exact >= 0) return exact;
   const partial = tabs.findIndex((tab) => tab.toLowerCase().includes(normalized.replace(/-/g, " ")));

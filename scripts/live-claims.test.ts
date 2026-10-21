@@ -227,7 +227,7 @@ test("hub offer arithmetic does not pair the 1P count with the harvested percent
   assert.match(text, /not part of the active-offer count/);
   assert.doesNotMatch(text, /28\.6%/);
   assert.doesNotMatch(text, /67 of 3,598/);
-  assert.match(text, /Featured Offer/);
+  assert.match(text, /Buy Box/);
 });
 
 test("the MAP violations widget follows the listing read", () => {

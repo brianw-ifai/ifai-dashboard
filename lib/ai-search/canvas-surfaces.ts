@@ -30,7 +30,7 @@ export type NodeFace = Pick<CanvasNode, "status" | "title" | "stats" | "meta" | 
 
 export const AI_TABS = {
   summary: "Run Summary",
-  simulations: "Simulations",
+  simulations: "Run Details",
   drift: "Product Fact Checks",
   citations: "Citation Ecosystem",
 } as const;
@@ -132,7 +132,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       subTab: AI_TABS.simulations,
       tooltip: {
         title: "Shopping prompt calls",
-        desc: `${headlineLine(s)} ${c.calls} shopping prompt-engine calls are in this ${state.toLowerCase()} run. ${s.probesAnswered} answered product fact checks are excluded. ${c.unresolved} answers with no clear leader and ${c.errors} provider errors are reported separately, not as losses.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Simulations to see every call.`,
+        desc: `${headlineLine(s)} ${c.calls} shopping prompt-engine calls are in this ${state.toLowerCase()} run. ${s.probesAnswered} answered product fact checks are excluded. ${c.unresolved} answers with no clear leader and ${c.errors} provider errors are reported separately, not as losses.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Run Details to see every call.`,
       },
     },
     satCitations: {

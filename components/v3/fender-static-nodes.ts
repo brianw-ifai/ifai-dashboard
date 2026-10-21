@@ -133,11 +133,11 @@ export const fenderStaticNodes: CanvasNode[] = [
       r: 98,
       status: "danger",
       variant: "hub",
-      title: "Brand Portfolio",
+      title: "Summary",
       stats: [],
       logoSrc: "/image.png",
       meta: "Click for Master View",
       spokeId: "hub",
-      tooltip: {"title": "Brand Portfolio Overview", "desc": "Click to open the portfolio overview: 5 brand divisions, the executive briefing, and enterprise commercial sizing."},
+      tooltip: {"title": "Summary", "desc": "Click to open the Summary: 5 brand divisions, the Briefing, and Opportunity."},
     },
 ];

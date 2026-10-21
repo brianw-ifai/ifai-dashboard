@@ -30,13 +30,13 @@ type Reading = {
 function readings(counts: FeaturedOfferCounts): Reading[] {
   return [
     {
-      label: "Featured Offer present",
+      label: "Buy Box present",
       value: counts.present,
       denominator: counts.population,
       note: "Amazon showed a purchasing offer at the last check.",
     },
     {
-      label: "Featured Offer withheld",
+      label: "Buy Box withheld",
       value: counts.withheld,
       denominator: counts.population,
       note: "Amazon showed no purchasing offer at the last check.",
@@ -108,7 +108,7 @@ export function FeaturedOfferReadings({
   return (
     <div className="content-box fo-readings" style={{ marginTop: 12 }}>
       <div className="content-box-title">
-        <span>Featured Offer readings</span>
+        <span>Buy Box readings</span>
         <span className="tag-badge tag-neutral">
           {formatInt(counts.current)} of {formatInt(counts.population)} current
         </span>

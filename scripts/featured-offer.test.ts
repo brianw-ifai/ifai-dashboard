@@ -133,8 +133,8 @@ test("each stored state reads back as itself, and an unwritten state is not chec
   assert.equal(featuredOfferState(NOT_CHECKED), "not_checked");
   assert.equal(featuredOfferState(row({ featured_offer_state: "something_else" })), "not_checked");
 
-  assert.equal(FEATURED_OFFER_STATE_LABELS.present, "Featured Offer present");
-  assert.equal(FEATURED_OFFER_STATE_LABELS.withheld, "Featured Offer withheld");
+  assert.equal(FEATURED_OFFER_STATE_LABELS.present, "Buy Box present");
+  assert.equal(FEATURED_OFFER_STATE_LABELS.withheld, "Buy Box withheld");
   assert.equal(FEATURED_OFFER_STATE_LABELS.no_active_offer, "No active offer");
   assert.equal(FEATURED_OFFER_STATE_LABELS.check_failed, "Check failed");
   assert.equal(FEATURED_OFFER_STATE_LABELS.not_checked, "Not checked");
@@ -315,12 +315,12 @@ test("coverage keeps failures and unchecked rows in the denominator", () => {
   assert.match(benchmark, /does not name/i);
 
   const confirmed = confirmedSuppressionSentence(counts);
-  assert.match(confirmed, /2 listings have a confirmed withheld Featured Offer/);
+  assert.match(confirmed, /2 listings have a confirmed withheld Buy Box/);
   assert.match(confirmed, /1 of those is priced above Amazon's outside price/);
   assert.match(confirmed, /withheld without a confirmed price cause/);
 
   // A withheld listing with no benchmark is present, so the plain label leads.
-  assert.equal(featuredOfferHeadlineLabel(counts), "Featured Offer withheld");
+  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box withheld");
   assert.equal(featuredOfferHeadlineCount(counts), 2);
   assert.equal(firstPassIncomplete(counts), true);
 });
@@ -329,7 +329,7 @@ test("the stronger label applies only when every withheld listing has a benchmar
   const counts = countFeaturedOffer([B0D8G43XJP, B07N28P3W9], NOW);
   assert.equal(counts.withheldWithoutBenchmark, 0);
   assert.equal(counts.confirmedHighPrice, 1);
-  assert.equal(featuredOfferHeadlineLabel(counts), "Featured Offer withheld above Amazon's outside price");
+  assert.equal(featuredOfferHeadlineLabel(counts), "Buy Box withheld above Amazon's outside price");
   assert.equal(featuredOfferHeadlineCount(counts), 1);
   assert.equal(firstPassIncomplete(counts), false);
 });
@@ -352,7 +352,7 @@ test("freshness reads the Featured Offer clock, not the retail row timestamp", (
   assert.equal(job?.job_key, "featured_offer_keepa");
 
   const sentence = featuredOfferFreshnessSentence(counts, job);
-  assert.match(sentence, /Latest successful Featured Offer check/);
+  assert.match(sentence, /Latest successful Buy Box check/);
   assert.match(sentence, /1 of 3 monitored listings have a current reading/);
   assert.match(sentence, /still completing its first full pass/);
   // The newer catalog job must not appear as the Featured Offer time.
