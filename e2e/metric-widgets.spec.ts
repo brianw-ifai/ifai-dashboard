@@ -17,7 +17,7 @@ test.describe("configurable metric widgets", () => {
     await expect(picker).toBeVisible();
     await expect(picker.locator(".metric-widget-group h3")).toContainText([
       "Overview",
-      "Portfolio Retail",
+      "Catalog Health",
       "AI Search Visibility",
       "AI Readiness",
       "Competitive Radar",

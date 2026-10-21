@@ -66,7 +66,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(rows.nth(0)).toContainText("56.7% (17 of 30 resolved)");
     await expect(rows.nth(1)).toContainText("65.0% (13 of 20 resolved)");
     await expect(rows.nth(2)).toContainText("56.5% (13 of 23 resolved)");
-    await page.locator(".drilldown-tab-btn", { hasText: "Simulations" }).click();
+    await page.locator(".drilldown-tab-btn", { hasText: "Run Details" }).click();
     await expect(page.locator("[data-ai-history-trends]")).toHaveCount(0);
     await expect(page.locator("#ai-simulation-list")).toBeVisible();
     await expect(page.locator("[data-ai-history-banner]")).toContainText("current published run");
@@ -84,7 +84,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Run Summary",
-      "Simulations",
+      "Run Details",
       "Product Fact Checks",
       "Citation Ecosystem",
     ]);

@@ -4,8 +4,8 @@ import { mockCanvasRead } from "./spec-read-mock";
 
 /** Label in the picker, and the current tab that label must open. */
 const DESTINATIONS: Array<[string, string]> = [
-  ["Monitored Electric SKUs", "Division Performance"],
-  ["Active Amazon Offer Coverage", "Executive Briefing"],
+  ["Monitored Electric SKUs", "Performance"],
+  ["Active Amazon Offer Coverage", "Briefing"],
   ["Confirmed Amazon 1P Buy Box", "Retail Overview"],
   ["Seller Data Harvested", "Retail Overview"],
   ["MAP violations", "MAP"],
@@ -13,7 +13,7 @@ const DESTINATIONS: Array<[string, string]> = [
   ["Stranded Customer Reviews", "Catalog Governance"],
   ["Average Amazon Price Drift", "MAP"],
   ["Unbranded discovery", "Run Summary"],
-  ["Beginner AI Win Rate", "Simulations"],
+  ["Beginner AI Win Rate", "Run Details"],
   ["Answered AI Calls", "Run Summary"],
   ["Product Fact Checks", "Product Fact Checks"],
   ["Exact official product pages", "Findability"],

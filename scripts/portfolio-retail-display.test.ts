@@ -26,9 +26,9 @@ import {
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 
-/* Internal seller jargon stays off client surfaces. "No active offer" is a Featured
-   Offer state Fender does see, so only the seller-share phrasing is forbidden. */
-const FORBIDDEN = /buy box|partner-led|\b1p\b|unknown seller|(?<!no )active offers?\b/i;
+/* Seller-share jargon stays off bubble surfaces. Buy Box is the client purchasing-button
+   name. Partner-led belongs on the Retail Overview seller-type line, not these pills. */
+const FORBIDDEN = /partner-led|\b1p\b|unknown seller|(?<!no )active offers?\b/i;
 
 const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
 
@@ -162,7 +162,7 @@ test("the headline pill follows the stored finding and its count", () => {
   });
   const withheldFace = headlineBubble(withheldOnly);
   assert.equal(withheldOnly.suppressedListings.issueCount, 2);
-  assert.deepEqual(withheldFace.stats, ["2 Featured Offers withheld"]);
+  assert.deepEqual(withheldFace.stats, ["2 Buy Boxes withheld"]);
   assert.equal(withheldFace.stats.length, 1);
 
   const mapSource = findings({
@@ -234,7 +234,7 @@ test("a higher unfinished reading is not replaced by a later count", () => {
 test("the shared headline keeps the count, the missing message, and the command-center tab", () => {
   const source = findings();
   const surface = headlineSurface({ phase: "ready", snapshot: { ...source, headline: null } });
-  assert.equal(surface.label, "Featured Offer withheld above Amazon's outside price");
+  assert.equal(surface.label, "Buy Box withheld above Amazon's outside price");
   assert.equal(surface.countLabel, "1 listing");
   assert.equal(surface.missingMessage, source.suppressedListings.missingMessage);
   assert.equal(surface.tab, "Suppressed Listings");

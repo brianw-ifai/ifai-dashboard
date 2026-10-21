@@ -19,11 +19,11 @@
     "targetX": 1160,
     "targetY": 320,
     "radius": 125,
-    "title": "Portfolio Retail",
-    "subtitle": "Featured Offer, MAP, and catalog nesting",
+    "title": "Catalog Health",
+    "subtitle": "Buy Box, MAP, and catalog nesting",
     "category": "RETAIL HEALTH",
     "displays": [
-      "Suppressed Featured Offers, MAP leakage, and unnested bundles",
+      "Suppressed Buy Boxes, MAP leakage, and unnested bundles",
       "A partial reading keeps its count and says what is still missing"
     ],
     "value": "These catalog and retail issues change what an assistant can recommend and what a shopper can buy."

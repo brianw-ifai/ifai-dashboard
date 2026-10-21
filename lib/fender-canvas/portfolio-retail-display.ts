@@ -1,5 +1,5 @@
 /**
- * Bubble and panel copy for Portfolio Retail.
+ * Bubble and panel copy for Catalog Health (file: portfolio-retail-display).
  * Counts come from the reading model. This file does not count rows.
  */
 
@@ -128,7 +128,7 @@ export function headlineSurface(read: RetailCanvasRead): HeadlineSurface {
   const headline = selectRetailHeadline(read.snapshot);
   if (!headline) {
     return {
-      label: "Portfolio Retail",
+      label: "Catalog Health",
       countLabel: "0 listings",
       missingMessage: null,
       tab: RETAIL_OVERVIEW_TAB,
@@ -161,7 +161,7 @@ function countNoun(count: number, singular: string, plural = `${singular}s`): st
 }
 
 /**
- * One pill for the main Portfolio Retail bubble. The count comes from the reading.
+ * One pill for the main Catalog Health bubble. The count comes from the reading.
  * An unfinished read keeps its coverage in the tooltip, not in a second pill.
  */
 function combinedHeadlineStat(headline: RetailHeadline): string {
@@ -174,7 +174,7 @@ function combinedHeadlineStat(headline: RetailHeadline): string {
       return `${countNoun(count, "listing")} withheld above outside price`;
     }
     if (headline.reading.headlineLabel === WITHHELD_LABEL) {
-      return `${countNoun(count, "Featured Offer")} withheld`;
+      return `${countNoun(count, "Buy Box", "Buy Boxes")} withheld`;
     }
   }
 
@@ -195,14 +195,14 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
   const headline = selectRetailHeadline(findings);
   if (!headline) {
     return {
-      title: "Portfolio Retail",
+      title: "Catalog Health",
       stats: ["0 listings"],
       meta: "Stored zeros",
       status: "success",
       subTab: RETAIL_OVERVIEW_TAB,
       tooltip: {
-        title: "Portfolio Retail",
-        desc: "Suppressed Featured Offers, MAP leakage, and unnested bundles are each a stored zero.",
+        title: "Catalog Health",
+        desc: "Suppressed Buy Boxes, MAP leakage, and unnested bundles are each a stored zero.",
       },
     };
   }
@@ -211,7 +211,7 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
   const tooltip = headline.reading.missingMessage ?? `${label} is the current retail headline.`;
 
   return {
-    title: "Portfolio Retail",
+    title: "Catalog Health",
     stats: [combinedHeadlineStat(headline)],
     status: tone(headline.reading),
     subTab: RETAIL_OVERVIEW_TAB,
@@ -228,7 +228,7 @@ export function suppressedBubble(reading: RetailReading<unknown>): RetailBubbleF
     reading,
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     reading.missingMessage ??
-      "Amazon withholds the Featured Offer when the offer it observed is above the lowest price it recently found outside Amazon. Amazon does not name that retailer.",
+      "Amazon withholds the Buy Box when the offer it observed is above the lowest price it recently found outside Amazon. Amazon does not name that retailer.",
     "Suppressed Listings",
   );
 }
@@ -285,7 +285,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "loading") {
     const desc = "The retail reading is still loading.";
     return {
-      main: waitingFace("Portfolio Retail", RETAIL_OVERVIEW_TAB, ["Loading"], desc),
+      main: waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Loading"], desc),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
@@ -295,7 +295,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "error") {
     const desc = "The retail read could not be loaded.";
     return {
-      main: waitingFace("Portfolio Retail", RETAIL_OVERVIEW_TAB, ["Read failed"], desc),
+      main: waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Read failed"], desc),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),

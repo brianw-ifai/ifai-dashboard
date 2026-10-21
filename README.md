@@ -6,17 +6,17 @@ It is built as an executive briefing for portfolio health, not a live operations
 
 ## How it works
 
-The canvas is a zoomable map. A center hub, **Brand Portfolio**, connects to six spokes. Each node shows a status (critical, at risk, or on track), a headline metric, and a short tooltip. Clicking a node opens a side panel with tabs of briefing copy, tables, and recommended actions.
+The canvas is a zoomable map. A center hub, **Summary**, connects to six spokes. Each node shows a status (critical, at risk, or on track), a headline metric, and a short tooltip. Clicking a node opens a side panel with tabs of briefing copy, tables, and recommended actions.
 
 Tickers across the top surface the headline alerts and jump to the matching spoke. Configurable metric widgets let each viewer pin the signals they care about. A guided tour walks through every area of the briefing.
 
 ## What each area covers
 
-**Brand Portfolio (hub).** Executive briefing, division performance, and commercial sizing for the pilot and the full enterprise portfolio.
+**Summary (hub).** Briefing, Performance, and Opportunity for the pilot and the full enterprise portfolio.
 
-**Portfolio Retail.** Who holds the Amazon Featured Offer (also called the Buy Box, or BB), partner bundle ASINs that split reviews, Brand Registry consolidation, and MAP price leakage across marketplaces. Fender's seller type is Partner-led. The five types are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
+**Catalog Health.** Who holds the Amazon Buy Box (Amazon also calls it the Featured Offer), partner bundle ASINs that split reviews, Brand Registry consolidation, and MAP price leakage across marketplaces. Fender's seller type is Partner-led. The five types are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
 
-**AI Search Visibility.** How AI assistants name and cite Fender, read from one published audit run (`canvas_ai_current_run`, contract in `docs/ai-search-truth-contract.md`). Tabs: **Run Summary** (completeness, and the same two Fender-lead rates — unbranded discovery and branded consideration — for the run, for each engine, and for each category), **Simulations** (every call, with shopping prompts, product fact checks, provider errors, and unresolved answers filtered apart, and an evidence drawer per call), **Product Fact Checks** (answers compared with facts IntoFocus verified on official Fender pages, leading with what was checked rather than a zero), and **Citation Ecosystem** (how many shopping answers cited sources, then the links, domains, and source classes those answers contained). Pooled `canvas_metrics.sim_*` fields are not used. Remediation and root cause appear only when the run stores real text. The panel header can open a stored review run or a trend of unbranded discovery and branded consideration. Before the history views are applied, `?ai-history=fixture` reviews a labeled copy of the October 11 run and the two October 12 runs. The default dashboard stays on the published October 12 run. The history contract is in `docs/ai-search-history.md`.
+**AI Search Visibility.** How AI assistants name and cite Fender, read from one published audit run (`canvas_ai_current_run`, contract in `docs/ai-search-truth-contract.md`). Tabs: **Run Summary** (completeness, and the same two Fender-lead rates — unbranded discovery and branded consideration — for the run, for each engine, and for each category), **Run Details** (every call, with shopping prompts, product fact checks, provider errors, and unresolved answers filtered apart, and an evidence drawer per call), **Product Fact Checks** (answers compared with facts IntoFocus verified on official Fender pages, leading with what was checked rather than a zero), and **Citation Ecosystem** (how many shopping answers cited sources, then the links, domains, and source classes those answers contained). Pooled `canvas_metrics.sim_*` fields are not used. Remediation and root cause appear only when the run stores real text. The panel header can open a stored review run or a trend of unbranded discovery and branded consideration. Before the history views are applied, `?ai-history=fixture` reviews a labeled copy of the October 11 run and the two October 12 runs. The default dashboard stays on the published October 12 run. The history contract is in `docs/ai-search-history.md`. Old tab slugs such as `simulations` and `executive-briefing` still open the renamed tabs through `TAB_SLUG_ALIASES` in `lib/canvas-sdk/canvas-url-state.ts`.
 
 **AI Readiness.** Whether Fender's product data is ready for AI engines to read. The bubble and its two satellites keep their names. The tabs are **Findability** (whether each catalog listing resolves to an exact official product page, an official family page, a finished search with no defensible page, an ambiguous match, or unchecked), **AI Readiness** for the catalog-level spec view, **Machine Readability** for Schema.org JSON-LD on the older spec read, and **Amazon A+ Matrix** for Amazon A+ comparison content. A family page is not an exact product page. The guided tour introduces this area as **Product Readiness**.
 
@@ -50,14 +50,16 @@ Follow these rules for every visible string: titles, labels, tooltips, tour step
 
 **Area names.** Use these names exactly in visible copy:
 
-- **AI Search Visibility**: how AI assistants recommend and cite Fender.
+- **Summary**: the center hub (Briefing, Performance, and Opportunity tabs).
+- **Catalog Health**: Amazon Buy Box, MAP, and catalog nesting for retail listings.
+- **AI Search Visibility**: how AI assistants recommend and cite Fender. Tabs include **Run Summary** and **Run Details**.
 - **AI Readiness**: whether product data is ready for AI engines to read.
 - **Machine Readability**: the Schema.org JSON-LD view inside AI Readiness, named for the bubble's satellite.
 - **Amazon A+ Matrix**: the A+ comparison-content view inside AI Readiness, named for the bubble's other satellite.
 - **Product Readiness**: the product-page view of the same area, used as its guided tour title.
 - **Action Items**: the prioritized interventions. Use it for the area and as the count noun ("18 Action Items").
 
-Don't bring back the retired labels Brand AEO, Brand Fixes, Spec Readiness, Suggestion Engine, Catalog Readiness, Schema.org (as an area or tab name), or A+ Tables. Schema.org still names the standard itself, as in "Schema.org JSON-LD".
+Don't bring back the retired labels Brand Portfolio, Portfolio Retail, Retail Portfolio, Brand AEO, Brand Fixes, Spec Readiness, Suggestion Engine, Catalog Readiness, Commercial Sizing (as a tab title), Simulations (as a tab title), Schema.org (as an area or tab name), or A+ Tables. Schema.org still names the standard itself, as in "Schema.org JSON-LD". The primary client name for Amazon's purchasing button is **Buy Box**; tooltips may note that Amazon also calls it the Featured Offer.
 
 **AEO.** Use AEO (Answer Engine Optimization) only for the technical discipline, as in "AEO schemas" or "AEO execution". Never use it as the name of an area, tab, or metric.
 

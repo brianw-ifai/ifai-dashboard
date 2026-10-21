@@ -135,11 +135,11 @@ export function roleRateSort(
   return tally.fenderWins / tally.resolved;
 }
 
-/** "ChatGPT (model not recorded), Gemini (3.6 Flash), Perplexity (turbo)" */
+/** "ChatGPT (not recorded), Gemini (3.6 Flash), Perplexity (turbo)" */
 export function engineModelLine(list: EngineModel[]): string {
   return list
     .map(({ engine, models }) =>
-      `${engineLabel(engine)} (${models.length ? models.join(", ") : "model not recorded"})`,
+      `${engineLabel(engine)} (${models.length ? models.join(", ") : "not recorded"})`,
     )
     .join(", ");
 }
