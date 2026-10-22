@@ -14,6 +14,7 @@ test.describe("AI Search history on the live run", () => {
   test("the current run stays current and only the three review days are offered", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
+    await expect(page.locator("[data-ai-stat='window']")).toHaveCount(0);
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/);
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText(/\d+\.\d%/);
     const trigger = page.locator("[data-ai-history-trigger]");
@@ -54,8 +55,9 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-state='unavailable']")).toHaveCount(0);
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.7%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
-    await expect(page.locator(".ai-run-freshness")).toContainText("Historical run");
-    await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical published run");
+    await expect(page.locator(".ai-run-freshness")).toContainText("7c3e9f52");
+    await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical run");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("Historical run");
     await returnToLast30Days(page);
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
     await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
@@ -128,8 +130,9 @@ test.describe("AI Search stored-run copy", () => {
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Historical run");
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.7%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
-    await expect(page.locator(".ai-run-freshness")).toContainText("Historical run");
-    await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical published run");
+    await expect(page.locator(".ai-run-freshness")).toContainText("7c3e9f52");
+    await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical run");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("Historical run");
     await page.locator(".drilldown-tab-btn", { hasText: "Citation Ecosystem" }).click();
     await expect(page.locator("[data-ai-citation-count]")).toContainText("468 citation rows");
     await expect(page.locator("[data-ai-citation-count]")).toContainText("not read as a change in the citation ecosystem");

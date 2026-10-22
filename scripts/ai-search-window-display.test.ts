@@ -11,7 +11,6 @@ import {
   hasMixedScoringMethods,
   isWindowHistoryKind,
   MIXED_SCORING_NOTE,
-  pooledWindowChipValue,
   scoringMethodsInSnapshot,
 } from "../lib/ai-search/window-display.ts";
 import { applyExplorerFilter, filterFromEvidence } from "../lib/ai-search/explorer-filter.ts";
@@ -104,7 +103,7 @@ test("mixed scoring methods across October 11 and later runs", () => {
   assert.equal(hasMixedScoringMethods(single), false);
 });
 
-test("header chips replace single-run state on window modes", () => {
+test("header chips omit single-run state on window modes and do not restate the pill", () => {
   const snapshot: AiSearchSnapshot = {
     run: run(PUBLISHED_OCTOBER_12_RUN_ID, "2026-10-12T17:00:00Z"),
     calls: [
@@ -115,15 +114,11 @@ test("header chips replace single-run state on window modes", () => {
     citations: [],
   };
   const ready = { phase: "ready" as const, snapshot };
-  const windowChips = aiSpokeHeaderChips(ready, {
-    modeKind: "month",
-    selectionLabel: "Last 30 days · Oct 12, 2026 to Nov 10, 2026",
-  });
-  assert.ok(windowChips.some((chip) => chip.id === "window"));
-  assert.ok(!windowChips.some((chip) => chip.id === "state" || chip.id === "completed" || chip.id === "answered"));
+  const windowChips = aiSpokeHeaderChips(ready, { modeKind: "month" });
+  assert.ok(!windowChips.some((chip) => chip.id === "window" || chip.id === "state" || chip.id === "completed" || chip.id === "answered"));
   assert.ok(windowChips.some((chip) => chip.id === "unbranded"));
   assert.ok(windowChips.some((chip) => chip.id === "branded"));
-  assert.match(pooledWindowChipValue({ selectionLabel: "Last 30 days", runCount: 2 }), /2 runs/);
+  assert.equal(windowChips.some((chip) => /Last 30 days/.test(chip.value)), false);
 
   const runChips = aiSpokeHeaderChips(ready, { modeKind: "run" });
   assert.ok(runChips.some((chip) => chip.id === "state"));

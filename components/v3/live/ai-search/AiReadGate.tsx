@@ -19,8 +19,8 @@ function Notice({ heading, children, tone }: { heading: string; children: ReactN
   );
 }
 
-/** AI-specific freshness: the published run's own completion time, not any other job's. */
-export function RunFreshness({ snapshot, stale, historical }: { snapshot: AiSearchSnapshot; stale?: boolean; historical?: boolean }) {
+/** Run id, completion time, and answered counts. The pill already names the selection. */
+export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; stale?: boolean }) {
   const s = summarizeRun(snapshot);
   const { completeness: run } = s;
   return (
@@ -32,11 +32,6 @@ export function RunFreshness({ snapshot, stale, historical }: { snapshot: AiSear
         {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
       </span>
       <span>
-        {historical
-          ? snapshot.run.is_published
-            ? "Historical published run"
-            : "Historical run"
-          : <AiTerm term="published run">Published run</AiTerm>}{" "}
         {s.shortRunId} · completed {s.completedAt}
       </span>
       <span>
@@ -146,7 +141,7 @@ function GateBody({
   return (
     <div data-ai-state={windowed ? "selection" : read.snapshot.run.run_state}>
       {showFreshness && !windowed ? (
-        <RunFreshness snapshot={read.snapshot} stale={read.stale} historical={historical} />
+        <RunFreshness snapshot={read.snapshot} stale={read.stale} />
       ) : null}
       {children(read.snapshot)}
     </div>

@@ -32,7 +32,7 @@ export function rangeFromMode(mode: HistoryMode): { from: string | null; to: str
 
 /**
  * Panel introduction while history is open. Null keeps the normal area description.
- * Month, range, and all stay null: the pill already names the selection.
+ * Month, range, all, and a loaded single run stay null: the pill already names the selection.
  * The map is not given this string.
  */
 export function historySpokeDescription(input: {
@@ -50,5 +50,5 @@ export function historySpokeDescription(input: {
   }
   if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected run.";
   if (input.selectedPhase === "unavailable" || input.selectedPhase === "error") return input.selectedMessage;
-  return input.runDescription ? `Historical run. ${input.runDescription}` : "Historical run.";
+  return null;
 }

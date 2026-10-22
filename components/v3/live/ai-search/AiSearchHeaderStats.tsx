@@ -9,7 +9,6 @@ export function AiSearchHeaderStats() {
   const history = useAiHistoryOptional();
   const chips = aiSpokeHeaderChips(read, {
     modeKind: history?.mode.kind,
-    selectionLabel: history?.controlLabel,
   });
   if (chips.length === 0) return null;
   return (

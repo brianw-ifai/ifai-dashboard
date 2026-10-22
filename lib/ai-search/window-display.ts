@@ -38,12 +38,3 @@ export function callDaySpan(snapshot: AiSearchSnapshot): { from: string; to: str
   if (days.length === 0) return null;
   return { from: days[0], to: days[days.length - 1] };
 }
-
-/** Header chip value when the panel shows a pooled window. */
-export function pooledWindowChipValue(input: {
-  selectionLabel: string;
-  runCount: number;
-}): string {
-  const runWord = input.runCount === 1 ? "run" : "runs";
-  return `${input.selectionLabel} · ${input.runCount} ${runWord}`;
-}

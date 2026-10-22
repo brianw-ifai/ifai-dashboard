@@ -218,9 +218,7 @@ export function HistoryTrendsPanel() {
         </div>
       </div>
       <p className="ai-history-note">
-        <AiTerm term="unbranded discovery">Unbranded discovery</AiTerm> and{" "}
-        <AiTerm term="branded consideration">branded consideration</AiTerm> use the same denominators as the current run.{" "}
-        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside.
+        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside both rates.
       </p>
       <label className="ai-history-query">
         Question

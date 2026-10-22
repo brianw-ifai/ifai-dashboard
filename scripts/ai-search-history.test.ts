@@ -532,6 +532,16 @@ test("month, range, and all keep the normal area description", () => {
     }) ?? "",
     /out of the trend/,
   );
+  assert.equal(
+    historySpokeDescription({
+      mode: "run",
+      source: "live",
+      selectedPhase: "ready",
+      selectedMessage: null,
+      runDescription: "How AI shopping answers cite the web.",
+    }),
+    null,
+  );
 });
 
 test("errors stay outside the plotted denominator", () => {
