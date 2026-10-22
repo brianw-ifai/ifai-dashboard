@@ -2,6 +2,7 @@
 
 import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
@@ -17,6 +18,7 @@ import {
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 function brandId(brand: string): string {
   return `brand:${brand}`;
@@ -55,6 +57,9 @@ function engineSortValue(
 }
 
 function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
+  const mixed = hasMixedScoringMethods(snapshot);
   const engines = engineRoleTallies(snapshot.calls);
   const largest = {
     unbranded: largestResolved(engines, "unbranded_discovery"),
@@ -105,10 +110,21 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <div className="content-box ai-engine-comparison ai-role-rates">
         <div className="content-box-title">Commercial outcomes by engine</div>
         <RoleSumLine groups={engines} preface="Fender/Squier leads, by the kind of question." />
+        {mixed ? (
+          <p className="ai-role-footnote" data-ai-mixed-scoring>
+            {MIXED_SCORING_NOTE}
+          </p>
+        ) : null}
         <p className="ai-role-footnote">
           Each engine is compared on its own for <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and for{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="small sample" /> keeps its
-          percentage and is not ranked. Competitor columns count wins inside those two rates only.
+          <AiTerm term="branded consideration">branded consideration</AiTerm>.
+          {showSmallSample ? (
+            <>
+              {" "}
+              A <AiTerm term="small sample" /> keeps its percentage and is not ranked.
+            </>
+          ) : null}{" "}
+          Competitor columns count wins inside those two rates only.
         </p>
         <ResizableTable
           tableId="engine-comparison"
@@ -130,10 +146,20 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
                     <div className="ai-role-detail">{engine.models.join(", ")}</div>
                   </td>
                   <td>
-                    <RoleCount role="unbranded_discovery" tally={engine.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                    <RoleCount
+                      role="unbranded_discovery"
+                      tally={engine.roles.unbranded_discovery}
+                      largestResolved={largest.unbranded}
+                      showSmallSample={showSmallSample}
+                    />
                   </td>
                   <td>
-                    <RoleCount role="branded_consideration" tally={engine.roles.branded_consideration} largestResolved={largest.branded} />
+                    <RoleCount
+                      role="branded_consideration"
+                      tally={engine.roles.branded_consideration}
+                      largestResolved={largest.branded}
+                      showSmallSample={showSmallSample}
+                    />
                   </td>
                   {brands.map((brand) => (
                     <td key={brand}>{brandWins(snapshot.calls, engine.key, brand)}</td>
@@ -171,6 +197,7 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
                         branded={cell.branded}
                         largestUnbranded={cellLargest.unbranded}
                         largestBranded={cellLargest.branded}
+                        showSmallSample={showSmallSample}
                       />
                       {errors ? <div className="ai-role-detail">{errors} provider errors</div> : null}
                     </td>
@@ -181,8 +208,8 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          Each cell shows both rates. A small sample is marked beside its percentage, and the two rates are not combined
-          into one.
+          Each cell shows both rates.
+          {showSmallSample ? " A small sample is marked beside its percentage, and the two rates are not combined into one." : " The two rates are not combined into one."}
         </p>
         <KeptOutNote snapshot={snapshot} />
       </div>

@@ -25,6 +25,11 @@ import {
   type AiRunSummary,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
+import {
+  distinctCallRunIds,
+  isWindowHistoryKind,
+  pooledWindowChipValue,
+} from "@/lib/ai-search/window-display";
 
 export type NodeFace = Pick<CanvasNode, "status" | "title" | "stats" | "meta" | "tooltip" | "subTab">;
 
@@ -228,23 +233,46 @@ export type AiSpokeChip = {
   tone?: "warning" | "neutral";
 };
 
+export type AiSpokeHeaderChipsOptions = {
+  /** History mode kind. Window modes replace single-run state chips. */
+  modeKind?: string | null;
+  /** Label from the history control (selection and date span). */
+  selectionLabel?: string | null;
+};
+
 /** Compact run facts for the AI Search panel header. Keeps every former paragraph fact available. */
-export function aiSpokeHeaderChips(read: AiSearchRead): AiSpokeChip[] {
+export function aiSpokeHeaderChips(read: AiSearchRead, options: AiSpokeHeaderChipsOptions = {}): AiSpokeChip[] {
   if (read.phase !== "ready") return [];
   const s = summarizeRun(read.snapshot);
-  const chips: AiSpokeChip[] = [
-    {
-      id: "state",
-      label: "Run",
-      value: runStateLabel(s.completeness.state),
-      tone: s.completeness.isPartial ? "warning" : "neutral",
-    },
-    { id: "completed", label: "Completed", value: s.completedAt },
-    {
-      id: "answered",
-      label: "Answered",
-      value: `${s.completeness.answered ?? "?"} of ${s.completeness.expected ?? "?"}`,
-    },
+  const windowed = isWindowHistoryKind(options.modeKind);
+  const chips: AiSpokeChip[] = [];
+  if (windowed) {
+    const runCount = distinctCallRunIds(read.snapshot).length;
+    chips.push({
+      id: "window",
+      label: "Selection",
+      value: pooledWindowChipValue({
+        selectionLabel: options.selectionLabel?.trim() || "Stored review runs",
+        runCount,
+      }),
+    });
+  } else {
+    chips.push(
+      {
+        id: "state",
+        label: "Run",
+        value: runStateLabel(s.completeness.state),
+        tone: s.completeness.isPartial ? "warning" : "neutral",
+      },
+      { id: "completed", label: "Completed", value: s.completedAt },
+      {
+        id: "answered",
+        label: "Answered",
+        value: `${s.completeness.answered ?? "?"} of ${s.completeness.expected ?? "?"}`,
+      },
+    );
+  }
+  chips.push(
     { id: "errors", label: "Provider errors", value: errorLine(s), tone: s.errorEngines.length ? "warning" : "neutral" },
     {
       id: "unbranded",
@@ -261,7 +289,7 @@ export function aiSpokeHeaderChips(read: AiSearchRead): AiSpokeChip[] {
       label: "Product fact checks",
       value: factCheckShortLine(s.drift.coverage),
     },
-  ];
+  );
   return chips;
 }
 

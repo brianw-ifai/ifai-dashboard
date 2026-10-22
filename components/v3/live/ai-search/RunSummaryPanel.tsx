@@ -2,16 +2,19 @@
 
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { RunCompletenessCard } from "@/components/v3/live/ai-search/RunCompletenessCard";
 import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { categoryRoleTallies, engineRoleTallies, headlineAside, ROLE_LABELS, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
-import { categoryLabel, engineLabel, formatRunTime } from "@/lib/ai-search/run-metrics";
-import { engineModelLine, errorLine, pct, resolvedPhrase, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
+import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
+import { pct, resolvedPhrase, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 const ENGINE_COLUMNS = [
   clientColumn("engine", "Engine", "text", 140, 100),
@@ -47,55 +50,15 @@ function groupSortValue(
 
 const SIM = AI_TABS.simulations;
 
-function RunCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
-  const s = summarizeRun(snapshot);
-  const { run } = snapshot;
-  const rowsShort = s.completeness.expected != null && s.completeness.rowsRead < s.completeness.expected;
-  return (
-    <div className="content-box ai-run-card">
-      <div className="content-box-title">
-        <span>Run completeness</span>
-        <span className={`tag-badge ${s.completeness.isPartial ? "tag-warning" : "tag-success"}`}>
-          {runStateLabel(s.completeness.state)}
-        </span>
-      </div>
-      <table className="table-sm">
-        <tbody>
-          <tr><td>Run</td><td style={{ wordBreak: "break-all" }}>{run.audit_run_id}</td></tr>
-          <tr><td>Prompt set</td><td style={{ wordBreak: "break-all" }}>{run.prompt_set_hash ?? "Not recorded"}</td></tr>
-          <tr><td>Collector</td><td>{run.collector_version ?? "Not recorded"}</td></tr>
-          <tr><td>Started</td><td>{formatRunTime(run.started_at)}</td></tr>
-          <tr><td>Completed</td><td>{formatRunTime(run.completed_at)}</td></tr>
-          <tr><td>Published</td><td>{formatRunTime(run.published_at)}</td></tr>
-          <tr><td>Expected calls</td><td>{run.expected_calls ?? "Not recorded"}</td></tr>
-          <tr><td>Answered calls</td><td>{run.answered_calls ?? "Not recorded"}</td></tr>
-          <tr>
-            <td>Provider errors</td>
-            <td>
-              <EvidenceLink focus={{ field: "outcome", value: "error" }} tab={SIM}>
-                {errorLine(s)}
-              </EvidenceLink>
-            </td>
-          </tr>
-          <tr><td>Missing answers</td><td>{run.missing_calls ?? "Not recorded"}</td></tr>
-          <tr><td>Engines and models</td><td>{engineModelLine(s.enginesAndModels)}</td></tr>
-        </tbody>
-      </table>
-      {s.completeness.isPartial ? (
-        <p style={{ ...mutedText, marginTop: 8 }}>
-          This run is partial. Every figure below covers answered calls only. Unanswered calls are not losses.
-        </p>
-      ) : null}
-      {rowsShort ? (
-        <p style={{ ...mutedText, marginTop: 8, color: "var(--warning-text)" }}>
-          The read returned {s.completeness.rowsRead} call rows for {s.completeness.expected} expected calls.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function RoleRate({ tally, term }: { tally: RoleTally; term: "unbranded discovery" | "branded consideration" }) {
+function RoleRate({
+  tally,
+  term,
+  unit,
+}: {
+  tally: RoleTally;
+  term: "unbranded discovery" | "branded consideration";
+  unit: "run" | "selection";
+}) {
   const rate = tally.resolved > 0 ? pct(tally.fenderWins, tally.resolved) : "No resolved answers";
   return (
     <div className="metric-card-sm" data-ai-role={tally.role}>
@@ -114,7 +77,7 @@ function RoleRate({ tally, term }: { tally: RoleTally; term: "unbranded discover
             <AiTerm term="resolved" /> answers
           </>
         ) : (
-          "No resolved answers in this run"
+          `No resolved answers in this ${unit}`
         )}
       </span>
     </div>
@@ -128,7 +91,7 @@ function keptOut(tally: RoleTally): string {
   return parts.join(", ");
 }
 
-function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
+function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: "run" | "selection"; mixed: boolean }) {
   const s = summarizeRun(snapshot);
   return (
     <div className="content-box ai-win-card" style={{ marginTop: 12 }}>
@@ -136,9 +99,14 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
         <span>How often Fender/Squier is named, by the kind of question</span>
       </div>
       <div className="metric-grid-2">
-        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" />
-        <RoleRate tally={s.roles.branded} term="branded consideration" />
+        <RoleRate tally={s.roles.unbranded} term="unbranded discovery" unit={unit} />
+        <RoleRate tally={s.roles.branded} term="branded consideration" unit={unit} />
       </div>
+      {mixed ? (
+        <p style={{ ...mutedText, margin: "10px 0 0" }} data-ai-mixed-scoring>
+          {MIXED_SCORING_NOTE}
+        </p>
+      ) : null}
       <ul style={{ ...mutedText, margin: "10px 0 0", paddingLeft: 16 }}>
         <li>
           <AiTerm term="brand-associated discovery">Brand-associated discovery</AiTerm>:{" "}
@@ -177,7 +145,7 @@ function WinCard({ snapshot }: { snapshot: AiSearchSnapshot }) {
   );
 }
 
-function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
+function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot; showSmallSample: boolean }) {
   const engines = engineRoleTallies(snapshot.calls);
   const largest = {
     unbranded: largestResolved(engines, "unbranded_discovery"),
@@ -210,10 +178,20 @@ function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
                 </td>
                 <td>{engine.models.join(", ")}</td>
                 <td>
-                  <RoleCount role="unbranded_discovery" tally={engine.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                  <RoleCount
+                    role="unbranded_discovery"
+                    tally={engine.roles.unbranded_discovery}
+                    largestResolved={largest.unbranded}
+                    showSmallSample={showSmallSample}
+                  />
                 </td>
                 <td>
-                  <RoleCount role="branded_consideration" tally={engine.roles.branded_consideration} largestResolved={largest.branded} />
+                  <RoleCount
+                    role="branded_consideration"
+                    tally={engine.roles.branded_consideration}
+                    largestResolved={largest.branded}
+                    showSmallSample={showSmallSample}
+                  />
                 </td>
                 <td>{aside.unresolved}</td>
                 <td>{aside.errors}</td>
@@ -226,7 +204,7 @@ function EngineTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
   );
 }
 
-function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
+function CategoryTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot; showSmallSample: boolean }) {
   const categories = categoryRoleTallies(snapshot.calls);
   const largest = {
     unbranded: largestResolved(categories, "unbranded_discovery"),
@@ -258,10 +236,20 @@ function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
                   </EvidenceLink>
                 </td>
                 <td>
-                  <RoleCount role="unbranded_discovery" tally={row.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                  <RoleCount
+                    role="unbranded_discovery"
+                    tally={row.roles.unbranded_discovery}
+                    largestResolved={largest.unbranded}
+                    showSmallSample={showSmallSample}
+                  />
                 </td>
                 <td>
-                  <RoleCount role="branded_consideration" tally={row.roles.branded_consideration} largestResolved={largest.branded} />
+                  <RoleCount
+                    role="branded_consideration"
+                    tally={row.roles.branded_consideration}
+                    largestResolved={largest.branded}
+                    showSmallSample={showSmallSample}
+                  />
                 </td>
                 <td>{aside.unresolved}</td>
                 <td>{aside.errors}</td>
@@ -275,19 +263,24 @@ function CategoryTable({ snapshot }: { snapshot: AiSearchSnapshot }) {
   );
 }
 
-export function RunSummaryPanel() {
+function SummaryBody({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const windowed = isWindowHistoryKind(history?.mode.kind);
+  const showSmallSample = !windowed;
+  const unit = windowed ? "selection" : "run";
+  const mixed = hasMixedScoringMethods(snapshot);
   return (
-    <AiReadGate>
-      {(snapshot) => (
-        <>
-          <WinCard snapshot={snapshot} />
-          <EngineTable snapshot={snapshot} />
-          <CategoryTable snapshot={snapshot} />
-          <div style={{ marginTop: 12 }}>
-            <RunCard snapshot={snapshot} />
-          </div>
-        </>
-      )}
-    </AiReadGate>
+    <>
+      <WinCard snapshot={snapshot} unit={unit} mixed={mixed} />
+      <EngineTable snapshot={snapshot} showSmallSample={showSmallSample} />
+      <CategoryTable snapshot={snapshot} showSmallSample={showSmallSample} />
+      <div style={{ marginTop: 12 }}>
+        <RunCompletenessCard snapshot={snapshot} />
+      </div>
+    </>
   );
+}
+
+export function RunSummaryPanel() {
+  return <AiReadGate>{(snapshot) => <SummaryBody snapshot={snapshot} />}</AiReadGate>;
 }

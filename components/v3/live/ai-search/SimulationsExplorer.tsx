@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
@@ -31,6 +32,7 @@ import {
 } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 const SIM_COLUMNS = [
   clientColumn("prompt", "Prompt", "text", 280, 160),
@@ -72,12 +74,21 @@ const OUTCOME_TONE: Record<CallOutcome, string> = {
 };
 
 function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const unit = isWindowHistoryKind(history?.mode.kind) ? "selection" : "run";
   const focus = useEvidenceFocus();
   const [filter, setFilter] = useState<ExplorerFilter>(() => filterFromEvidence(focus));
-  const [openId, setOpenId] = useState<string | null>(() => {
-    const simId = filterFromEvidence(focus).simId;
-    return simId != null ? (snapshot.calls.find((call) => call.sim_id === simId)?.id ?? null) : null;
-  });
+  const openFromFilter = (next: ExplorerFilter): string | null => {
+    if (next.callId != null) {
+      return snapshot.calls.some((call) => call.id === next.callId) ? next.callId : null;
+    }
+    if (next.simId != null) {
+      return snapshot.calls.find((call) => call.sim_id === next.simId)?.id ?? null;
+    }
+    return null;
+  };
+
+  const [openId, setOpenId] = useState<string | null>(() => openFromFilter(filterFromEvidence(focus)));
 
   const [appliedFocus, setAppliedFocus] = useState(focus);
   if (focus !== appliedFocus) {
@@ -85,7 +96,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     if (focus) {
       const next = filterFromEvidence(focus);
       setFilter(next);
-      setOpenId(next.simId != null ? (snapshot.calls.find((call) => call.sim_id === next.simId)?.id ?? null) : null);
+      setOpenId(openFromFilter(next));
     }
   }
 
@@ -142,7 +153,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </button>
         </p>
       ) : null}
-      {rows.length === 0 ? <EmptyRows>No call in this run matches these filters.</EmptyRows> : null}
+      {rows.length === 0 ? <EmptyRows>No call in this {unit} matches these filters.</EmptyRows> : null}
       {rows.length ? (
         <div id="ai-simulation-list">
           <ResizableTable
@@ -197,7 +208,11 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                         <td colSpan={SIM_COLUMNS.length}>
                           <SimulationEvidenceDrawer
                             row={row}
-                            probe={drift.probes.find((p) => p.simId === row.sim_id) ?? null}
+                            probe={
+                              drift.probes.find(
+                                (p) => p.auditRunId === row.audit_run_id && p.simId === row.sim_id,
+                              ) ?? null
+                            }
                             citations={cited}
                             questionsSent={drift.coverage.questionsSent}
                             onClose={() => setOpenId(null)}

@@ -34,12 +34,13 @@ function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
   return row.checkedAt;
 }
 
-export function FactCheckTable({ rows }: { rows: ProbeEvidence[] }) {
+export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence[]; windowed?: boolean }) {
   const sorted = useClientTableSort(rows, COLUMNS, factSortValue);
+  const unit = windowed ? "selection" : "run";
   return (
     <div className="content-box ai-probe-table" style={{ marginTop: 12 }}>
-      <div className="content-box-title">Every product fact check in this run</div>
-      {rows.length === 0 ? <EmptyRows>This run sent no product fact checks.</EmptyRows> : null}
+      <div className="content-box-title">Every product fact check in this {unit}</div>
+      {rows.length === 0 ? <EmptyRows>This {unit} sent no product fact checks.</EmptyRows> : null}
       {rows.length ? (
         <ResizableTable
           tableId="product-fact-checks"
@@ -53,7 +54,10 @@ export function FactCheckTable({ rows }: { rows: ProbeEvidence[] }) {
             {sorted.rows.map((row) => (
               <tr key={row.key} data-probe-state={row.state} data-sim-id={row.simId}>
                 <td>
-                  <EvidenceLink focus={{ field: "sim", value: String(row.simId) }} tab={AI_TABS.simulations}>
+                  <EvidenceLink
+                    focus={{ field: "sim", value: row.callId ?? String(row.simId) }}
+                    tab={AI_TABS.simulations}
+                  >
                     {row.prompt}
                   </EvidenceLink>
                 </td>

@@ -1,11 +1,16 @@
 "use client";
 
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { aiSpokeHeaderChips } from "@/lib/ai-search/canvas-surfaces";
 
 export function AiSearchHeaderStats() {
   const read = useAiSearch();
-  const chips = aiSpokeHeaderChips(read);
+  const history = useAiHistoryOptional();
+  const chips = aiSpokeHeaderChips(read, {
+    modeKind: history?.mode.kind,
+    selectionLabel: history?.controlLabel,
+  });
   if (chips.length === 0) return null;
   return (
     <div className="drilldown-header-stats" data-ai-header-stats>

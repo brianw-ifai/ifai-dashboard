@@ -1,5 +1,6 @@
 "use client";
 
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
@@ -7,19 +8,24 @@ import { driftRead } from "@/lib/ai-search/drift";
 import {
   FACT_CHECK_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE,
+  FACT_CHECK_SHOPPING_SCOPE_WINDOW,
   factCheckCoverageNote,
   factCheckHeadline,
   factCheckPendingNote,
 } from "@/lib/ai-search/fact-check-copy";
 import { engineLabel, formatRunTime, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const windowed = isWindowHistoryKind(history?.mode.kind);
   const drift = driftRead(snapshot.calls, snapshot.probes);
   const { coverage } = drift;
   const contradictions = drift.probes.filter((row) => row.state === "confirmed");
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
+  const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
 
   return (
     <>
@@ -34,7 +40,7 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </span>
         </div>
         <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
-          {factCheckHeadline(coverage)}
+          {factCheckHeadline(coverage, windowed)}
         </p>
         <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
         <p style={{ ...mutedText, marginBottom: 0 }}>
@@ -60,12 +66,12 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </div>
       ) : null}
 
-      <FactCheckTable rows={drift.probes} />
+      <FactCheckTable rows={drift.probes} windowed={windowed} />
 
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">What this does and does not cover</div>
         <ul style={{ ...mutedText, paddingLeft: 16, margin: 0 }}>
-          <li>{FACT_CHECK_SHOPPING_SCOPE}</li>
+          <li>{shoppingScope}</li>
           <li>
             A result of <AiTerm term="no contradiction found" /> means nothing in that answer conflicted with the one
             fact being checked. It is not a clean bill of health for the whole answer.

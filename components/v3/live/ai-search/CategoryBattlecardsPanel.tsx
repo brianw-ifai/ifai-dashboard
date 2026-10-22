@@ -2,6 +2,7 @@
 
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
@@ -16,6 +17,7 @@ import {
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
@@ -44,6 +46,9 @@ function battleSortValue(
 }
 
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
+  const mixed = hasMixedScoringMethods(snapshot);
   const battles = [...categoryRoleTallies(snapshot.calls)].sort((a, b) => {
     const wins = (row: RoleGroupTally) => headlineAside(row).competitorWins;
     return wins(b) - wins(a) || a.key.localeCompare(b.key);
@@ -75,6 +80,11 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
       <div className="content-box ai-battlecards" style={{ marginTop: 12 }}>
         <div className="content-box-title">Category battlecards</div>
         <RoleSumLine groups={battles} preface="Fender/Squier leads, by the kind of question." />
+        {mixed ? (
+          <p className="ai-role-footnote" data-ai-mixed-scoring>
+            {MIXED_SCORING_NOTE}
+          </p>
+        ) : null}
         <ResizableTable
           tableId="category-battlecards"
           columns={COLUMNS}
@@ -95,10 +105,20 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
                     </EvidenceLink>
                   </td>
                   <td>
-                    <RoleCount role="unbranded_discovery" tally={battle.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                    <RoleCount
+                      role="unbranded_discovery"
+                      tally={battle.roles.unbranded_discovery}
+                      largestResolved={largest.unbranded}
+                      showSmallSample={showSmallSample}
+                    />
                   </td>
                   <td>
-                    <RoleCount role="branded_consideration" tally={battle.roles.branded_consideration} largestResolved={largest.branded} />
+                    <RoleCount
+                      role="branded_consideration"
+                      tally={battle.roles.branded_consideration}
+                      largestResolved={largest.branded}
+                      showSmallSample={showSmallSample}
+                    />
                   </td>
                   <td>{top ? `${top.brand} (${top.wins})` : "None"}</td>
                   <td>{aside.competitorWins}</td>

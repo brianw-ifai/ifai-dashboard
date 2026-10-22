@@ -43,7 +43,10 @@ export type ExplorerFilter = {
   accuracy: AccuracyState | "";
   brand: string;
   role: QuestionRole | "";
+  /** Bare simulation number from older links. Prefer callId on pooled snapshots. */
   simId: number | null;
+  /** Call row id, including pooled `${audit_run_id}:${id}` namespaces. */
+  callId: string | null;
 };
 
 export const DEFAULT_FILTER: ExplorerFilter = {
@@ -56,6 +59,7 @@ export const DEFAULT_FILTER: ExplorerFilter = {
   brand: "",
   role: "",
   simId: null,
+  callId: null,
 };
 
 /** The explorer filter a drill-down link stands for. */
@@ -64,8 +68,11 @@ export function filterFromEvidence(focus: EvidenceFocus | null): ExplorerFilter 
   const { field, value } = focus;
   switch (field) {
     case "sim": {
-      const simId = Number.parseInt(value, 10);
-      return Number.isFinite(simId) ? { ...DEFAULT_FILTER, scope: "all", simId } : DEFAULT_FILTER;
+      // Bare digits stay sim_id. Anything else is the displayed call id (UUID or run:uuid).
+      if (/^\d+$/.test(value)) {
+        return { ...DEFAULT_FILTER, scope: "all", simId: Number.parseInt(value, 10), callId: null };
+      }
+      return { ...DEFAULT_FILTER, scope: "all", callId: value, simId: null };
     }
     case "engine":
       return { ...DEFAULT_FILTER, engine: value.toLowerCase() };
@@ -101,6 +108,7 @@ export function filterFromEvidence(focus: EvidenceFocus | null): ExplorerFilter 
 
 export function applyExplorerFilter(rows: AiCallRow[], filter: ExplorerFilter): AiCallRow[] {
   return rows.filter((row) => {
+    if (filter.callId != null) return row.id === filter.callId;
     if (filter.simId != null) return row.sim_id === filter.simId;
     if (filter.scope !== "all" && row.prompt_kind !== filter.scope) return false;
     if (filter.engine && (row.engine ?? "").toLowerCase() !== filter.engine) return false;

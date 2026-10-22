@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
@@ -12,6 +13,7 @@ import { competitorTallies, type CompetitorTally } from "@/lib/ai-search/competi
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 const COLUMNS = [
   clientColumn("competitor", "Competitor", "text", 160, 110),
@@ -30,6 +32,9 @@ function tallySortValue(row: CompetitorTally, columnId: string): SortInput {
 }
 
 function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const windowed = isWindowHistoryKind(history?.mode.kind);
+  const mixed = hasMixedScoringMethods(snapshot);
   const focus = useEvidenceFocus();
   const [brand, setBrand] = useState(focus?.field === "competitor" ? focus.value : "");
 
@@ -54,11 +59,12 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
     [snapshot],
   );
   const shown = brand ? losses.filter((row) => row.primary_brand === brand) : losses;
+  const emptyUnit = windowed ? "selection" : "run";
 
   if (losses.length === 0) {
     return (
       <div className="content-box">
-        <EmptyRows>No competitor was named most in a resolved commercial answer in this run.</EmptyRows>
+        <EmptyRows>No competitor was named most in a resolved commercial answer in this {emptyUnit}.</EmptyRows>
       </div>
     );
   }
@@ -67,6 +73,11 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <>
       <div className="content-box ai-competitor-tallies">
         <div className="content-box-title">Competitors named more than Fender/Squier</div>
+        {mixed ? (
+          <p style={mutedText} data-ai-mixed-scoring>
+            {MIXED_SCORING_NOTE}
+          </p>
+        ) : null}
         <ResizableTable
           tableId="competitor-wins"
           columns={COLUMNS}
@@ -111,7 +122,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
           return (
             <div key={row.id} className="action-card" data-sim-id={row.sim_id} style={{ marginTop: 6 }}>
               <div className="action-head">
-                <EvidenceLink focus={{ field: "sim", value: String(row.sim_id) }} tab={AI_TABS.simulations}>
+                <EvidenceLink focus={{ field: "sim", value: row.id }} tab={AI_TABS.simulations}>
                   {cleanPrompt(row.prompt)}
                 </EvidenceLink>
                 <span className="tag-badge tag-danger">{row.primary_brand} named most</span>
