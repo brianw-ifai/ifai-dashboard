@@ -17,8 +17,8 @@ test.describe("AI Search Visibility", () => {
     await expect(canvas.activeTab).toHaveText("Run Summary");
     const body = page.locator(".drilldown-body");
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
-    await expect(page.locator("[data-ai-window-freshness]")).toContainText(/Rates add \d+ runs/);
-    await expect(page.locator("[data-ai-window-freshness]")).not.toContainText("Published run");
+    await expect(page.locator("[data-ai-window-freshness]")).toHaveCount(0);
+    await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/);
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText(/\d+\.\d%/);
     await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText(/\d+ Fender\/Squier leads/);
@@ -95,7 +95,7 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-citation-hero-ratio]")).toContainText(
       /unbranded discovery answers cited a Fender-owned page/,
     );
-    await expect(page.locator("[data-citation-window]")).toContainText(/Figures add \d+ runs?/);
+    await expect(page.getByText(/Figures add \d+ runs?/)).toHaveCount(0);
     await expect(page.locator("[data-citation-hero-pct]")).toContainText(/%/);
     await expect(page.locator("[data-citation-role-lead]").first()).toBeVisible();
     const linkPie = page.locator("[data-citation-pie='classes']");

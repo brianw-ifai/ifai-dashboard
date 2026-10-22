@@ -46,14 +46,7 @@ function CountTable<T>({
 }) {
   const sorted = useClientTableSort(rows, columns, value);
   return (
-    <ResizableTable
-      tableId={tableId}
-      columns={columns}
-      freezeHeader
-      maxHeight={520}
-      sort={sorted.sort}
-      onSort={sorted.onSort}
-    >
+    <ResizableTable tableId={tableId} columns={columns} freezeHeader maxHeight={520} sort={sorted.sort} onSort={sorted.onSort}>
       <tbody>{sorted.rows.map((row) => renderRow(row))}</tbody>
     </ResizableTable>
   );
@@ -192,9 +185,11 @@ function Ecosystem({
           </p>
         ) : citationUrlsLoaded ? (
           <>
-            <p className="citation-window" data-citation-window>
-              {copy}
-            </p>
+            {copy ? (
+              <p className="citation-window" data-citation-window>
+                {copy}
+              </p>
+            ) : null}
             <CitationHero
               snapshot={snapshot}
               read={read}
@@ -387,7 +382,7 @@ export function CitationEcosystemPanel() {
   if (history?.mode.kind === "run") {
     return (
       <AiReadGate showFreshness={false}>
-        {(snapshot) => <Ecosystem snapshot={snapshot} copy="This run only." singleRun />}
+        {(snapshot) => <Ecosystem snapshot={snapshot} copy="" singleRun />}
       </AiReadGate>
     );
   }

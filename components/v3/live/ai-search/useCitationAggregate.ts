@@ -40,7 +40,7 @@ function finish(
     phase: "ready",
     snapshot,
     singleRun,
-    copy: singleRun ? "This run only." : citationAggregateCopy({ window, included, omitted }),
+    copy: singleRun ? "" : citationAggregateCopy({ window, included, omitted }),
   };
 }
 

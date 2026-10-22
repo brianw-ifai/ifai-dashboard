@@ -1,4 +1,4 @@
-import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
+import { utcDay } from "@/lib/ai-search/history-eligibility";
 import { scoringMethodFor, type ScoringMethod } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
@@ -37,25 +37,6 @@ export function callDaySpan(snapshot: AiSearchSnapshot): { from: string; to: str
     .sort();
   if (days.length === 0) return null;
   return { from: days[0], to: days[days.length - 1] };
-}
-
-/**
- * Plain-language completeness for a pooled window. Rates add the runs; this is
- * not the latest run's partial badge or expected-call count.
- */
-export function pooledCompletenessCopy(input: {
-  selectionLabel: string;
-  runCount: number;
-  span: { from: string; to: string } | null;
-}): string {
-  const runWord = input.runCount === 1 ? "run" : "runs";
-  const span =
-    input.span == null
-      ? "dates not recorded"
-      : input.span.from === input.span.to
-        ? formatDay(input.span.from)
-        : `${formatDay(input.span.from)} to ${formatDay(input.span.to)}`;
-  return `${input.selectionLabel}. Rates add ${input.runCount} ${runWord} from ${span}.`;
 }
 
 /** Header chip value when the panel shows a pooled window. */

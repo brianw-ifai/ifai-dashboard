@@ -1,9 +1,7 @@
 "use client";
 
-import { HistoryBanner } from "@/components/v3/live/ai-search/HistoryBanner";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { historyFixtureSnapshot } from "@/lib/ai-search/history-fixtures";
-import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
 import { cleanPrompt, engineLabel } from "@/lib/ai-search/run-metrics";
 import { runStateLabel } from "@/lib/ai-search/summary";
 
@@ -13,13 +11,11 @@ export function LegacyRunInspect() {
   const runId = history.mode.kind === "legacy" ? history.mode.runId : "";
   const run = history.catalog.phase === "ready" ? history.catalog.runs.find((item) => item.audit_run_id === runId) : null;
   const fixture = history.source === "fixture" ? historyFixtureSnapshot(runId) : null;
-  const day = run ? utcDay(run.published_at ?? run.completed_at) : null;
   return (
     <div data-ai-history-legacy>
-      <HistoryBanner
-        heading={day ? `Legacy run · ${formatDay(day)}` : "Legacy run"}
-        detail="This run is excluded from headline rates and trends."
-      />
+      <p className="ai-history-note" data-ai-history-legacy-excluded>
+        This run is excluded from headline rates and trends.
+      </p>
       {run ? (
         <div className="content-box">
           <div className="content-box-title">Run summary only</div>

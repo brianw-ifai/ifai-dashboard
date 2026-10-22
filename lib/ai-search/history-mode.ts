@@ -31,7 +31,8 @@ export function rangeFromMode(mode: HistoryMode): { from: string | null; to: str
 }
 
 /**
- * Panel introduction while history is open. Null keeps the published-run description.
+ * Panel introduction while history is open. Null keeps the normal area description.
+ * Month, range, and all stay null: the pill already names the selection.
  * The map is not given this string.
  */
 export function historySpokeDescription(input: {
@@ -41,16 +42,11 @@ export function historySpokeDescription(input: {
   selectedMessage: string | null;
   runDescription: string | null;
 }): string | null {
-  if (input.mode === "month") {
-    return "The open AI Search panel adds the stored review runs in that window. The map stays on the current published run.";
+  if (input.mode === "month" || input.mode === "range" || input.mode === "all") {
+    return null;
   }
   if (input.mode === "legacy") {
     return "Legacy test run. These calls stay out of the two rates and out of the trend.";
-  }
-  if (input.mode === "range" || input.mode === "all") {
-    return input.source === "fixture"
-      ? "Copy of the stored runs for review. The chart uses that copy, not a live read. Last 30 days returns to the stored review runs in this copy. The map stays on the live published run."
-      : "Trends use the stored review runs. The map stays on the current published run.";
   }
   if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected run.";
   if (input.selectedPhase === "unavailable" || input.selectedPhase === "error") return input.selectedMessage;

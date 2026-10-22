@@ -1,5 +1,5 @@
-import { formatDay, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
-import { isReviewHistoryRun, scoringMethodFor, citationStorageCaution } from "@/lib/ai-search/review-runs";
+import { utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
+import { isReviewHistoryRun, citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 /** Inclusive day count for the citation tab's default window. */
@@ -130,39 +130,12 @@ export function poolWindowSnapshots(snapshots: readonly AiSearchSnapshot[]): AiS
   };
 }
 
+/** Omission note only. The pill already names the selection; do not restate it here. */
 export function citationAggregateCopy(input: {
   window: CitationWindow;
   included: readonly AiSearchSnapshot[];
   omitted: number;
 }): string {
-  const runs = input.included.length;
-  const runWord = runs === 1 ? "run" : "runs";
-  const days = input.included
-    .map((snapshot) => utcDay(snapshot.run.published_at ?? snapshot.run.completed_at))
-    .filter((day): day is string => day != null)
-    .sort();
-  const span = days.length > 0 ? `${formatDay(days[0])} to ${formatDay(days[days.length - 1])}` : "dates not recorded";
-  const lead =
-    input.window.kind === "month"
-      ? `Last ${CITATION_MONTH_DAYS} days, ${span}.`
-      : input.window.kind === "all"
-        ? `All time, ${span}.`
-        : input.window.kind === "range"
-          ? `${formatDay(input.window.from)} to ${formatDay(input.window.to)}.`
-          : "This run only.";
-  const added = `Figures add ${runs} ${runWord}.`;
-  const leftOut =
-    input.omitted > 0
-      ? ` ${input.omitted} ${input.omitted === 1 ? "run is" : "runs are"} left out because citations were not stored.`
-      : "";
-  const methods = new Set(
-    input.included
-      .map((snapshot) => scoringMethodFor(snapshot.run))
-      .filter((method): method is NonNullable<typeof method> => method != null),
-  );
-  const scoring =
-    methods.size > 1
-      ? " Lead rates and gaps add runs that named the leader in different ways."
-      : "";
-  return `${lead} ${added}${leftOut}${scoring}`;
+  if (input.omitted <= 0) return "";
+  return `${input.omitted} ${input.omitted === 1 ? "run is" : "runs are"} left out because citations were not stored.`;
 }

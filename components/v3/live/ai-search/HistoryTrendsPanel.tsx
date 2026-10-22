@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
-import { HistoryBanner } from "@/components/v3/live/ai-search/HistoryBanner";
 import { HistoryPointDetail } from "@/components/v3/live/ai-search/HistoryPointDetail";
 import { HistoryTrendChart } from "@/components/v3/live/ai-search/HistoryTrendChart";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
@@ -68,8 +67,6 @@ export function HistoryTrendsPanel() {
     () => (history.trend.phase === "ready" ? queryChoices(history.trend.snapshots, metric) : [{ kind: "all" as const }]),
     [history.trend, metric],
   );
-
-  const period = history.mode.kind === "all" ? "All time" : history.mode.kind === "range" ? `${formatDay(history.mode.from)} to ${formatDay(history.mode.to)}` : "Trends";
 
   let body: ReactNode = null;
   if (history.catalog.phase === "loading" || history.trend.phase === "loading") {
@@ -193,10 +190,6 @@ export function HistoryTrendsPanel() {
 
   return (
     <div data-ai-history-trends>
-      <HistoryBanner
-        heading={period}
-        detail="Trends use the stored review runs. A scoring-method change stays visible. Legacy fragments stay out of this chart."
-      />
       <div className="ai-history-toggles">
         <div className="segmented-control" role="group" aria-label="Rate">
           {(["unbranded_discovery", "branded_consideration"] as const).map((role) => (

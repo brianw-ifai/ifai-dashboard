@@ -11,7 +11,6 @@ import {
   hasMixedScoringMethods,
   isWindowHistoryKind,
   MIXED_SCORING_NOTE,
-  pooledCompletenessCopy,
   pooledWindowChipValue,
   scoringMethodsInSnapshot,
 } from "../lib/ai-search/window-display.ts";
@@ -70,7 +69,7 @@ test("window history kinds", () => {
   assert.equal(isWindowHistoryKind("legacy"), false);
 });
 
-test("pooled completeness names run count and span", () => {
+test("pooled window helpers name run ids and day span", () => {
   const snapshot: AiSearchSnapshot = {
     run: run(PUBLISHED_OCTOBER_12_RUN_ID, "2026-10-12T17:00:00Z"),
     calls: [
@@ -82,15 +81,6 @@ test("pooled completeness names run count and span", () => {
   };
   assert.deepEqual(distinctCallRunIds(snapshot), [OCTOBER_11_RUN_ID, PUBLISHED_OCTOBER_12_RUN_ID].sort());
   assert.deepEqual(callDaySpan(snapshot), { from: "2026-10-11", to: "2026-10-12" });
-  const copy = pooledCompletenessCopy({
-    selectionLabel: "Last 30 days",
-    runCount: 2,
-    span: callDaySpan(snapshot),
-  });
-  assert.match(copy, /Last 30 days/);
-  assert.match(copy, /Rates add 2 runs/);
-  assert.match(copy, /Oct 11, 2026 to Oct 12, 2026/);
-  assert.doesNotMatch(copy, /partial|expected/i);
 });
 
 test("mixed scoring methods across October 11 and later runs", () => {

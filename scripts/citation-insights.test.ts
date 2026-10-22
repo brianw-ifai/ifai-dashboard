@@ -391,7 +391,15 @@ test("a citation window adds usable runs and names the month", () => {
     included: [listed],
     omitted: 1,
   });
-  assert.match(copy, /Last 30 days/);
-  assert.match(copy, /Figures add 1 run/);
+  assert.doesNotMatch(copy, /Last 30 days/);
+  assert.doesNotMatch(copy, /Figures add/);
   assert.match(copy, /left out/);
+  assert.equal(
+    citationAggregateCopy({
+      window: { kind: "month", from: "2026-09-19", to: "2026-10-18" },
+      included: [listed],
+      omitted: 0,
+    }),
+    "",
+  );
 });

@@ -481,46 +481,46 @@ test("the migration names only the two additional runs and does not write rows",
   assert.equal(utcDay("2026-10-12T17:02:36.755Z"), "2026-10-12");
 });
 
-test("the panel introduction names the stored-run copy and leaves the map copy alone", () => {
-  assert.match(
+test("month, range, and all keep the normal area description", () => {
+  assert.equal(
     historySpokeDescription({
       mode: "month",
       source: "live",
       selectedPhase: "idle",
       selectedMessage: null,
       runDescription: "Current figures",
-    }) ?? "",
-    /stored review runs in that window/,
+    }),
+    null,
   );
-  assert.match(
+  assert.equal(
     historySpokeDescription({
-      mode: "month",
+      mode: "range",
       source: "live",
       selectedPhase: "idle",
       selectedMessage: null,
       runDescription: "Current figures",
-    }) ?? "",
-    /map stays on the current published run/,
+    }),
+    null,
   );
-  assert.match(
+  assert.equal(
     historySpokeDescription({
       mode: "all",
       source: "fixture",
       selectedPhase: "idle",
       selectedMessage: null,
       runDescription: "56.5%",
-    }) ?? "",
-    /Copy of the stored runs/,
+    }),
+    null,
   );
-  assert.doesNotMatch(
+  assert.equal(
     historySpokeDescription({
       mode: "all",
       source: "live",
       selectedPhase: "idle",
       selectedMessage: null,
       runDescription: "56.5%",
-    }) ?? "",
-    /56\.5%/,
+    }),
+    null,
   );
   assert.match(
     historySpokeDescription({
