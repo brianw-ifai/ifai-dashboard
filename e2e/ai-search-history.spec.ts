@@ -43,10 +43,10 @@ test.describe("AI Search history on the live run", () => {
     await page.locator("[data-ai-history-trigger]").click();
     await page.locator("[data-ai-history-day='2026-10-11']").click();
     await expect(page.locator(`[data-ai-history-scoring='${OCTOBER_11}']`)).toHaveText("Original winner labels");
-    await expect(page.locator("[data-ai-history-gap='p15:perplexity']")).toContainText(
+    await expect(page.locator("[data-ai-history-dialog] [data-ai-history-gap='p15:perplexity']")).toContainText(
       "What is the best first electric guitar for a total beginner?",
     );
-    await expect(page.locator("[data-ai-history-gap='p24:chatgpt']")).toContainText(
+    await expect(page.locator("[data-ai-history-dialog] [data-ai-history-gap='p24:chatgpt']")).toContainText(
       "Best 5-string bass guitar for gigging musicians",
     );
     await page.locator("[data-ai-history-view-run]").click();
@@ -57,6 +57,8 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
     await expect(page.locator(".ai-run-freshness")).toContainText("7c3e9f52");
     await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical run");
+    await expect(page.locator(".ai-run-freshness .tag-badge")).toHaveCount(0);
+    await expect(page.locator("[data-ai-stat='state']")).toHaveCount(0);
     await expect(page.locator(".drilldown-desc")).not.toContainText("Historical run");
     await returnToLast30Days(page);
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
@@ -132,6 +134,8 @@ test.describe("AI Search stored-run copy", () => {
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("100.0%");
     await expect(page.locator(".ai-run-freshness")).toContainText("7c3e9f52");
     await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical run");
+    await expect(page.locator(".ai-run-freshness .tag-badge")).toHaveCount(0);
+    await expect(page.locator("[data-ai-stat='state']")).toHaveCount(0);
     await expect(page.locator(".drilldown-desc")).not.toContainText("Historical run");
     await page.locator(".drilldown-tab-btn", { hasText: "Citation Ecosystem" }).click();
     await expect(page.locator("[data-ai-citation-count]")).toContainText("468 citation rows");

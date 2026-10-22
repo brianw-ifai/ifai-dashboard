@@ -123,6 +123,13 @@ test("header chips omit single-run state on window modes and do not restate the 
   const runChips = aiSpokeHeaderChips(ready, { modeKind: "run" });
   assert.ok(runChips.some((chip) => chip.id === "state"));
   assert.ok(runChips.some((chip) => chip.id === "answered"));
+
+  const historicalChips = aiSpokeHeaderChips(
+    { phase: "ready", snapshot: { ...snapshot, run: { ...snapshot.run, run_state: "historical" } } },
+    { modeKind: "run" },
+  );
+  assert.ok(!historicalChips.some((chip) => chip.id === "state"));
+  assert.ok(historicalChips.some((chip) => chip.id === "completed" || chip.id === "answered"));
 });
 
 test("evidence call id opens the pooled row; bare sim id still works", () => {

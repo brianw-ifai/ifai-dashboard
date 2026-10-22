@@ -23,14 +23,17 @@ function Notice({ heading, children, tone }: { heading: string; children: ReactN
 export function RunFreshness({ snapshot, stale }: { snapshot: AiSearchSnapshot; stale?: boolean }) {
   const s = summarizeRun(snapshot);
   const { completeness: run } = s;
+  const showState = run.isPartial || run.state !== "historical";
   return (
     <div
       className="ai-run-freshness"
       style={{ ...mutedText, fontSize: 11, display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}
     >
-      <span className={`tag-badge ${run.isPartial ? "tag-warning" : "tag-success"}`}>
-        {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
-      </span>
+      {showState ? (
+        <span className={`tag-badge ${run.isPartial ? "tag-warning" : "tag-success"}`}>
+          {run.isPartial ? <AiTerm term="partial run">Partial run</AiTerm> : runStateLabel(run.state)}
+        </span>
+      ) : null}
       <span>
         {s.shortRunId} · completed {s.completedAt}
       </span>

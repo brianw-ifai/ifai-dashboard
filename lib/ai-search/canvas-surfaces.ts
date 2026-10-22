@@ -241,13 +241,15 @@ export function aiSpokeHeaderChips(read: AiSearchRead, options: AiSpokeHeaderChi
   const windowed = isWindowHistoryKind(options.modeKind);
   const chips: AiSpokeChip[] = [];
   if (!windowed) {
-    chips.push(
-      {
+    if (s.completeness.state !== "historical") {
+      chips.push({
         id: "state",
         label: "Run",
         value: runStateLabel(s.completeness.state),
         tone: s.completeness.isPartial ? "warning" : "neutral",
-      },
+      });
+    }
+    chips.push(
       { id: "completed", label: "Completed", value: s.completedAt },
       {
         id: "answered",
