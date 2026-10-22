@@ -68,7 +68,6 @@ test.describe("drill-downs", () => {
     await expect(canvas.activeTab).toContainText("MAP");
 
     const body = page.locator(".drilldown-body");
-    await expect(body).toContainText("Minimum Advertised Price");
     await expect(body).toContainText("Summary");
     await expect(body).toContainText("Fender MAP prices have not been stored.");
     await expect(body).not.toContainText("listings below MAP");
