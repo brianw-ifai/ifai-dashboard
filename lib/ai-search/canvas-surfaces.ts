@@ -13,6 +13,7 @@ import {
   factCheckShortLine,
   factsCheckedLine,
 } from "@/lib/ai-search/fact-check-copy";
+import { questionRole } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 import {
   engineModelLine,
@@ -166,12 +167,12 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       title: "Competitive Radar",
       stats: s.topCompetitor
         ? [`${s.topCompetitor.brand} ${s.topCompetitor.wins} wins`, `of ${s.topCompetitor.resolved} resolved`]
-        : ["No competitor wins", `${c.resolved} resolved`],
-      meta: `${s.competitorWins} competitor wins · commercial prompts`,
+        : ["No competitor wins", `${s.roles.unbranded.resolved} resolved`],
+      meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
       tooltip: {
         title: "Competitive Radar",
-        desc: `Competitor brands were named more than Fender/Squier in ${s.competitorWins} of ${c.resolved} resolved commercial answers in the published run.${gap ? ` Largest gap: ${battleSentence(gap)}.` : ""}`,
+        desc: `Competitor brands were named more than Fender/Squier in ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers in the published run.${gap ? ` Largest gap: ${battleSentence(gap)}.` : ""}`,
       },
     },
     satGap: gap
@@ -187,29 +188,35 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
           status: "success",
           title: "Category Gap",
           stats: ["No competitor wins"],
-          meta: "Commercial prompts",
+          meta: "Unbranded discovery",
           subTab: RADAR_TABS.wins,
-          tooltip: { title: "Category gap", desc: "No competitor was named most in a resolved commercial answer." },
+          tooltip: {
+            title: "Category gap",
+            desc: "No competitor was named most in a resolved unbranded discovery answer.",
+          },
         },
     satLead: lead
       ? {
           status: "success",
           title: `${categoryLabel(lead.category)} Lead`,
           stats: [`${pct(lead.fenderWins, lead.resolved)} Fender`, `${lead.fenderWins} of ${lead.resolved} resolved`],
-          meta: "Commercial prompts",
+          meta: "Unbranded discovery",
           subTab: RADAR_TABS.battlecards,
           tooltip: {
             title: `${categoryLabel(lead.category)} category`,
-            desc: `Fender/Squier was named most in ${lead.fenderWins} of ${lead.resolved} resolved ${lead.category} answers in the published run.`,
+            desc: `Fender/Squier was named most in ${lead.fenderWins} of ${lead.resolved} resolved unbranded discovery ${lead.category} answers in the published run.`,
           },
         }
       : {
           status: "neutral",
           title: "Category Lead",
           stats: ["No resolved answers"],
-          meta: "Commercial prompts",
+          meta: "Unbranded discovery",
           subTab: RADAR_TABS.battlecards,
-          tooltip: { title: "Category lead", desc: "No commercial category has resolved answers yet." },
+          tooltip: {
+            title: "Category lead",
+            desc: "No unbranded discovery category has resolved answers yet.",
+          },
         },
   };
 }
@@ -299,7 +306,7 @@ export function aiCommandSummary(read: AiSearchRead): string | null {
 export function competitorsSpokeDesc(read: AiSearchRead): string {
   if (read.phase !== "ready") return aiSpokeDesc(read);
   const s = summarizeRun(read.snapshot);
-  return `Which brands AI engines name over Fender/Squier on shopping prompts in the published run. Competitors led ${s.competitorWins} of ${s.commercial.resolved} resolved answers. Product fact checks, provider errors, and answers with no clear leader are left out.`;
+  return `Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Competitors led ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.`;
 }
 
 /** Client priorities this run can prove. Nothing appears while the run is loading or missing. */
@@ -324,7 +331,10 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
   const gap = s.largestGap;
   if (gap) {
     const calls = read.snapshot.calls.filter(
-      (row) => row.category === gap.category && row.outcome === "competitor_win" && row.prompt_kind === "commercial",
+      (row) =>
+        row.category === gap.category &&
+        row.outcome === "competitor_win" &&
+        questionRole(row) === "unbranded_discovery",
     );
     const losingIds = new Set(calls.map((row) => row.id));
     const cited = citationEvidence(read.snapshot.calls, read.snapshot.citations, "commercial").rows.filter((row) =>
@@ -335,7 +345,7 @@ export function aiPriorityItems(read: AiSearchRead): PriorityItem[] {
     items.push({
       id: "ai-competitor-gap",
       title: battleSentence(gap),
-      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than Fender/Squier on ${gap.competitorWins} ${gap.category} buying prompts.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe Fender's ${gap.category} line against the brand they favor.`,
+      why: `In the published run, ${engines} named ${joinBrands(gap.leaders.map((l) => l.brand))} more often than Fender/Squier in ${gap.competitorWins} of ${gap.resolved} resolved unbranded discovery ${gap.category} answers.${domains.length ? ` Those answers cited ${domains.join(", ")}.` : ""} Start with those pages: check how they describe Fender's ${gap.category} line against the brand they favor.`,
       impact: `The Competitor Wins tab lists each of the ${gap.competitorWins} answers with its engine, model, and cited pages.`,
       severity: "high",
       spokeId: "competitors",
@@ -472,10 +482,10 @@ export function aiTourLines(read: AiSearchRead): AiTourLines {
     ],
     competitors: [
       s.topCompetitor
-        ? `${s.topCompetitor.brand} named most in ${s.topCompetitor.wins} of ${s.topCompetitor.resolved} resolved answers`
-        : "No competitor named most in a resolved answer",
+        ? `${s.topCompetitor.brand} named most in ${s.topCompetitor.wins} of ${s.topCompetitor.resolved} resolved unbranded discovery answers`
+        : "No competitor named most in a resolved unbranded discovery answer",
       s.largestGap ? battleSentence(s.largestGap) : "No category gap in this run",
-      "Commercial AI-search prompts only",
+      "Unbranded discovery answers only",
     ],
     roadmap: lead,
   };

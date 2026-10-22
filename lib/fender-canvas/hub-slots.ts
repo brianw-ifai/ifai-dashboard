@@ -331,7 +331,7 @@ function competitorPair(ai: AiSearchRead): [HubSlot, HubSlot] {
     ];
   }
   const summary = summarizeRun(ai.snapshot);
-  const note = `Published run · ${summary.completedAt}. Commercial prompts only.`;
+  const note = `Published run · ${summary.completedAt}. Unbranded discovery only.`;
   const battles = categoryBattles(ai.snapshot.calls);
   const gapBattle = summary.largestGap;
   const lead = strongestCategory(battles);
@@ -487,7 +487,7 @@ export function buildHubSlots(input: HubSlotInput): Record<string, HubSlotFeed> 
     spokeId: "competitors",
     subTab: "Category Battlecards",
     label: "Open Category Battlecards",
-    detail: "Commercial prompts only.",
+    detail: "Unbranded discovery only.",
   });
   const queueAction = actionSlot(input.commandItems[0], "Open", openAction);
   const secondAction = actionSlot(input.commandItems[1], "Next", queueAction);

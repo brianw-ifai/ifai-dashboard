@@ -128,7 +128,12 @@ function wrapSpoke(
           headerStats: <AiSearchHeaderStats />,
         }
       : {}),
-    ...(id === "competitors" ? { desc: competitorsSpokeDesc(ai) } : {}),
+    ...(id === "competitors"
+      ? {
+          desc: competitorsSpokeDesc(ai),
+          headerAccessory: <RunHistoryControl />,
+        }
+      : {}),
     ...(id === "specs" ? { desc: findabilitySpokeDescription(findability) } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);

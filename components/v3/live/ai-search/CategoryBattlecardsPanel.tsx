@@ -73,7 +73,8 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           Each category shows two Fender-lead rates, <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and{" "}
           <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
           Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
-          entry-level line against Yamaha and Ibanez. The top competitor is the brand named most inside those two rates.
+          entry-level line against Yamaha and Ibanez. The top competitor and Competitor leads columns use unbranded
+          discovery only.
         </div>
       </div>
 
@@ -130,8 +131,9 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          Competitor leads count wins inside the two rates only. A competitor win on a question kept out below does not
-          appear in these columns.
+          Competitor leads count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
+          Branded consideration stays in its Fender-lead column and is not part of this rate. A competitor win on a
+          question kept out below does not appear in these columns.
         </p>
         <KeptOutNote snapshot={snapshot} />
       </div>

@@ -124,7 +124,7 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
               A <AiTerm term="small sample" /> keeps its percentage and is not ranked.
             </>
           ) : null}{" "}
-          Competitor columns count wins inside those two rates only.
+          Competitor columns count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
         </p>
         <ResizableTable
           tableId="engine-comparison"

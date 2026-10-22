@@ -8,7 +8,7 @@ import { CanvasLoadingShell } from "@/components/v3/live/CanvasLoadingShell";
 import { DataFreshnessBar } from "@/components/v3/live/DataFreshnessBar";
 import { usePortfolioRetailSnapshot } from "@/components/v3/live/usePortfolioRetailSnapshot";
 import { useFenderCanvasData } from "@/components/v3/use-fender-canvas-data";
-import { aiSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
+import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import { historySpokeDescription } from "@/lib/ai-search/history-mode";
 import { buildFenderCanvasSpec } from "@/lib/fender-canvas/build-canvas-spec";
 import { IntelligenceCanvas } from "@/lib/canvas-sdk";
@@ -84,6 +84,7 @@ function FenderBrandCanvasBody({
     selectedMessage,
     runDescription: displayedAiSearch.phase === "ready" ? aiSpokeDesc(displayedAiSearch) : null,
   });
+  const competitorDescription = displayedAiSearch.phase === "ready" ? competitorsSpokeDesc(displayedAiSearch) : null;
   const spec = useMemo(() => {
     if (!bundle) return null;
     const built = buildFenderCanvasSpec(bundle, {
@@ -95,15 +96,20 @@ function FenderBrandCanvasBody({
       metricStorageSuffix: viewerStorageScope(viewerId),
       headerSlot: <DataFreshnessBar fresh={bundle.fresh} stale={stale} />,
     });
-    if (!panelDescription || !built.spokes.aeo) return built;
+    if ((!panelDescription || !built.spokes.aeo) && (!competitorDescription || !built.spokes.competitors)) return built;
     return {
       ...built,
       spokes: {
         ...built.spokes,
-        aeo: { ...built.spokes.aeo, desc: panelDescription },
+        ...(panelDescription && built.spokes.aeo
+          ? { aeo: { ...built.spokes.aeo, desc: panelDescription } }
+          : {}),
+        ...(competitorDescription && built.spokes.competitors
+          ? { competitors: { ...built.spokes.competitors, desc: competitorDescription } }
+          : {}),
       },
     };
-  }, [aiSearch, bundle, findability, panelDescription, retail, stale, userMenu, viewerId]);
+  }, [aiSearch, bundle, competitorDescription, findability, panelDescription, retail, stale, userMenu, viewerId]);
 
   if (loading && !spec) return <CanvasLoadingShell />;
   if (!spec) {

@@ -61,6 +61,13 @@ export type PricedChannelCell = {
   url: string | null;
 };
 
+/** Shown beside a price when no checked retailer page was stored. */
+export const MISSING_CHECKED_PAGE_LABEL = "Not available*";
+
+/** Plain-language reason for {@link MISSING_CHECKED_PAGE_LABEL}. */
+export const MISSING_CHECKED_PAGE_DESC =
+  "No checked page was stored for this price.";
+
 const PREFERRED_CHANNELS = ["sweetwater", "reverb"];
 
 const CHANNEL_NAMES: Record<string, string> = {
@@ -127,6 +134,12 @@ function belowMap(gap: number | null): boolean {
   return gap != null && gap < 0;
 }
 
+const FIXED_CHANNELS = [
+  { key: "amazon", name: "Amazon" },
+  { key: "walmart", name: "Walmart" },
+  { key: "musicians-friend", name: "Musician's Friend" },
+] as const;
+
 /**
  * Stored price and gap for each channel on one listing.
  * A channel with no stored price and no stored leakage is omitted.
@@ -158,6 +171,7 @@ export function listingChannelFacts(
   }
   if (extras) {
     for (const [channel, cell] of extras) {
+      if (FIXED_CHANNELS.some((fixed) => fixed.key === channel)) continue;
       facts.push({
         key: channel,
         name: channelDisplayName(channel),
@@ -167,6 +181,56 @@ export function listingChannelFacts(
     }
   }
   return facts;
+}
+
+/** Trimmed http(s) URL, or null. Never builds a retailer search page. */
+export function storedHttpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Checked-page URL for a price cell. Prefers the channel-price row, then an
+ * existing listing field. Does not invent a retailer page from an ASIN or name.
+ */
+export function checkedPageUrl(
+  channelCellUrl: string | null | undefined,
+  listingFieldUrl?: string | null,
+): string | null {
+  return storedHttpUrl(channelCellUrl) ?? storedHttpUrl(listingFieldUrl ?? null);
+}
+
+/** Musician's Friend checked page from the loaded channel-price map, or a listing field. */
+export function musiciansFriendCheckedPageUrl(
+  prices: Map<string, Map<string, PricedChannelCell>>,
+  asin: string,
+  listingFieldUrl?: string | null,
+): string | null {
+  const cell = prices.get(asin.trim())?.get("musicians-friend");
+  return checkedPageUrl(cell?.url, listingFieldUrl);
+}
+
+/**
+ * When a price is shown and a checked page is required, return the missing-source
+ * label if no stored URL exists. Otherwise null.
+ */
+export function missingCheckedPageLabel(
+  requireCheckedPage: boolean,
+  href: string | null | undefined,
+  price: number | null | undefined,
+): string | null {
+  if (!requireCheckedPage) return null;
+  if (price == null) return null;
+  if (href) return null;
+  return MISSING_CHECKED_PAGE_LABEL;
 }
 
 /** Price and URL keyed by ASIN, then channel slug. Rows without a price are dropped. */
@@ -189,12 +253,6 @@ export function channelPriceLookup(
   }
   return byAsin;
 }
-
-const FIXED_CHANNELS = [
-  { key: "amazon", name: "Amazon" },
-  { key: "walmart", name: "Walmart" },
-  { key: "musicians-friend", name: "Musician's Friend" },
-] as const;
 
 /**
  * Channel counts are listings below MAP on that channel.

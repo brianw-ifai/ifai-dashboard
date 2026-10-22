@@ -65,3 +65,17 @@ test("a channel cell prints the signed gap and does not name it Amazon gap", () 
   assert.match(source, /danger-red/);
   assert.match(source, /gap < 0/);
 });
+
+test("a channel cell marks a missing checked page without inventing a retailer URL", () => {
+  const source = readFileSync(
+    new URL("../components/v3/live/ChannelPriceCell.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /MISSING_CHECKED_PAGE_LABEL/);
+  assert.match(source, /requireCheckedPage/);
+  assert.match(source, /data-ifai-tooltip-desc/);
+  assert.match(source, /ifai-term/);
+  assert.doesNotMatch(source, /(?<![\w-])title=/);
+  assert.doesNotMatch(source, /musiciansfriend\.com\/search/i);
+  assert.doesNotMatch(source, /google\.com\/search/i);
+});

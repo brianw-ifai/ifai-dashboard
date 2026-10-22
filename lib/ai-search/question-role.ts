@@ -165,21 +165,25 @@ export function sumRoleTallies(groups: readonly RoleGroupTally[], role: Question
   return tally;
 }
 
-/** Unresolved answers and provider errors inside the two headline roles. */
+/**
+ * Aside counts for Category Battlecards.
+ * Unresolved and errors stay on the two Fender-lead rates.
+ * Competitor wins use unbranded discovery only.
+ */
 export function headlineAside(group: RoleGroupTally): { unresolved: number; errors: number; competitorWins: number } {
   const parts = HEADLINE_ROLES.map((role) => group.roles[role]);
   return {
     unresolved: parts.reduce((sum, part) => sum + part.unresolved, 0),
     errors: parts.reduce((sum, part) => sum + part.errors, 0),
-    competitorWins: parts.reduce((sum, part) => sum + part.competitorWins, 0),
+    competitorWins: group.roles.unbranded_discovery.competitorWins,
   };
 }
 
-/** Competitor wins on unbranded discovery and branded consideration only. */
+/** Competitor wins on unbranded discovery only. Branded consideration is not in this count. */
 export function headlineCompetitorWins(rows: AiCallRow[]): Array<{ brand: string; wins: number }> {
   const brands = new Map<string, number>();
   for (const row of rows) {
-    if (!isHeadlineRole(questionRole(row))) continue;
+    if (questionRole(row) !== "unbranded_discovery") continue;
     if (callOutcome(row) !== "competitor_win") continue;
     const brand = row.primary_brand?.trim() || "Brand not recorded";
     brands.set(brand, (brands.get(brand) ?? 0) + 1);

@@ -5,11 +5,12 @@ import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
-import { competitorTallies, type CompetitorTally } from "@/lib/ai-search/competitors";
+import { competitorTallies, isUnbrandedDiscovery, type CompetitorTally } from "@/lib/ai-search/competitors";
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -50,7 +51,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const losses = useMemo(
     () =>
       snapshot.calls
-        .filter((row) => callOutcome(row) === "competitor_win")
+        .filter((row) => isUnbrandedDiscovery(row) && callOutcome(row) === "competitor_win")
         .sort((a, b) => (a.category ?? "").localeCompare(b.category ?? "") || a.sim_id - b.sim_id),
     [snapshot.calls],
   );
@@ -64,7 +65,10 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
   if (losses.length === 0) {
     return (
       <div className="content-box">
-        <EmptyRows>No competitor was named most in a resolved commercial answer in this {emptyUnit}.</EmptyRows>
+        <EmptyRows>
+          No competitor was named most in a resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
+          answer in this {emptyUnit}.
+        </EmptyRows>
       </div>
     );
   }
@@ -73,6 +77,10 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <>
       <div className="content-box ai-competitor-tallies">
         <div className="content-box-title">Competitors named more than Fender/Squier</div>
+        <p style={mutedText}>
+          Each lead is a win of that many resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
+          answers. Branded consideration is not in this rate.
+        </p>
         {mixed ? (
           <p style={mutedText} data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}
@@ -99,7 +107,9 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
                     {t.brand}
                   </button>
                 </td>
-                <td>{t.wins} of {t.resolved} resolved</td>
+                <td>
+                  {t.wins} of {t.resolved} resolved
+                </td>
                 <td>{t.byCategory.map((c) => `${categoryLabel(c.category)} ${c.wins} of ${c.resolved}`).join(", ")}</td>
                 <td>{t.byEngine.map((e) => `${engineLabel(e.engine)} ${e.wins} of ${e.resolved}`).join(", ")}</td>
               </tr>

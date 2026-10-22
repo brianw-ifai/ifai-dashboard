@@ -13,6 +13,8 @@ import {
   channelDisplayName,
   channelPriceLookup,
   listingChannelFacts,
+  musiciansFriendCheckedPageUrl,
+  storedHttpUrl,
   type ChannelPriceRow,
   type MapSourceRow,
   type PricedChannelCell,
@@ -23,6 +25,7 @@ import type { CanvasRetailListingRow } from "@/lib/fender-canvas/types";
 
 const PRICE_PAGE = 1000;
 const PREFERRED_EXTRAS = ["sweetwater", "reverb"];
+const FIXED_CHANNEL_KEYS = new Set(["amazon", "walmart", "musicians-friend"]);
 
 type Filter = {
   status?: string;
@@ -34,17 +37,6 @@ function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
 }
 
-function httpUrl(value: string | null | undefined): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
-}
-
 function moneyColumn(id: string, name: string, width = 164): RetailColumn {
   return { id, name, label: name, width, minWidth: 148, className: "money", sort: "number" };
 }
@@ -52,7 +44,9 @@ function moneyColumn(id: string, name: string, width = 164): RetailColumn {
 function extraChannels(prices: ChannelPriceRow[]): { channel: string; name: string }[] {
   const slugs = new Set<string>();
   for (const byChannel of channelPriceLookup(prices).values()) {
-    for (const slug of byChannel.keys()) slugs.add(slug);
+    for (const slug of byChannel.keys()) {
+      if (!FIXED_CHANNEL_KEYS.has(slug)) slugs.add(slug);
+    }
   }
   return [...slugs]
     .sort((a, b) => {
@@ -264,11 +258,12 @@ export function FenderListingsTable() {
           {population.pageRows.map((row) => {
             const label = row.model_name?.trim() || row.title?.trim() || "Listing";
             const partner = row.bundle_name ?? row.buybox_seller_name ?? "n/a";
-            const href = httpUrl(row.product_url) ?? amazonHref(row.asin);
             const facts = new Map(
               listingChannelFacts(asMapRow(row), prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
             );
-            const walmartUrl = httpUrl(row.wmt_url);
+            const walmartUrl = storedHttpUrl(row.wmt_url);
+            const musiciansFriendUrl = musiciansFriendCheckedPageUrl(prices, row.asin);
+            const exploreHref = storedHttpUrl(row.product_url) ?? amazonHref(row.asin);
             return (
               <tr key={row.asin}>
                 <td className="listing-col">
@@ -277,10 +272,10 @@ export function FenderListingsTable() {
                   </span>
                 </td>
                 <td className="asin-col">
-                  {href ? (
+                  {exploreHref ? (
                     <a
                       className="listing-link channel-tag channel-amz"
-                      href={href}
+                      href={exploreHref}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -293,15 +288,20 @@ export function FenderListingsTable() {
                 <td>{partner}</td>
                 <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
                 <ChannelPriceCell fact={facts.get("amazon")} note={lastSeenNote(row)} />
-                <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} />
-                <ChannelPriceCell fact={facts.get("musicians-friend")} />
+                <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} requireCheckedPage />
+                <ChannelPriceCell
+                  fact={facts.get("musicians-friend")}
+                  href={musiciansFriendUrl}
+                  requireCheckedPage
+                />
                 {extras.map((channel) => {
                   const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.channel);
                   return (
                     <ChannelPriceCell
                       key={channel.channel}
                       fact={facts.get(channel.channel)}
-                      href={cell ? httpUrl(cell.url) : null}
+                      href={cell ? storedHttpUrl(cell.url) : null}
+                      requireCheckedPage
                     />
                   );
                 })}

@@ -266,3 +266,49 @@ test("loading and error faces do not invent a count", () => {
     assert.doesNotMatch(text, FORBIDDEN);
   }
 });
+
+test("channel price cells use a stored Musician's Friend URL or Not available*", async () => {
+  const { readFileSync } = await import("node:fs");
+  const mapTable = readFileSync(
+    new URL("../components/v3/live/MapListingsTable.tsx", import.meta.url),
+    "utf8",
+  );
+  const exploreTable = readFileSync(
+    new URL("../components/v3/live/FenderListingsTable.tsx", import.meta.url),
+    "utf8",
+  );
+  const {
+    MISSING_CHECKED_PAGE_DESC,
+    MISSING_CHECKED_PAGE_LABEL,
+    musiciansFriendCheckedPageUrl,
+    channelPriceLookup,
+    missingCheckedPageLabel,
+  } = await import("../lib/fender-canvas/map-channels.ts");
+
+  assert.match(mapTable, /musiciansFriendCheckedPageUrl/);
+  assert.match(mapTable, /requireCheckedPage/);
+  assert.match(exploreTable, /musiciansFriendCheckedPageUrl/);
+  assert.match(exploreTable, /requireCheckedPage/);
+  assert.doesNotMatch(mapTable, /musiciansfriend\.com\/search/i);
+  assert.doesNotMatch(exploreTable, /musiciansfriend\.com\/search/i);
+
+  const stored =
+    "https://www.musiciansfriend.com/guitars/fender-player-ii/m11513000002000";
+  const withUrl = channelPriceLookup([
+    {
+      asin: "B0D2LP2PRQ",
+      channel: "musicians-friend",
+      price: 714.99,
+      url: stored,
+      checked_at: "2026-10-07T00:00:00Z",
+    },
+  ]);
+  assert.equal(musiciansFriendCheckedPageUrl(withUrl, "B0D2LP2PRQ"), stored);
+  assert.equal(missingCheckedPageLabel(true, stored, 714.99), null);
+
+  const missing = musiciansFriendCheckedPageUrl(channelPriceLookup([]), "B0HJDFP2XS");
+  assert.equal(missing, null);
+  assert.equal(missingCheckedPageLabel(true, missing, 599.99), MISSING_CHECKED_PAGE_LABEL);
+  assert.equal(MISSING_CHECKED_PAGE_LABEL, "Not available*");
+  assert.match(MISSING_CHECKED_PAGE_DESC, /No checked page was stored/i);
+});

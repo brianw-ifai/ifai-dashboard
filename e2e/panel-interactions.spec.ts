@@ -79,6 +79,8 @@ test.describe("drill-downs", () => {
     const musiciansFriend = page.locator("tr", { hasText: "B0HJDFP2XS" });
     await expect(musiciansFriend).toBeVisible();
     await expect(musiciansFriend).toContainText("$599.99");
+    await expect(musiciansFriend).toContainText("Not available*");
+    await expect(musiciansFriend.locator(".channel-fact a.listing-link")).toHaveCount(0);
     await expect(musiciansFriend).not.toContainText("-$150");
     await expect(musiciansFriend.locator(".channel-gap")).toHaveCount(0);
     const walmart = page.locator("tr", { hasText: "B0DYKZ4MJG" });
@@ -231,13 +233,34 @@ test.describe("drill-downs", () => {
     await expect(body).not.toContainText("flagged answers");
   });
 
+  test("a Musician's Friend price uses its stored page or says the page was not stored", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("Catalog Health");
+    await canvas.openTab("MAP");
+    const cells = page.locator(".drilldown-body table td.channel-fact");
+    await expect(cells.first()).toBeVisible();
+    const texts = await cells.allInnerTexts();
+    const hrefs = await cells.locator("a.listing-link").evaluateAll((els) =>
+      els.map((el) => el.getAttribute("href") ?? ""),
+    );
+    expect(texts.some((text) => text.includes("Not available*")) || hrefs.length > 0).toBe(true);
+    for (const href of hrefs) expect(href).toMatch(/^https?:\/\//);
+    await expect(page.locator(".drilldown-body a[href*='/search']")).toHaveCount(0);
+  });
+
   test("competitive rows use commercial AI-search outcomes", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Competitive Radar");
     await expect(page.locator(".ai-battlecards")).toBeVisible();
 
-    const headers = await page.locator(".table-sm th").allInnerTexts();
-    expect(headers.some((h) => /fender win/i.test(h))).toBe(true);
+    const headers = await page.locator(".ai-battlecards th").allInnerTexts();
+    expect(headers.some((h) => /unbranded discovery/i.test(h))).toBe(true);
     expect(headers.some((h) => /top competitor/i.test(h))).toBe(true);
+    expect(headers.some((h) => /competitor leads/i.test(h))).toBe(true);
+
+    const desc = await page.locator(".drilldown-desc").innerText();
+    const led = desc.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
+    expect(led).not.toBeNull();
+    await expect(page.locator("[data-ai-role-total='unbranded_discovery']")).toContainText(`${led![2]} resolved`);
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
 
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Yamaha");
