@@ -7,12 +7,23 @@ import { HistoryTrendsPanel } from "@/components/v3/live/ai-search/HistoryTrends
 import { LegacyRunInspect } from "@/components/v3/live/ai-search/LegacyRunInspect";
 
 /**
- * The range chart belongs on Run Summary. The other AI Search tabs keep their own panels.
- * Those panels stay on the current published run, so the range is not mixed into one rate.
+ * Run Summary replaces its body with the range chart.
+ * Citation Ecosystem follows those same runs, one snapshot at a time.
+ * The other AI Search tabs stay on the current published run.
  */
-export function AiSearchSurface({ children, trend = false }: { children: ReactNode; trend?: boolean }) {
+export function AiSearchSurface({
+  children,
+  trend = false,
+  followsRange = false,
+}: {
+  children: ReactNode;
+  trend?: boolean;
+  /** This tab computes its own figures from the runs in All time or a date range. */
+  followsRange?: boolean;
+}) {
   const history = useAiHistoryOptional();
   const ranged = history?.mode.kind === "range" || history?.mode.kind === "all";
+  if (ranged && followsRange) return children;
   if (ranged && trend) {
     return (
       <div className="ai-search-panel">

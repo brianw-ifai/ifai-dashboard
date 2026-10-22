@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
+import { useAiHistoryOptional, type TrendLoad } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
 import {
@@ -24,6 +25,8 @@ import {
   type CitationScope,
   type SourceClass,
 } from "@/lib/ai-search/citations";
+import { citationRangeLabel } from "@/lib/ai-search/citation-insights";
+import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -180,8 +183,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-caution>
             {caution}
           </p>
-        ) : null}
-        {citationUrlsLoaded ? (
+        ) : citationUrlsLoaded ? (
           <>
             <CitationHero
               snapshot={snapshot}
@@ -194,33 +196,36 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
               }}
               onPick={setPick}
             />
-            <ul style={{ ...mutedText, paddingLeft: 16, margin: "12px 0 0" }}>
-              <li>
-                Answers and links are separate counts. {read.answersWithCitation} {scopeNoun} produced{" "}
-                {read.rows.length} links, so one answer can cite several pages.
-              </li>
-              <li>
-                Fender-owned links appear in {fenderAnswers} of those answers. The other{" "}
-                {read.rows.length - fender.length} links point to sites Fender does not control.
-              </li>
-              {read.duplicates + read.invalid > 0 ? (
+            <details className="citation-method-notes">
+              <summary>How these counts work</summary>
+              <ul style={{ ...mutedText, paddingLeft: 16, margin: "8px 0 0" }}>
                 <li>
-                  {read.stored} stored rows in this view. Left out:{" "}
-                  {read.duplicates > 0 ? (
-                    <>
-                      {read.duplicates} that repeat the same <AiTerm term="canonical URL" /> inside one
-                      answer
-                    </>
-                  ) : null}
-                  {read.duplicates > 0 && read.invalid > 0 ? ", and " : null}
-                  {read.invalid > 0 ? `${read.invalid} with no usable address` : null}.
+                  Answers and links are separate counts. {read.answersWithCitation} {scopeNoun} produced{" "}
+                  {read.rows.length} links, so one answer can cite several pages.
                 </li>
-              ) : null}
-            </ul>
-            <p style={{ ...mutedText, marginTop: 8 }}>
-              A cited link appears alongside an answer. This read does not measure whether the page
-              caused the recommendation, and a citation is not an endorsement of Fender by that source.
-            </p>
+                <li>
+                  Fender-owned links appear in {fenderAnswers} of those answers. The other{" "}
+                  {read.rows.length - fender.length} links point to sites Fender does not control.
+                </li>
+                {read.duplicates + read.invalid > 0 ? (
+                  <li>
+                    {read.stored} stored rows in this view. Left out:{" "}
+                    {read.duplicates > 0 ? (
+                      <>
+                        {read.duplicates} that repeat the same <AiTerm term="canonical URL" /> inside one
+                        answer
+                      </>
+                    ) : null}
+                    {read.duplicates > 0 && read.invalid > 0 ? ", and " : null}
+                    {read.invalid > 0 ? `${read.invalid} with no usable address` : null}.
+                  </li>
+                ) : null}
+              </ul>
+              <p style={{ ...mutedText, marginTop: 8 }}>
+                A cited link appears alongside an answer. This read does not measure whether the page
+                caused the recommendation, and a citation is not an endorsement of Fender by that source.
+              </p>
+            </details>
           </>
         ) : (
           <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-citation-count>
@@ -230,9 +235,9 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
         )}
       </div>
 
-      <CitationRoleNote />
+      {caution ? null : <CitationRoleNote />}
 
-      {!citationUrlsLoaded ? null : read.rows.length === 0 ? (
+      {caution || !citationUrlsLoaded ? null : read.rows.length === 0 ? (
         <div className="content-box" style={{ marginTop: 12 }}>
           <EmptyRows>No answer in this view returned a cited link.</EmptyRows>
         </div>
@@ -242,7 +247,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
             <div className="content-box-title">
               <span>By engine</span>
             </div>
-            <CitationInterpretationNote partial={snapshot.run.run_state === "partial"} />
+            <CitationInterpretationNote />
             <CountTable
               tableId="citation-engines"
               columns={ENGINE_COLUMNS}
@@ -306,7 +311,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
         </div>
       )}
 
-      {citationUrlsLoaded ? (
+      {!caution && citationUrlsLoaded ? (
         <CitationEvidenceTable
           rows={filtered}
           label={pickLabel}
@@ -314,7 +319,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
         />
       ) : null}
 
-      {citationUrlsLoaded && read.rows.length > 0 ? (
+      {!caution && citationUrlsLoaded && read.rows.length > 0 ? (
         <p style={{ ...mutedText, marginTop: 10 }} data-citation-reconcile>
           Cited links by source totals {read.rows.length}. Fender-owned and other links totals{" "}
           {read.rows.length}.
@@ -324,6 +329,102 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
   );
 }
 
+function RangeNotice({ heading, children, tone }: { heading: string; children: ReactNode; tone: string }) {
+  return (
+    <div className="content-box" data-ai-state={tone}>
+      <div className="content-box-title">{heading}</div>
+      <p style={mutedText}>{children}</p>
+    </div>
+  );
+}
+
+function CitationRangeRuns({ snapshots }: { snapshots: AiSearchSnapshot[] }) {
+  const latestId = snapshots[snapshots.length - 1]?.run.audit_run_id ?? "";
+  const ids = snapshots.map((snapshot) => snapshot.run.audit_run_id).join(",");
+  const [focusedId, setFocusedId] = useState(latestId);
+  const [appliedIds, setAppliedIds] = useState(ids);
+  if (ids !== appliedIds) {
+    setAppliedIds(ids);
+    setFocusedId(latestId);
+  }
+  const snapshot =
+    snapshots.find((item) => item.run.audit_run_id === focusedId) ?? snapshots[snapshots.length - 1];
+  if (!snapshot) {
+    return (
+      <RangeNotice heading="No runs in this selection" tone="empty">
+        No stored review runs fall in this selection.
+      </RangeNotice>
+    );
+  }
+
+  return (
+    <>
+      <div className="citation-range" data-citation-range>
+        <p className="citation-range-note">
+          Figures are for the run you select. These runs are not added together.
+        </p>
+        <div className="citation-range-runs" role="group" aria-label="Runs in this selection">
+          {snapshots.map((item) => {
+            const day = utcDay(item.run.published_at ?? item.run.completed_at);
+            const selected = item.run.audit_run_id === snapshot.run.audit_run_id;
+            return (
+              <button
+                key={item.run.audit_run_id}
+                type="button"
+                className={`citation-range-run${selected ? " active" : ""}`}
+                data-citation-range-run={item.run.audit_run_id}
+                aria-pressed={selected}
+                onClick={() => setFocusedId(item.run.audit_run_id)}
+              >
+                <strong>{day ? formatDay(day) : "Undated run"}</strong>
+                <span>{citationRangeLabel(item)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <Ecosystem key={snapshot.run.audit_run_id} snapshot={snapshot} />
+    </>
+  );
+}
+
+function CitationRangeBody({ trend }: { trend: TrendLoad }) {
+  if (trend.phase === "loading" || trend.phase === "idle") {
+    return (
+      <RangeNotice heading="Loading the runs in this selection" tone="loading">
+        Reading each stored run. Figures appear when those runs load, and they are not added together.
+      </RangeNotice>
+    );
+  }
+  if (trend.phase === "error" || trend.phase === "unavailable") {
+    return (
+      <RangeNotice heading="These runs did not load" tone={trend.phase}>
+        {trend.message} No citation figure is shown for this selection.
+      </RangeNotice>
+    );
+  }
+  if (trend.snapshots.length === 0) {
+    return (
+      <RangeNotice heading="No runs in this selection" tone="empty">
+        No stored review runs fall in this selection.
+      </RangeNotice>
+    );
+  }
+  return <CitationRangeRuns snapshots={trend.snapshots} />;
+}
+
 export function CitationEcosystemPanel() {
-  return <AiReadGate>{(snapshot) => <Ecosystem snapshot={snapshot} />}</AiReadGate>;
+  const history = useAiHistoryOptional();
+  if (history && (history.mode.kind === "range" || history.mode.kind === "all")) {
+    return (
+      <div className="ai-search-panel">
+        <CitationRangeBody trend={history.trend} />
+      </div>
+    );
+  }
+  return (
+    <AiReadGate showFreshness={false}>
+      {(snapshot) => <Ecosystem snapshot={snapshot} />}
+    </AiReadGate>
+  );
 }

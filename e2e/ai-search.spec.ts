@@ -83,7 +83,7 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-ai-cited-answers]")).toContainText(
       /\d+ of \d+ shopping answers cited web sources/,
     );
-    const ratio = await page.locator("[data-citation-hero-ratio]").innerText();
+    const ratio = await page.locator("[data-citation-hero-value]").innerText();
     const ratioMatch = ratio.match(/(\d+) of (\d+)/);
     expect(ratioMatch).not.toBeNull();
     const ownedAnswers = Number(ratioMatch![1]);
@@ -91,7 +91,7 @@ test.describe("AI Search Visibility", () => {
     expect(ownedAnswers).toBeGreaterThanOrEqual(0);
     expect(answered).toBeGreaterThan(0);
     await expect(page.locator("[data-citation-hero-ratio]")).toContainText(
-      /cited at least one Fender-owned page/,
+      /unbranded discovery answers cited a Fender-owned page/,
     );
     const linkPie = page.locator("[data-citation-pie='classes']");
     const ownedPie = page.locator("[data-citation-pie='owned']");
@@ -104,9 +104,8 @@ test.describe("AI Search Visibility", () => {
       );
       expect(counts.reduce((sum, count) => sum + count, 0)).toBe(total);
     }
-    await expect(page.locator("[data-citation-role-insight]")).toContainText(
-      /Fender-owned pages were cited in \d+ of \d+ unbranded discovery answers/,
-    );
+    await expect(page.locator("[data-citation-role='unbranded_discovery']")).toContainText(/\d+ of \d+/);
+    await expect(page.locator("[data-citation-role='branded_consideration']")).toContainText(/\d+ of \d+/);
     for (const role of ["unbranded_discovery", "branded_consideration"]) {
       const roleRow = page.locator(`[data-citation-role="${role}"]`);
       await expect(roleRow).toBeVisible();

@@ -70,6 +70,7 @@ export function CitationHero({
         scope={scope}
         onScope={onScope}
         scopeNoun={scopeNoun}
+        part="scopes"
       />
       {pies == null ? (
         <p data-citation-reconcile>
@@ -89,6 +90,14 @@ export function CitationHero({
         onToggleAllGaps={() => setShowAllGaps((value) => !value)}
         onPickGap={onPickGap}
         onPickRoleGroup={onPickRoleGroup}
+      />
+      <CitationControlsStrip
+        snapshot={snapshot}
+        read={read}
+        scope={scope}
+        onScope={onScope}
+        scopeNoun={scopeNoun}
+        part="meta"
       />
       <CitationDomainsMix
         bars={bars}

@@ -1,4 +1,5 @@
 import {
+  citationEvidence,
   groupCitations,
   SOURCE_CLASS_LABELS,
   SOURCE_CLASS_ORDER,
@@ -7,6 +8,7 @@ import {
   type CitationScope,
   type SourceClass,
 } from "@/lib/ai-search/citations";
+import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import {
   HEADLINE_ROLES,
   ROLE_LABELS,
@@ -16,7 +18,7 @@ import {
   type HeadlineRole,
 } from "@/lib/ai-search/question-role";
 import { callOutcome, categoryLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
-import type { AiCallRow } from "@/lib/ai-search/types";
+import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 
 export type OwnedPresence = {
   /** Shopping (or scoped) answers that cited at least one Fender-owned page. */
@@ -224,6 +226,21 @@ export function ownedByQuestionType(
     },
     ok: roles.every((role) => role.ok),
   };
+}
+
+/**
+ * One run's unbranded owned-page count for the All time / date-range chips.
+ * A run whose citation URLs were not stored stays unlabeled rather than showing a blended or zero rate.
+ */
+export function citationRangeLabel(snapshot: AiSearchSnapshot): string {
+  const declared = snapshot.storedCitationCount ?? snapshot.citations.length;
+  if (citationStorageCaution(snapshot.run.audit_run_id) || snapshot.citations.length < declared) {
+    return "Citations not listed";
+  }
+  const read = citationEvidence(snapshot.calls, snapshot.citations, "commercial");
+  const byType = ownedByQuestionType(snapshot.calls, read, "commercial");
+  if (!byType || byType.insight.resolved <= 0) return "No unbranded answers";
+  return `${byType.insight.withOwned} of ${byType.insight.resolved} unbranded`;
 }
 
 /**

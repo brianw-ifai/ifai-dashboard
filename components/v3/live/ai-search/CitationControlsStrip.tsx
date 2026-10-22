@@ -18,12 +18,15 @@ export function CitationControlsStrip({
   scope,
   onScope,
   scopeNoun,
+  part = "all",
 }: {
   snapshot: AiSearchSnapshot;
   read: CitationRead;
   scope: CitationScope;
   onScope: (scope: CitationScope) => void;
   scopeNoun: string;
+  /** Scopes stay in the first view. The cited-any-source line sits under the executive facts. */
+  part?: "all" | "scopes" | "meta";
 }) {
   const engines = [
     ...new Set(
@@ -33,8 +36,22 @@ export function CitationControlsStrip({
     ),
   ].sort();
 
-  return (
-    <div className="citation-controls" data-citation-controls>
+  const scopes = (
+    <div role="group" aria-label="Citation scope" className="citation-scope-group">
+      {SCOPES.map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          className={`segmented-btn${scope === value ? " active" : ""}`}
+          aria-pressed={scope === value}
+          onClick={() => onScope(value)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+  const meta = (
       <div className="citation-controls-meta" data-citation-run-context>
         <span data-ai-cited-answers>
           {read.answersWithCitation} of {read.answered} {scopeNoun} cited web sources (
@@ -47,19 +64,13 @@ export function CitationControlsStrip({
         <span aria-hidden="true">·</span>
         <span>{engines.length ? engines.join(", ") : "No engines"}</span>
       </div>
-      <div role="group" aria-label="Citation scope" className="citation-scope-group">
-        {SCOPES.map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            className={`segmented-btn${scope === value ? " active" : ""}`}
-            aria-pressed={scope === value}
-            onClick={() => onScope(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+  );
+  if (part === "scopes") return <div className="citation-controls citation-controls-scopes" data-citation-controls>{scopes}</div>;
+  if (part === "meta") return meta;
+  return (
+    <div className="citation-controls" data-citation-controls>
+      {meta}
+      {scopes}
     </div>
   );
 }

@@ -16,28 +16,35 @@ function PresenceCard({
   presence,
   scopeNoun,
   ownedPie,
+  unbranded,
 }: {
   presence: OwnedPresence;
   scopeNoun: string;
   ownedPie: CitationPie | null;
+  unbranded: { withOwned: number; resolved: number } | null;
 }) {
-  const value =
-    presence.answered > 0 ? pct(presence.answersWithOwned, presence.answered) : "No answers";
+  const hero = unbranded
+    ? `${unbranded.withOwned} of ${unbranded.resolved}`
+    : presence.answered > 0
+      ? pct(presence.answersWithOwned, presence.answered)
+      : "No answers";
   return (
     <section className="citation-card citation-card-presence" data-citation-presence>
       <h3 className="citation-card-kicker">
-        <AiTerm term="Fender-owned">Fender-owned</AiTerm> presence
+        <AiTerm term="Fender-owned">Fender-owned</AiTerm> pages
       </h3>
       <p className="citation-hero-value" data-citation-hero-value>
-        {value}
+        {hero}
       </p>
       <p className="citation-hero-ratio" data-citation-hero-ratio>
-        {presence.answersWithOwned} of {presence.answered} {scopeNoun} cited at least one Fender-owned
-        page
+        {unbranded
+          ? "unbranded discovery answers cited a Fender-owned page"
+          : `${presence.answersWithOwned} of ${presence.answered} ${scopeNoun} cited at least one Fender-owned page`}
       </p>
       <p className="citation-card-secondary" data-ai-fender-owned>
+        {presence.answersWithOwned} of {presence.answered} {scopeNoun} cited at least one Fender-owned page.{" "}
         {presence.ownedLinks} of {presence.totalLinks} cited links (
-        {pct(presence.ownedLinks, presence.totalLinks)}) led to Fender-owned sites
+        {pct(presence.ownedLinks, presence.totalLinks)}) led to Fender-owned sites.
       </p>
       {ownedPie && ownedPie.total > 0 ? (
         <figure className="citation-pie citation-pie-owned" data-citation-pie="owned" data-pie-total={ownedPie.total}>
@@ -115,58 +122,74 @@ function RoleOwnedCard({
     );
   }
 
-  const { insight } = byType;
   return (
     <section className="citation-card citation-card-roles" data-citation-association>
-      <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>
-      <p className="citation-role-insight" data-citation-role-insight>
-        Fender-owned pages were cited in {insight.withOwned} of {insight.resolved}{" "}
-        {insight.roleLabel.toLowerCase()} answers
-      </p>
-      <p className="citation-card-note">Denominator is resolved answers, matching the headline rates.</p>
-      <ul className="citation-role-list">
-        {byType.roles.map((role) => {
-          const total = Math.max(role.resolved, 1);
-          return (
-            <li key={role.role} data-citation-role={role.role} data-role-resolved={role.resolved}>
-              <div className="citation-role-label">
-                <strong>{role.roleLabel}</strong>
-                <span>
-                  {role.withOwned} with a Fender-owned page · {role.withoutOwned} without
-                </span>
-              </div>
-              <div
-                className="citation-role-track"
-                role="img"
-                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
-              >
-                <RoleGroupButton
-                  role={role}
-                  group={role.groups[0]}
-                  share={role.groups[0].resolved / total}
-                  onPick={onPickGroup}
-                />
-                <RoleGroupButton
-                  role={role}
-                  group={role.groups[1]}
-                  share={role.groups[1].resolved / total}
-                  onPick={onPickGroup}
-                />
-              </div>
-              <ul className="citation-role-leads">
-                {role.groups.map((group) =>
-                  group.resolved > 0 ? (
-                    <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
-                      {group.label}: Fender led {group.fenderLed} of {group.resolved}
-                      {group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
-                    </li>
-                  ) : null,
-                )}
-              </ul>
-            </li>
-          );
-        })}
+      <h3 className="citation-card-kicker">By question type</h3>
+      <ul className="citation-glance-list">
+        {byType.roles.map((role) => (
+          <li key={role.role} data-citation-role={role.role} data-role-resolved={role.resolved}>
+            <button
+              type="button"
+              className="citation-glance-hit"
+              data-citation-role-group={`${role.role}:${role.groups[0].key}`}
+              onClick={() => onPickGroup(role, role.groups[0])}
+            >
+              <span className="citation-glance-figure">
+                {role.withOwned} of {role.resolved}
+              </span>
+              <span className="citation-glance-label">{role.roleLabel}</span>
+            </button>
+            <span hidden data-role-n={role.groups[0].resolved} />
+            <span hidden data-role-n={role.groups[1].resolved} />
+          </li>
+        ))}
       </ul>
+      <details className="citation-role-details">
+        <summary>Lead rates in each group</summary>
+        <ul className="citation-role-list">
+          {byType.roles.map((role) => {
+            const total = Math.max(role.resolved, 1);
+            return (
+              <li key={role.role}>
+                <div className="citation-role-label">
+                  <strong>{role.roleLabel}</strong>
+                  <span>
+                    {role.withOwned} with a Fender-owned page · {role.withoutOwned} without
+                  </span>
+                </div>
+                <div
+                  className="citation-role-track"
+                  role="img"
+                  aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
+                >
+                  <RoleGroupButton
+                    role={role}
+                    group={role.groups[0]}
+                    share={role.groups[0].resolved / total}
+                    onPick={onPickGroup}
+                  />
+                  <RoleGroupButton
+                    role={role}
+                    group={role.groups[1]}
+                    share={role.groups[1].resolved / total}
+                    onPick={onPickGroup}
+                  />
+                </div>
+                <ul className="citation-role-leads">
+                  {role.groups.map((group) =>
+                    group.resolved > 0 ? (
+                      <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
+                        {group.label}: Fender led {group.fenderLed} of {group.resolved}
+                        {group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
+                      </li>
+                    ) : null,
+                  )}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
+      </details>
       <p className="citation-card-caveat" data-citation-assoc-caveat>
         Counts from one run. An association, not proof of cause.
       </p>
@@ -213,10 +236,7 @@ function GapsCard({
   return (
     <section className="citation-card citation-card-gaps" data-citation-gaps>
       <h3 className="citation-card-kicker">Biggest actionable gaps</h3>
-      <p className="citation-card-lead">
-        Unbranded discovery and branded consideration categories with the most competitor-led answers
-        that cited no Fender-owned page
-      </p>
+      <p className="citation-card-lead">Competitor led, and no Fender-owned page was cited</p>
       {visible.length === 0 ? (
         <p className="citation-card-note">
           No competitor-led discovery or consideration answers lacked a Fender-owned citation.
@@ -289,7 +309,16 @@ export function CitationExecutiveGrid({
 }) {
   return (
     <div className="citation-exec-grid" data-citation-exec>
-      <PresenceCard presence={presence} scopeNoun={scopeNoun} ownedPie={ownedPie} />
+      <PresenceCard
+        presence={presence}
+        scopeNoun={scopeNoun}
+        ownedPie={ownedPie}
+        unbranded={
+          rolesApplicable && byQuestionType?.ok
+            ? { withOwned: byQuestionType.insight.withOwned, resolved: byQuestionType.insight.resolved }
+            : null
+        }
+      />
       <RoleOwnedCard
         byType={byQuestionType}
         applicable={rolesApplicable}

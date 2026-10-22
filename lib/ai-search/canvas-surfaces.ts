@@ -213,14 +213,12 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   };
 }
 
-/** One-line AI Search panel lead. Detail chips carry the run facts beside it. */
+/** One-line AI Search panel lead. Run facts stay on the pill and on the other tabs' chips. */
 export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "loading") return "Reading the published AI run.";
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
-  const s = summarizeRun(read.snapshot);
-  const state = runStateLabel(s.completeness.state);
-  return `${state} published run. How AI shopping answers cite the web, and whether Fender-owned pages show up.`;
+  return "How AI shopping answers cite the web, and whether Fender-owned pages show up.";
 }
 
 export type AiSpokeChip = {

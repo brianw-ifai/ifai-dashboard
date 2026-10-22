@@ -48,15 +48,28 @@ export function RunFreshness({ snapshot, stale, historical }: { snapshot: AiSear
 }
 
 /** Loading, failed, and missing reads never fall through to zeros or demo figures. */
-export function AiReadGate({ children }: { children: (snapshot: AiSearchSnapshot) => ReactNode }) {
+export function AiReadGate({
+  children,
+  showFreshness = true,
+}: {
+  children: (snapshot: AiSearchSnapshot) => ReactNode;
+  /** The run pill already names the selected run, so a tab can skip the status line. */
+  showFreshness?: boolean;
+}) {
   return (
     <div className="ai-search-panel">
-      <GateBody>{children}</GateBody>
+      <GateBody showFreshness={showFreshness}>{children}</GateBody>
     </div>
   );
 }
 
-function GateBody({ children }: { children: (snapshot: AiSearchSnapshot) => ReactNode }) {
+function GateBody({
+  children,
+  showFreshness,
+}: {
+  children: (snapshot: AiSearchSnapshot) => ReactNode;
+  showFreshness: boolean;
+}) {
   const read = useAiSearch();
   const history = useAiHistoryOptional();
   const historical = history?.mode.kind === "run";
@@ -124,7 +137,9 @@ function GateBody({ children }: { children: (snapshot: AiSearchSnapshot) => Reac
       {historical ? (
         <HistoryBanner heading="Historical run" detail="This is not the current published run. Headline rates below use this run only." />
       ) : null}
-      <RunFreshness snapshot={read.snapshot} stale={read.stale} historical={historical} />
+      {showFreshness ? (
+        <RunFreshness snapshot={read.snapshot} stale={read.stale} historical={historical} />
+      ) : null}
       {children(read.snapshot)}
     </div>
   );

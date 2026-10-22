@@ -5,15 +5,17 @@ import { citationEvidence } from "../lib/ai-search/citations.ts";
 import { citationPies } from "../lib/ai-search/citation-pies.ts";
 import {
   citationGaps,
+  citationRangeLabel,
   ownedByQuestionType,
   ownedPresence,
   sourceMix,
   topDomainBars,
 } from "../lib/ai-search/citation-insights.ts";
+import { EARLIER_OCTOBER_12_RUN_ID } from "../lib/ai-search/review-runs.ts";
 import { questionRole } from "../lib/ai-search/question-role.ts";
 import { roleTally } from "../lib/ai-search/question-role.ts";
 import { SMALL_SAMPLE_LABEL } from "../lib/ai-search/summary.ts";
-import type { AiCallRow, AiCitationRow } from "../lib/ai-search/types.ts";
+import type { AiCallRow, AiCitationRow, AiSearchSnapshot } from "../lib/ai-search/types.ts";
 
 function call(patch: Partial<AiCallRow>): AiCallRow {
   return {
@@ -316,4 +318,39 @@ test("source mix and pies reconcile with link totals", () => {
   const bars = topDomainBars(read, 3);
   assert.equal(bars[0].domain, "fender.com");
   assert.equal(bars[0].links, 2);
+});
+
+function snapshot(patch: Partial<AiSearchSnapshot> & { runId?: string }): AiSearchSnapshot {
+  return {
+    run: {
+      audit_run_id: patch.runId ?? "run",
+      run_state: "completed",
+      collector_version: "v11",
+      prompt_set_hash: "hash",
+      expected_calls: 1,
+      attempted_calls: 1,
+      answered_calls: 1,
+      error_calls: 0,
+      started_at: "2026-10-18T12:00:00.000Z",
+      completed_at: "2026-10-18T12:10:00.000Z",
+      published_at: "2026-10-18T12:10:00.000Z",
+      missing_calls: 0,
+    },
+    calls: patch.calls ?? [call({ id: "w1" })],
+    probes: [],
+    citations: patch.citations ?? [cite("w1", "https://www.fender.com/guitars", "fender.com")],
+    storedCitationCount: patch.storedCitationCount,
+  };
+}
+
+test("range labels stay on one run and refuse a missing citation list", () => {
+  assert.equal(citationRangeLabel(snapshot({})), "1 of 1 unbranded");
+  assert.equal(
+    citationRangeLabel(snapshot({ storedCitationCount: 40, citations: [] })),
+    "Citations not listed",
+  );
+  assert.equal(
+    citationRangeLabel(snapshot({ runId: EARLIER_OCTOBER_12_RUN_ID })),
+    "Citations not listed",
+  );
 });

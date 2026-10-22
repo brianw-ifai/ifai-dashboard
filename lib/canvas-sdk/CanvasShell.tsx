@@ -1297,7 +1297,9 @@ export function CanvasShell({ spec, children }: Props) {
           <div className="drilldown-header">
             <div
               className={`drilldown-title-wrap${
-                !showingCommand && spoke?.headerStats ? " has-stats" : ""
+                !showingCommand && spoke?.headerStats && spoke.tabs[activeTab] !== "Citation Ecosystem"
+                  ? " has-stats"
+                  : ""
               }`}
             >
               <div className="drilldown-title-main">
@@ -1320,7 +1322,9 @@ export function CanvasShell({ spec, children }: Props) {
                 </p>
                 {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
               </div>
-              {!showingCommand && spoke?.headerStats ? spoke.headerStats : null}
+              {!showingCommand && spoke?.headerStats && spoke.tabs[activeTab] !== "Citation Ecosystem"
+                ? spoke.headerStats
+                : null}
             </div>
 
             <div className="drilldown-header-actions">

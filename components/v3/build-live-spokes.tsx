@@ -78,7 +78,7 @@ const TAB_OVERRIDES: Partial<
       </AiSearchSurface>
     ),
     3: () => (
-      <AiSearchSurface>
+      <AiSearchSurface followsRange>
         <CitationEcosystemPanel />
       </AiSearchSurface>
     ),

@@ -4045,6 +4045,74 @@
       background: color-mix(in srgb, var(--bg-surface) 82%, transparent);
     }
 
+    .citation-controls-scopes {
+      justify-content: flex-start;
+      margin: 0 0 12px;
+      padding: 0;
+      border: 0;
+      background: none;
+    }
+
+    .citation-controls-scopes .citation-scope-group {
+      margin-left: 0;
+    }
+
+    .citation-range {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    .citation-range-note {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      line-height: 1.4;
+    }
+
+    .citation-range-runs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .citation-range-run {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--bg-surface) 82%, transparent);
+      color: var(--text-main);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .citation-range-run strong {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .citation-range-run span {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .citation-range-run.active {
+      border-color: #38bdf8;
+      box-shadow: inset 0 0 0 1px #38bdf8;
+    }
+
+    .citation-range-run:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+
     .citation-controls-meta {
       display: flex;
       flex-wrap: wrap;
@@ -4149,11 +4217,72 @@
       margin: 0;
       color: var(--text-main);
       font-family: var(--font-sans);
-      font-size: clamp(44px, 4.2vw, 56px);
+      font-size: clamp(56px, 6vw, 84px);
       font-weight: 800;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.03em;
       line-height: 0.95;
+    }
+
+    .citation-glance-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .citation-glance-hit {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .citation-glance-hit:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+
+    .citation-glance-figure {
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: clamp(28px, 2.6vw, 36px);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .citation-glance-label {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.3;
+    }
+
+    .citation-role-details,
+    .citation-method-notes {
+      margin-top: 12px;
+    }
+
+    .citation-role-details summary,
+    .citation-method-notes summary {
+      cursor: pointer;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 650;
     }
 
     .citation-hero-ratio {

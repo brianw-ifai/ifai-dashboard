@@ -190,7 +190,8 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(t.winPct, 40);
   const s = summarizeRun(snapshot);
   assert.equal(s.probesAnswered, 1);
-  assert.match(aiSpokeDesc(ready), /Partial published run/);
+  assert.match(aiSpokeDesc(ready), /whether Fender-owned pages show up/);
+  assert.doesNotMatch(aiSpokeDesc(ready), /Partial/);
   assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
   assert.match(aiSpokeFullDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
   assert.match(aiSpokeFullDesc(ready), /Branded consideration: no resolved answers/);
