@@ -28,6 +28,12 @@ export function accuracyState(row: AiCallRow): AccuracyState {
   }
 }
 
+/** Run Details Fact Check column / shopping drawer: probes keep accuracy labels; other rows are "n/a". */
+export function factCheckColumnLabel(row: AiCallRow): string {
+  if (row.prompt_kind !== "probe") return "n/a";
+  return ACCURACY_LABELS[accuracyState(row)];
+}
+
 export type ExplorerFilter = {
   scope: PromptScope;
   engine: string;
