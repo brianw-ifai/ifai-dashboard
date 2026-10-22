@@ -1,7 +1,8 @@
 import { formatDay } from "@/lib/ai-search/history-eligibility";
+import { citationMonthBounds } from "@/lib/ai-search/citation-aggregate";
 
 export type HistoryMode =
-  | { kind: "current" }
+  | { kind: "month" }
   | { kind: "run"; runId: string }
   | { kind: "legacy"; runId: string }
   | { kind: "range"; from: string; to: string }
@@ -12,7 +13,12 @@ export function historyControlLabel(
   currentDay: string | null,
   selectedDay: string | null,
 ): string {
-  if (mode.kind === "current") return currentDay ? `Current run · ${formatDay(currentDay)}` : "Current run";
+  if (mode.kind === "month") {
+    if (!currentDay) return "Last 30 days";
+    const bounds = citationMonthBounds(currentDay);
+    if (!bounds) return "Last 30 days";
+    return `Last 30 days · ${formatDay(bounds.from)} to ${formatDay(bounds.to)}`;
+  }
   if (mode.kind === "all") return "All time";
   if (mode.kind === "range") return `${formatDay(mode.from)} to ${formatDay(mode.to)}`;
   if (mode.kind === "legacy") return selectedDay ? `Legacy run · ${formatDay(selectedDay)}` : "Legacy run";
@@ -25,7 +31,7 @@ export function rangeFromMode(mode: HistoryMode): { from: string | null; to: str
 }
 
 /**
- * Panel introduction while history is open. Null keeps the current-run description.
+ * Panel introduction while history is open. Null keeps the published-run description.
  * The map is not given this string.
  */
 export function historySpokeDescription(input: {
@@ -35,7 +41,9 @@ export function historySpokeDescription(input: {
   selectedMessage: string | null;
   runDescription: string | null;
 }): string | null {
-  if (input.mode === "current") return null;
+  if (input.mode === "month") {
+    return "The open AI Search panel adds the stored review runs in that window. The map stays on the current published run.";
+  }
   if (input.mode === "legacy") {
     return "Legacy test run. These calls stay out of the two rates and out of the trend.";
   }

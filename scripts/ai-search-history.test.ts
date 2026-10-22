@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { isTrustworthyRun, utcDay, type HistoryRunSummary } from "../lib/ai-search/history-eligibility.ts";
 import { historyFixtureSnapshot, historyFixtureSnapshots, historyFixtureSummaries } from "../lib/ai-search/history-fixtures.ts";
+import { citationMonthBounds, poolWindowSnapshots } from "../lib/ai-search/citation-aggregate.ts";
 import { historyControlLabel, historySpokeDescription } from "../lib/ai-search/history-mode.ts";
 import { historyViewMissing } from "../lib/ai-search/history-queries.ts";
 import { batteryGaps, batteryPrompt } from "../lib/ai-search/prompt-battery.ts";
@@ -49,9 +50,95 @@ const october11 = byId(OCTOBER_11_RUN_ID);
 const earlier = byId(EARLIER_OCTOBER_12_RUN_ID);
 const published = byId(PUBLISHED_OCTOBER_12_RUN_ID);
 
-test("default history label stays on the current run", () => {
-  assert.equal(historyControlLabel({ kind: "current" }, "2026-10-12", null), "Current run · Oct 12, 2026");
+test("default history label names the last 30 days", () => {
+  assert.deepEqual(citationMonthBounds("2026-10-12"), { from: "2026-09-13", to: "2026-10-12" });
+  assert.equal(
+    historyControlLabel({ kind: "month" }, "2026-10-12", null),
+    "Last 30 days · Sep 13, 2026 to Oct 12, 2026",
+  );
+  assert.equal(historyControlLabel({ kind: "month" }, null, null), "Last 30 days");
   assert.equal(historyControlLabel({ kind: "all" }, "2026-10-12", null), "All time");
+});
+
+test("poolWindowSnapshots keeps unusable-run calls and drops their citations", () => {
+  const usableCallId = "call-usable";
+  const cautionCallId = "call-caution";
+  const usable: AiSearchSnapshot = {
+    run: {
+      ...published.run,
+      audit_run_id: PUBLISHED_OCTOBER_12_RUN_ID,
+      completed_at: "2026-10-12T18:00:00.000Z",
+      published_at: "2026-10-12T18:00:00.000Z",
+    },
+    calls: [
+      {
+        ...published.calls[0],
+        id: usableCallId,
+        audit_run_id: PUBLISHED_OCTOBER_12_RUN_ID,
+      },
+    ],
+    probes: [],
+    citations: [
+      {
+        audit_run_id: PUBLISHED_OCTOBER_12_RUN_ID,
+        sim_id: 1,
+        simulation_id: usableCallId,
+        prompt_key: "p01",
+        prompt_kind: "commercial",
+        category: "electrics",
+        engine: "chatgpt",
+        position: 1,
+        url: "https://www.fender.com/guitars",
+        domain: "fender.com",
+        title: "Fender",
+      },
+    ],
+    storedCitationCount: 1,
+  };
+  const caution: AiSearchSnapshot = {
+    run: {
+      ...earlier.run,
+      audit_run_id: EARLIER_OCTOBER_12_RUN_ID,
+      completed_at: "2026-10-12T12:00:00.000Z",
+      published_at: null,
+    },
+    calls: [
+      {
+        ...earlier.calls[0],
+        id: cautionCallId,
+        audit_run_id: EARLIER_OCTOBER_12_RUN_ID,
+      },
+    ],
+    probes: [],
+    citations: [
+      {
+        audit_run_id: EARLIER_OCTOBER_12_RUN_ID,
+        sim_id: 1,
+        simulation_id: cautionCallId,
+        prompt_key: "p01",
+        prompt_kind: "commercial",
+        category: "electrics",
+        engine: "chatgpt",
+        position: 1,
+        url: "https://example.com/caution",
+        domain: "example.com",
+        title: "Caution",
+      },
+    ],
+    storedCitationCount: 2,
+  };
+  assert.equal(citationStorageCaution(EARLIER_OCTOBER_12_RUN_ID) != null, true);
+  const pooled = poolWindowSnapshots([usable, caution]);
+  assert.ok(pooled);
+  assert.equal(pooled.calls.length, 2);
+  assert.deepEqual(
+    pooled.calls.map((call) => call.id).sort(),
+    [`${EARLIER_OCTOBER_12_RUN_ID}:${cautionCallId}`, `${PUBLISHED_OCTOBER_12_RUN_ID}:${usableCallId}`].sort(),
+  );
+  assert.equal(pooled.citations.length, 1);
+  assert.equal(pooled.citations[0].simulation_id, `${PUBLISHED_OCTOBER_12_RUN_ID}:${usableCallId}`);
+  assert.equal(pooled.storedCitationCount, 1);
+  assert.equal(pooled.run.audit_run_id, PUBLISHED_OCTOBER_12_RUN_ID);
 });
 
 test("the current-run loader does not read history views", () => {
@@ -395,15 +482,25 @@ test("the migration names only the two additional runs and does not write rows",
 });
 
 test("the panel introduction names the stored-run copy and leaves the map copy alone", () => {
-  assert.equal(
+  assert.match(
     historySpokeDescription({
-      mode: "current",
+      mode: "month",
       source: "live",
       selectedPhase: "idle",
       selectedMessage: null,
       runDescription: "Current figures",
-    }),
-    null,
+    }) ?? "",
+    /stored review runs in that window/,
+  );
+  assert.match(
+    historySpokeDescription({
+      mode: "month",
+      source: "live",
+      selectedPhase: "idle",
+      selectedMessage: null,
+      runDescription: "Current figures",
+    }) ?? "",
+    /map stays on the current published run/,
   );
   assert.match(
     historySpokeDescription({

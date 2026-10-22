@@ -78,8 +78,8 @@ function GateBody({
       <Notice heading="Historical calls are not available" tone="unavailable">
         {history.selected.message}
         <span style={{ display: "block", marginTop: 8 }}>
-          <button type="button" data-ai-history-return onClick={history.viewCurrent}>
-            Return to current
+          <button type="button" data-ai-history-return onClick={history.viewMonth}>
+            Last 30 days
           </button>
         </span>
       </Notice>
@@ -93,6 +93,16 @@ function GateBody({
     );
   }
   if (read.phase === "loading") {
+    const windowed =
+      history != null &&
+      (history.mode.kind === "month" || history.mode.kind === "range" || history.mode.kind === "all");
+    if (windowed) {
+      return (
+        <Notice heading="Loading the stored review runs" tone="loading">
+          The stored review runs in this selection are loading. No rate is shown until they load.
+        </Notice>
+      );
+    }
     return (
       <Notice heading="Loading the published AI run" tone="loading">
         Reading the published AI run. Figures appear when it loads.
@@ -105,8 +115,8 @@ function GateBody({
         The published AI run did not load, so no AI Search figure is shown. {read.message}
         {historical ? (
           <span style={{ display: "block", marginTop: 8 }}>
-            <button type="button" data-ai-history-return onClick={history.viewCurrent}>
-              Return to current
+            <button type="button" data-ai-history-return onClick={history.viewMonth}>
+              Last 30 days
             </button>
           </span>
         ) : null}
@@ -125,8 +135,8 @@ function GateBody({
       <Notice heading="Call rows did not load" tone="unavailable">
         Call rows for this run did not load, so no rate is shown.
         <span style={{ display: "block", marginTop: 8 }}>
-          <button type="button" data-ai-history-return onClick={history.viewCurrent}>
-            Return to current
+          <button type="button" data-ai-history-return onClick={history.viewMonth}>
+            Last 30 days
           </button>
         </span>
       </Notice>

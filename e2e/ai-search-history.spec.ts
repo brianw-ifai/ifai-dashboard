@@ -10,7 +10,7 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
     const trigger = page.locator("[data-ai-history-trigger]");
-    await expect(trigger).toContainText(/Current run/);
+    await expect(trigger).toContainText(/Last 30 days/);
     await trigger.click();
     const dialog = page.locator("[data-ai-history-dialog]");
     await expect(dialog).toBeVisible();
@@ -78,7 +78,7 @@ test.describe("AI Search history on the live run", () => {
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-history-trends]")).toBeVisible();
     await page.locator("[data-ai-history-return]").click();
-    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Current run");
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
     await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
     await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");

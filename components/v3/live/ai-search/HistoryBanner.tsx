@@ -13,8 +13,8 @@ export function HistoryBanner({ heading, detail }: { heading: string; detail: st
       {history.source === "fixture" ? (
         <p data-ai-history-fixture>{STORED_RUN_COPY_LABEL}</p>
       ) : null}
-      <button type="button" data-ai-history-return onClick={history.viewCurrent}>
-        Return to current
+      <button type="button" data-ai-history-return onClick={history.viewMonth}>
+        Last 30 days
       </button>
     </div>
   );

@@ -46,17 +46,21 @@ export function citationSnapshotUsable(snapshot: AiSearchSnapshot): boolean {
   return snapshot.citations.length > 0 && snapshot.calls.length > 0;
 }
 
+function sortSnapshotsByRun(snapshots: readonly AiSearchSnapshot[]): AiSearchSnapshot[] {
+  return [...snapshots].sort((a, b) => {
+    const at = a.run.published_at ?? a.run.completed_at ?? "";
+    const bt = b.run.published_at ?? b.run.completed_at ?? "";
+    return at.localeCompare(bt) || a.run.audit_run_id.localeCompare(b.run.audit_run_id);
+  });
+}
+
 /**
  * One snapshot whose calls and cited links are the sum of the included runs.
  * Ids are namespaced so the same simulation id cannot collide across runs.
  */
 export function poolCitationSnapshots(snapshots: readonly AiSearchSnapshot[]): AiSearchSnapshot | null {
   if (snapshots.length === 0) return null;
-  const ordered = [...snapshots].sort((a, b) => {
-    const at = a.run.published_at ?? a.run.completed_at ?? "";
-    const bt = b.run.published_at ?? b.run.completed_at ?? "";
-    return at.localeCompare(bt) || a.run.audit_run_id.localeCompare(b.run.audit_run_id);
-  });
+  const ordered = sortSnapshotsByRun(snapshots);
   const calls = [];
   const citations = [];
   const probes = [];
@@ -76,6 +80,46 @@ export function poolCitationSnapshots(snapshots: readonly AiSearchSnapshot[]): A
     }
     probes.push(...snapshot.probes);
   }
+  const latest = ordered[ordered.length - 1];
+  return {
+    run: latest.run,
+    calls,
+    probes,
+    citations,
+    storedCitationCount: citations.length,
+  };
+}
+
+/**
+ * Window pool for Run Summary and other rate tabs: every non-empty call list,
+ * but only citation-usable runs contribute citation rows.
+ */
+export function poolWindowSnapshots(snapshots: readonly AiSearchSnapshot[]): AiSearchSnapshot | null {
+  if (snapshots.length === 0) return null;
+  const ordered = sortSnapshotsByRun(snapshots);
+  const calls = [];
+  const citations = [];
+  const probes = [];
+  for (const snapshot of ordered) {
+    if (snapshot.calls.length === 0) continue;
+    const prefix = snapshot.run.audit_run_id;
+    const ids = new Map<string, string>();
+    for (const call of snapshot.calls) {
+      const id = `${prefix}:${call.id}`;
+      ids.set(call.id, id);
+      calls.push({ ...call, id });
+    }
+    if (citationSnapshotUsable(snapshot)) {
+      for (const citation of snapshot.citations) {
+        citations.push({
+          ...citation,
+          simulation_id: ids.get(citation.simulation_id) ?? `${prefix}:${citation.simulation_id}`,
+        });
+      }
+    }
+    probes.push(...snapshot.probes);
+  }
+  if (calls.length === 0) return null;
   const latest = ordered[ordered.length - 1];
   return {
     run: latest.run,
