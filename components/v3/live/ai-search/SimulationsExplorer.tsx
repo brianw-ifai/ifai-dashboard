@@ -13,9 +13,8 @@ import { driftRead } from "@/lib/ai-search/drift";
 import { questionRole, ROLE_LABELS } from "@/lib/ai-search/question-role";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
-  ACCURACY_LABELS,
-  accuracyState,
   applyExplorerFilter,
+  factCheckColumnLabel,
   filterFromEvidence,
   sortExplorerRows,
   type ExplorerFilter,
@@ -57,7 +56,7 @@ function simulationSortValue(row: AiCallRow, columnId: string, cited: number): S
   if (columnId === "category") {
     return row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category);
   }
-  if (columnId === "fact") return ACCURACY_LABELS[accuracyState(row)];
+  if (columnId === "fact") return factCheckColumnLabel(row);
   if (columnId === "cited") return cited;
   return row.created_at;
 }
@@ -189,9 +188,9 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       <td>{engineLabel(row.engine)}</td>
                       <td>{modelLabel(row.model)}</td>
                       <td>{row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)}</td>
-                      <td>{ACCURACY_LABELS[accuracyState(row)]}</td>
+                      <td>{factCheckColumnLabel(row)}</td>
                       <td>{cited.length} cited links</td>
-                      <td>checked {formatRunTime(row.created_at)}</td>
+                      <td>{formatRunTime(row.created_at)}</td>
                     </tr>
                     {open ? (
                       <tr>
