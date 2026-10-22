@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-/* AI Search Visibility and Competitive Radar read one published run.
+/* AI Search tabs follow the run control. The map stays on the published run.
    These cover the run summary, evidence drill-downs, citations, and old links. */
 
 test.describe("AI Search Visibility", () => {
@@ -16,20 +16,22 @@ test.describe("AI Search Visibility", () => {
     await canvas.openSpokeFromMap("AI Search Visibility");
     await expect(canvas.activeTab).toHaveText("Run Summary");
     const body = page.locator(".drilldown-body");
-    await expect(page.locator(".ai-run-freshness")).toContainText("Published run");
-    await expect(page.locator(".ai-run-freshness")).toContainText(/completed .* UTC/);
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
-    await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText("13 Fender/Squier leads");
-    await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText("of 23");
-    await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText("22 Fender/Squier leads");
-    await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText("of 23");
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
+    await expect(page.locator("[data-ai-window-freshness]")).toContainText(/Rates add \d+ runs/);
+    await expect(page.locator("[data-ai-window-freshness]")).not.toContainText("Published run");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/);
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText(/\d+\.\d%/);
+    await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText(/\d+ Fender\/Squier leads/);
+    await expect(page.locator("[data-ai-role='unbranded_discovery']")).toContainText(/of \d+/);
+    await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText(/\d+ Fender\/Squier leads/);
+    await expect(page.locator("[data-ai-role='branded_consideration']")).toContainText(/of \d+/);
     await expect(body).toContainText("not inside unbranded discovery");
     await expect(body).toContainText("Not in either rate above");
     await expect(body).not.toContainText("51 of 63");
     await expect(page.locator(".ai-engine-table tbody tr")).not.toHaveCount(0);
     await expect(page.locator(".ai-category-table [data-category='hallucinations']")).toHaveCount(0);
-    await expect(page.locator(".ai-run-card")).toContainText("Expected calls");
+    await expect(page.locator("[data-ai-window-completeness]")).toContainText("Runs in this selection");
+    await expect(page.locator(".ai-run-card")).not.toContainText("Expected calls");
   });
 
   test("the command center and metric repeat the two rates", async ({ canvas, page }) => {
@@ -253,19 +255,16 @@ test.describe("Competitive Radar", () => {
     const comparison = page.locator(".ai-engine-comparison");
     await expect(comparison).toContainText("Unbranded discovery");
     await expect(comparison).toContainText("Branded consideration");
-    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText("13 of 23");
-    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText("56.5%");
-    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText("22 of 23");
-    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText("95.7%");
+    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText(/\d+ of \d+/);
+    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText(/\d+\.\d%/);
+    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText(/\d+ of \d+/);
+    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText(/\d+\.\d%/);
     const body = page.locator(".drilldown-body");
     await expect(body).not.toContainText("51 of 63");
     await expect(body).not.toContainText("All commercial prompts");
     await expect(body).not.toContainText("Fender win share");
     await expect(body).not.toContainText("Too few to compare");
-    const small = comparison.locator("[data-small-sample='true']").first();
-    await expect(small).toContainText(/%/);
-    await expect(small).toContainText("Small sample");
-    await expect(small).toContainText(/of \d+/);
+    await expect(comparison.locator("[data-small-sample='true']")).toHaveCount(0);
 
     const cell = await comparison.locator("td").first().evaluate((el) => getComputedStyle(el).fontSize);
     const header = await comparison.locator(".ifai-sort-btn").first().evaluate((el) => getComputedStyle(el).fontSize);

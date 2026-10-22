@@ -7,8 +7,9 @@ const PUBLISHED = "b28d6086-65f3-4d12-a775-ea724ea58f22";
 test.describe("AI Search history on the live run", () => {
   test("the current run stays current and only the three review days are offered", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
+    await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText(/\d+\.\d%/);
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText(/\d+\.\d%/);
     const trigger = page.locator("[data-ai-history-trigger]");
     await expect(trigger).toContainText(/Last 30 days/);
     await trigger.click();
@@ -20,13 +21,14 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator("[data-ai-history-day='2026-10-03']")).toBeDisabled();
     await expect(page.locator("[data-ai-history-day='2026-10-11']")).toHaveAttribute("data-ai-history-coverage", "partial");
     await expect(page.locator("[data-ai-history-day='2026-10-12']")).toHaveAttribute("data-ai-history-coverage", "partial");
-    await expect(page.locator("[data-ai-history-enabled='true']")).toHaveCount(2);
+    await expect(page.locator("[data-ai-history-day='2026-10-18']")).toBeEnabled();
+    await expect(page.locator("[data-ai-history-enabled='true']")).toHaveCount(3);
     await expect(dialog.getByRole("button", { name: "Previous run" })).toBeEnabled();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(page.locator(".drilldown-panel")).toBeVisible();
     await expect(trigger).toBeFocused();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
+    await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
   });
 
   test("selecting October 11 loads that stored run from the database", async ({ canvas, page }) => {
@@ -48,8 +50,9 @@ test.describe("AI Search history on the live run", () => {
     await expect(page.locator(".ai-run-freshness")).toContainText("Historical run");
     await expect(page.locator(".ai-run-freshness")).not.toContainText("Historical published run");
     await page.locator("[data-ai-history-return]").click();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
+    await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
+    await expect(page.locator("[data-ai-history-banner]")).not.toContainText("This is not the current published run");
   });
 
   test("all time draws the three stored runs from the database", async ({ canvas, page }) => {
@@ -69,7 +72,8 @@ test.describe("AI Search history on the live run", () => {
     await page.locator(".drilldown-tab-btn", { hasText: "Run Details" }).click();
     await expect(page.locator("[data-ai-history-trends]")).toHaveCount(0);
     await expect(page.locator("#ai-simulation-list")).toBeVisible();
-    await expect(page.locator("[data-ai-history-banner]")).toContainText("current published run");
+    await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("All time");
     await page.locator(".drilldown-tab-btn", { hasText: "Product Fact Checks" }).click();
     await expect(page.locator("[data-ai-history-trends]")).toHaveCount(0);
     await page.locator(".drilldown-tab-btn", { hasText: "Citation Ecosystem" }).click();
@@ -80,8 +84,7 @@ test.describe("AI Search history on the live run", () => {
     await page.locator("[data-ai-history-return]").click();
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
+    await expect(page.locator("[data-ai-window-completeness]")).toBeVisible();
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Run Summary",
       "Run Details",
@@ -99,9 +102,10 @@ test.describe("AI Search stored-run copy", () => {
 
   test("the copy labels the three runs and return restores the live rates", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("AI Search Visibility");
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("58.9%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("98.6%");
     await page.locator("[data-ai-history-trigger]").click();
-    await expect(page.locator("[data-ai-history-fixture]")).toContainText("Copy of the stored runs");
+    await expect(page.locator("[data-ai-history-dialog] [data-ai-history-fixture]")).toContainText("Copy of the stored runs");
     await expect(page.locator("[data-ai-history-day='2026-10-03']")).toBeDisabled();
     await page.locator("[data-ai-history-day='2026-10-12']").click();
     await expect(page.locator("[data-ai-history-run]")).toHaveCount(2);
@@ -125,8 +129,8 @@ test.describe("AI Search stored-run copy", () => {
     await page.locator("[data-ai-history-return]").click();
     await expect(page.locator("[data-ai-history-banner]")).toHaveCount(0);
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("58.9%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("98.6%");
   });
 
   test("the trend connects the three runs and marks the scoring boundary", async ({ canvas, page }) => {
@@ -152,7 +156,7 @@ test.describe("AI Search stored-run copy", () => {
     await expect(rows.nth(2)).toContainText("56.5% (13 of 23 resolved)");
     await expect(page.locator("[data-ai-history-gap='p15:perplexity']")).toContainText("total beginner");
     await expect(page.locator("[data-ai-history-gap='p24:chatgpt']")).toContainText("5-string bass");
-    await page.getByRole("button", { name: "Branded consideration" }).click();
+    await page.locator("[data-ai-history-trends]").getByRole("button", { name: "Branded consideration", exact: true }).click();
     await expect(page.locator(`[data-ai-trend-row='${EARLIER}:overall']`)).toContainText("100.0% (18 of 18 resolved)");
     await expect(page.locator(`[data-ai-trend-row='${PUBLISHED}:overall']`)).toContainText("95.7% (22 of 23 resolved)");
     await page.getByRole("button", { name: "By engine" }).click();
@@ -176,8 +180,8 @@ test.describe("AI Search stored-run copy", () => {
     );
     await page.locator("[data-ai-history-return]").click();
     await page.locator(".drilldown-tab-btn", { hasText: "Run Summary" }).click();
-    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("56.5%");
-    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("95.7%");
+    await expect(page.locator("[data-ai-win-rate='unbranded_discovery']")).toHaveText("58.9%");
+    await expect(page.locator("[data-ai-win-rate='branded_consideration']")).toHaveText("98.6%");
   });
 });
 

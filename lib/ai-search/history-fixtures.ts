@@ -4,7 +4,7 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 
 /**
  * `?ai-history=fixture` opens this copy of the stored runs.
- * The live dashboard stays on the published run until a review run is chosen.
+ * The live AI Search tabs start on the last 30 days. The map stays on the published run.
  */
 
 export function historyFixtureSnapshots(): AiSearchSnapshot[] {

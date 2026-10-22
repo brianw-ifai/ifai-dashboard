@@ -7,6 +7,7 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
 import { errorLine, runStateLabel, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { distinctCallRunIds, isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 export const mutedText = { fontSize: 12, color: "var(--text-muted)", lineHeight: 1.45 } as const;
 
@@ -43,6 +44,19 @@ export function RunFreshness({ snapshot, stale, historical }: { snapshot: AiSear
         {run.answered ?? "Unknown"} of {run.expected ?? "unknown"} calls answered · {errorLine(s)}
       </span>
       {stale ? <span className="tag-badge tag-warning">Refresh failed, showing the last good read</span> : null}
+    </div>
+  );
+}
+
+/** A pooled window is not the latest run's published-run badge. */
+function WindowFreshness({ snapshot, label }: { snapshot: AiSearchSnapshot; label: string }) {
+  const runCount = distinctCallRunIds(snapshot).length;
+  const runWord = runCount === 1 ? "run" : "runs";
+  return (
+    <div className="ai-run-freshness" data-ai-window-freshness style={{ ...mutedText, fontSize: 11, marginBottom: 10 }}>
+      <span>
+        {label}. Rates add {runCount} {runWord}.
+      </span>
     </div>
   );
 }
@@ -142,13 +156,18 @@ function GateBody({
       </Notice>
     );
   }
+  const windowed = Boolean(history && isWindowHistoryKind(history.mode.kind));
   return (
-    <div data-ai-state={read.snapshot.run.run_state}>
+    <div data-ai-state={windowed ? "selection" : read.snapshot.run.run_state}>
       {historical ? (
         <HistoryBanner heading="Historical run" detail="This is not the current published run. Headline rates below use this run only." />
       ) : null}
       {showFreshness ? (
-        <RunFreshness snapshot={read.snapshot} stale={read.stale} historical={historical} />
+        windowed ? (
+          <WindowFreshness snapshot={read.snapshot} label={history?.controlLabel ?? "Stored review runs"} />
+        ) : (
+          <RunFreshness snapshot={read.snapshot} stale={read.stale} historical={historical} />
+        )
       ) : null}
       {children(read.snapshot)}
     </div>

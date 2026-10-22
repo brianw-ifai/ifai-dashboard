@@ -49,7 +49,7 @@ export function historySpokeDescription(input: {
   }
   if (input.mode === "range" || input.mode === "all") {
     return input.source === "fixture"
-      ? "Copy of the stored runs for review. The chart uses that copy, not a live read. Current returns to the live published run."
+      ? "Copy of the stored runs for review. The chart uses that copy, not a live read. Last 30 days returns to the stored review runs in this copy. The map stays on the live published run."
       : "Trends use the stored review runs. The map stays on the current published run.";
   }
   if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected run.";

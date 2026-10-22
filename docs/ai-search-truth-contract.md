@@ -6,6 +6,8 @@ Status: FINAL for Phase 2. Backend only. Do not read any table directly from the
 
 The current run is the latest explicitly PUBLISHED run (`is_published`, ordered by `published_at` then `id`), with `run_state` in (`completed`, `partial`), a prompt set hash that matches, and counts that reconcile. It is never the newest timestamp and never a union of runs. A published run is immutable (a trigger raises "is published and immutable" on edit). Publishing is done only by `command.fmic_ai_publish_run(uuid)`. The collector never publishes.
 
+The AI Search tabs also have a separate selection. Their default is the stored review runs from the last 30 UTC days ending on the published run's day. A date range, All time, or one chosen run replaces that window on every tab in the bubble. That selection does not replace `canvas_ai_current_run`. The map stays on the published run.
+
 Current published run at the time of this contract: `b28d6086-65f3-4d12-a775-ea724ea58f22`, `partial`, 75 of 102 answered, 27 errors (all Perplexity, provider failures).
 
 ## 2. Views (all `security_invoker = false`, SELECT only for anon and authenticated)

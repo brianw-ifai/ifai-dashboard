@@ -4,11 +4,13 @@ Status: applied. The read-only views in `supabase/migrations/20261014190000_ai_s
 
 The public site does not include this history screen until a deploy of this branch is approved. Open the pull-request preview, then AI Search, and use the run control. Do not add `?ai-history=fixture` for the Loom. That flag still opens a labeled copy instead of the database.
 
+The published-run record below was queried on 2026-10-14. A later publish replaced it. As of the 2026-10-22 review, the live published run is the October 18 partial run (id starts `2d55ca62`). This file's row table is still the October 14 review set.
+
 ## What the dashboard reads
 
-The default screen stays on the published October 12 run. Its headline rates stay 56.5% unbranded discovery and 95.7% branded consideration. The map stays on that published run.
+Opening AI Search Visibility lands every tab on the stored review runs from the last 30 UTC days, ending on the published run's day. The pill names that window. It does not say "Current run" while the cards add those runs. Run Summary, Run Details, Product Fact Checks, Citation Ecosystem, and the Competitive Radar rates that read the same calls all follow the pill. Choosing one run, a date range, or All time updates those tabs and stays in place until the pill changes. Rates add numerators and denominators. Citation totals skip a run whose cited URLs were not stored. The map stays on the published run.
 
-The run control lists the three stored runs from the live views. Choosing October 11 or the earlier October 12 run loads that run's calls, probes, and citations. All time draws the trend from those same rows. A later published v11 run that attempted its full battery is included the same way. Fragment runs stay out. After the questions change, the old points stay on the wording that was asked, and the new wording starts its own series once new runs exist.
+The run control lists the stored review runs from the live views. Choosing one run loads that run's calls, probes, and citations. All time and a date range draw the trend and the pooled figures from the runs in that selection. A later published v11 run that attempted its full battery is included the same way. Fragment runs stay out. After the questions change, the old points stay on the wording that was asked, and the new wording starts its own series once new runs exist.
 
 `?ai-history=fixture` remains available as a labeled copy. It is not the Loom path.
 
