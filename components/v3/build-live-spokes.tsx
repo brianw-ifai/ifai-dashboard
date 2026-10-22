@@ -6,6 +6,7 @@ import { CitationEcosystemPanel } from "@/components/v3/live/ai-search/CitationE
 import { CompetitorWinsPanel } from "@/components/v3/live/ai-search/CompetitorWinsPanel";
 import { EngineComparisonPanel } from "@/components/v3/live/ai-search/EngineComparisonPanel";
 import { AiSearchSurface } from "@/components/v3/live/ai-search/AiSearchSurface";
+import { AiSearchHeaderStats } from "@/components/v3/live/ai-search/AiSearchHeaderStats";
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
@@ -120,7 +121,13 @@ function wrapSpoke(
           tabs: [...RETAIL_PANEL_TABS],
         }
       : {}),
-    ...(id === "aeo" ? { desc: aiSpokeDesc(ai), headerAccessory: <RunHistoryControl /> } : {}),
+    ...(id === "aeo"
+      ? {
+          desc: aiSpokeDesc(ai),
+          headerAccessory: <RunHistoryControl />,
+          headerStats: <AiSearchHeaderStats />,
+        }
+      : {}),
     ...(id === "competitors" ? { desc: competitorsSpokeDesc(ai) } : {}),
     ...(id === "specs" ? { desc: findabilitySpokeDescription(findability) } : {}),
     render: (tabIdx) => {

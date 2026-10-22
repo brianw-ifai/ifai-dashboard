@@ -19,4 +19,6 @@ export type SpokeDefinition = {
   render: (tabIdx: number) => ReactNode | string;
   /** Compact control under the panel title. Used by AI Search history. */
   headerAccessory?: ReactNode;
+  /** Optional stats that fill the wide header band on expanded panels. */
+  headerStats?: ReactNode;
 };

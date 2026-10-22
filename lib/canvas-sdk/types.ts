@@ -71,6 +71,8 @@ export type SpokeContent = {
   render: (tabIdx: number) => ReactNode | string;
   /** Compact control under the panel title. */
   headerAccessory?: ReactNode;
+  /** Optional stats that fill the wide header band on expanded panels. */
+  headerStats?: ReactNode;
 };
 
 export type TourStep = {

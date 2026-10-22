@@ -213,8 +213,62 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   };
 }
 
-/** The AI Search spoke description. Never states a count the run did not return. */
+/** One-line AI Search panel lead. Detail chips carry the run facts beside it. */
 export function aiSpokeDesc(read: AiSearchRead): string {
+  if (read.phase === "loading") return "Reading the published AI run.";
+  if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
+  if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
+  const s = summarizeRun(read.snapshot);
+  const state = runStateLabel(s.completeness.state);
+  return `${state} published run — how AI shopping answers cite the web, and whether Fender-owned pages show up.`;
+}
+
+export type AiSpokeChip = {
+  id: string;
+  label: string;
+  value: string;
+  tone?: "warning" | "neutral";
+};
+
+/** Compact run facts for the AI Search panel header. Keeps every former paragraph fact available. */
+export function aiSpokeHeaderChips(read: AiSearchRead): AiSpokeChip[] {
+  if (read.phase !== "ready") return [];
+  const s = summarizeRun(read.snapshot);
+  const chips: AiSpokeChip[] = [
+    {
+      id: "state",
+      label: "Run",
+      value: runStateLabel(s.completeness.state),
+      tone: s.completeness.isPartial ? "warning" : "neutral",
+    },
+    { id: "completed", label: "Completed", value: s.completedAt },
+    {
+      id: "answered",
+      label: "Answered",
+      value: `${s.completeness.answered ?? "?"} of ${s.completeness.expected ?? "?"}`,
+    },
+    { id: "errors", label: "Provider errors", value: errorLine(s), tone: s.errorEngines.length ? "warning" : "neutral" },
+    {
+      id: "unbranded",
+      label: "Unbranded discovery",
+      value: resolvedPhrase(s.roles.unbranded),
+    },
+    {
+      id: "branded",
+      label: "Branded consideration",
+      value: resolvedPhrase(s.roles.branded),
+    },
+    {
+      id: "facts",
+      label: "Product fact checks",
+      value: factCheckShortLine(s.drift.coverage),
+    },
+  ];
+  return chips;
+}
+
+/** Full run narrative kept for history banners and tests that need every count in one string. */
+export function aiSpokeFullDesc(read: AiSearchRead): string {
   if (read.phase === "loading") return "Reading the published AI run.";
   if (read.phase === "error") return `The published AI run did not load: ${read.message}`;
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";

@@ -1,7 +1,14 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/ai-search-truth.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { aiMetrics, aiNodeFaces, aiPriorityItems, aiSpokeDesc } from "../lib/ai-search/canvas-surfaces.ts";
+import {
+  aiMetrics,
+  aiNodeFaces,
+  aiPriorityItems,
+  aiSpokeDesc,
+  aiSpokeFullDesc,
+  aiSpokeHeaderChips,
+} from "../lib/ai-search/canvas-surfaces.ts";
 import { canonicalUrl, citationEvidence, classifySource, groupCitations, isValidCitationUrl } from "../lib/ai-search/citations.ts";
 import { categoryBattles, competitorTallies } from "../lib/ai-search/competitors.ts";
 import { driftRead, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
@@ -183,9 +190,13 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(t.winPct, 40);
   const s = summarizeRun(snapshot);
   assert.equal(s.probesAnswered, 1);
-  assert.match(aiSpokeDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
-  assert.match(aiSpokeDesc(ready), /Branded consideration: no resolved answers/);
+  assert.match(aiSpokeDesc(ready), /Partial published run/);
   assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
+  assert.match(aiSpokeFullDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
+  assert.match(aiSpokeFullDesc(ready), /Branded consideration: no resolved answers/);
+  const chips = aiSpokeHeaderChips(ready);
+  assert.ok(chips.some((chip) => chip.id === "unbranded" && /0 of 1/.test(chip.value)));
+  assert.ok(chips.some((chip) => chip.id === "errors" && /provider errors/i.test(chip.value)));
 });
 
 test("probes never appear as a commercial category or competitor", () => {
@@ -258,7 +269,8 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
   assert.match(faces.satPrompts.meta ?? "", /Completed Oct 12, 2026, 5:02 PM UTC/);
   assert.match(faces.spokeAeo.meta ?? "", /Partial run · 7 of 9 answered/);
   assert.doesNotMatch(faces.satPrompts.tooltip.desc, /latest battery/i);
-  assert.match(aiSpokeDesc(ready), /provider errors/);
+  assert.match(aiSpokeFullDesc(ready), /provider errors/);
+  assert.ok(aiSpokeHeaderChips(ready).some((chip) => /provider errors/i.test(chip.value)));
 });
 
 test("client priorities come from run evidence, never pipeline work", () => {

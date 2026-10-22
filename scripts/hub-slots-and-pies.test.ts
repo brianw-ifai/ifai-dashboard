@@ -203,16 +203,11 @@ test("citation pies use the same totals as the tables", () => {
   const read = citationEvidence(calls, citations, "commercial");
   const pies = citationPies(read);
   assert.ok(pies);
-  const answers = pies.find((pie) => pie.id === "answers");
+  assert.equal(pies.some((pie) => (pie.id as string) === "answers"), false);
   const classes = pies.find((pie) => pie.id === "classes");
   const owned = pies.find((pie) => pie.id === "owned");
-  assert.equal(answers?.total, read.answered);
   assert.equal(classes?.total, read.rows.length);
   assert.equal(owned?.total, read.rows.length);
-  assert.equal(
-    answers?.slices.reduce((sum, slice) => sum + slice.count, 0),
-    read.answered,
-  );
   assert.equal(
     classes?.slices.reduce((sum, slice) => sum + slice.count, 0),
     read.rows.length,
@@ -221,5 +216,5 @@ test("citation pies use the same totals as the tables", () => {
     owned?.slices.reduce((sum, slice) => sum + slice.count, 0),
     read.rows.length,
   );
-  assert.equal(answers?.slices.find((slice) => slice.key === "cited")?.count, read.answersWithCitation);
+  assert.equal(owned?.slices.find((slice) => slice.key === "owned")?.count, 1);
 });

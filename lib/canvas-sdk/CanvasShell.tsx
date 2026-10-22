@@ -1295,25 +1295,32 @@ export function CanvasShell({ spec, children }: Props) {
 
         <aside className={`drilldown-panel${panelOpen && !tourOverlayVisible ? " open" : ""}`}>
           <div className="drilldown-header">
-            <div className="drilldown-title-wrap">
-              {commandCenter && !showingCommand ? (
-                <button className="drilldown-back-btn" onClick={openCommandCenter}>
-                  <ChevronLeft size={12} />
-                  Priorities
-                </button>
-              ) : null}
-              <span className="drilldown-badge">
-                {showingCommand
-                  ? (commandCenter?.badge ?? "COMMAND CENTER")
-                  : (spoke?.badge ?? "SPOKE")}
-              </span>
-              <h2 className="drilldown-title">
-                {showingCommand ? commandCenter?.title : (spoke?.title ?? "")}
-              </h2>
-              <p className="drilldown-desc">
-                {showingCommand ? commandCenter?.desc : (spoke?.desc ?? "")}
-              </p>
-              {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
+            <div
+              className={`drilldown-title-wrap${
+                !showingCommand && spoke?.headerStats ? " has-stats" : ""
+              }`}
+            >
+              <div className="drilldown-title-main">
+                {commandCenter && !showingCommand ? (
+                  <button className="drilldown-back-btn" onClick={openCommandCenter}>
+                    <ChevronLeft size={12} />
+                    Priorities
+                  </button>
+                ) : null}
+                <span className="drilldown-badge">
+                  {showingCommand
+                    ? (commandCenter?.badge ?? "COMMAND CENTER")
+                    : (spoke?.badge ?? "SPOKE")}
+                </span>
+                <h2 className="drilldown-title">
+                  {showingCommand ? commandCenter?.title : (spoke?.title ?? "")}
+                </h2>
+                <p className="drilldown-desc">
+                  {showingCommand ? commandCenter?.desc : (spoke?.desc ?? "")}
+                </p>
+                {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
+              </div>
+              {!showingCommand && spoke?.headerStats ? spoke.headerStats : null}
             </div>
 
             <div className="drilldown-header-actions">

@@ -86,13 +86,13 @@ test.describe("AI Search Visibility", () => {
     const ratio = await page.locator("[data-citation-hero-ratio]").innerText();
     const ratioMatch = ratio.match(/(\d+) of (\d+)/);
     expect(ratioMatch).not.toBeNull();
-    const answered = ratioMatch![2];
-    const answerPie = page.locator("[data-citation-pie='answers']");
-    await expect(answerPie).toHaveAttribute("data-pie-total", answered);
-    const answerCounts = await answerPie.locator("[data-pie-count]").evaluateAll((els) =>
-      els.map((el) => Number(el.getAttribute("data-pie-count"))),
+    const ownedAnswers = Number(ratioMatch![1]);
+    const answered = Number(ratioMatch![2]);
+    expect(ownedAnswers).toBeGreaterThanOrEqual(0);
+    expect(answered).toBeGreaterThan(0);
+    await expect(page.locator("[data-citation-hero-ratio]")).toContainText(
+      /cited at least one Fender-owned page/,
     );
-    expect(answerCounts.reduce((sum, count) => sum + count, 0)).toBe(Number(answered));
     const linkPie = page.locator("[data-citation-pie='classes']");
     const ownedPie = page.locator("[data-citation-pie='owned']");
     const linkTotal = await linkPie.getAttribute("data-pie-total");
@@ -104,14 +104,26 @@ test.describe("AI Search Visibility", () => {
       );
       expect(counts.reduce((sum, count) => sum + count, 0)).toBe(total);
     }
+    const assocNs = await page.locator("[data-assoc-n]").evaluateAll((els) =>
+      els.map((el) => Number(el.getAttribute("data-assoc-n"))),
+    );
+    expect(assocNs.length).toBe(2);
+    expect(assocNs.reduce((sum, n) => sum + n, 0)).toBeGreaterThan(0);
     const heroBox = await page.locator("[data-citation-hero-value]").boundingBox();
     expect(heroBox && heroBox.height).toBeGreaterThan(40);
-    await expect(page.locator("[data-ai-cited-links]")).toContainText(/Those answers contained \d+ cited links across \d+ domains/);
-    await expect(page.locator("[data-ai-fender-owned]")).toContainText(/\d+ links, or \d+\.\d%, led to Fender-owned sites/);
+    const ownedDisc = await page.locator(".citation-pie-disc-owned").boundingBox();
+    const mixDisc = await page.locator(".citation-pie-disc-mix").boundingBox();
+    expect(ownedDisc && ownedDisc.width).toBeGreaterThanOrEqual(160);
+    expect(mixDisc && mixDisc.width).toBeGreaterThanOrEqual(180);
+    await expect(page.locator("[data-ai-cited-links]")).toContainText(/\d+ cited links/);
+    await expect(page.locator("[data-ai-fender-owned]")).toContainText(
+      /\d+ of \d+ cited links .* led to Fender-owned sites/,
+    );
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Answers and links are separate counts");
     await expect(body).toContainText("Why this matters");
     await expect(body).toContainText("canonical product facts");
+    await expect(body).toContainText("This is an association, not proof of cause");
     await expect(page.locator("[data-ai-citation-interpretation]")).toContainText(
       "A low count does not prove a source had no influence",
     );
@@ -123,6 +135,12 @@ test.describe("AI Search Visibility", () => {
     await expect(rows.first()).toBeVisible();
     for (const d of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-domain")))) {
       expect(d).toBe(picked);
+    }
+    const gap = page.locator("[data-citation-gap]").first();
+    if (await gap.count()) {
+      await gap.click();
+      await expect(page.locator(".ai-citation-evidence")).toContainText(/gaps \(no Fender-owned page\)/i);
+      await expect(rows.first()).toBeVisible();
     }
     const link = page.locator(".ai-citation-evidence a[href]").first();
     await expect(link).toHaveAttribute("target", "_blank");
