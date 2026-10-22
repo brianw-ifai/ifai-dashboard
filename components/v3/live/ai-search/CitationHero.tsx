@@ -5,13 +5,15 @@ import { CitationControlsStrip } from "@/components/v3/live/ai-search/CitationCo
 import { CitationDomainsMix } from "@/components/v3/live/ai-search/CitationDomainsMix";
 import { CitationExecutiveGrid } from "@/components/v3/live/ai-search/CitationExecutiveGrid";
 import {
-  citationAssociation,
   citationGaps,
+  ownedByQuestionType,
   ownedPresence,
   topDomainBars,
+  type CitationGap,
+  type RoleOwnedGroup,
+  type RoleOwnedPresence,
 } from "@/lib/ai-search/citation-insights";
 import { citationPies } from "@/lib/ai-search/citation-pies";
-import type { CitationGap } from "@/lib/ai-search/citation-insights";
 import type { CitationRead, CitationScope } from "@/lib/ai-search/citations";
 import { groupCitations } from "@/lib/ai-search/citations";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -19,6 +21,7 @@ import type { AiSearchSnapshot } from "@/lib/ai-search/types";
 export type CitationPick =
   | { field: "domain" | "class" | "engine" | "category"; value: string }
   | { field: "gap"; value: string; simulationIds: string[] }
+  | { field: "role_owned"; value: string; simulationIds: string[] }
   | null;
 
 export function CitationHero({
@@ -41,7 +44,7 @@ export function CitationHero({
   const pies = citationPies(read);
   const ownedPie = pies?.find((pie) => pie.id === "owned") ?? null;
   const mixPie = pies?.find((pie) => pie.id === "classes") ?? null;
-  const association = citationAssociation(snapshot.calls, read, scope);
+  const byQuestionType = ownedByQuestionType(snapshot.calls, read, scope);
   const gapResult = citationGaps(snapshot.calls, read, scope);
   const domains = groupCitations(read.rows, (row) => row.domain);
   const bars = topDomainBars(read, 10);
@@ -49,6 +52,14 @@ export function CitationHero({
 
   const onPickGap = (gap: CitationGap) => {
     onPick({ field: "gap", value: gap.category, simulationIds: gap.simulationIds });
+  };
+
+  const onPickRoleGroup = (role: RoleOwnedPresence, group: RoleOwnedGroup) => {
+    onPick({
+      field: "role_owned",
+      value: `${role.role}:${group.key}`,
+      simulationIds: group.simulationIds,
+    });
   };
 
   return (
@@ -69,14 +80,15 @@ export function CitationHero({
         presence={presence}
         scopeNoun={scopeNoun}
         ownedPie={ownedPie}
-        association={association}
-        associationApplicable={shoppingScope}
+        byQuestionType={byQuestionType}
+        rolesApplicable={shoppingScope}
         gaps={gapResult?.gaps ?? []}
         gapsOk={gapResult?.ok ?? false}
         gapsApplicable={shoppingScope}
         showAllGaps={showAllGaps}
         onToggleAllGaps={() => setShowAllGaps((value) => !value)}
         onPickGap={onPickGap}
+        onPickRoleGroup={onPickRoleGroup}
       />
       <CitationDomainsMix
         bars={bars}

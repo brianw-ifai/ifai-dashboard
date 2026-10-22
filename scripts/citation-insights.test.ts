@@ -4,12 +4,15 @@ import { test } from "node:test";
 import { citationEvidence } from "../lib/ai-search/citations.ts";
 import { citationPies } from "../lib/ai-search/citation-pies.ts";
 import {
-  citationAssociation,
   citationGaps,
+  ownedByQuestionType,
   ownedPresence,
   sourceMix,
   topDomainBars,
 } from "../lib/ai-search/citation-insights.ts";
+import { questionRole } from "../lib/ai-search/question-role.ts";
+import { roleTally } from "../lib/ai-search/question-role.ts";
+import { SMALL_SAMPLE_LABEL } from "../lib/ai-search/summary.ts";
 import type { AiCallRow, AiCitationRow } from "../lib/ai-search/types.ts";
 
 function call(patch: Partial<AiCallRow>): AiCallRow {
@@ -122,18 +125,152 @@ test("owned presence counts answers and links separately", () => {
   assert.equal(presence.totalLinks, 7);
 });
 
-test("association arms sum to resolved shopping answers", () => {
+test("owned-by-role groups sum to each headline role resolved total", () => {
   const read = citationEvidence(calls, citations, "commercial");
-  const assoc = citationAssociation(calls, read, "commercial");
-  assert.ok(assoc);
-  assert.equal(assoc.ok, true);
-  assert.equal(assoc.resolvedTotal, 5);
-  const [cited, notCited] = assoc.arms;
-  assert.equal(cited.fenderLed, 2);
-  assert.equal(cited.resolved, 2);
-  assert.equal(notCited.fenderLed, 0);
-  assert.equal(notCited.resolved, 3);
-  assert.equal(citationAssociation(calls, read, "probe"), null);
+  const byType = ownedByQuestionType(calls, read, "commercial");
+  assert.ok(byType);
+  assert.equal(byType.ok, true);
+  for (const role of byType.roles) {
+    const expected = roleTally(calls, role.role);
+    assert.equal(role.resolved, expected.resolved);
+    assert.equal(role.withOwned + role.withoutOwned, expected.resolved);
+    assert.equal(role.groups[0].resolved + role.groups[1].resolved, expected.resolved);
+  }
+  assert.equal(ownedByQuestionType(calls, read, "probe"), null);
+});
+
+test("owned citations concentrated in branded questions do not inflate unbranded", () => {
+  const mixed = [
+    call({
+      id: "u1",
+      sim_id: 1,
+      prompt: "Best guitar under $300",
+      outcome: "competitor_win",
+      primary_brand: "Yamaha",
+      category: "beginner",
+    }),
+    call({
+      id: "u2",
+      sim_id: 2,
+      prompt: "Best bass under $400",
+      outcome: "competitor_win",
+      primary_brand: "Yamaha",
+      category: "basses",
+    }),
+    call({
+      id: "u3",
+      sim_id: 3,
+      prompt: "Best acoustic under $500",
+      outcome: "fender_win",
+      category: "acoustic",
+    }),
+    call({
+      id: "b1",
+      sim_id: 4,
+      prompt: "Is the Fender Stratocaster a good first guitar",
+      outcome: "fender_win",
+      category: "electrics",
+    }),
+    call({
+      id: "b2",
+      sim_id: 5,
+      prompt: "Is a Squier Affinity a good bass",
+      outcome: "fender_win",
+      category: "basses",
+    }),
+    call({
+      id: "b3",
+      sim_id: 6,
+      prompt: "Fender Player vs PRS SE comparison",
+      outcome: "fender_win",
+      category: "electrics",
+    }),
+    call({
+      id: "pf1",
+      sim_id: 7,
+      prompt: "What pickup types does the Player II Strat use",
+      outcome: "fender_win",
+      category: "electrics",
+    }),
+  ];
+  assert.equal(questionRole(mixed[0]), "unbranded_discovery");
+  assert.equal(questionRole(mixed[3]), "branded_consideration");
+  assert.equal(questionRole(mixed[6]), "product_fact");
+
+  const cites: AiCitationRow[] = [
+    cite("b1", "https://www.fender.com/strat", "fender.com"),
+    cite("b2", "https://www.fender.com/squier", "fender.com"),
+    cite("b3", "https://www.fender.com/player", "fender.com"),
+    cite("pf1", "https://www.fender.com/player-ii", "fender.com"),
+    cite("u1", "https://www.yamaha.com/guitars", "yamaha.com"),
+    cite("u2", "https://www.sweetwater.com/bass", "sweetwater.com"),
+  ];
+  const read = citationEvidence(mixed, cites, "commercial");
+  const byType = ownedByQuestionType(mixed, read, "commercial");
+  assert.ok(byType);
+  assert.equal(byType.ok, true);
+
+  const unbranded = byType.roles.find((role) => role.role === "unbranded_discovery");
+  const branded = byType.roles.find((role) => role.role === "branded_consideration");
+  assert.ok(unbranded && branded);
+  // Owned citations sit on branded (and product-fact) answers, not unbranded.
+  assert.equal(unbranded.withOwned, 0);
+  assert.equal(unbranded.withoutOwned, 3);
+  assert.equal(unbranded.resolved, roleTally(mixed, "unbranded_discovery").resolved);
+  assert.equal(branded.withOwned, 3);
+  assert.equal(branded.withoutOwned, 0);
+  assert.equal(byType.insight.withOwned, 0);
+  assert.equal(byType.insight.resolved, 3);
+  // Small samples on the thin owned / not-owned arms carry the label.
+  assert.equal(branded.groups[0].smallSample, true);
+  assert.match(
+    `Fender led ${branded.groups[0].fenderLed} of ${branded.groups[0].resolved}${branded.groups[0].smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}`,
+    new RegExp(SMALL_SAMPLE_LABEL),
+  );
+});
+
+test("gaps only count headline-role competitor losses without Fender-owned pages", () => {
+  const mixed = [
+    call({
+      id: "u1",
+      sim_id: 1,
+      prompt: "Best acoustic under $500",
+      outcome: "competitor_win",
+      primary_brand: "Yamaha",
+      category: "acoustic",
+    }),
+    call({
+      id: "pf1",
+      sim_id: 2,
+      prompt: "What pickup types does the Player II Strat use",
+      outcome: "competitor_win",
+      primary_brand: "Gibson",
+      category: "electrics",
+    }),
+    call({
+      id: "g1",
+      sim_id: 3,
+      prompt: "How much should I spend on a first guitar",
+      outcome: "competitor_win",
+      primary_brand: "Yamaha",
+      category: "beginner",
+    }),
+  ];
+  assert.equal(questionRole(mixed[0]), "unbranded_discovery");
+  assert.equal(questionRole(mixed[1]), "product_fact");
+  assert.equal(questionRole(mixed[2]), "shopping_guidance");
+  const cites = [
+    cite("u1", "https://www.yamaha.com/acoustic", "yamaha.com"),
+    cite("pf1", "https://www.gibson.com/les-paul", "gibson.com"),
+    cite("g1", "https://www.sweetwater.com/guide", "sweetwater.com"),
+  ];
+  const read = citationEvidence(mixed, cites, "commercial");
+  const result = citationGaps(mixed, read, "commercial");
+  assert.ok(result);
+  assert.equal(result.ok, true);
+  assert.equal(result.totalLosing, 1);
+  assert.equal(result.gaps[0].category, "acoustic");
+  assert.equal(result.gaps[0].count, 1);
 });
 
 test("gaps rank competitor-led answers with no Fender-owned page", () => {

@@ -104,11 +104,18 @@ test.describe("AI Search Visibility", () => {
       );
       expect(counts.reduce((sum, count) => sum + count, 0)).toBe(total);
     }
-    const assocNs = await page.locator("[data-assoc-n]").evaluateAll((els) =>
-      els.map((el) => Number(el.getAttribute("data-assoc-n"))),
+    await expect(page.locator("[data-citation-role-insight]")).toContainText(
+      /Fender-owned pages were cited in \d+ of \d+ unbranded discovery answers/,
     );
-    expect(assocNs.length).toBe(2);
-    expect(assocNs.reduce((sum, n) => sum + n, 0)).toBeGreaterThan(0);
+    for (const role of ["unbranded_discovery", "branded_consideration"]) {
+      const roleRow = page.locator(`[data-citation-role="${role}"]`);
+      await expect(roleRow).toBeVisible();
+      const resolved = Number(await roleRow.getAttribute("data-role-resolved"));
+      const groupNs = await roleRow.locator("[data-role-n]").evaluateAll((els) =>
+        els.map((el) => Number(el.getAttribute("data-role-n"))),
+      );
+      expect(groupNs.reduce((sum, n) => sum + n, 0)).toBe(resolved);
+    }
     const heroBox = await page.locator("[data-citation-hero-value]").boundingBox();
     expect(heroBox && heroBox.height).toBeGreaterThan(40);
     const ownedDisc = await page.locator(".citation-pie-disc-owned").boundingBox();
@@ -123,7 +130,8 @@ test.describe("AI Search Visibility", () => {
     await expect(body).toContainText("Answers and links are separate counts");
     await expect(body).toContainText("Why this matters");
     await expect(body).toContainText("canonical product facts");
-    await expect(body).toContainText("This is an association, not proof of cause");
+    await expect(body).toContainText("An association, not proof of cause");
+    await expect(page.locator(".drilldown-desc")).not.toContainText("\u2014");
     await expect(page.locator("[data-ai-citation-interpretation]")).toContainText(
       "A low count does not prove a source had no influence",
     );
@@ -135,6 +143,11 @@ test.describe("AI Search Visibility", () => {
     await expect(rows.first()).toBeVisible();
     for (const d of await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-domain")))) {
       expect(d).toBe(picked);
+    }
+    const roleGroup = page.locator("[data-citation-role-group]").first();
+    if (await roleGroup.count()) {
+      await roleGroup.click();
+      await expect(page.locator(".ai-citation-evidence")).toContainText(/Fender-owned page/i);
     }
     const gap = page.locator("[data-citation-gap]").first();
     if (await gap.count()) {

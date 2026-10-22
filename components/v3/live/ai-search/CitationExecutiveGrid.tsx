@@ -4,9 +4,11 @@ import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationPieDisc, CitationPieLegend } from "@/components/v3/live/ai-search/CitationPieDisc";
 import type { CitationPie } from "@/lib/ai-search/citation-pies";
 import type {
-  AssociationArm,
   CitationGap,
+  OwnedByQuestionType,
   OwnedPresence,
+  RoleOwnedGroup,
+  RoleOwnedPresence,
 } from "@/lib/ai-search/citation-insights";
 import { SMALL_SAMPLE_LABEL, pct } from "@/lib/ai-search/summary";
 
@@ -51,19 +53,49 @@ function PresenceCard({
   );
 }
 
-function AssociationCard({
-  arms,
-  ok,
-  applicable,
+function RoleGroupButton({
+  role,
+  group,
+  share,
+  onPick,
 }: {
-  arms: [AssociationArm, AssociationArm] | null;
-  ok: boolean;
+  role: RoleOwnedPresence;
+  group: RoleOwnedGroup;
+  share: number;
+  onPick: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
+}) {
+  if (group.resolved <= 0 || share <= 0) return null;
+  const lead = `Fender led ${group.fenderLed} of ${group.resolved}`;
+  const sample = group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : "";
+  return (
+    <button
+      type="button"
+      className={`citation-role-seg citation-role-seg-${group.key}`}
+      style={{ flexGrow: share, flexBasis: 0 }}
+      data-citation-role-group={`${role.role}:${group.key}`}
+      data-role-n={group.resolved}
+      data-ai-pick={`role_owned:${role.role}:${group.key}`}
+      onClick={() => onPick(role, group)}
+      aria-label={`${role.roleLabel}: ${group.label}, ${group.resolved} resolved answers. ${lead}${sample}.`}
+    >
+      <span className="citation-role-seg-count">{group.resolved}</span>
+    </button>
+  );
+}
+
+function RoleOwnedCard({
+  byType,
+  applicable,
+  onPickGroup,
+}: {
+  byType: OwnedByQuestionType | null;
   applicable: boolean;
+  onPickGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
   if (!applicable) {
     return (
-      <section className="citation-card citation-card-association" data-citation-association>
-        <h3 className="citation-card-kicker">Citations and outcomes</h3>
+      <section className="citation-card citation-card-roles" data-citation-association>
+        <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>
         <p className="citation-card-note">
           Lead rates apply to shopping answers. Product fact checks do not name a brand leader, so this
           comparison is not shown for this scope.
@@ -71,57 +103,72 @@ function AssociationCard({
       </section>
     );
   }
-  if (!arms || !ok) {
+  if (!byType || !byType.ok) {
     return (
-      <section className="citation-card citation-card-association" data-citation-association>
-        <h3 className="citation-card-kicker">Citations and outcomes</h3>
+      <section className="citation-card citation-card-roles" data-citation-association>
+        <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>
         <p data-citation-reconcile>
-          The association bars are hidden because their samples do not match the resolved shopping total.
+          The role bars are hidden because owned and not-owned groups do not match each role&apos;s
+          resolved total.
         </p>
       </section>
     );
   }
-  const maxResolved = Math.max(arms[0].resolved, arms[1].resolved, 1);
+
+  const { insight } = byType;
   return (
-    <section className="citation-card citation-card-association" data-citation-association>
-      <h3 className="citation-card-kicker">Citations and outcomes</h3>
-      <p className="citation-card-lead">
-        Fender lead rate among resolved shopping answers
+    <section className="citation-card citation-card-roles" data-citation-association>
+      <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>
+      <p className="citation-role-insight" data-citation-role-insight>
+        Fender-owned pages were cited in {insight.withOwned} of {insight.resolved}{" "}
+        {insight.roleLabel.toLowerCase()} answers
       </p>
-      <ul className="citation-assoc-bars">
-        {arms.map((arm) => {
-          const width = arm.resolved > 0 ? (100 * arm.fenderLed) / arm.resolved : 0;
-          const rate = arm.resolved > 0 ? pct(arm.fenderLed, arm.resolved) : "No resolved answers";
+      <p className="citation-card-note">Denominator is resolved answers, matching the headline rates.</p>
+      <ul className="citation-role-list">
+        {byType.roles.map((role) => {
+          const total = Math.max(role.resolved, 1);
           return (
-            <li key={arm.key} data-citation-assoc={arm.key} data-assoc-n={arm.resolved}>
-              <div className="citation-assoc-label">
-                <span>{arm.label}</span>
-                <strong>
-                  {rate}
-                  {arm.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
-                </strong>
+            <li key={role.role} data-citation-role={role.role} data-role-resolved={role.resolved}>
+              <div className="citation-role-label">
+                <strong>{role.roleLabel}</strong>
+                <span>
+                  {role.withOwned} with a Fender-owned page · {role.withoutOwned} without
+                </span>
               </div>
               <div
-                className="citation-assoc-track"
+                className="citation-role-track"
                 role="img"
-                aria-label={`${arm.label}: Fender led ${arm.fenderLed} of ${arm.resolved} answers (${rate}${arm.smallSample ? `, ${SMALL_SAMPLE_LABEL}` : ""}). Scale 0 to 100 percent.`}
+                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
               >
-                <div
-                  className="citation-assoc-fill"
-                  style={{ width: `${width}%` }}
-                  data-assoc-max={maxResolved}
+                <RoleGroupButton
+                  role={role}
+                  group={role.groups[0]}
+                  share={role.groups[0].resolved / total}
+                  onPick={onPickGroup}
+                />
+                <RoleGroupButton
+                  role={role}
+                  group={role.groups[1]}
+                  share={role.groups[1].resolved / total}
+                  onPick={onPickGroup}
                 />
               </div>
-              <p className="citation-assoc-detail">
-                Fender led {arm.fenderLed} of {arm.resolved} answers
-                {arm.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
-              </p>
+              <ul className="citation-role-leads">
+                {role.groups.map((group) =>
+                  group.resolved > 0 ? (
+                    <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
+                      {group.label}: Fender led {group.fenderLed} of {group.resolved}
+                      {group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
             </li>
           );
         })}
       </ul>
       <p className="citation-card-caveat" data-citation-assoc-caveat>
-        This is an association, not proof of cause. The prompts and categories in each group differ.
+        Counts from one run. An association, not proof of cause.
       </p>
     </section>
   );
@@ -167,10 +214,13 @@ function GapsCard({
     <section className="citation-card citation-card-gaps" data-citation-gaps>
       <h3 className="citation-card-kicker">Biggest actionable gaps</h3>
       <p className="citation-card-lead">
-        Shopping categories with the most competitor-led answers that cited no Fender-owned page
+        Unbranded discovery and branded consideration categories with the most competitor-led answers
+        that cited no Fender-owned page
       </p>
       {visible.length === 0 ? (
-        <p className="citation-card-note">No competitor-led shopping answers lacked a Fender-owned citation.</p>
+        <p className="citation-card-note">
+          No competitor-led discovery or consideration answers lacked a Fender-owned citation.
+        </p>
       ) : (
         <ol className="citation-gap-list">
           {visible.map((gap) => (
@@ -185,15 +235,15 @@ function GapsCard({
                 <span className="citation-gap-count">{gap.count}</span>
                 <span className="citation-gap-body">
                   <strong>{gap.categoryLabel}</strong>
-                  <span>
-                    {gap.competitor} led · no Fender-owned page cited
-                  </span>
+                  <span>{gap.competitor} led · no Fender-owned page cited</span>
                   {gap.topDomains.length > 0 ? (
                     <span className="citation-gap-domains">
                       Top cited: {gap.topDomains.map((d) => `${d.domain} (${d.links})`).join(", ")}
                     </span>
                   ) : (
-                    <span className="citation-gap-domains">No third-party links recorded in those answers</span>
+                    <span className="citation-gap-domains">
+                      No third-party links recorded in those answers
+                    </span>
                   )}
                 </span>
               </button>
@@ -214,34 +264,36 @@ export function CitationExecutiveGrid({
   presence,
   scopeNoun,
   ownedPie,
-  association,
-  associationApplicable,
+  byQuestionType,
+  rolesApplicable,
   gaps,
   gapsOk,
   gapsApplicable,
   showAllGaps,
   onToggleAllGaps,
   onPickGap,
+  onPickRoleGroup,
 }: {
   presence: OwnedPresence;
   scopeNoun: string;
   ownedPie: CitationPie | null;
-  association: { arms: [AssociationArm, AssociationArm]; ok: boolean } | null;
-  associationApplicable: boolean;
+  byQuestionType: OwnedByQuestionType | null;
+  rolesApplicable: boolean;
   gaps: CitationGap[];
   gapsOk: boolean;
   gapsApplicable: boolean;
   showAllGaps: boolean;
   onToggleAllGaps: () => void;
   onPickGap: (gap: CitationGap) => void;
+  onPickRoleGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
   return (
     <div className="citation-exec-grid" data-citation-exec>
       <PresenceCard presence={presence} scopeNoun={scopeNoun} ownedPie={ownedPie} />
-      <AssociationCard
-        arms={association?.arms ?? null}
-        ok={association?.ok ?? false}
-        applicable={associationApplicable}
+      <RoleOwnedCard
+        byType={byQuestionType}
+        applicable={rolesApplicable}
+        onPickGroup={onPickRoleGroup}
       />
       <GapsCard
         gaps={gaps}

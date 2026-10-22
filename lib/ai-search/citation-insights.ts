@@ -7,6 +7,14 @@ import {
   type CitationScope,
   type SourceClass,
 } from "@/lib/ai-search/citations";
+import {
+  HEADLINE_ROLES,
+  ROLE_LABELS,
+  isHeadlineRole,
+  questionRole,
+  roleTally,
+  type HeadlineRole,
+} from "@/lib/ai-search/question-role";
 import { callOutcome, categoryLabel, isSmallSample } from "@/lib/ai-search/run-metrics";
 import type { AiCallRow } from "@/lib/ai-search/types";
 
@@ -18,25 +26,43 @@ export type OwnedPresence = {
   totalLinks: number;
 };
 
-export type AssociationArm = {
+export type RoleOwnedGroup = {
   key: "cited_owned" | "no_owned";
   label: string;
-  fenderLed: number;
+  /** Resolved answers in this group. */
   resolved: number;
+  fenderLed: number;
   smallSample: boolean;
+  simulationIds: string[];
 };
 
-export type CitationAssociation = {
-  arms: [AssociationArm, AssociationArm];
-  /** Sum of both arms' resolved counts. Must equal resolved shopping answers in view. */
-  resolvedTotal: number;
+export type RoleOwnedPresence = {
+  role: HeadlineRole;
+  roleLabel: string;
+  /** Resolved answers for this role. Matches summarizeRun().roles.<role>.resolved. */
+  resolved: number;
+  withOwned: number;
+  withoutOwned: number;
+  groups: [RoleOwnedGroup, RoleOwnedGroup];
+  ok: boolean;
+};
+
+export type OwnedByQuestionType = {
+  roles: RoleOwnedPresence[];
+  /** Executive lead: unbranded discovery owned-citation share of resolved. */
+  insight: {
+    role: HeadlineRole;
+    roleLabel: string;
+    withOwned: number;
+    resolved: number;
+  };
   ok: boolean;
 };
 
 export type CitationGap = {
   category: string;
   categoryLabel: string;
-  /** Competitor-led answers in this category with no Fender-owned citation. */
+  /** Competitor-led headline-role answers in this category with no Fender-owned citation. */
   count: number;
   /** Leading competitor brand among those losing answers. */
   competitor: string;
@@ -80,13 +106,22 @@ function answeredInScope(calls: AiCallRow[], scope: CitationScope): AiCallRow[] 
   });
 }
 
-/** Commercial answered calls among the scoped answered set (lead outcomes only exist here). */
+/** Commercial answered calls among the scoped answered set. */
 function shoppingAnswered(calls: AiCallRow[], scope: CitationScope): AiCallRow[] {
   return answeredInScope(calls, scope).filter((call) => call.prompt_kind === "commercial");
 }
 
 function ownedAnswerIds(rows: CitationEvidence[]): Set<string> {
   return new Set(rows.filter((row) => row.sourceClass === "fender_owned").map((row) => row.simulationId));
+}
+
+function isResolvedOutcome(call: AiCallRow): boolean {
+  const outcome = callOutcome(call);
+  return (
+    outcome === "fender_win" ||
+    outcome === "fender_win_disqualified" ||
+    outcome === "competitor_win"
+  );
 }
 
 /** A. Share of scoped answers that cited at least one Fender-owned page, plus owned link share. */
@@ -111,67 +146,90 @@ export function ownedPie(read: CitationRead): OwnedPie | null {
 }
 
 /**
- * B. Fender lead rate among resolved shopping answers that cited a Fender-owned page,
- * versus those that did not. Uses callOutcome: fender_win / resolved
- * (resolved = fender_win + disqualified + competitor_win).
+ * B. Fender-owned page presence by headline question role (unbranded discovery and
+ * branded consideration). Denominators are resolved answers, matching summarizeRun().roles.
+ * Lead rates inside each owned / not-owned group use callOutcome fender_win / resolved.
  */
-export function citationAssociation(
+export function ownedByQuestionType(
   calls: AiCallRow[],
   read: CitationRead,
   scope: CitationScope,
-): CitationAssociation | null {
+): OwnedByQuestionType | null {
   if (scope === "probe") return null;
-  const shopping = shoppingAnswered(calls, scope);
   const ownedIds = ownedAnswerIds(read.rows);
 
-  const arms: AssociationArm[] = (
-    [
-      ["cited_owned", "Cited a Fender-owned page", true],
-      ["no_owned", "Did not cite a Fender-owned page", false],
-    ] as const
-  ).map(([key, label, hasOwned]) => {
-    const group = shopping.filter((call) => ownedIds.has(call.id) === hasOwned);
-    let fenderLed = 0;
-    let resolved = 0;
-    for (const call of group) {
-      const outcome = callOutcome(call);
-      if (outcome === "fender_win") {
-        fenderLed += 1;
-        resolved += 1;
-      } else if (outcome === "fender_win_disqualified" || outcome === "competitor_win") {
-        resolved += 1;
+  const roles: RoleOwnedPresence[] = HEADLINE_ROLES.map((role) => {
+    const expected = roleTally(calls, role);
+    const resolvedCalls = calls.filter(
+      (call) =>
+        call.prompt_kind === "commercial" &&
+        questionRole(call) === role &&
+        isResolvedOutcome(call),
+    );
+    const withOwnedCalls = resolvedCalls.filter((call) => ownedIds.has(call.id));
+    const withoutOwnedCalls = resolvedCalls.filter((call) => !ownedIds.has(call.id));
+
+    const toGroup = (
+      key: "cited_owned" | "no_owned",
+      label: string,
+      groupCalls: AiCallRow[],
+    ): RoleOwnedGroup => {
+      let fenderLed = 0;
+      for (const call of groupCalls) {
+        if (callOutcome(call) === "fender_win") fenderLed += 1;
       }
-    }
-    return { key, label, fenderLed, resolved, smallSample: false };
+      return {
+        key,
+        label,
+        resolved: groupCalls.length,
+        fenderLed,
+        smallSample: false,
+        simulationIds: groupCalls.map((call) => call.id).sort(),
+      };
+    };
+
+    const groups: [RoleOwnedGroup, RoleOwnedGroup] = [
+      toGroup("cited_owned", "Cited a Fender-owned page", withOwnedCalls),
+      toGroup("no_owned", "No Fender-owned page", withoutOwnedCalls),
+    ];
+    const largest = Math.max(groups[0].resolved, groups[1].resolved);
+    groups[0].smallSample = isSmallSample(groups[0].resolved, largest);
+    groups[1].smallSample = isSmallSample(groups[1].resolved, largest);
+
+    const withOwned = groups[0].resolved;
+    const withoutOwned = groups[1].resolved;
+    const ok =
+      withOwned + withoutOwned === expected.resolved &&
+      resolvedCalls.length === expected.resolved;
+
+    return {
+      role,
+      roleLabel: ROLE_LABELS[role],
+      resolved: expected.resolved,
+      withOwned,
+      withoutOwned,
+      groups,
+      ok,
+    };
   });
 
-  const resolvedTotal = arms[0].resolved + arms[1].resolved;
-  let expectedResolved = 0;
-  for (const call of shopping) {
-    const outcome = callOutcome(call);
-    if (
-      outcome === "fender_win" ||
-      outcome === "fender_win_disqualified" ||
-      outcome === "competitor_win"
-    ) {
-      expectedResolved += 1;
-    }
-  }
-  const largest = Math.max(arms[0].resolved, arms[1].resolved);
-  arms[0].smallSample = isSmallSample(arms[0].resolved, largest);
-  arms[1].smallSample = isSmallSample(arms[1].resolved, largest);
-
-  const ok = resolvedTotal === expectedResolved;
+  const unbranded = roles[0];
   return {
-    arms: [arms[0], arms[1]],
-    resolvedTotal,
-    ok,
+    roles,
+    insight: {
+      role: unbranded.role,
+      roleLabel: unbranded.roleLabel,
+      withOwned: unbranded.withOwned,
+      resolved: unbranded.resolved,
+    },
+    ok: roles.every((role) => role.ok),
   };
 }
 
 /**
  * C. Shopping categories ranked by competitor-led answers with no Fender-owned citation.
- * Returns null when the ranking cannot reconcile (should not happen with stored data).
+ * Restricted to unbranded discovery and branded consideration so gaps match the
+ * dashboard's two headline rates (product-fact and shopping-guidance stay out).
  */
 export function citationGaps(
   calls: AiCallRow[],
@@ -189,7 +247,10 @@ export function citationGaps(
   }
 
   const losing = shopping.filter(
-    (call) => callOutcome(call) === "competitor_win" && !ownedIds.has(call.id),
+    (call) =>
+      callOutcome(call) === "competitor_win" &&
+      !ownedIds.has(call.id) &&
+      isHeadlineRole(questionRole(call)),
   );
   const byCategory = new Map<string, AiCallRow[]>();
   for (const call of losing) {

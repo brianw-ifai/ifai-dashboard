@@ -4214,11 +4214,88 @@
     .citation-pie-legend,
     .citation-mix-pct,
     .citation-assoc-bars,
+    .citation-role-list,
+    .citation-role-leads,
     .citation-gap-list,
     .citation-domain-bars {
       margin: 6px 0;
       padding: 0;
       list-style: none;
+    }
+
+    .citation-role-insight {
+      margin: 0 0 6px;
+      color: var(--text-main);
+      font-size: clamp(18px, 1.6vw, 22px);
+      font-weight: 750;
+      line-height: 1.3;
+    }
+
+    .citation-role-list > li + li {
+      margin-top: 14px;
+    }
+
+    .citation-role-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+
+    .citation-role-label strong {
+      color: var(--text-main);
+      font-size: 14px;
+    }
+
+    .citation-role-track {
+      display: flex;
+      width: 100%;
+      min-height: 28px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: color-mix(in srgb, var(--border-color) 70%, transparent);
+    }
+
+    .citation-role-seg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      margin: 0;
+      padding: 0 6px;
+      border: 0;
+      color: #0b1f33;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .citation-role-seg-cited_owned {
+      background: #38bdf8;
+    }
+
+    .citation-role-seg-no_owned {
+      background: #94a3b8;
+    }
+
+    .citation-role-seg:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+      z-index: 1;
+    }
+
+    .citation-role-leads {
+      margin-top: 6px;
+    }
+
+    .citation-role-leads li {
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     .citation-pie-legend li,

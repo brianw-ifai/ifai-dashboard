@@ -73,7 +73,9 @@ const CATEGORY_COLUMNS = [
 
 function matches(row: CitationEvidence, pick: CitationPick) {
   if (!pick) return true;
-  if (pick.field === "gap") return pick.simulationIds.includes(row.simulationId);
+  if (pick.field === "gap" || pick.field === "role_owned") {
+    return pick.simulationIds.includes(row.simulationId);
+  }
   if (pick.field === "domain") return row.domain === pick.value;
   if (pick.field === "class") return row.sourceClass === pick.value;
   if (pick.field === "engine") return row.engine === pick.value;
@@ -152,13 +154,17 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
     ? "every cited link"
     : pick.field === "gap"
       ? `${categoryLabel(pick.value)} gaps (no Fender-owned page)`
-      : pick.field === "class"
-        ? SOURCE_CLASS_LABELS[pick.value as SourceClass]
-        : pick.field === "engine"
-          ? engineLabel(pick.value)
-          : pick.field === "category"
-            ? categoryLabel(pick.value)
-            : pick.value;
+      : pick.field === "role_owned"
+        ? pick.value.includes("cited_owned")
+          ? "answers that cited a Fender-owned page"
+          : "answers with no Fender-owned page"
+        : pick.field === "class"
+          ? SOURCE_CLASS_LABELS[pick.value as SourceClass]
+          : pick.field === "engine"
+            ? engineLabel(pick.value)
+            : pick.field === "category"
+              ? categoryLabel(pick.value)
+              : pick.value;
 
   const caution = citationStorageCaution(snapshot.run.audit_run_id);
   const declaredCitations = snapshot.storedCitationCount ?? snapshot.citations.length;

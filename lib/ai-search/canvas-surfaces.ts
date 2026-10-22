@@ -220,7 +220,7 @@ export function aiSpokeDesc(read: AiSearchRead): string {
   if (read.phase === "no-run") return "No AI run has been published yet, so no AI Search figure is shown.";
   const s = summarizeRun(read.snapshot);
   const state = runStateLabel(s.completeness.state);
-  return `${state} published run — how AI shopping answers cite the web, and whether Fender-owned pages show up.`;
+  return `${state} published run. How AI shopping answers cite the web, and whether Fender-owned pages show up.`;
 }
 
 export type AiSpokeChip = {
