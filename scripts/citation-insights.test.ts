@@ -10,7 +10,14 @@ import {
   ownedPresence,
   sourceMix,
   topDomainBars,
+  unbrandedBrandSites,
 } from "../lib/ai-search/citation-insights.ts";
+import {
+  citationAggregateCopy,
+  citationMonthBounds,
+  citationSnapshotUsable,
+  poolCitationSnapshots,
+} from "../lib/ai-search/citation-aggregate.ts";
 import { EARLIER_OCTOBER_12_RUN_ID } from "../lib/ai-search/review-runs.ts";
 import { questionRole } from "../lib/ai-search/question-role.ts";
 import { roleTally } from "../lib/ai-search/question-role.ts";
@@ -343,6 +350,18 @@ function snapshot(patch: Partial<AiSearchSnapshot> & { runId?: string }): AiSear
   };
 }
 
+test("unbranded brand sites count only brand websites and reconcile", () => {
+  const read = citationEvidence(calls, citations, "commercial");
+  const sites = unbrandedBrandSites(calls, read);
+  assert.ok(sites);
+  assert.equal(sites.ok, true);
+  assert.equal(sites.total, sites.slices.reduce((sum, slice) => sum + slice.links, 0));
+  assert.deepEqual(
+    sites.slices.map((slice) => slice.brand),
+    ["Fender", "Taylor", "Yamaha"],
+  );
+});
+
 test("range labels stay on one run and refuse a missing citation list", () => {
   assert.equal(citationRangeLabel(snapshot({})), "1 of 1 unbranded");
   assert.equal(
@@ -353,4 +372,26 @@ test("range labels stay on one run and refuse a missing citation list", () => {
     citationRangeLabel(snapshot({ runId: EARLIER_OCTOBER_12_RUN_ID })),
     "Citations not listed",
   );
+});
+
+test("a citation window adds usable runs and names the month", () => {
+  const listed = snapshot({});
+  const second = snapshot({ runId: "run-b" });
+  const missing = snapshot({ runId: "missing-run", storedCitationCount: 8, citations: [] });
+  assert.equal(citationSnapshotUsable(listed), true);
+  assert.equal(citationSnapshotUsable(missing), false);
+  const pooled = poolCitationSnapshots([listed, second]);
+  assert.ok(pooled);
+  assert.equal(pooled.calls.length, 2);
+  assert.notEqual(pooled.calls[0].id, pooled.calls[1].id);
+  assert.equal(pooled.citations[0].simulation_id, pooled.calls[0].id);
+  assert.deepEqual(citationMonthBounds("2026-10-18"), { from: "2026-09-19", to: "2026-10-18" });
+  const copy = citationAggregateCopy({
+    window: { kind: "month", from: "2026-09-19", to: "2026-10-18" },
+    included: [listed],
+    omitted: 1,
+  });
+  assert.match(copy, /Last 30 days/);
+  assert.match(copy, /Figures add 1 run/);
+  assert.match(copy, /left out/);
 });

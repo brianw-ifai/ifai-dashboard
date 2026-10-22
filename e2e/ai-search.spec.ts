@@ -93,11 +93,16 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-citation-hero-ratio]")).toContainText(
       /unbranded discovery answers cited a Fender-owned page/,
     );
+    await expect(page.locator("[data-citation-window]")).toContainText(/Figures add \d+ runs?/);
+    await expect(page.locator("[data-citation-hero-pct]")).toContainText(/%/);
+    await expect(page.locator("[data-citation-role-lead]").first()).toBeVisible();
     const linkPie = page.locator("[data-citation-pie='classes']");
-    const ownedPie = page.locator("[data-citation-pie='owned']");
-    const linkTotal = await linkPie.getAttribute("data-pie-total");
-    await expect(ownedPie).toHaveAttribute("data-pie-total", linkTotal ?? "");
-    for (const pie of [linkPie, ownedPie]) {
+    const ownedPie = page.locator("[data-citation-pie='unbranded']");
+    await expect(ownedPie).toHaveAttribute("data-pie-total", String(answered));
+    const brandPie = page.locator("[data-citation-pie='brands']");
+    const pies = [linkPie, ownedPie];
+    if (await brandPie.count()) pies.push(brandPie);
+    for (const pie of pies) {
       const total = Number(await pie.getAttribute("data-pie-total"));
       const counts = await pie.locator("[data-pie-count]").evaluateAll((els) =>
         els.map((el) => Number(el.getAttribute("data-pie-count"))),

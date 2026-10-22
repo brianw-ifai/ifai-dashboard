@@ -331,6 +331,70 @@ export function topDomainBars(read: CitationRead, limit = 10): DomainBar[] {
     });
 }
 
+const BRAND_SITE_NAMES: Array<[string, string]> = [
+  ["fender.com", "Fender"],
+  ["squier.com", "Fender"],
+  ["yamaha.com", "Yamaha"],
+  ["gibson.com", "Gibson"],
+  ["epiphone.com", "Epiphone"],
+  ["taylorguitars.com", "Taylor"],
+  ["prsguitars.com", "PRS"],
+  ["ibanez.com", "Ibanez"],
+  ["sire-usa.com", "Sire"],
+  ["boss.info", "Boss"],
+  ["positivegrid.com", "Positive Grid"],
+  ["martinguitar.com", "Martin"],
+  ["schecterguitars.com", "Schecter"],
+  ["gretschguitars.com", "Gretsch"],
+  ["jacksonguitars.com", "Jackson"],
+  ["charvel.com", "Charvel"],
+  ["evhgear.com", "EVH"],
+];
+
+function brandFromDomain(domain: string): string | null {
+  const host = domain.toLowerCase();
+  for (const [root, brand] of BRAND_SITE_NAMES) {
+    if (host === root || host.endsWith(`.${root}`)) return brand;
+  }
+  return null;
+}
+
+/**
+ * Brand websites cited in unbranded discovery answers. Retail, editorial, and
+ * community links stay in the source mix. Slices are link counts and sum to the total.
+ */
+export function unbrandedBrandSites(
+  calls: AiCallRow[],
+  read: CitationRead,
+): { total: number; slices: Array<{ brand: string; links: number }>; ok: boolean } | null {
+  const unbrandedIds = new Set(
+    calls
+      .filter(
+        (call) =>
+          call.prompt_kind === "commercial" &&
+          call.call_status === "answered" &&
+          questionRole(call) === "unbranded_discovery",
+      )
+      .map((call) => call.id),
+  );
+  const counts = new Map<string, number>();
+  let seen = 0;
+  for (const row of read.rows) {
+    if (!unbrandedIds.has(row.simulationId)) continue;
+    if (row.sourceClass !== "fender_owned" && row.sourceClass !== "competitor_brand") continue;
+    const brand = brandFromDomain(row.domain);
+    if (!brand) continue;
+    seen += 1;
+    counts.set(brand, (counts.get(brand) ?? 0) + 1);
+  }
+  const slices = [...counts.entries()]
+    .map(([brand, links]) => ({ brand, links }))
+    .sort((a, b) => b.links - a.links || a.brand.localeCompare(b.brand));
+  const total = slices.reduce((sum, slice) => sum + slice.links, 0);
+  if (total !== seen) return null;
+  return { total, slices, ok: true };
+}
+
 export function sourceMix(read: CitationRead): SourceMix | null {
   const grouped = groupCitations(read.rows, (row) => row.sourceClass);
   const slices = SOURCE_CLASS_ORDER.map((key) => ({

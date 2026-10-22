@@ -4162,6 +4162,10 @@
       grid-column: span 7;
     }
 
+    .citation-row-domains > .citation-card-gaps {
+      grid-column: span 5;
+    }
+
     .citation-card-mix {
       grid-column: span 5;
     }
@@ -4294,6 +4298,50 @@
       line-height: 1.3;
     }
 
+    .citation-hero-pct {
+      margin: 8px 0 0;
+      color: var(--text-main);
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.2;
+    }
+
+    .citation-hero-pct-figure {
+      color: #e11d48;
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
+    }
+
+    .citation-window {
+      margin: 0 0 10px;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .citation-card-kicker-follow {
+      margin-top: 16px;
+    }
+
+    .citation-chart-tip.ifai-term {
+      border-bottom: 0;
+    }
+
+    .citation-chart-tip.ifai-term:hover,
+    .citation-chart-tip.ifai-term:focus-visible {
+      color: inherit;
+      border-bottom: 0;
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+
+    .citation-pie-legend .ifai-term,
+    .citation-domain-btn.ifai-term {
+      border-bottom: 0;
+    }
+
     .citation-pie {
       display: flex;
       align-items: flex-start;
@@ -4322,7 +4370,8 @@
       height: 170px;
     }
 
-    .citation-pie-disc-mix {
+    .citation-pie-disc-mix,
+    .citation-pie-disc-brands {
       width: 220px;
       height: 220px;
     }
@@ -4586,6 +4635,16 @@
       min-width: 4px;
     }
 
+    .citation-card-mix .citation-pie-mix {
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+
+    .citation-card-mix .citation-pie-mix figcaption {
+      flex: 1 1 auto;
+      min-width: 140px;
+    }
+
     .citation-pie-mix {
       flex-wrap: wrap;
     }
@@ -4615,7 +4674,9 @@
       }
 
       .citation-card-domains,
-      .citation-card-mix {
+      .citation-card-mix,
+      .citation-row-domains > .citation-card-domains,
+      .citation-row-domains > .citation-card-gaps {
         grid-column: auto;
       }
 
@@ -4628,7 +4689,8 @@
         height: 160px;
       }
 
-      .citation-pie-disc-mix {
+      .citation-pie-disc-mix,
+      .citation-pie-disc-brands {
         width: 180px;
         height: 180px;
       }

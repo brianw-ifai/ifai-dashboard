@@ -10,17 +10,28 @@ import type {
   RoleOwnedGroup,
   RoleOwnedPresence,
 } from "@/lib/ai-search/citation-insights";
+import type { HeadlineRole } from "@/lib/ai-search/question-role";
 import { SMALL_SAMPLE_LABEL, pct } from "@/lib/ai-search/summary";
+
+const ROLE_TERMS: Partial<Record<HeadlineRole, "unbranded discovery" | "branded consideration">> = {
+  unbranded_discovery: "unbranded discovery",
+  branded_consideration: "branded consideration",
+};
+
+function RoleName({ role, label }: { role: HeadlineRole; label: string }) {
+  const term = ROLE_TERMS[role];
+  return term ? <AiTerm term={term}>{label}</AiTerm> : <span>{label}</span>;
+}
 
 function PresenceCard({
   presence,
   scopeNoun,
-  ownedPie,
+  unbrandedPie,
   unbranded,
 }: {
   presence: OwnedPresence;
   scopeNoun: string;
-  ownedPie: CitationPie | null;
+  unbrandedPie: CitationPie | null;
   unbranded: { withOwned: number; resolved: number } | null;
 }) {
   const hero = unbranded
@@ -28,6 +39,7 @@ function PresenceCard({
     : presence.answered > 0
       ? pct(presence.answersWithOwned, presence.answered)
       : "No answers";
+  const share = unbranded ? pct(unbranded.withOwned, unbranded.resolved) : null;
   return (
     <section className="citation-card citation-card-presence" data-citation-presence>
       <h3 className="citation-card-kicker">
@@ -36,23 +48,36 @@ function PresenceCard({
       <p className="citation-hero-value" data-citation-hero-value>
         {hero}
       </p>
+      {share && share !== "No resolved answers" ? (
+        <p className="citation-hero-pct" data-citation-hero-pct>
+          <span className="citation-hero-pct-figure">{share}</span> cited a Fender-owned page
+        </p>
+      ) : null}
       <p className="citation-hero-ratio" data-citation-hero-ratio>
-        {unbranded
-          ? "unbranded discovery answers cited a Fender-owned page"
-          : `${presence.answersWithOwned} of ${presence.answered} ${scopeNoun} cited at least one Fender-owned page`}
+        {unbranded ? (
+          <>
+            <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> answers cited a Fender-owned page
+          </>
+        ) : (
+          `${presence.answersWithOwned} of ${presence.answered} ${scopeNoun} cited at least one Fender-owned page`
+        )}
       </p>
       <p className="citation-card-secondary" data-ai-fender-owned>
         {presence.answersWithOwned} of {presence.answered} {scopeNoun} cited at least one Fender-owned page.{" "}
         {presence.ownedLinks} of {presence.totalLinks} cited links (
         {pct(presence.ownedLinks, presence.totalLinks)}) led to Fender-owned sites.
       </p>
-      {ownedPie && ownedPie.total > 0 ? (
-        <figure className="citation-pie citation-pie-owned" data-citation-pie="owned" data-pie-total={ownedPie.total}>
-          <CitationPieDisc pie={ownedPie} sizeClass="citation-pie-disc citation-pie-disc-owned" />
+      {unbrandedPie && unbrandedPie.total > 0 ? (
+        <figure className="citation-pie citation-pie-owned" data-citation-pie="unbranded" data-pie-total={unbrandedPie.total}>
+          <CitationPieDisc
+            pie={unbrandedPie}
+            sizeClass="citation-pie-disc citation-pie-disc-owned"
+            tip={`This pie is the same count as ${hero}. ${unbrandedPie.slices.map((slice) => `${slice.count} ${slice.label}`).join(". ")}. Total ${unbrandedPie.total} unbranded discovery answers.`}
+          />
           <figcaption>
-            <strong>{ownedPie.title}</strong>
-            <CitationPieLegend pie={ownedPie} />
-            <p>Slices total {ownedPie.total} {ownedPie.totalLabel}.</p>
+            <strong>Same {hero} answers</strong>
+            <CitationPieLegend pie={unbrandedPie} />
+            <p>Slices total {unbrandedPie.total} {unbrandedPie.totalLabel}.</p>
           </figcaption>
         </figure>
       ) : null}
@@ -90,19 +115,52 @@ function RoleGroupButton({
   );
 }
 
+function SourceMixFigure({ pie }: { pie: CitationPie | null }) {
+  if (pie == null) {
+    return <p data-citation-reconcile>The source-mix chart is hidden because its slices do not match the cited-link total.</p>;
+  }
+  if (pie.total === 0) return <p className="citation-card-note">No cited links in this view.</p>;
+  return (
+    <>
+      <h3 className="citation-card-kicker">Source mix</h3>
+      <figure className="citation-pie citation-pie-mix" data-citation-pie="classes" data-pie-total={pie.total}>
+        <CitationPieDisc
+          pie={pie}
+          sizeClass="citation-pie-disc citation-pie-disc-mix"
+          tip={`Source mix of ${pie.total} cited links. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}.`}
+        />
+        <figcaption>
+          <strong>
+            Cited links by <AiTerm term="source class">source class</AiTerm>
+          </strong>
+          <CitationPieLegend pie={pie} />
+          <p>
+            Slices total {pie.total} {pie.totalLabel}.
+          </p>
+        </figcaption>
+      </figure>
+    </>
+  );
+}
+
 function RoleOwnedCard({
   byType,
   applicable,
+  mixPie,
+  showSmallSample,
   onPickGroup,
 }: {
   byType: OwnedByQuestionType | null;
   applicable: boolean;
+  mixPie: CitationPie | null;
+  showSmallSample: boolean;
   onPickGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
+  const mix = <SourceMixFigure pie={mixPie} />;
   if (!applicable) {
     return (
-      <section className="citation-card citation-card-roles" data-citation-association>
-        <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>
+      <section className="citation-card citation-card-mix" data-citation-association>
+        {mix}
         <p className="citation-card-note">
           Lead rates apply to shopping answers. Product fact checks do not name a brand leader, so this
           comparison is not shown for this scope.
@@ -112,8 +170,8 @@ function RoleOwnedCard({
   }
   if (!byType || !byType.ok) {
     return (
-      <section className="citation-card citation-card-roles" data-citation-association>
-        <h3 className="citation-card-kicker">Fender-owned pages by question type</h3>
+      <section className="citation-card citation-card-mix" data-citation-association>
+        {mix}
         <p data-citation-reconcile>
           The role bars are hidden because owned and not-owned groups do not match each role&apos;s
           resolved total.
@@ -123,81 +181,94 @@ function RoleOwnedCard({
   }
 
   return (
-    <section className="citation-card citation-card-roles" data-citation-association>
-      <h3 className="citation-card-kicker">By question type</h3>
-      <ul className="citation-glance-list">
-        {byType.roles.map((role) => (
-          <li key={role.role} data-citation-role={role.role} data-role-resolved={role.resolved}>
-            <button
-              type="button"
-              className="citation-glance-hit"
-              data-citation-role-group={`${role.role}:${role.groups[0].key}`}
-              onClick={() => onPickGroup(role, role.groups[0])}
-            >
-              <span className="citation-glance-figure">
-                {role.withOwned} of {role.resolved}
-              </span>
-              <span className="citation-glance-label">{role.roleLabel}</span>
-            </button>
-            <span hidden data-role-n={role.groups[0].resolved} />
-            <span hidden data-role-n={role.groups[1].resolved} />
-          </li>
-        ))}
+    <section className="citation-card citation-card-mix" data-citation-association>
+      {mix}
+      <h3 className="citation-card-kicker citation-card-kicker-follow">By question type</h3>
+      <ul className="citation-role-list">
+        {byType.roles.map((role) => {
+          const total = Math.max(role.resolved, 1);
+          return (
+            <li key={role.role} data-citation-role={role.role} data-role-resolved={role.resolved}>
+              <div className="citation-role-label">
+                <strong>
+                  <RoleName role={role.role} label={role.roleLabel} />
+                </strong>
+                <span>
+                  {role.withOwned} of {role.resolved} cited a Fender-owned page
+                </span>
+              </div>
+              <div
+                className="citation-role-track citation-chart-tip ifai-term"
+                role="img"
+                tabIndex={0}
+                data-ifai-tooltip-title={role.roleLabel}
+                data-ifai-tooltip-desc={`${role.withOwned} of ${role.resolved} ${role.roleLabel} answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
+                aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
+              >
+                <RoleGroupButton
+                  role={role}
+                  group={role.groups[0]}
+                  share={role.groups[0].resolved / total}
+                  onPick={onPickGroup}
+                />
+                <RoleGroupButton
+                  role={role}
+                  group={role.groups[1]}
+                  share={role.groups[1].resolved / total}
+                  onPick={onPickGroup}
+                />
+              </div>
+              <ul className="citation-role-leads">
+                {role.groups.map((group) =>
+                  group.resolved > 0 ? (
+                    <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
+                      {group.label}: Fender led {group.fenderLed} of {group.resolved}
+                      {showSmallSample && group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            </li>
+          );
+        })}
       </ul>
-      <details className="citation-role-details">
-        <summary>Lead rates in each group</summary>
-        <ul className="citation-role-list">
-          {byType.roles.map((role) => {
-            const total = Math.max(role.resolved, 1);
-            return (
-              <li key={role.role}>
-                <div className="citation-role-label">
-                  <strong>{role.roleLabel}</strong>
-                  <span>
-                    {role.withOwned} with a Fender-owned page · {role.withoutOwned} without
-                  </span>
-                </div>
-                <div
-                  className="citation-role-track"
-                  role="img"
-                  aria-label={`${role.roleLabel}: ${role.withOwned} of ${role.resolved} resolved answers cited a Fender-owned page. ${role.withoutOwned} did not.`}
-                >
-                  <RoleGroupButton
-                    role={role}
-                    group={role.groups[0]}
-                    share={role.groups[0].resolved / total}
-                    onPick={onPickGroup}
-                  />
-                  <RoleGroupButton
-                    role={role}
-                    group={role.groups[1]}
-                    share={role.groups[1].resolved / total}
-                    onPick={onPickGroup}
-                  />
-                </div>
-                <ul className="citation-role-leads">
-                  {role.groups.map((group) =>
-                    group.resolved > 0 ? (
-                      <li key={group.key} data-citation-role-lead={`${role.role}:${group.key}`}>
-                        {group.label}: Fender led {group.fenderLed} of {group.resolved}
-                        {group.smallSample ? ` · ${SMALL_SAMPLE_LABEL}` : ""}
-                      </li>
-                    ) : null,
-                  )}
-                </ul>
-              </li>
-            );
-          })}
-        </ul>
-      </details>
       <p className="citation-card-caveat" data-citation-assoc-caveat>
-        Counts from one run. An association, not proof of cause.
+        {showSmallSample ? "Counts from one run. " : "Counts add the runs in this window. "}
+        An association, not proof of cause.
       </p>
     </section>
   );
 }
 
-function GapsCard({
+function BrandCard({ pie }: { pie: CitationPie | null }) {
+  return (
+    <section className="citation-card citation-card-brands" data-citation-brands>
+      <h3 className="citation-card-kicker">
+        Brands cited in <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>
+      </h3>
+      {pie == null ? (
+        <p data-citation-reconcile>The brand chart is hidden because its slices do not match the brand-site link total.</p>
+      ) : pie.total === 0 ? (
+        <p className="citation-card-note">No brand website was cited in unbranded discovery answers.</p>
+      ) : (
+        <figure className="citation-pie citation-pie-mix" data-citation-pie="brands" data-pie-total={pie.total}>
+          <CitationPieDisc
+            pie={pie}
+            sizeClass="citation-pie-disc citation-pie-disc-brands"
+            tip={`Brand websites cited in unbranded discovery. ${pie.slices.map((slice) => `${slice.label} ${slice.count}`).join(". ")}. Retail and editorial sites are in the source mix.`}
+          />
+          <figcaption>
+            <strong>Brand websites only</strong>
+            <CitationPieLegend pie={pie} />
+            <p>Slices total {pie.total} {pie.totalLabel}.</p>
+          </figcaption>
+        </figure>
+      )}
+    </section>
+  );
+}
+
+export function GapsCard({
   gaps,
   ok,
   applicable,
@@ -283,28 +354,22 @@ function GapsCard({
 export function CitationExecutiveGrid({
   presence,
   scopeNoun,
-  ownedPie,
+  unbrandedPie,
+  mixPie,
+  brandPie,
   byQuestionType,
   rolesApplicable,
-  gaps,
-  gapsOk,
-  gapsApplicable,
-  showAllGaps,
-  onToggleAllGaps,
-  onPickGap,
+  showSmallSample,
   onPickRoleGroup,
 }: {
   presence: OwnedPresence;
   scopeNoun: string;
-  ownedPie: CitationPie | null;
+  unbrandedPie: CitationPie | null;
+  mixPie: CitationPie | null;
+  brandPie: CitationPie | null;
   byQuestionType: OwnedByQuestionType | null;
   rolesApplicable: boolean;
-  gaps: CitationGap[];
-  gapsOk: boolean;
-  gapsApplicable: boolean;
-  showAllGaps: boolean;
-  onToggleAllGaps: () => void;
-  onPickGap: (gap: CitationGap) => void;
+  showSmallSample: boolean;
   onPickRoleGroup: (role: RoleOwnedPresence, group: RoleOwnedGroup) => void;
 }) {
   return (
@@ -312,7 +377,7 @@ export function CitationExecutiveGrid({
       <PresenceCard
         presence={presence}
         scopeNoun={scopeNoun}
-        ownedPie={ownedPie}
+        unbrandedPie={unbrandedPie}
         unbranded={
           rolesApplicable && byQuestionType?.ok
             ? { withOwned: byQuestionType.insight.withOwned, resolved: byQuestionType.insight.resolved }
@@ -322,16 +387,11 @@ export function CitationExecutiveGrid({
       <RoleOwnedCard
         byType={byQuestionType}
         applicable={rolesApplicable}
+        mixPie={mixPie}
+        showSmallSample={showSmallSample}
         onPickGroup={onPickRoleGroup}
       />
-      <GapsCard
-        gaps={gaps}
-        ok={gapsOk}
-        applicable={gapsApplicable}
-        showAll={showAllGaps}
-        onToggleAll={onToggleAllGaps}
-        onPickGap={onPickGap}
-      />
+      {rolesApplicable ? <BrandCard pie={brandPie} /> : null}
     </div>
   );
 }

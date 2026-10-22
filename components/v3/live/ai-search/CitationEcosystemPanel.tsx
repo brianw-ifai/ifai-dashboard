@@ -4,7 +4,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import { clientColumn, ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
-import { useAiHistoryOptional, type TrendLoad } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
+import { useCitationAggregate } from "@/components/v3/live/ai-search/useCitationAggregate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { CitationEvidenceTable } from "@/components/v3/live/ai-search/CitationEvidenceTable";
 import {
@@ -25,8 +26,6 @@ import {
   type CitationScope,
   type SourceClass,
 } from "@/lib/ai-search/citations";
-import { citationRangeLabel } from "@/lib/ai-search/citation-insights";
-import { formatDay, utcDay } from "@/lib/ai-search/history-eligibility";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -117,7 +116,15 @@ function PickButton({
   );
 }
 
-function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
+function Ecosystem({
+  snapshot,
+  copy,
+  singleRun,
+}: {
+  snapshot: AiSearchSnapshot;
+  copy: string;
+  singleRun: boolean;
+}) {
   const focus = useEvidenceFocus();
   const [scope, setScope] = useState<CitationScope>("commercial");
   const [pick, setPick] = useState<CitationPick>(() =>
@@ -185,11 +192,15 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </p>
         ) : citationUrlsLoaded ? (
           <>
+            <p className="citation-window" data-citation-window>
+              {copy}
+            </p>
             <CitationHero
               snapshot={snapshot}
               read={read}
               scope={scope}
               scopeNoun={scopeNoun}
+              showSmallSample={singleRun}
               onScope={(next) => {
                 setScope(next);
                 setPick(null);
@@ -338,93 +349,51 @@ function RangeNotice({ heading, children, tone }: { heading: string; children: R
   );
 }
 
-function CitationRangeRuns({ snapshots }: { snapshots: AiSearchSnapshot[] }) {
-  const latestId = snapshots[snapshots.length - 1]?.run.audit_run_id ?? "";
-  const ids = snapshots.map((snapshot) => snapshot.run.audit_run_id).join(",");
-  const [focusedId, setFocusedId] = useState(latestId);
-  const [appliedIds, setAppliedIds] = useState(ids);
-  if (ids !== appliedIds) {
-    setAppliedIds(ids);
-    setFocusedId(latestId);
-  }
-  const snapshot =
-    snapshots.find((item) => item.run.audit_run_id === focusedId) ?? snapshots[snapshots.length - 1];
-  if (!snapshot) {
+function CitationAggregateBody() {
+  const aggregate = useCitationAggregate();
+  if (aggregate.phase === "loading") {
     return (
-      <RangeNotice heading="No runs in this selection" tone="empty">
-        No stored review runs fall in this selection.
+      <RangeNotice heading="Adding the runs in this selection" tone="loading">
+        Reading each stored run. Figures appear when those runs load. They are added together, not shown as one snapshot.
       </RangeNotice>
     );
   }
-
+  if (aggregate.phase === "error") {
+    return (
+      <RangeNotice heading="These runs did not load" tone="error">
+        {aggregate.message} No citation figure is shown for this selection.
+      </RangeNotice>
+    );
+  }
+  if (aggregate.phase === "empty") {
+    return (
+      <RangeNotice heading="No citation total" tone="empty">
+        {aggregate.message}
+      </RangeNotice>
+    );
+  }
   return (
-    <>
-      <div className="citation-range" data-citation-range>
-        <p className="citation-range-note">
-          Figures are for the run you select. These runs are not added together.
-        </p>
-        <div className="citation-range-runs" role="group" aria-label="Runs in this selection">
-          {snapshots.map((item) => {
-            const day = utcDay(item.run.published_at ?? item.run.completed_at);
-            const selected = item.run.audit_run_id === snapshot.run.audit_run_id;
-            return (
-              <button
-                key={item.run.audit_run_id}
-                type="button"
-                className={`citation-range-run${selected ? " active" : ""}`}
-                data-citation-range-run={item.run.audit_run_id}
-                aria-pressed={selected}
-                onClick={() => setFocusedId(item.run.audit_run_id)}
-              >
-                <strong>{day ? formatDay(day) : "Undated run"}</strong>
-                <span>{citationRangeLabel(item)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <Ecosystem key={snapshot.run.audit_run_id} snapshot={snapshot} />
-    </>
+    <Ecosystem
+      key={`${aggregate.snapshot.run.audit_run_id}:${aggregate.snapshot.calls.length}`}
+      snapshot={aggregate.snapshot}
+      copy={aggregate.copy}
+      singleRun={aggregate.singleRun}
+    />
   );
-}
-
-function CitationRangeBody({ trend }: { trend: TrendLoad }) {
-  if (trend.phase === "loading" || trend.phase === "idle") {
-    return (
-      <RangeNotice heading="Loading the runs in this selection" tone="loading">
-        Reading each stored run. Figures appear when those runs load, and they are not added together.
-      </RangeNotice>
-    );
-  }
-  if (trend.phase === "error" || trend.phase === "unavailable") {
-    return (
-      <RangeNotice heading="These runs did not load" tone={trend.phase}>
-        {trend.message} No citation figure is shown for this selection.
-      </RangeNotice>
-    );
-  }
-  if (trend.snapshots.length === 0) {
-    return (
-      <RangeNotice heading="No runs in this selection" tone="empty">
-        No stored review runs fall in this selection.
-      </RangeNotice>
-    );
-  }
-  return <CitationRangeRuns snapshots={trend.snapshots} />;
 }
 
 export function CitationEcosystemPanel() {
   const history = useAiHistoryOptional();
-  if (history && (history.mode.kind === "range" || history.mode.kind === "all")) {
+  if (history?.mode.kind === "run") {
     return (
-      <div className="ai-search-panel">
-        <CitationRangeBody trend={history.trend} />
-      </div>
+      <AiReadGate showFreshness={false}>
+        {(snapshot) => <Ecosystem snapshot={snapshot} copy="This run only." singleRun />}
+      </AiReadGate>
     );
   }
   return (
-    <AiReadGate showFreshness={false}>
-      {(snapshot) => <Ecosystem snapshot={snapshot} />}
-    </AiReadGate>
+    <div className="ai-search-panel">
+      <CitationAggregateBody />
+    </div>
   );
 }
