@@ -59,7 +59,7 @@ test("the Phase 1 and enterprise ROI lines do not wear the live retail headline"
   assert.match(enterprise, /\$38M to \$62M/);
 });
 
-test("Commercial Sizing does not paste the live headline into the $680,000 estimate", () => {
+test("Opportunity does not paste the live headline into the $680,000 estimate", () => {
   const sizing = bound(spec.spokes.hub.tabTemplates[2] as string);
   assert.equal(sizing.includes("follows the live retail headline"), false);
   assert.equal(sizing.includes(LIVE_HEADLINE), false);
@@ -88,9 +88,9 @@ test("client copy does not discuss IntoFocus fees or retainers", () => {
   assert.equal(raw.includes("Service Fee"), false);
 });
 
-test("the first Action Item says Featured Offer", () => {
+test("the first Action Item says Buy Box", () => {
   const actions = bound(spec.spokes.suggestions.tabTemplates[0] as string);
   const first = actions.split("action-card")[1]?.split("action-card")[0] ?? "";
-  assert.match(first, /Featured Offer/);
+  assert.match(first, /Buy Box/);
   assert.equal(/buy button/i.test(first), false);
 });

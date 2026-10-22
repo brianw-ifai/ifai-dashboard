@@ -3,19 +3,53 @@ import { test } from "node:test";
 import { buildCanvasSearchParams, tabIndexFromSlug, tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 
 const hubTabs = [
-  "Executive Briefing",
-  "Division Performance (3,598 SKUs)",
-  "Commercial Sizing: $680K Pilot vs $38M to $62M Enterprise",
+  "Briefing",
+  "Performance",
+  "Opportunity",
 ];
+
+const aiTabs = ["Run Summary", "Run Details", "Product Fact Checks", "Citation Ecosystem"];
 
 const specTabs = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
 
 test("the renamed executive briefing keeps the earlier Buy Box tab slug", () => {
-  assert.equal(tabSlug(hubTabs[0]), "executive-briefing");
+  assert.equal(tabSlug(hubTabs[0]), "briefing");
   assert.equal(tabSlug("Executive Briefing & Buy Box Coverage"), "executive-briefing-buy-box-coverage");
+  assert.equal(tabSlug("Executive Briefing"), "executive-briefing");
   assert.equal(tabIndexFromSlug(hubTabs, "executive-briefing"), 0);
   assert.equal(tabIndexFromSlug(hubTabs, "executive-briefing-buy-box-coverage"), 0);
+  assert.equal(hubTabs[0], "Briefing");
   assert.doesNotMatch(hubTabs[0], /buy box/i);
+});
+
+test("hub tab aliases open Briefing, Performance, and Opportunity", () => {
+  assert.deepEqual(hubTabs.map(tabSlug), ["briefing", "performance", "opportunity"]);
+
+  assert.equal(tabIndexFromSlug(hubTabs, "briefing"), 0);
+  assert.equal(tabIndexFromSlug(hubTabs, "performance"), 1);
+  assert.equal(tabIndexFromSlug(hubTabs, "opportunity"), 2);
+
+  assert.equal(
+    tabIndexFromSlug(hubTabs, "commercial-sizing-680k-pilot-vs-38m-to-62m-enterprise"),
+    2,
+  );
+
+  // Old Division Performance titles included a live SKU count in the slug.
+  assert.equal(tabIndexFromSlug(hubTabs, "division-performance"), 1);
+  assert.equal(tabIndexFromSlug(hubTabs, "division-performance-3-598-skus"), 1);
+  assert.equal(tabIndexFromSlug(hubTabs, "division-performance-3598-skus"), 1);
+
+  // Prefix rule stays narrow: unrelated tabs are unchanged.
+  assert.equal(tabIndexFromSlug(aiTabs, "division-performance-3-598-skus"), 0);
+  assert.equal(tabIndexFromSlug(aiTabs, "run-details"), 1);
+});
+
+test("AI Search Simulations aliases open Run Details", () => {
+  assert.equal(tabSlug(aiTabs[1]), "run-details");
+  assert.equal(tabIndexFromSlug(aiTabs, "run-details"), 1);
+  assert.equal(tabIndexFromSlug(aiTabs, "simulations"), 1);
+  assert.equal(tabIndexFromSlug(aiTabs, "100-ai-simulations-interactive-explorer"), 1);
+  assert.equal(tabIndexFromSlug(aiTabs, "run-summary"), 0);
 });
 
 test("the renamed AI Readiness tabs keep the slugs copied from their old titles", () => {

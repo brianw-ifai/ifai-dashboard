@@ -5,7 +5,7 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 const JOB_LABELS: Record<string, string> = {
   catalog_harvester: "Catalog",
   buybox_seller_harvester: "Buy Box sellers",
-  featured_offer_keepa: "Featured Offer",
+  featured_offer_keepa: "Buy Box",
   map_leakage_walmart: "Walmart MAP",
   map_parity_musiciansfriend: "MF MAP",
   spec_readiness: "Spec audit",

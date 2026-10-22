@@ -19,7 +19,7 @@ import { formatCheckedAt } from "@/lib/fender-canvas/featured-offer-copy";
 
 export const FEATURED_OFFER_TABLE_COLUMNS: RetailColumn[] = [
   { id: "listing", name: "Listing", label: "Listing", width: 230, minWidth: 140, sort: "text" },
-  { id: "state", name: "Featured Offer", label: "Featured Offer", width: 150, minWidth: 110, sort: "text" },
+  { id: "state", name: "Buy Box", label: "Buy Box", width: 150, minWidth: 110, sort: "text" },
   {
     id: "offer",
     name: "Observed offer",

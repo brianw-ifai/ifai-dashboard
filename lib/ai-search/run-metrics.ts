@@ -21,7 +21,7 @@ export function engineLabel(engine: string | null | undefined): string {
 
 export function modelLabel(model: string | null | undefined): string {
   const text = model?.trim();
-  return text ? text : "Model not recorded";
+  return text ? text : "not recorded";
 }
 
 export function categoryLabel(category: string | null | undefined): string {

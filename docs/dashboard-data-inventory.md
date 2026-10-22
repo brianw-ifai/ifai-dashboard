@@ -10,7 +10,7 @@ Exhaustive catalogue of every data point on the **Fender Brand Intelligence Canv
 ## 0. How to read this file
 
 - **Nothing here is live.** There are no `fetch()` calls, API routes, or database reads. Every number is a TypeScript literal or an HTML string inside a spoke `render()` function.
-- **Featured Offer is the Buy Box.** Amazon's current name is Featured Offer. Buy Box and BB in this file mean that same button. New writing uses Featured Offer. See `docs/featured-offer-high-price.md`.
+- **Buy Box is the primary client name** for Amazon's purchasing button. Tooltips may note that Amazon also calls it the Featured Offer. Buy Box and BB in this file mean that same button. See `docs/featured-offer-high-price.md`.
 - **Fender is Partner-led.** The five seller types are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
 - **No runtime aggregation.** Spoke panels, node stats, tickers, and tour copy are all authored independently. If a total “should” equal its parts, that arithmetic was done by hand in the copy, not in code.
 - **“Appearances”** lists every UI surface that shows the same value (or the same fact restated). Duplicate rows are intentional.
@@ -26,7 +26,7 @@ Exhaustive catalogue of every data point on the **Fender Brand Intelligence Canv
 
 **Filters** (camera targets only — they do not slice or recompute data):
 
-- Entire Brand Portfolio (124 SKUs)
+- Entire Summary (124 SKUs)
 - Electric Division (Strat, Tele, Jazzmaster)
 - Acoustic & Hybrids (Acoustasonic, Paramount)
 - Bass Division (Precision, Jazz Bass)
@@ -100,9 +100,9 @@ From `fenderCanvasSpec.nodes`. Stats on the bubble are what the canvas shows at 
 
 | Node id | Title | Stats | Meta | Tooltip extras |
 | --- | --- | --- | --- | --- |
-| `hub` | BRAND PORTFOLIO | 41%, 4 Anomalies | 124 SKUs · **5 Divisions** | Opens Master Executive Briefing (new hub spoke) |
+| `hub` | SUMMARY | 41%, 4 Anomalies | 124 SKUs · **5 Divisions** | Opens Master Briefing (new hub spoke) |
 | `spoke-aeo` | BRAND AEO | 41/100, −11 pts | 100 Tracked Queries | Strong heritage recognition diluted in spec & value queries |
-| `spoke-retail` | PORTFOLIO RETAIL | 68%, **14 Flagged** | 124 ASINs · Buy Box | 18% suppressed, 14% lost to 3P |
+| `spoke-retail` | CATALOG HEALTH | 68%, **14 Flagged** | 124 ASINs · Buy Box | 18% suppressed, 14% lost to 3P |
 | `spoke-specs` | SPEC READINESS | 34%, 14 Gaps | Schema & A+ Grids | 14 of 18 lines lack comparison grids |
 | `spoke-competitors` | COMPETITIVE RADAR | 6 Rivals, −29% Gap | Taylor · PRS · Boss · Yamaha | Also Gibson/Epiphone, Ibanez in tooltip |
 | `spoke-fixes` | BRAND FIXES | 18 Fixes, +$680K | Pilot / Enterprise | +$680k Pilot / +$28.4M Enterprise |

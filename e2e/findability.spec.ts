@@ -247,25 +247,19 @@ const OUTCOME_LISTINGS: Array<[string, string, string]> = [
   ["not_checked", "1", "B00UNCHECKED"],
 ];
 
-async function selectFindabilityWidget(page: Page) {
-  await page.locator(".canvas-metric-widget").first().locator(".metric-widget-config").click();
-  const picker = page.getByRole("dialog", { name: "Choose metric for widget 1" });
-  const option = picker.locator(".metric-widget-option", { hasText: "Exact official product pages" });
-  await expect(option).toContainText("2");
-  await expect(option).not.toContainText("%");
-  await option.click();
-  const widget = page.locator(".canvas-metric-widget").first();
-  await expect(widget.locator(".metric-widget-value")).toHaveText("2");
-  const detail = widget.locator(".metric-widget-detail");
-  await expect(detail).toContainText("1 family page");
-  await expect(detail).toContainText("1 finished search with no defensible page");
-  await expect(detail).toContainText("1 ambiguous match");
-  await expect(detail).toContainText("1 unchecked listing");
-  await expect(widget).not.toContainText("%");
-  await expect(widget).not.toContainText("50.0%");
-  await expect(widget).not.toContainText("29.2%");
-  await expect(widget).not.toContainText("pages found");
-  return widget;
+async function openFindabilityFromBubble(page: Page) {
+  await page.locator("[data-graph-node-id='spoke-specs']").focus();
+  const slot = page.locator("[data-hub-slot='opportunity']");
+  await expect(slot.locator("[data-hub-slot-figure]")).toHaveText("2");
+  await expect(slot).toContainText("1 family page");
+  await expect(slot).toContainText("1 finished search with no defensible page");
+  await expect(slot).toContainText("1 ambiguous match");
+  await expect(slot).toContainText("1 unchecked listing");
+  await expect(slot).not.toContainText("%");
+  await expect(slot).not.toContainText("50.0%");
+  await expect(slot).not.toContainText("29.2%");
+  await expect(slot).not.toContainText("pages found");
+  await slot.click();
 }
 
 async function chevronAngle(button: ReturnType<Page["locator"]>) {
@@ -308,8 +302,7 @@ for (const viewport of [
     const canvas = new Canvas(page);
     await canvas.open();
 
-    const widget = await selectFindabilityWidget(page);
-    await widget.locator(".metric-widget-body").click();
+    await openFindabilityFromBubble(page);
     await expect(canvas.activeTab).toContainText("Findability");
     await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
 

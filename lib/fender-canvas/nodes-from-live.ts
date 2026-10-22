@@ -158,7 +158,7 @@ export function buildLiveNodes(
       r: 98,
       status: "danger",
       variant: "hub",
-      title: "Brand Portfolio",
+      title: "Summary",
       stats: [
         `${formatInt(m.catalog_skus)} SKUs`,
         `${formatInt(bundle.divisions.length || m.division_count)} Divisions`,
@@ -167,8 +167,8 @@ export function buildLiveNodes(
       meta: "Click for Master View",
       spokeId: "hub",
       tooltip: {
-        title: "Brand Portfolio Overview",
-        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for executive briefing and division performance.`,
+        title: "Summary",
+        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for Briefing and Performance.`,
       },
     },
   ];

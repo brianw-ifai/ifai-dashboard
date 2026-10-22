@@ -28,7 +28,10 @@ export function probeState(row: AiProbeRow): ProbeState {
 
 export type ProbeEvidence = {
   key: string;
+  auditRunId: string;
   simId: number;
+  /** Matching call id on the displayed snapshot, when the probe joins a call row. */
+  callId: string | null;
   promptKey: string;
   prompt: string;
   engine: string;
@@ -112,21 +115,30 @@ function factCheckCoverage(rows: ProbeEvidence[]): FactCheckCoverage {
 }
 
 export function driftRead(calls: AiCallRow[], probes: AiProbeRow[]): DriftRead {
+  const callIdByProbe = new Map<string, string>();
+  for (const call of calls) {
+    callIdByProbe.set(`${call.audit_run_id}:${call.sim_id}`, call.id);
+  }
   const rows: ProbeEvidence[] = probes
-    .map((row) => ({
-      key: `${row.audit_run_id}:${row.sim_id}`,
-      simId: row.sim_id,
-      promptKey: row.prompt_key ?? "",
-      prompt: cleanPrompt(row.prompt),
-      engine: (row.engine ?? "").toLowerCase(),
-      model: row.model,
-      state: probeState(row),
-      claim: row.verified_claim?.trim() || null,
-      sourceUrl: row.verified_source_url?.trim() || null,
-      evidence: row.hallucination_evidence?.trim() || null,
-      checkedAt: row.created_at,
-      verifiedAt: row.verified_at,
-    }))
+    .map((row) => {
+      const key = `${row.audit_run_id}:${row.sim_id}`;
+      return {
+        key,
+        auditRunId: row.audit_run_id,
+        simId: row.sim_id,
+        callId: callIdByProbe.get(key) ?? null,
+        promptKey: row.prompt_key ?? "",
+        prompt: cleanPrompt(row.prompt),
+        engine: (row.engine ?? "").toLowerCase(),
+        model: row.model,
+        state: probeState(row),
+        claim: row.verified_claim?.trim() || null,
+        sourceUrl: row.verified_source_url?.trim() || null,
+        evidence: row.hallucination_evidence?.trim() || null,
+        checkedAt: row.created_at,
+        verifiedAt: row.verified_at,
+      };
+    })
     .sort((a, b) => a.promptKey.localeCompare(b.promptKey) || a.engine.localeCompare(b.engine));
 
   const count = (state: ProbeState) => rows.filter((row) => row.state === state).length;

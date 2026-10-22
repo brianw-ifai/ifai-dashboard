@@ -67,7 +67,7 @@ export function CitationEvidenceTable({
             {shown.map((row) => (
               <tr key={row.key} data-domain={row.domain} data-source-class={row.sourceClass}>
                 <td style={{ wordBreak: "break-word" }}>
-                  <EvidenceLink focus={{ field: "sim", value: String(row.simId) }} tab={AI_TABS.simulations}>
+                  <EvidenceLink focus={{ field: "sim", value: row.simulationId }} tab={AI_TABS.simulations}>
                     {row.prompt}
                   </EvidenceLink>
                   <div style={mutedText}>Answer {row.simId}</div>

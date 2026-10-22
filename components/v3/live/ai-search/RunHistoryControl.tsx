@@ -170,11 +170,11 @@ export function RunHistoryControl() {
           <div className="ai-history-dialog-body">
           {history.source === "fixture" ? (
             <p className="ai-history-note" data-ai-history-fixture>
-              {STORED_RUN_COPY_LABEL} Current returns to the live published run.
+              {STORED_RUN_COPY_LABEL} The default is Last 30 days of stored review runs. The map stays on the live published run.
             </p>
           ) : null}
           <div className="ai-history-quick" role="group" aria-label="Quick choices">
-            <button type="button" onClick={() => { history.viewCurrent(); setOpen(false); }}>Current</button>
+            <button type="button" onClick={() => { history.viewMonth(); setOpen(false); }}>Last 30 days</button>
             <button
               type="button"
               disabled={!previous}

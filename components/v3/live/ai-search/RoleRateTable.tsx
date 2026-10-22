@@ -58,16 +58,19 @@ export function RoleCount({
   role,
   tally,
   largestResolved: largest,
+  showSmallSample = true,
 }: {
   role: HeadlineRole;
   tally: OutcomeTally;
   largestResolved: number;
+  /** False on pooled windows. Defaults true so a single run still shows the mark. */
+  showSmallSample?: boolean;
 }) {
   const figure = formatObservedRate(tally.fenderWins, tally.resolved);
   if (figure == null) {
     return <span data-ai-role-count={role}>No resolved answers</span>;
   }
-  const small = isSmallSample(tally.resolved, largest);
+  const small = showSmallSample && isSmallSample(tally.resolved, largest);
   const name = ROLE_LABELS[role];
   return (
     <span data-ai-role-count={role} data-ai-rate={figure} data-small-sample={small ? "true" : undefined}>
@@ -89,21 +92,33 @@ export function RolePair({
   branded,
   largestUnbranded,
   largestBranded,
+  showSmallSample = true,
 }: {
   unbranded: OutcomeTally;
   branded: OutcomeTally;
   largestUnbranded: number;
   largestBranded: number;
+  showSmallSample?: boolean;
 }) {
   return (
     <>
       <div>
         Unbranded{" "}
-        <RoleCount role="unbranded_discovery" tally={unbranded} largestResolved={largestUnbranded} />
+        <RoleCount
+          role="unbranded_discovery"
+          tally={unbranded}
+          largestResolved={largestUnbranded}
+          showSmallSample={showSmallSample}
+        />
       </div>
       <div>
         Branded{" "}
-        <RoleCount role="branded_consideration" tally={branded} largestResolved={largestBranded} />
+        <RoleCount
+          role="branded_consideration"
+          tally={branded}
+          largestResolved={largestBranded}
+          showSmallSample={showSmallSample}
+        />
       </div>
     </>
   );

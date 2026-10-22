@@ -29,8 +29,8 @@ export function activeOfferClarity(metrics: CanvasMetricsRow): string {
     `${formatInt(active)} listings have an active Amazon offer.`,
     `${formatInt(noOffer)} listings have no Amazon offer.`,
     `Those ${formatInt(noOffer)} listings are not part of the active-offer count.`,
-    `Of the ${formatInt(active)} listings with an offer, Amazon holds the Featured Offer on ${formatInt(oneP)} of ${formatInt(active)} (${share(oneP)}).`,
-    `A third-party seller holds the Featured Offer on ${formatInt(threeP)} of ${formatInt(active)} (${share(threeP)}).`,
+    `Of the ${formatInt(active)} listings with an offer, Amazon holds the Buy Box on ${formatInt(oneP)} of ${formatInt(active)} (${share(oneP)}).`,
+    `A third-party seller holds the Buy Box on ${formatInt(threeP)} of ${formatInt(active)} (${share(threeP)}).`,
     `${formatInt(unknown)} of ${formatInt(active)} offers have no stored seller name (${share(unknown)}).`,
   ].join(" ");
 }

@@ -58,7 +58,7 @@ test("Suppressed Listings keeps every read state and does not invent a zero", ()
   assert.match(failed.detail, /did not succeed/);
   assert.notEqual(failed.value, "0");
 
-  const missingMessage = "The Featured Offer audit has not stored a reading for any monitored listing yet.";
+  const missingMessage = "The Buy Box audit has not stored a reading for any monitored listing yet.";
   const unavailable = buildLiveMetrics(
     bundle(),
     ready(reading("unavailable", null, missingMessage)),
