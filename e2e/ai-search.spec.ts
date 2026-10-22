@@ -38,11 +38,12 @@ test.describe("AI Search Visibility", () => {
     await expect(canvas.commandCenter).toContainText("22 of 23 resolved answers (95.7%)");
     await expect(canvas.commandCenter).not.toContainText("51 of 63");
     await page.locator(".drilldown-hide-btn").click();
+    await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
 
-    await page.locator(".metric-widget-config").first().click();
-    const picker = page.getByRole("dialog");
-    await expect(picker.locator(".metric-widget-option", { hasText: "Unbranded discovery" })).toContainText("56.5%");
-    await expect(picker).not.toContainText("Overall AI Win Rate");
+    await page.locator("[data-graph-node-id='spoke-aeo']").focus();
+    const slots = page.locator("[data-hub-slots]");
+    await expect(slots.locator("[data-hub-slot='gap']")).toContainText(/Fender led \d+ of \d+/);
+    await expect(slots).not.toContainText("Overall AI Win Rate");
   });
 
   test("a headline count opens the rows behind it", async ({ canvas, page }) => {
@@ -82,6 +83,29 @@ test.describe("AI Search Visibility", () => {
     await expect(page.locator("[data-ai-cited-answers]")).toContainText(
       /\d+ of \d+ shopping answers cited web sources/,
     );
+    const ratio = await page.locator("[data-citation-hero-ratio]").innerText();
+    const ratioMatch = ratio.match(/(\d+) of (\d+)/);
+    expect(ratioMatch).not.toBeNull();
+    const answered = ratioMatch![2];
+    const answerPie = page.locator("[data-citation-pie='answers']");
+    await expect(answerPie).toHaveAttribute("data-pie-total", answered);
+    const answerCounts = await answerPie.locator("[data-pie-count]").evaluateAll((els) =>
+      els.map((el) => Number(el.getAttribute("data-pie-count"))),
+    );
+    expect(answerCounts.reduce((sum, count) => sum + count, 0)).toBe(Number(answered));
+    const linkPie = page.locator("[data-citation-pie='classes']");
+    const ownedPie = page.locator("[data-citation-pie='owned']");
+    const linkTotal = await linkPie.getAttribute("data-pie-total");
+    await expect(ownedPie).toHaveAttribute("data-pie-total", linkTotal ?? "");
+    for (const pie of [linkPie, ownedPie]) {
+      const total = Number(await pie.getAttribute("data-pie-total"));
+      const counts = await pie.locator("[data-pie-count]").evaluateAll((els) =>
+        els.map((el) => Number(el.getAttribute("data-pie-count"))),
+      );
+      expect(counts.reduce((sum, count) => sum + count, 0)).toBe(total);
+    }
+    const heroBox = await page.locator("[data-citation-hero-value]").boundingBox();
+    expect(heroBox && heroBox.height).toBeGreaterThan(40);
     await expect(page.locator("[data-ai-cited-links]")).toContainText(/Those answers contained \d+ cited links across \d+ domains/);
     await expect(page.locator("[data-ai-fender-owned]")).toContainText(/\d+ links, or \d+\.\d%, led to Fender-owned sites/);
     const body = page.locator(".drilldown-body");

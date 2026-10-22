@@ -4,6 +4,7 @@ import "@/lib/canvas-sdk/canvas-sdk.css";
 import "@/lib/canvas-sdk/iom-theme.css";
 import { UserMenuDropdown } from "@/components/auth/UserMenuDropdown";
 import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
+import { HubSlots } from "@/lib/canvas-sdk/HubSlots";
 import { MetricWidgets } from "@/lib/canvas-sdk/MetricWidgets";
 import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
 import type {
@@ -138,6 +139,7 @@ export function CanvasShell({ spec, children }: Props) {
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [inspectedBubbleId, setInspectedBubbleId] = useState("hub");
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   /** Set when the tour is parked behind an open drilldown rather than ended. */
@@ -459,6 +461,7 @@ export function CanvasShell({ spec, children }: Props) {
       setActiveSpoke(null);
       restoreTourLauncher();
     }
+    setInspectedBubbleId("hub");
     setOverviewNonce((nonce) => nonce + 1);
     frameOverview();
   }, [frameOverview, iom, restoreTourLauncher]);
@@ -492,7 +495,11 @@ export function CanvasShell({ spec, children }: Props) {
         const found = spoke.tabs.findIndex((tab) =>
           tab.toLowerCase().includes(subTab.toLowerCase()),
         );
-        setActiveTab(found >= 0 ? found : 0);
+        const nextTab = found >= 0 ? found : 0;
+        setActiveTab(nextTab);
+        if (spoke.tabs[nextTab] === "Citation Ecosystem") {
+          setPanelLayout((current) => (current === "narrow" ? "wide" : current));
+        }
       } else {
         setActiveTab(0);
       }
@@ -993,6 +1000,7 @@ export function CanvasShell({ spec, children }: Props) {
     tourRadius: currentTour?.radius ?? 160,
     tourCategory: currentTour?.category ?? "",
     focusNode,
+    inspectBubble: setInspectedBubbleId,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
@@ -1209,7 +1217,9 @@ export function CanvasShell({ spec, children }: Props) {
           </div>
         ) : null}
 
-        {spec.metricWidgets ? (
+        {spec.hubSlots && panelLayout === "hidden" ? (
+          <HubSlots feeds={spec.hubSlots} bubbleId={inspectedBubbleId} onOpen={focusNode} />
+        ) : spec.metricWidgets ? (
           <MetricWidgets
             config={spec.metricWidgets}
             spokes={spec.spokes}
@@ -1375,7 +1385,12 @@ export function CanvasShell({ spec, children }: Props) {
                     role="tab"
                     aria-selected={idx === activeTab}
                     className={`drilldown-tab-btn${idx === activeTab ? " active" : ""}`}
-                    onClick={() => setActiveTab(idx)}
+                    onClick={() => {
+                      setActiveTab(idx);
+                      if (spoke.tabs[idx] === "Citation Ecosystem") {
+                        setPanelLayout((current) => (current === "narrow" ? "wide" : current));
+                      }
+                    }}
                   >
                     {tabName}
                   </button>

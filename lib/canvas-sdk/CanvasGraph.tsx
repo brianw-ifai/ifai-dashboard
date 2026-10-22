@@ -21,6 +21,7 @@ type Props = {
   tourRadius: number;
   tourCategory: string;
   onFocusNode: (spokeId: string, subTab?: string) => void;
+  onInspectBubble?: (nodeId: string) => void;
   onResetView: () => void;
   overviewNonce: number;
   focusedSpokeId?: string | null;
@@ -44,6 +45,7 @@ export function CanvasGraph({
   tourRadius,
   tourCategory,
   onFocusNode,
+  onInspectBubble,
   onResetView,
   overviewNonce,
   focusedSpokeId = null,
@@ -169,6 +171,9 @@ export function CanvasGraph({
         onGroupEnter={parentId ? () => revealGroup(parentId) : undefined}
         onGroupLeave={parentId ? holdGroup : undefined}
         onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
+        onInspect={
+          onInspectBubble && MAIN_BUBBLES.has(node.id) ? () => onInspectBubble(node.id) : undefined
+        }
       />
     );
   };

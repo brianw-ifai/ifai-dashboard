@@ -145,6 +145,36 @@ export type CanvasMetricWidgets = {
   storageKey: string;
 };
 
+export type HubSlotRole = "gap" | "opportunity" | "action";
+
+/** A compact share whose two parts add up to `total`. */
+export type HubSlotChart = {
+  part: number;
+  total: number;
+  partLabel: string;
+  restLabel: string;
+};
+
+export type HubSlot = {
+  role: HubSlotRole;
+  figure: string;
+  label: string;
+  detail: string;
+  note: string;
+  tone: NodeStatus;
+  /** Text status so a red figure is never the only signal. */
+  statusWord: string;
+  chart: HubSlotChart | null;
+  spokeId: string;
+  subTab?: string;
+};
+
+export type HubSlotFeed = {
+  bubbleId: string;
+  title: string;
+  slots: [HubSlot, HubSlot, HubSlot];
+};
+
 export type CanvasUserMenuOrganization = {
   id: string;
   name: string;
@@ -205,6 +235,8 @@ export type CanvasSpec = {
   tickers?: CanvasTicker[];
   /** Configurable top-left decision signals. Category names resolve from `spokes`. */
   metricWidgets?: CanvasMetricWidgets;
+  /** Three slots filled by hovering or focusing a main bubble. Keyed by node id. */
+  hubSlots?: Record<string, HubSlotFeed>;
   search?: {
     placeholder?: string;
     matchers?: SearchMatcher[];
@@ -241,6 +273,7 @@ export type CanvasRenderContext = {
   tourRadius: number;
   tourCategory: string;
   focusNode: (spokeId: string, subTab?: string) => void;
+  inspectBubble: (nodeId: string) => void;
   resetView: () => void;
   overviewNonce: number;
   focusedSpokeId: string | null;

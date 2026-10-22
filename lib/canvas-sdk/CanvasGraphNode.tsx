@@ -14,6 +14,7 @@ export function CanvasGraphNode({
   onGroupEnter,
   onGroupLeave,
   onSelect,
+  onInspect,
   emphasis,
   selected,
   dimmed,
@@ -30,6 +31,7 @@ export function CanvasGraphNode({
   onGroupEnter?: () => void;
   onGroupLeave?: () => void;
   onSelect?: () => void;
+  onInspect?: () => void;
   emphasis?: boolean;
   selected?: boolean;
   dimmed?: boolean;
@@ -56,8 +58,10 @@ export function CanvasGraphNode({
       selected={selected}
       dimmed={dimmed}
       enterDelay={enterDelay}
+      onInspect={onInspect}
       onClick={() => {
         onSelect?.();
+        onInspect?.();
         // The center node is the portfolio overview. A click always reopens it,
         // including when the camera is already framed on the hub.
         if (node.spokeId) onFocusNode(node.spokeId, node.subTab);
@@ -65,6 +69,7 @@ export function CanvasGraphNode({
         onHideTooltip();
       }}
       onMouseEnter={(evt) => {
+        onInspect?.();
         onGroupEnter?.();
         onShowTooltip(
           evt,

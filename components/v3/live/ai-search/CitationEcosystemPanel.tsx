@@ -22,6 +22,7 @@ import {
 } from "@/lib/ai-search/citations";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { citationStorageCaution } from "@/lib/ai-search/review-runs";
+import { CitationHero } from "@/components/v3/live/ai-search/CitationHero";
 import { pct } from "@/lib/ai-search/summary";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -179,6 +180,7 @@ function Ecosystem({ snapshot }: { snapshot: AiSearchSnapshot }) {
         ) : null}
         {citationUrlsLoaded ? (
           <>
+        <CitationHero read={read} scopeNoun={scopeNoun} />
         <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-cited-answers>
           {read.answersWithCitation} of {read.answered} {scopeNoun} cited web sources ({pct(read.answersWithCitation, read.answered)}).
         </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent } from "react";
+import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
@@ -208,29 +208,35 @@ export function CenteredStack({
     Math.max(0, pillMetricsList.length - 1) * gap +
     (meta ? gap + metaBlockH : 0);
 
-  let cursorY =
+  const startY =
     layout === "flow" ? flowStartY : -stackH / 2 + (pillMetricsList[0]?.height ?? fontSize + 9) / 2 + 2;
 
-  const pills = pillMetricsList.map((pill, index) => {
-    const y = cursorY + pill.height / 2;
-    cursorY += pill.height + gap;
-    return (
-      <StatPill
-        key={`${stats[index]}-${index}`}
-        label={stats[index]}
-        y={y}
-        fontSize={fontSize}
-        status={status}
-        maxWidth={pillMax}
-      />
-    );
-  });
+  const placed = pillMetricsList.reduce(
+    (acc, pill, index) => {
+      const y = acc.cursor + pill.height / 2;
+      return {
+        cursor: acc.cursor + pill.height + gap,
+        nodes: [
+          ...acc.nodes,
+          <StatPill
+            key={`${stats[index]}-${index}`}
+            label={stats[index]}
+            y={y}
+            fontSize={fontSize}
+            status={status}
+            maxWidth={pillMax}
+          />,
+        ],
+      };
+    },
+    { cursor: startY, nodes: [] as ReactElement[] },
+  );
 
-  const metaY = meta ? cursorY + metaBlockH / 2 : 0;
+  const metaY = meta ? placed.cursor + metaBlockH / 2 : 0;
 
   return (
     <>
-      {pills}
+      {placed.nodes}
       {meta ? <MetaBlock meta={meta} fontSize={metaSize} y={metaY} maxWidth={metaMax} /> : null}
     </>
   );
@@ -461,7 +467,23 @@ type BubbleProps = {
   onMouseEnter: (evt: MouseEvent) => void;
   onMouseMove?: (evt: MouseEvent) => void;
   onMouseLeave: () => void;
+  onInspect?: () => void;
 };
+
+function inspectProps(label: string, onInspect: (() => void) | undefined, onActivate: () => void) {
+  if (!onInspect) return {};
+  return {
+    tabIndex: 0,
+    role: "button" as const,
+    "aria-label": label || "Bubble",
+    onFocus: onInspect,
+    onKeyDown: (event: KeyboardEvent) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      onActivate();
+    },
+  };
+}
 
 export function GraphBubble({
   id,
@@ -483,6 +505,7 @@ export function GraphBubble({
   onMouseEnter,
   onMouseMove,
   onMouseLeave,
+  onInspect,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
@@ -521,6 +544,7 @@ export function GraphBubble({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      {...inspectProps(title, onInspect, onClick)}
     >
       <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
       {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
@@ -556,6 +580,7 @@ export function GraphHub({
   onMouseEnter,
   onMouseMove,
   onMouseLeave,
+  onInspect,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
@@ -592,6 +617,7 @@ export function GraphHub({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      {...inspectProps(title, onInspect, onClick)}
     >
       <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
       {emphasis ? <RingMotes radius={r} /> : null}
