@@ -7,6 +7,7 @@ import { CompetitorWinsPanel } from "@/components/v3/live/ai-search/CompetitorWi
 import { EngineComparisonPanel } from "@/components/v3/live/ai-search/EngineComparisonPanel";
 import { AiSearchSurface } from "@/components/v3/live/ai-search/AiSearchSurface";
 import { AiSearchHeaderStats } from "@/components/v3/live/ai-search/AiSearchHeaderStats";
+import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/CompetitorsSpokeDescription";
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
@@ -131,6 +132,7 @@ function wrapSpoke(
     ...(id === "competitors"
       ? {
           desc: competitorsSpokeDesc(ai),
+          descSlot: <CompetitorsSpokeDescription />,
           headerAccessory: <RunHistoryControl />,
         }
       : {}),

@@ -63,6 +63,11 @@ export type SpokeContent = {
   badge: string;
   title: string;
   desc: string;
+  /**
+   * Live description rendered in place of `desc`.
+   * Use this when the sentence must follow the same client snapshot as the panel body.
+   */
+  descSlot?: ReactNode;
   tabs: string[];
   /** Short name for the breadcrumb and the "Next" footer. */
   navLabel?: string;

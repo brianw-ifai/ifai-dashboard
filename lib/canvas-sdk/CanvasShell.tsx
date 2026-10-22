@@ -1318,7 +1318,7 @@ export function CanvasShell({ spec, children }: Props) {
                   {showingCommand ? commandCenter?.title : (spoke?.title ?? "")}
                 </h2>
                 <p className="drilldown-desc">
-                  {showingCommand ? commandCenter?.desc : (spoke?.desc ?? "")}
+                  {showingCommand ? commandCenter?.desc : (spoke?.descSlot ?? spoke?.desc ?? "")}
                 </p>
                 {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
               </div>

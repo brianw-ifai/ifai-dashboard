@@ -13,6 +13,8 @@ export type SpokeDefinition = {
   badge: string;
   title: string;
   desc: string;
+  /** Live description. Rendered instead of `desc` when the sentence follows panel data. */
+  descSlot?: ReactNode;
   tabs: string[];
   navLabel: string;
   next: SpokeId;
