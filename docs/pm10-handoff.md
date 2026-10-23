@@ -31,7 +31,7 @@ When Brian does approve PR 46, the closeout line is 9.5, not 10.0. That closeout
 - Branch: `cursor/why-not-fender-lead-figure-2ff4`
 - Pull request: https://github.com/brianw-ifai/ifai-dashboard/pull/46 (base `main`, open, not draft)
 - Latest feature commit: `ce1bba9` ("AI Search Visibility bubble group: one hero percentage per bubble, red/yellow/green")
-- This handoff is the commit after `ce1bba9` on the same branch. Branch new work from the head of `cursor/why-not-fender-lead-figure-2ff4`.
+- The commits after `ce1bba9` on this branch are this handoff. Branch new work from the head of `cursor/why-not-fender-lead-figure-2ff4`.
 - Preview: https://deploy-preview-46--ifai-dashboard.netlify.app
 - Guest path: Skip Login, or cookie `ifai_guest_fender=1` on that Netlify host
 
