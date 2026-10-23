@@ -26,9 +26,9 @@ import {
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 
-/* Internal seller jargon stays off client surfaces. "No active offer" is a Featured
-   Offer state Fender does see, so only the seller-share phrasing is forbidden. */
-const FORBIDDEN = /buy box|partner-led|\b1p\b|unknown seller|(?<!no )active offers?\b/i;
+/* Seller-share jargon stays off bubble surfaces. Buy Box is the client purchasing-button
+   name. Partner-led belongs on the Retail Overview seller-type line, not these pills. */
+const FORBIDDEN = /partner-led|\b1p\b|unknown seller|(?<!no )active offers?\b/i;
 
 const CHECKED_AT = new Date(Date.now() - 60_000).toISOString();
 
@@ -133,7 +133,9 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.deepEqual(face.stats, ["1 listing withheld above outside price"]);
   assert.equal(face.meta, undefined);
   assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
-  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
+  // The headline bubble carries its own count; it keeps no hover explainer.
+  assert.equal(face.tooltip.title, "");
+  assert.equal(face.tooltip.desc, "");
   assert.doesNotMatch(visible(face), /incomplete|unavailable/i);
   assert.doesNotMatch(visible(face), FORBIDDEN);
 
@@ -162,7 +164,7 @@ test("the headline pill follows the stored finding and its count", () => {
   });
   const withheldFace = headlineBubble(withheldOnly);
   assert.equal(withheldOnly.suppressedListings.issueCount, 2);
-  assert.deepEqual(withheldFace.stats, ["2 Featured Offers withheld"]);
+  assert.deepEqual(withheldFace.stats, ["2 Buy Boxes withheld"]);
   assert.equal(withheldFace.stats.length, 1);
 
   const mapSource = findings({
@@ -226,15 +228,20 @@ test("a higher unfinished reading is not replaced by a later count", () => {
   });
   const face = headlineBubble(source);
   assert.equal(face.subTab, "Retail Overview");
-  assert.deepEqual(face.stats, ["Suppressed Listings"]);
-  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
+  // An unfinished reading keeps its own coverage line visible as a second stat, not in a hover.
+  assert.equal(face.stats[0], "Suppressed Listings");
+  assert.equal(
+    face.stats[1],
+    shortCoverageLine(source.suppressedListings.missingMessage),
+  );
+  assert.equal(face.tooltip.desc, "");
   assert.doesNotMatch(face.stats.join(" "), /2 listings/);
 });
 
 test("the shared headline keeps the count, the missing message, and the command-center tab", () => {
   const source = findings();
   const surface = headlineSurface({ phase: "ready", snapshot: { ...source, headline: null } });
-  assert.equal(surface.label, "Featured Offer withheld above Amazon's outside price");
+  assert.equal(surface.label, "Buy Box withheld above Amazon's outside price");
   assert.equal(surface.countLabel, "1 listing");
   assert.equal(surface.missingMessage, source.suppressedListings.missingMessage);
   assert.equal(surface.tab, "Suppressed Listings");
@@ -265,4 +272,50 @@ test("loading and error faces do not invent a count", () => {
     assert.doesNotMatch(text, /\d/);
     assert.doesNotMatch(text, FORBIDDEN);
   }
+});
+
+test("channel price cells use a stored Musician's Friend URL or Not available*", async () => {
+  const { readFileSync } = await import("node:fs");
+  const mapTable = readFileSync(
+    new URL("../components/v3/live/MapListingsTable.tsx", import.meta.url),
+    "utf8",
+  );
+  const exploreTable = readFileSync(
+    new URL("../components/v3/live/FenderListingsTable.tsx", import.meta.url),
+    "utf8",
+  );
+  const {
+    MISSING_CHECKED_PAGE_DESC,
+    MISSING_CHECKED_PAGE_LABEL,
+    musiciansFriendCheckedPageUrl,
+    channelPriceLookup,
+    missingCheckedPageLabel,
+  } = await import("../lib/fender-canvas/map-channels.ts");
+
+  assert.match(mapTable, /musiciansFriendCheckedPageUrl/);
+  assert.match(mapTable, /requireCheckedPage/);
+  assert.match(exploreTable, /musiciansFriendCheckedPageUrl/);
+  assert.match(exploreTable, /requireCheckedPage/);
+  assert.doesNotMatch(mapTable, /musiciansfriend\.com\/search/i);
+  assert.doesNotMatch(exploreTable, /musiciansfriend\.com\/search/i);
+
+  const stored =
+    "https://www.musiciansfriend.com/guitars/fender-player-ii/m11513000002000";
+  const withUrl = channelPriceLookup([
+    {
+      asin: "B0D2LP2PRQ",
+      channel: "musicians-friend",
+      price: 714.99,
+      url: stored,
+      checked_at: "2026-10-07T00:00:00Z",
+    },
+  ]);
+  assert.equal(musiciansFriendCheckedPageUrl(withUrl, "B0D2LP2PRQ"), stored);
+  assert.equal(missingCheckedPageLabel(true, stored, 714.99), null);
+
+  const missing = musiciansFriendCheckedPageUrl(channelPriceLookup([]), "B0HJDFP2XS");
+  assert.equal(missing, null);
+  assert.equal(missingCheckedPageLabel(true, missing, 599.99), MISSING_CHECKED_PAGE_LABEL);
+  assert.equal(MISSING_CHECKED_PAGE_LABEL, "Not available*");
+  assert.match(MISSING_CHECKED_PAGE_DESC, /No checked page was stored/i);
 });

@@ -6,11 +6,12 @@ const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
 const CALL = (n: number) => `${n} fact-check call${n === 1 ? "" : "s"}`;
 
 /** The business result, first: what was checked, on which engines, and what came back. */
-export function factCheckHeadline(c: FactCheckCoverage): string {
+export function factCheckHeadline(c: FactCheckCoverage, windowed = false): string {
+  const unit = windowed ? "selection" : "run";
   if (c.answersChecked === 0) {
     return c.questionsSent === 0
-      ? "This run sent no product fact checks."
-      : `No product fact check completed in this run, so there is no accuracy result to report on ${FACT(c.questionsWithFact)}.`;
+      ? `This ${unit} sent no product fact checks.`
+      : `No product fact check completed in this ${unit}, so there is no accuracy result to report on ${FACT(c.questionsWithFact)}.`;
   }
   const scope = `${FACT(c.factsChecked)} ${c.factsChecked === 1 ? "was" : "were"} checked across ${joinBrands(c.checkedEngines)}.`;
   const result =
@@ -25,6 +26,9 @@ export const FACT_CHECK_SCOPE =
 
 export const FACT_CHECK_SHOPPING_SCOPE =
   "This run checked selected product facts, not every factual claim in the shopping answers.";
+
+export const FACT_CHECK_SHOPPING_SCOPE_WINDOW =
+  "This selection checked selected product facts, not every factual claim in the shopping answers.";
 
 /** Engines that returned nothing. Secondary, never the headline. */
 export function factCheckCoverageNote(c: FactCheckCoverage): string | null {

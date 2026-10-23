@@ -4,7 +4,7 @@ const PRIMARY_TITLES = [
   "Action Items",
   "Strategy Roadmap",
   "AI Search Visibility",
-  "Portfolio Retail",
+  "Catalog Health",
   "AI Readiness",
   "Competitive Radar",
 ];
@@ -82,10 +82,10 @@ test.describe("primary spoke map", () => {
     });
   }
 
-  test("the Portfolio Retail column rail stays readable", async ({ canvas, page }) => {
+  test("the Catalog Health column rail stays readable", async ({ canvas, page }) => {
     await page.setViewportSize({ width: 1440, height: 800 });
-    await canvas.openSpokeFromMap("Portfolio Retail");
-    const retail = page.locator(".column-bubble-list .spoke-primary").filter({ hasText: /Portfolio\s*Retail/i });
+    await canvas.openSpokeFromMap("Catalog Health");
+    const retail = page.locator(".column-bubble-list .spoke-primary").filter({ hasText: /Catalog\s*Health/i });
     await expect(retail).toBeVisible();
     const fontSize = await retail.locator(".node-title").first().evaluate((el) => {
       return Number.parseFloat(getComputedStyle(el).fontSize);

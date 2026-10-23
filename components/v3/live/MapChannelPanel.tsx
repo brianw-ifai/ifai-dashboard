@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { DefinedCopy, DefinedTerm } from "@/components/v3/live/DefinedTerm";
+import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import {
   listingChannelPricesQuery,
@@ -122,22 +122,6 @@ function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
   );
 }
 
-function mapDefinition() {
-  return (
-    <div className="ceo-callout">
-      <div className="ceo-callout-header">
-        <span>What is MAP?</span>
-      </div>
-      <div className="ceo-callout-body">
-        <strong>
-          <DefinedTerm term="MAP" />
-        </strong>{" "}
-        (Minimum Advertised Price) is the lowest price a retail partner agrees to display publicly.
-      </div>
-    </div>
-  );
-}
-
 export function MapChannelPanel({
   read,
   musiciansFriendFreshness = null,
@@ -174,7 +158,6 @@ export function MapChannelPanel({
   if (failed) {
     return (
       <RetailSurface>
-        {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
@@ -187,7 +170,6 @@ export function MapChannelPanel({
   if (!rows) {
     return (
       <RetailSurface>
-        {mapDefinition()}
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
@@ -215,8 +197,6 @@ export function MapChannelPanel({
 
   return (
     <RetailSurface>
-      {mapDefinition()}
-
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">Summary</div>
         <MapReadingSummary read={read} />

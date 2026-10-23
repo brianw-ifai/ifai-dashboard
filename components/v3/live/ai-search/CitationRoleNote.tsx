@@ -28,12 +28,11 @@ export function CitationRoleNote() {
   );
 }
 
-export function CitationInterpretationNote({ partial }: { partial: boolean }) {
+export function CitationInterpretationNote() {
   return (
     <p style={{ ...mutedText, marginTop: 8 }} data-ai-citation-interpretation>
-      These are explicit links returned in {partial ? "this partial run" : "this run"}. A low count does not prove a
-      source had no influence on the model, and an engine can use a source without returning it as a{" "}
-      <AiTerm term="cited link" />.
+      These are explicit links returned in this run. A low count does not prove a source had no influence on the
+      model, and an engine can use a source without returning it as a <AiTerm term="cited link" />.
     </p>
   );
 }

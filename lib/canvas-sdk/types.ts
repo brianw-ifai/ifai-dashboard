@@ -23,6 +23,11 @@ export type CanvasNode = {
   faceRadius?: number;
   stats: string[];
   meta?: string;
+  /**
+   * A single big status-colored number in place of the stacked stat pills. Use when a
+   * bubble has one scored headline value instead of several short facts to list.
+   */
+  heroValue?: { value: string; label: string };
   /** Opens this spoke on click. Omit to reset the camera. Set on the hub when it has its own drilldown. */
   spokeId?: string;
   subTab?: string;
@@ -63,6 +68,11 @@ export type SpokeContent = {
   badge: string;
   title: string;
   desc: string;
+  /**
+   * Live description rendered in place of `desc`.
+   * Use this when the sentence must follow the same client snapshot as the panel body.
+   */
+  descSlot?: ReactNode;
   tabs: string[];
   /** Short name for the breadcrumb and the "Next" footer. */
   navLabel?: string;
@@ -71,6 +81,8 @@ export type SpokeContent = {
   render: (tabIdx: number) => ReactNode | string;
   /** Compact control under the panel title. */
   headerAccessory?: ReactNode;
+  /** Optional stats that fill the wide header band on expanded panels. */
+  headerStats?: ReactNode;
 };
 
 export type TourStep = {
@@ -145,6 +157,36 @@ export type CanvasMetricWidgets = {
   storageKey: string;
 };
 
+export type HubSlotRole = "gap" | "opportunity" | "action";
+
+/** A compact share whose two parts add up to `total`. */
+export type HubSlotChart = {
+  part: number;
+  total: number;
+  partLabel: string;
+  restLabel: string;
+};
+
+export type HubSlot = {
+  role: HubSlotRole;
+  figure: string;
+  label: string;
+  detail: string;
+  note: string;
+  tone: NodeStatus;
+  /** Text status so a red figure is never the only signal. */
+  statusWord: string;
+  chart: HubSlotChart | null;
+  spokeId: string;
+  subTab?: string;
+};
+
+export type HubSlotFeed = {
+  bubbleId: string;
+  title: string;
+  slots: [HubSlot, HubSlot, HubSlot];
+};
+
 export type CanvasUserMenuOrganization = {
   id: string;
   name: string;
@@ -205,6 +247,8 @@ export type CanvasSpec = {
   tickers?: CanvasTicker[];
   /** Configurable top-left decision signals. Category names resolve from `spokes`. */
   metricWidgets?: CanvasMetricWidgets;
+  /** Three slots filled by hovering or focusing a main bubble. Keyed by node id. */
+  hubSlots?: Record<string, HubSlotFeed>;
   search?: {
     placeholder?: string;
     matchers?: SearchMatcher[];
@@ -241,6 +285,9 @@ export type CanvasRenderContext = {
   tourRadius: number;
   tourCategory: string;
   focusNode: (spokeId: string, subTab?: string) => void;
+  /** A main bubble is hovered or focused: show its signal slots. They stay up,
+   *  tracking the latest hovered bubble, until a click outside dismisses them. */
+  inspectBubble: (nodeId: string) => void;
   resetView: () => void;
   overviewNonce: number;
   focusedSpokeId: string | null;

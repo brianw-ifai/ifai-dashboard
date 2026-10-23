@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { listingChannelFacts, mapTabModel, type MapSourceRow } from "../lib/fender-canvas/map-channels.ts";
+import {
+  channelPriceLookup,
+  checkedPageUrl,
+  listingChannelFacts,
+  mapTabModel,
+  missingCheckedPageLabel,
+  MISSING_CHECKED_PAGE_LABEL,
+  musiciansFriendCheckedPageUrl,
+  type MapSourceRow,
+} from "../lib/fender-canvas/map-channels.ts";
 
 function row(overrides: Partial<MapSourceRow> & Pick<MapSourceRow, "asin">): MapSourceRow {
   return {
@@ -289,4 +298,47 @@ test("B0CMW1YK74 keeps the Amazon gap and the Musician's Friend gap apart", () =
     ["Amazon", "Musician's Friend"],
   );
   assert.equal(model.showWalmart, false);
+});
+
+test("a stored Musician's Friend URL is used as the checked page", () => {
+  const stored =
+    "https://www.musiciansfriend.com/guitars/fender-player-ii-jazzmaster/m11513000002000";
+  const prices = channelPriceLookup([
+    {
+      asin: "B0D2LP2PRQ",
+      channel: "musicians-friend",
+      price: 714.99,
+      url: stored,
+      checked_at: "2026-10-07T00:00:00Z",
+    },
+  ]);
+  assert.equal(musiciansFriendCheckedPageUrl(prices, "B0D2LP2PRQ"), stored);
+  assert.equal(checkedPageUrl(stored, null), stored);
+  assert.equal(missingCheckedPageLabel(true, stored, 714.99), null);
+});
+
+test("a missing Musician's Friend URL shows Not available* and no href", () => {
+  const prices = channelPriceLookup([
+    {
+      asin: "B0HJDFP2XS",
+      channel: "musicians-friend",
+      price: 599.99,
+      url: null,
+      checked_at: "2026-10-07T00:00:00Z",
+    },
+  ]);
+  const href = musiciansFriendCheckedPageUrl(prices, "B0HJDFP2XS");
+  assert.equal(href, null);
+  assert.equal(missingCheckedPageLabel(true, href, 599.99), MISSING_CHECKED_PAGE_LABEL);
+  assert.equal(missingCheckedPageLabel(true, null, 599.99), "Not available*");
+});
+
+test("a Musician's Friend checked page is never invented from an ASIN", () => {
+  const prices = channelPriceLookup([]);
+  const href = musiciansFriendCheckedPageUrl(prices, "B0HJDFP2XS");
+  assert.equal(href, null);
+  assert.equal(checkedPageUrl(null, null), null);
+  assert.equal(checkedPageUrl("not-a-url", "also-not"), null);
+  assert.doesNotMatch(String(href ?? ""), /musiciansfriend\.com/i);
+  assert.doesNotMatch(String(href ?? ""), /search/i);
 });

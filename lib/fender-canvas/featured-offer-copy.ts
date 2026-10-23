@@ -9,13 +9,13 @@ import { FEATURED_OFFER_JOB, type FeaturedOfferCounts } from "./featured-offer";
 
 /** Confirmed withheld above the outside benchmark. The strongest client-useful result. */
 export const CONFIRMED_HIGH_PRICE_LABEL =
-  "Featured Offer withheld above Amazon's outside price";
+  "Buy Box withheld above Amazon's outside price";
 
 /** Withheld with no outside benchmark stored. Still a confirmed withheld state. */
-export const WITHHELD_LABEL = "Featured Offer withheld";
+export const WITHHELD_LABEL = "Buy Box withheld";
 
 export const FEATURED_OFFER_UNAVAILABLE =
-  "The Featured Offer audit has not stored a reading for any monitored listing yet.";
+  "The Buy Box audit has not stored a reading for any monitored listing yet.";
 
 const checkedAtFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -67,7 +67,7 @@ export function featuredOfferHeadlineCount(counts: FeaturedOfferCounts): number 
 /** Coverage for the Featured Offer classification. Unchecked and failed rows stay visible. */
 export function classificationCoverageSentence(counts: FeaturedOfferCounts): string {
   const parts = [
-    `The Featured Offer audit has a current reading for ${formatInt(counts.current)} of ${formatInt(
+    `The Buy Box audit has a current reading for ${formatInt(counts.current)} of ${formatInt(
       counts.population,
     )} monitored ${listings(counts.population)}.`,
   ];
@@ -118,7 +118,7 @@ export function firstPassIncomplete(counts: FeaturedOfferCounts): boolean {
 /** Benchmark coverage. An unavailable benchmark is not a failure and not a zero. */
 export function benchmarkCoverageSentence(counts: FeaturedOfferCounts): string {
   if (counts.keepaClassified === 0) {
-    return "No listing has a finished Amazon Featured Offer check yet, so the outside-price benchmark has no coverage to report.";
+    return "No listing has a finished Amazon Buy Box check yet, so the outside-price benchmark has no coverage to report.";
   }
   const lead = `Amazon's outside price is stored for ${formatInt(
     counts.benchmarkPresent,
@@ -134,11 +134,11 @@ export function benchmarkCoverageSentence(counts: FeaturedOfferCounts): string {
 /** Confirmed suppression, stated so a withheld listing with no benchmark is not swept in. */
 export function confirmedSuppressionSentence(counts: FeaturedOfferCounts): string {
   if (counts.withheld === 0) {
-    return "No monitored listing has a confirmed withheld Featured Offer in the current reading.";
+    return "No monitored listing has a confirmed withheld Buy Box in the current reading.";
   }
   const lead = `${formatInt(counts.withheld)} ${listings(counts.withheld)} ${
     counts.withheld === 1 ? "has" : "have"
-  } a confirmed withheld Featured Offer.`;
+  } a confirmed withheld Buy Box.`;
   const confirmed =
     counts.confirmedHighPrice > 0
       ? ` ${formatInt(counts.confirmedHighPrice)} of ${
@@ -181,8 +181,8 @@ export function featuredOfferFreshnessSentence(
   const parts: string[] = [];
   parts.push(
     newest
-      ? `Latest successful Featured Offer check ${newest}.`
-      : "No Featured Offer check has succeeded yet.",
+      ? `Latest successful Buy Box check ${newest}.`
+      : "No Buy Box check has succeeded yet.",
   );
   parts.push(
     `${formatInt(counts.current)} of ${formatInt(counts.population)} monitored ${listings(

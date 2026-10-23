@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent } from "react";
+import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
@@ -82,6 +82,71 @@ function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
   const lineH = fontSize + 3;
   const height = Math.max(fontSize + 9, lines.length * lineH + 6);
   return { width, height, lines, lineH };
+}
+
+/**
+ * One big status-colored number with a short label, in place of the stacked stat pills.
+ * The value's font size shrinks to the circle's width, and the whole value-plus-label
+ * stack shrinks together if the label still wraps to more lines than the circle has
+ * room for below `startY`, so neither line ever crosses the ring.
+ */
+function HeroValue({
+  value,
+  label,
+  status,
+  radius,
+  startY,
+}: {
+  value: string;
+  label: string;
+  status: NodeStatus;
+  radius: number;
+  startY: number;
+}) {
+  const maxWidth = Math.max(40, radius * 2 - 16);
+  const bottomLimit = radius - 7;
+  const fitToWidth = (text: string, size: number) => {
+    const width = textWidth(text, size);
+    return width > maxWidth ? size * (maxWidth / width) : size;
+  };
+
+  let valueSize = fitToWidth(value, Math.max(14, radius * 0.46));
+  let labelSize = Math.max(7, valueSize * 0.33);
+  let labelLines = wrapText(label, maxWidth, labelSize);
+  let labelLineH = labelSize + 2;
+
+  // However many lines the label wraps to, shrink the value and the label together
+  // until the stack clears the circle's bottom edge (a few passes converge quickly).
+  for (let pass = 0; pass < 4; pass += 1) {
+    const gap = Math.max(3, valueSize * 0.18);
+    const stackBottom = startY + valueSize * 0.78 + gap + labelLines.length * labelLineH;
+    if (stackBottom <= bottomLimit || valueSize <= 9) break;
+    const scale = Math.max(0.7, (bottomLimit - startY) / (stackBottom - startY));
+    valueSize *= scale;
+    labelSize = Math.max(6, labelSize * scale);
+    labelLines = wrapText(label, maxWidth, labelSize);
+    labelLineH = labelSize + 2;
+  }
+
+  const gap = Math.max(3, valueSize * 0.18);
+  const valueY = startY + valueSize * 0.78;
+  const labelY = valueY + gap + labelSize * 0.82;
+  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+
+  return (
+    <g className="node-hero">
+      <text className={`node-hero-value${statusClass}`} y={valueY} textAnchor="middle" fontSize={valueSize}>
+        {value}
+      </text>
+      <text className="node-hero-label" y={labelY} textAnchor="middle" fontSize={labelSize}>
+        {labelLines.map((line, index) => (
+          <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : labelLineH}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
 }
 
 export function CurvedHeader({
@@ -208,29 +273,35 @@ export function CenteredStack({
     Math.max(0, pillMetricsList.length - 1) * gap +
     (meta ? gap + metaBlockH : 0);
 
-  let cursorY =
+  const startY =
     layout === "flow" ? flowStartY : -stackH / 2 + (pillMetricsList[0]?.height ?? fontSize + 9) / 2 + 2;
 
-  const pills = pillMetricsList.map((pill, index) => {
-    const y = cursorY + pill.height / 2;
-    cursorY += pill.height + gap;
-    return (
-      <StatPill
-        key={`${stats[index]}-${index}`}
-        label={stats[index]}
-        y={y}
-        fontSize={fontSize}
-        status={status}
-        maxWidth={pillMax}
-      />
-    );
-  });
+  const placed = pillMetricsList.reduce(
+    (acc, pill, index) => {
+      const y = acc.cursor + pill.height / 2;
+      return {
+        cursor: acc.cursor + pill.height + gap,
+        nodes: [
+          ...acc.nodes,
+          <StatPill
+            key={`${stats[index]}-${index}`}
+            label={stats[index]}
+            y={y}
+            fontSize={fontSize}
+            status={status}
+            maxWidth={pillMax}
+          />,
+        ],
+      };
+    },
+    { cursor: startY, nodes: [] as ReactElement[] },
+  );
 
-  const metaY = meta ? cursorY + metaBlockH / 2 : 0;
+  const metaY = meta ? placed.cursor + metaBlockH / 2 : 0;
 
   return (
     <>
-      {pills}
+      {placed.nodes}
       {meta ? <MetaBlock meta={meta} fontSize={metaSize} y={metaY} maxWidth={metaMax} /> : null}
     </>
   );
@@ -334,6 +405,7 @@ function CenteredFace({
   plate,
   titleSize: titleSizeOverride,
   statPillSize,
+  heroValue,
 }: {
   title: string;
   stats: string[];
@@ -347,6 +419,7 @@ function CenteredFace({
   plate?: boolean;
   titleSize?: number;
   statPillSize?: number;
+  heroValue?: { value: string; label: string };
 }) {
   const pillFont = statPillSize ?? IOM_STAT_PILL_FONT;
 
@@ -402,7 +475,7 @@ function CenteredFace({
   const lineH = titleSize + 3;
   const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
   const titleStart = icon ? (prominent ? 4 : -radius * 0.02) : -lineH * (lines.length / 2);
-  const stackStartY = titleStart + lines.length * lineH + (stats.length || meta ? 5 : 0);
+  const stackStartY = titleStart + lines.length * lineH + (stats.length || meta || heroValue ? 5 : 0);
 
   return (
     <g className="node-face">
@@ -423,7 +496,15 @@ function CenteredFace({
           {line}
         </text>
       ))}
-      {stats.length || meta ? (
+      {heroValue ? (
+        <HeroValue
+          value={heroValue.value}
+          label={heroValue.label}
+          status={status}
+          radius={radius}
+          startY={stackStartY}
+        />
+      ) : stats.length || meta ? (
         <CenteredStack
           radius={radius}
           stats={stats}
@@ -451,6 +532,7 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
+  heroValue?: { value: string; label: string };
   centered?: boolean;
   logoSrc?: string;
   emphasis?: boolean;
@@ -461,7 +543,23 @@ type BubbleProps = {
   onMouseEnter: (evt: MouseEvent) => void;
   onMouseMove?: (evt: MouseEvent) => void;
   onMouseLeave: () => void;
+  onInspect?: () => void;
 };
+
+function inspectProps(label: string, onInspect: (() => void) | undefined, onActivate: () => void) {
+  if (!onInspect) return {};
+  return {
+    tabIndex: 0,
+    role: "button" as const,
+    "aria-label": label || "Bubble",
+    onFocus: onInspect,
+    onKeyDown: (event: KeyboardEvent) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      onActivate();
+    },
+  };
+}
 
 export function GraphBubble({
   id,
@@ -474,6 +572,7 @@ export function GraphBubble({
   titleSize,
   stats,
   meta,
+  heroValue,
   centered = false,
   emphasis = false,
   selected = false,
@@ -483,6 +582,7 @@ export function GraphBubble({
   onMouseEnter,
   onMouseMove,
   onMouseLeave,
+  onInspect,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
@@ -503,6 +603,7 @@ export function GraphBubble({
       plate={centered && Boolean(SPOKE_ICONS[id])}
       titleSize={titleSize}
       statPillSize={statPillFont}
+      heroValue={heroValue}
     />
   ) : (
     <>
@@ -521,6 +622,7 @@ export function GraphBubble({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      {...inspectProps(title, onInspect, onClick)}
     >
       <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
       {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
@@ -556,6 +658,7 @@ export function GraphHub({
   onMouseEnter,
   onMouseMove,
   onMouseLeave,
+  onInspect,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
@@ -592,6 +695,7 @@ export function GraphHub({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      {...inspectProps(title, onInspect, onClick)}
     >
       <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
       {emphasis ? <RingMotes radius={r} /> : null}

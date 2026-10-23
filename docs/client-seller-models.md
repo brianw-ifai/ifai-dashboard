@@ -2,7 +2,7 @@
 
 IntoFocus classifies each brand by how it sells on Amazon. The class is called the seller type. It decides which retail question the dashboard is for.
 
-**Featured Offer** is Amazon's name for the Buy Box. BB in the questions below means Featured Offer.
+**Buy Box** is the primary client name for Amazon's purchasing button. Amazon also calls it the Featured Offer. BB in the questions below means Buy Box. Database fields keep the internal Featured Offer name.
 
 Fender is **Partner-led**.
 

@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
@@ -13,9 +14,8 @@ import { driftRead } from "@/lib/ai-search/drift";
 import { questionRole, ROLE_LABELS } from "@/lib/ai-search/question-role";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
-  ACCURACY_LABELS,
-  accuracyState,
   applyExplorerFilter,
+  factCheckColumnLabel,
   filterFromEvidence,
   sortExplorerRows,
   type ExplorerFilter,
@@ -32,6 +32,7 @@ import {
 } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
+import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
 
 const SIM_COLUMNS = [
   clientColumn("prompt", "Prompt", "text", 280, 160),
@@ -57,7 +58,7 @@ function simulationSortValue(row: AiCallRow, columnId: string, cited: number): S
   if (columnId === "category") {
     return row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category);
   }
-  if (columnId === "fact") return ACCURACY_LABELS[accuracyState(row)];
+  if (columnId === "fact") return factCheckColumnLabel(row);
   if (columnId === "cited") return cited;
   return row.created_at;
 }
@@ -73,12 +74,21 @@ const OUTCOME_TONE: Record<CallOutcome, string> = {
 };
 
 function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const unit = isWindowHistoryKind(history?.mode.kind) ? "selection" : "run";
   const focus = useEvidenceFocus();
   const [filter, setFilter] = useState<ExplorerFilter>(() => filterFromEvidence(focus));
-  const [openId, setOpenId] = useState<string | null>(() => {
-    const simId = filterFromEvidence(focus).simId;
-    return simId != null ? (snapshot.calls.find((call) => call.sim_id === simId)?.id ?? null) : null;
-  });
+  const openFromFilter = (next: ExplorerFilter): string | null => {
+    if (next.callId != null) {
+      return snapshot.calls.some((call) => call.id === next.callId) ? next.callId : null;
+    }
+    if (next.simId != null) {
+      return snapshot.calls.find((call) => call.sim_id === next.simId)?.id ?? null;
+    }
+    return null;
+  };
+
+  const [openId, setOpenId] = useState<string | null>(() => openFromFilter(filterFromEvidence(focus)));
 
   const [appliedFocus, setAppliedFocus] = useState(focus);
   if (focus !== appliedFocus) {
@@ -86,7 +96,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
     if (focus) {
       const next = filterFromEvidence(focus);
       setFilter(next);
-      setOpenId(next.simId != null ? (snapshot.calls.find((call) => call.sim_id === next.simId)?.id ?? null) : null);
+      setOpenId(openFromFilter(next));
     }
   }
 
@@ -117,7 +127,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <div className="content-box ai-simulations">
       <div className="content-box-title">
-        <span>Simulations in the published run</span>
+        <span>Run Details</span>
         <span className="tag-badge tag-neutral" data-ai-row-count>
           {rows.length} of {snapshot.calls.length} calls
         </span>
@@ -143,7 +153,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </button>
         </p>
       ) : null}
-      {rows.length === 0 ? <EmptyRows>No call in this run matches these filters.</EmptyRows> : null}
+      {rows.length === 0 ? <EmptyRows>No call in this {unit} matches these filters.</EmptyRows> : null}
       {rows.length ? (
         <div id="ai-simulation-list">
           <ResizableTable
@@ -189,16 +199,20 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
                       <td>{engineLabel(row.engine)}</td>
                       <td>{modelLabel(row.model)}</td>
                       <td>{row.prompt_kind === "probe" ? "Product fact check" : categoryLabel(row.category)}</td>
-                      <td>{ACCURACY_LABELS[accuracyState(row)]}</td>
+                      <td>{factCheckColumnLabel(row)}</td>
                       <td>{cited.length} cited links</td>
-                      <td>checked {formatRunTime(row.created_at)}</td>
+                      <td>{formatRunTime(row.created_at)}</td>
                     </tr>
                     {open ? (
                       <tr>
                         <td colSpan={SIM_COLUMNS.length}>
                           <SimulationEvidenceDrawer
                             row={row}
-                            probe={drift.probes.find((p) => p.simId === row.sim_id) ?? null}
+                            probe={
+                              drift.probes.find(
+                                (p) => p.auditRunId === row.audit_run_id && p.simId === row.sim_id,
+                              ) ?? null
+                            }
                             citations={cited}
                             questionsSent={drift.coverage.questionsSent}
                             onClose={() => setOpenId(null)}

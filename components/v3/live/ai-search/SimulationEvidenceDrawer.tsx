@@ -8,7 +8,7 @@ import { FactCheckEvidence } from "@/components/v3/live/ai-search/FactCheckEvide
 import { answerCopy, useAnswerText } from "@/components/v3/live/ai-search/useAnswerText";
 import { SOURCE_CLASS_LABELS, type CitationEvidence } from "@/lib/ai-search/citations";
 import type { ProbeEvidence } from "@/lib/ai-search/drift";
-import { ACCURACY_LABELS, accuracyState } from "@/lib/ai-search/explorer-filter";
+import { factCheckColumnLabel } from "@/lib/ai-search/explorer-filter";
 import { genuineGuidance } from "@/lib/ai-search/remediation";
 import {
   callOutcome,
@@ -68,7 +68,7 @@ function ShoppingEvidence({ row, citations }: { row: AiCallRow; citations: Citat
           {row.primary_brand && outcome !== "error" ? (
             <tr><td>Brand named most</td><td>{row.primary_brand}</td></tr>
           ) : null}
-          <tr><td>Fact check</td><td>{ACCURACY_LABELS[accuracyState(row)]}</td></tr>
+          <tr><td>Fact check</td><td>{factCheckColumnLabel(row)}</td></tr>
           {row.hallucination_evidence?.trim() ? (
             <tr><td>Conflicting text</td><td>{row.hallucination_evidence}</td></tr>
           ) : null}

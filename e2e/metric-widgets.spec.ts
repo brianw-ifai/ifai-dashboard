@@ -1,73 +1,51 @@
 import { expect, test } from "./fixtures";
 
-test.describe("configurable metric widgets", () => {
-  test("starts with three decision signals and spoke-derived categories", async ({ page }) => {
-    const widgets = page.locator(".canvas-metric-widget");
-    await expect(widgets).toHaveCount(3);
-    await expect(widgets.nth(0)).toContainText("MAP violations");
-    await expect(widgets.nth(1)).toContainText("Product Fact Checks");
-    await expect(widgets.nth(2)).toContainText("Recoverable Revenue");
+test.describe("bubble signal slots", () => {
+  test("shows three slots for the hovered or focused bubble, absent at rest", async ({ canvas, page }) => {
+    await expect(page.locator("[data-hub-slot]")).toHaveCount(0);
+    await expect(page.locator(".metric-widget-config")).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: /Choose metric/ })).toHaveCount(0);
 
-    const firstBox = await widgets.first().boundingBox();
-    expect(firstBox).not.toBeNull();
-    expect(firstBox!.width / firstBox!.height).toBeGreaterThan(1.7);
+    await page.locator("[data-graph-node-id='hub']").focus();
+    await expect(page.locator("[data-hub-slot]")).toHaveCount(3);
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("Summary");
 
-    await widgets.nth(0).locator(".metric-widget-config").click();
-    const picker = page.getByRole("dialog", { name: "Choose metric for widget 1" });
-    await expect(picker).toBeVisible();
-    await expect(picker.locator(".metric-widget-group h3")).toContainText([
-      "Overview",
-      "Portfolio Retail",
-      "AI Search Visibility",
-      "AI Readiness",
-      "Competitive Radar",
-      "Action Items",
-      "90-Day Roadmap",
-    ]);
+    for (const viewport of [
+      { width: 1600, height: 950 },
+      { width: 1280, height: 800 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.locator("[data-graph-node-id='spoke-retail']").focus();
+      await expect(page.locator("[data-hub-slot-source]")).toHaveText("Catalog Health");
+      await expect(page.locator("[data-hub-slot='gap'] [data-hub-slot-status]")).not.toHaveText("");
+      const figure = page.locator("[data-hub-slot='gap'] [data-hub-slot-figure]");
+      const box = await figure.boundingBox();
+      expect(box && box.height).toBeGreaterThan(20);
+    }
+
+    const tab = await page.locator("[data-hub-slot='gap']").getAttribute("data-hub-slot-tab");
+    await page.locator("[data-hub-slot='gap']").click();
+    await expect(canvas.activeTab).toContainText(tab ?? "Suppressed");
   });
 
-  test("allows duplicate selections", async ({ page }) => {
-    const widgets = page.locator(".canvas-metric-widget");
-    await widgets.nth(0).locator(".metric-widget-config").click();
-    await page
-      .getByRole("dialog", { name: "Choose metric for widget 1" })
-      .locator(".metric-widget-option", { hasText: "Product Fact Checks" })
-      .click();
+  test("the slots stay up after the cursor leaves the bubble, until a click outside", async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 950 });
+    await page.locator("[data-graph-node-id='spoke-retail']").focus();
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("Catalog Health");
 
-    await expect(
-      page.locator(".metric-widget-label", { hasText: "Product Fact Checks" }),
-    ).toHaveCount(2);
-  });
+    // Moving focus elsewhere on the page (the equivalent of the cursor drifting
+    // off the bubble) must not close the panel: only an outside click does.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await expect(page.locator("[data-hub-slots]")).toHaveCount(1);
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("Catalog Health");
 
-  test("Suppressed Listings opens its evidence tab and leaves MAP in the picker", async ({
-    canvas,
-    page,
-  }) => {
-    const widgets = page.locator(".canvas-metric-widget");
-    await widgets.nth(0).locator(".metric-widget-config").click();
-    const picker = page.getByRole("dialog", { name: "Choose metric for widget 1" });
-    await expect(picker.locator(".metric-widget-option", { hasText: "MAP violations" })).toBeVisible();
-    await picker.locator(".metric-widget-option", { hasText: "Suppressed Listings" }).click();
+    // Hovering a different bubble swaps to its own slots without ever closing.
+    await page.locator("[data-graph-node-id='spoke-aeo']").focus();
+    await expect(page.locator("[data-hub-slots]")).toHaveCount(1);
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("AI Search Visibility");
 
-    await expect(widgets.nth(0).locator(".metric-widget-label")).toHaveText("Suppressed Listings");
-    await widgets.nth(0).locator(".metric-widget-body").click();
-    await expect(canvas.activeTab).toContainText("Suppressed Listings");
-    await expect(page.locator(".drilldown-tab-btn", { hasText: "MAP" })).toBeVisible();
-  });
-
-  test("supports an empty add bubble and persists it across reloads", async ({ canvas, page }) => {
-    const firstWidget = page.locator(".canvas-metric-widget").first();
-    await firstWidget.locator(".metric-widget-config").click();
-    await page
-      .getByRole("dialog", { name: "Choose metric for widget 1" })
-      .locator(".metric-widget-clear")
-      .click();
-
-    await expect(firstWidget).toHaveClass(/is-empty/);
-    await expect(page.getByRole("button", { name: "Add metric to widget 1" })).toBeVisible();
-
-    await canvas.reload();
-    await expect(page.locator(".canvas-metric-widget").first()).toHaveClass(/is-empty/);
-    await expect(page.getByRole("button", { name: "Add metric to widget 1" })).toBeVisible();
+    // Just below the header, in the empty corner of the map, clear of every bubble.
+    await page.mouse.click(10, 90);
+    await expect(page.locator("[data-hub-slots]")).toHaveCount(0);
   });
 });

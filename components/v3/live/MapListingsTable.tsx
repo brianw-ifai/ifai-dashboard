@@ -9,6 +9,8 @@ import {
   channelPriceLookup,
   listingChannelFacts,
   listingLabel,
+  musiciansFriendCheckedPageUrl,
+  storedHttpUrl,
   type ChannelPriceRow,
   type MapSourceRow,
   type MapTabModel,
@@ -18,17 +20,6 @@ import { MAP_LISTING_COLUMN_WIDTH } from "@/lib/fender-canvas/retail-column-layo
 
 function amazonHref(asin: string): string | null {
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
-}
-
-function httpUrl(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
 }
 
 function mapColumns(model: MapTabModel): RetailColumn[] {
@@ -105,7 +96,8 @@ export function MapListingsTable({
             const facts = new Map(
               listingChannelFacts(row, prices.get(row.asin.trim())).map((fact) => [fact.key, fact]),
             );
-            const walmartUrl = httpUrl(row.wmt_url);
+            const walmartUrl = storedHttpUrl(row.wmt_url);
+            const musiciansFriendUrl = musiciansFriendCheckedPageUrl(prices, row.asin);
             return (
               <tr key={row.asin}>
                 <td className="listing-col">
@@ -124,15 +116,24 @@ export function MapListingsTable({
                 </td>
                 <td className="money">{row.map_price != null ? formatUsd(row.map_price) : pendingLabel()}</td>
                 {model.showAmazon ? <ChannelPriceCell fact={facts.get("amazon")} /> : null}
-                {model.showWalmart ? <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} /> : null}
-                {model.showMusiciansFriend ? <ChannelPriceCell fact={facts.get("musicians-friend")} /> : null}
+                {model.showWalmart ? (
+                  <ChannelPriceCell fact={facts.get("walmart")} href={walmartUrl} requireCheckedPage />
+                ) : null}
+                {model.showMusiciansFriend ? (
+                  <ChannelPriceCell
+                    fact={facts.get("musicians-friend")}
+                    href={musiciansFriendUrl}
+                    requireCheckedPage
+                  />
+                ) : null}
                 {model.extraChannels.map((channel) => {
                   const cell: PricedChannelCell | undefined = prices.get(row.asin.trim())?.get(channel.channel);
                   return (
                     <ChannelPriceCell
                       key={channel.channel}
                       fact={facts.get(channel.channel)}
-                      href={cell ? httpUrl(cell.url) : null}
+                      href={cell ? storedHttpUrl(cell.url) : null}
+                      requireCheckedPage
                     />
                   );
                 })}

@@ -84,10 +84,8 @@ export const fenderStaticNodes: CanvasNode[] = [
       stats: ["Official pages", "Five outcomes"],
       meta: "Exact, family, no page, ambiguous, unchecked",
       spokeId: "specs",
-      tooltip: {
-        title: "Official product pages",
-        desc: "Exact official product pages, official family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings are counted separately. A family page is not an exact product page. Those counts load with the official-page read.",
-      },
+      // The stats and meta above carry the counts; no hover explainer needed.
+      tooltip: { title: "", desc: "" },
     },
     {
       ...aiFaces.spokeCompetitors,
@@ -104,13 +102,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       ],
       meta: "Pilot ➔ $38M to $62M Ent.",
       spokeId: "suggestions",
-      tooltip: {
-        // title: "Action Items",
-        // desc: "18 high-impact brand interventions. Compare the Phase 1 Quick-Win ($680K) with the full enterprise portfolio potential ($38M to $62M GMV).",
-        title: "",
-        desc: "The information in this bubble is not optimized to live data, and is simply a visual example of what will eventually be displayed.",
-        hasMoreInfo: false,
-      },
+      tooltip: { title: "", desc: "" },
     },
     {
       ...primarySpoke("spoke-roadmap"),
@@ -118,13 +110,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       title: "Strategy Roadmap",
       stats: ["90 Days", "3 Phases"],
       spokeId: "roadmap",
-      tooltip: {
-        // title: "90-Day Portfolio Roadmap",
-        // desc: retailFaces.main.tooltip.desc,
-        title: "",
-        desc: "The information in this bubble is not optimized to live data, and is simply a visual example of what will eventually be displayed.",
-        hasMoreInfo: false,
-      },
+      tooltip: { title: "", desc: "" },
     },
     {
       id: "hub",
@@ -133,11 +119,11 @@ export const fenderStaticNodes: CanvasNode[] = [
       r: 98,
       status: "danger",
       variant: "hub",
-      title: "Brand Portfolio",
+      title: "Summary",
       stats: [],
       logoSrc: "/image.png",
       meta: "Click for Master View",
       spokeId: "hub",
-      tooltip: {"title": "Brand Portfolio Overview", "desc": "Click to open the portfolio overview: 5 brand divisions, the executive briefing, and enterprise commercial sizing."},
+      tooltip: {"title": "Summary", "desc": "Click to open the Summary: 5 brand divisions, the Briefing, and Opportunity."},
     },
 ];

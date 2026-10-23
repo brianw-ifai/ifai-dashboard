@@ -1233,17 +1233,76 @@
   --bg-surface: #ffffff;
   --bg-surface-hover: #e7f1fa;
   --bg-card: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.96);
   --text-main: #0b1f33;
   --text-muted: #5e7894;
   --text-subtle: #7c93ab;
   --map-bg: #e7f1fa;
   --map-node-bg: rgba(255, 255, 255, 0.94);
   --border-color: rgba(14, 48, 84, 0.12);
+  --border-dark: rgba(14, 48, 84, 0.18);
   /* Status text stayed on the dark-theme values while the surfaces flipped to
      white, leaving every badge and callout washed out. Darken them to match. */
   --danger-text: #b91c1c;
   --success-text: #047857;
   --warning-text: #b45309;
+}
+
+/* Citation Ecosystem cards and AI Search surfaces stay readable in light theme. */
+.ifai-canvas.theme-iom.light-theme .ai-search-panel .content-box,
+.ifai-canvas.theme-iom.light-theme .citation-card,
+.ifai-canvas.theme-iom.light-theme .citation-controls,
+.ifai-canvas.theme-iom.light-theme .drilldown-stat-chip,
+.ifai-canvas.theme-iom.light-theme .citation-gap-btn {
+  background: #ffffff;
+  border-color: rgba(14, 48, 84, 0.12);
+  color: #0b1f33;
+}
+
+.ifai-canvas.theme-iom.light-theme .citation-card-kicker,
+.ifai-canvas.theme-iom.light-theme .citation-card-note,
+.ifai-canvas.theme-iom.light-theme .citation-card-caveat,
+.ifai-canvas.theme-iom.light-theme .citation-assoc-detail,
+.ifai-canvas.theme-iom.light-theme .citation-role-leads li,
+.ifai-canvas.theme-iom.light-theme .citation-controls-meta,
+.ifai-canvas.theme-iom.light-theme .drilldown-stat-label,
+.ifai-canvas.theme-iom.light-theme .citation-gap-body,
+.ifai-canvas.theme-iom.light-theme .citation-domain-meta {
+  color: #5e7894;
+}
+
+.ifai-canvas.theme-iom.light-theme .citation-hero-value,
+.ifai-canvas.theme-iom.light-theme .citation-hero-ratio,
+.ifai-canvas.theme-iom.light-theme .citation-card-lead,
+.ifai-canvas.theme-iom.light-theme .citation-card-secondary,
+.ifai-canvas.theme-iom.light-theme .citation-role-insight,
+.ifai-canvas.theme-iom.light-theme .citation-role-label strong,
+.ifai-canvas.theme-iom.light-theme .citation-gap-count,
+.ifai-canvas.theme-iom.light-theme .citation-gap-body strong,
+.ifai-canvas.theme-iom.light-theme .citation-domain-meta strong,
+.ifai-canvas.theme-iom.light-theme .drilldown-stat-value,
+.ifai-canvas.theme-iom.light-theme .citation-controls-meta [data-ai-cited-answers],
+.ifai-canvas.theme-iom.light-theme .citation-controls-meta [data-ai-cited-links],
+.ifai-canvas.theme-iom.light-theme .citation-pie strong,
+.ifai-canvas.theme-iom.light-theme .citation-pie p,
+.ifai-canvas.theme-iom.light-theme .citation-pie li {
+  color: #0b1f33;
+}
+
+.ifai-canvas.theme-iom.light-theme .citation-assoc-track,
+.ifai-canvas.theme-iom.light-theme .citation-domain-track,
+.ifai-canvas.theme-iom.light-theme .citation-role-track {
+  background: rgba(14, 48, 84, 0.12);
+}
+
+.ifai-canvas.theme-iom.light-theme .citation-role-seg-cited_owned {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.ifai-canvas.theme-iom.light-theme .citation-role-seg-no_owned {
+  background: #94a3b8;
+  color: #0b1f33;
 }
 
 .ifai-canvas.theme-iom.light-theme .top-header {

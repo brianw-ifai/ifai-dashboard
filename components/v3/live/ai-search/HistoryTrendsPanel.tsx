@@ -2,7 +2,6 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useAiHistory } from "@/components/v3/live/ai-search/AiHistoryContext";
-import { HistoryBanner } from "@/components/v3/live/ai-search/HistoryBanner";
 import { HistoryPointDetail } from "@/components/v3/live/ai-search/HistoryPointDetail";
 import { HistoryTrendChart } from "@/components/v3/live/ai-search/HistoryTrendChart";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
@@ -68,8 +67,6 @@ export function HistoryTrendsPanel() {
     () => (history.trend.phase === "ready" ? queryChoices(history.trend.snapshots, metric) : [{ kind: "all" as const }]),
     [history.trend, metric],
   );
-
-  const period = history.mode.kind === "all" ? "All time" : history.mode.kind === "range" ? `${formatDay(history.mode.from)} to ${formatDay(history.mode.to)}` : "Trends";
 
   let body: ReactNode = null;
   if (history.catalog.phase === "loading" || history.trend.phase === "loading") {
@@ -193,10 +190,6 @@ export function HistoryTrendsPanel() {
 
   return (
     <div data-ai-history-trends>
-      <HistoryBanner
-        heading={period}
-        detail="Trends use the stored review runs. A scoring-method change stays visible. Legacy fragments stay out of this chart."
-      />
       <div className="ai-history-toggles">
         <div className="segmented-control" role="group" aria-label="Rate">
           {(["unbranded_discovery", "branded_consideration"] as const).map((role) => (
@@ -225,9 +218,7 @@ export function HistoryTrendsPanel() {
         </div>
       </div>
       <p className="ai-history-note">
-        <AiTerm term="unbranded discovery">Unbranded discovery</AiTerm> and{" "}
-        <AiTerm term="branded consideration">branded consideration</AiTerm> use the same denominators as the current run.{" "}
-        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside.
+        <AiTerm term="provider error">Provider errors</AiTerm> and <AiTerm term="no clear leader">unresolved answers</AiTerm> stay outside both rates.
       </p>
       <label className="ai-history-query">
         Question
