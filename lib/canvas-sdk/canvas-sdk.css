@@ -3926,12 +3926,6 @@
       letter-spacing: -0.02em;
     }
 
-    .hub-slot-hint {
-      margin: -4px 0 2px;
-      color: var(--text-subtle);
-      font-size: 12px;
-    }
-
     .hub-slot {
       position: relative;
       display: flex;

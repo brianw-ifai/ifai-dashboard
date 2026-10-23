@@ -20,6 +20,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           tourCategory={ctx.tourCategory}
           onFocusNode={ctx.focusNode}
           onInspectBubble={ctx.inspectBubble}
+          onUninspectBubble={ctx.uninspectBubble}
           onResetView={ctx.resetView}
           overviewNonce={ctx.overviewNonce}
           focusedSpokeId={ctx.focusedSpokeId}

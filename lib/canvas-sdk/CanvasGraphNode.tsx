@@ -15,6 +15,7 @@ export function CanvasGraphNode({
   onGroupLeave,
   onSelect,
   onInspect,
+  onUninspect,
   emphasis,
   selected,
   dimmed,
@@ -32,6 +33,7 @@ export function CanvasGraphNode({
   onGroupLeave?: () => void;
   onSelect?: () => void;
   onInspect?: () => void;
+  onUninspect?: () => void;
   emphasis?: boolean;
   selected?: boolean;
   dimmed?: boolean;
@@ -59,6 +61,7 @@ export function CanvasGraphNode({
       dimmed={dimmed}
       enterDelay={enterDelay}
       onInspect={onInspect}
+      onUninspect={onUninspect}
       onClick={() => {
         onSelect?.();
         onInspect?.();
@@ -94,6 +97,7 @@ export function CanvasGraphNode({
       }}
       onMouseLeave={() => {
         onGroupLeave?.();
+        onUninspect?.();
         onHideTooltip();
       }}
     />

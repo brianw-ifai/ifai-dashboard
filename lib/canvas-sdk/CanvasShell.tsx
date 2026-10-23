@@ -140,6 +140,8 @@ export function CanvasShell({ spec, children }: Props) {
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   const [inspectedBubbleId, setInspectedBubbleId] = useState("hub");
+  /** The signal slots show only while a main bubble is hovered or focused. */
+  const [hubSlotsVisible, setHubSlotsVisible] = useState(false);
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   /** Set when the tour is parked behind an open drilldown rather than ended. */
@@ -462,6 +464,7 @@ export function CanvasShell({ spec, children }: Props) {
       restoreTourLauncher();
     }
     setInspectedBubbleId("hub");
+    setHubSlotsVisible(false);
     setOverviewNonce((nonce) => nonce + 1);
     frameOverview();
   }, [frameOverview, iom, restoreTourLauncher]);
@@ -687,6 +690,35 @@ export function CanvasShell({ spec, children }: Props) {
   useEffect(() => {
     if (activeSpoke || panelView === "command") hideTooltip();
   }, [activeSpoke, hideTooltip, panelView]);
+
+  const inspectBubble = useCallback((nodeId: string) => {
+    setInspectedBubbleId(nodeId);
+    setHubSlotsVisible(true);
+  }, []);
+
+  const uninspectBubble = useCallback(() => {
+    setHubSlotsVisible(false);
+  }, []);
+
+  // Opening a spoke panel, or returning from one, leaves no bubble hovered or focused.
+  useEffect(() => {
+    setHubSlotsVisible(false);
+  }, [activeSpoke]);
+
+  // A click outside every bubble and the slots themselves closes the slots,
+  // the same way a click outside a menu closes the menu.
+  useEffect(() => {
+    if (!hubSlotsVisible) return;
+    function onPointerDown(e: PointerEvent) {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".graph-node")) return;
+      if (target.closest("[data-hub-slots]")) return;
+      setHubSlotsVisible(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [hubSlotsVisible]);
 
   const showDefinitionTooltip = useCallback((target: Element) => {
     if (tourActiveRef.current && !tourSuspendedRef.current) return;
@@ -1000,7 +1032,8 @@ export function CanvasShell({ spec, children }: Props) {
     tourRadius: currentTour?.radius ?? 160,
     tourCategory: currentTour?.category ?? "",
     focusNode,
-    inspectBubble: setInspectedBubbleId,
+    inspectBubble,
+    uninspectBubble,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
@@ -1217,8 +1250,10 @@ export function CanvasShell({ spec, children }: Props) {
           </div>
         ) : null}
 
-        {spec.hubSlots && panelLayout === "hidden" ? (
-          <HubSlots feeds={spec.hubSlots} bubbleId={inspectedBubbleId} onOpen={focusNode} />
+        {spec.hubSlots ? (
+          hubSlotsVisible && panelLayout === "hidden" ? (
+            <HubSlots feeds={spec.hubSlots} bubbleId={inspectedBubbleId} onOpen={focusNode} />
+          ) : null
         ) : spec.metricWidgets ? (
           <MetricWidgets
             config={spec.metricWidgets}

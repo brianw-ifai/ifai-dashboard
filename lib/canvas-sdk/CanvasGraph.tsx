@@ -22,6 +22,7 @@ type Props = {
   tourCategory: string;
   onFocusNode: (spokeId: string, subTab?: string) => void;
   onInspectBubble?: (nodeId: string) => void;
+  onUninspectBubble?: () => void;
   onResetView: () => void;
   overviewNonce: number;
   focusedSpokeId?: string | null;
@@ -46,6 +47,7 @@ export function CanvasGraph({
   tourCategory,
   onFocusNode,
   onInspectBubble,
+  onUninspectBubble,
   onResetView,
   overviewNonce,
   focusedSpokeId = null,
@@ -173,6 +175,9 @@ export function CanvasGraph({
         onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
         onInspect={
           onInspectBubble && MAIN_BUBBLES.has(node.id) ? () => onInspectBubble(node.id) : undefined
+        }
+        onUninspect={
+          onUninspectBubble && MAIN_BUBBLES.has(node.id) ? onUninspectBubble : undefined
         }
       />
     );

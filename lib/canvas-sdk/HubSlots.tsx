@@ -74,7 +74,6 @@ export function HubSlots({ feeds, bubbleId, onOpen }: Props) {
       <p className="hub-slot-source" data-hub-slot-source>
         {feed.title}
       </p>
-      <p className="hub-slot-hint">Hover or focus a main bubble.</p>
       {feed.slots.map((slot) => (
         <SlotCard key={slot.role} slot={slot} onOpen={onOpen} />
       ))}
