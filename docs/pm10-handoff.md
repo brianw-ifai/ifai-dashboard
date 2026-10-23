@@ -30,13 +30,14 @@ When Brian does approve PR 46, the closeout line is 9.5, not 10.0. That closeout
 
 - Branch: `cursor/why-not-fender-lead-figure-2ff4`
 - Pull request: https://github.com/brianw-ifai/ifai-dashboard/pull/46 (base `main`, open, not draft)
-- Latest code commit: `ce1bba9` ("AI Search Visibility bubble group: one hero percentage per bubble, red/yellow/green")
+- Latest feature commit: `ce1bba9` ("AI Search Visibility bubble group: one hero percentage per bubble, red/yellow/green")
+- This handoff is the commit after `ce1bba9` on the same branch. Branch new work from the head of `cursor/why-not-fender-lead-figure-2ff4`.
 - Preview: https://deploy-preview-46--ifai-dashboard.netlify.app
 - Guest path: Skip Login, or cookie `ifai_guest_fender=1` on that Netlify host
 
 PR 46 contains the already approved 8.1 through 8.7 work because PR 45 has not merged. A diff against `main` shows both. PR 45 stays the draft for that earlier batch: https://github.com/brianw-ifai/ifai-dashboard/pull/45 on `cursor/visual-pilot-8c53`. Do not open a third copy of that history.
 
-New feature work branches from `ce1bba9` until PR 46 merges, then from `main`. A cloud agent uses its own `cursor/<description>-<suffix>` branch name. Do not start 10.1 from PR 45.
+New feature work branches from the head of `cursor/why-not-fender-lead-figure-2ff4` until PR 46 merges, then from `main`. A cloud agent uses its own `cursor/<description>-<suffix>` branch name. Do not start 10.1 from PR 45.
 
 `docs/pm9-handoff.md` is the note PM9 received. It stops at the 8.7 closeout and recommends 9.1 and 9.2 only. Leave that file as history. This file is the handoff for PM10.
 
