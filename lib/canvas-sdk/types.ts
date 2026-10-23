@@ -280,10 +280,9 @@ export type CanvasRenderContext = {
   tourRadius: number;
   tourCategory: string;
   focusNode: (spokeId: string, subTab?: string) => void;
-  /** A main bubble is hovered or focused: show its signal slots. */
+  /** A main bubble is hovered or focused: show its signal slots. They stay up,
+   *  tracking the latest hovered bubble, until a click outside dismisses them. */
   inspectBubble: (nodeId: string) => void;
-  /** The bubble is no longer hovered or focused: hide the signal slots. */
-  uninspectBubble: () => void;
   resetView: () => void;
   overviewNonce: number;
   focusedSpokeId: string | null;

@@ -740,6 +740,9 @@
       z-index: 1;
       cursor: grab;
       user-select: none;
+      /* The slot column nudges this over on a laptop-width map (see .hub-slots
+         below). Ease that shift instead of snapping the bubbles under the cursor. */
+      transition: left 180ms ease;
       background-color: var(--map-bg);
       background-image:
         radial-gradient(circle at 78% 24%, #38bdf84d, transparent 28rem),

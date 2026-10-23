@@ -468,22 +468,15 @@ type BubbleProps = {
   onMouseMove?: (evt: MouseEvent) => void;
   onMouseLeave: () => void;
   onInspect?: () => void;
-  onUninspect?: () => void;
 };
 
-function inspectProps(
-  label: string,
-  onInspect: (() => void) | undefined,
-  onUninspect: (() => void) | undefined,
-  onActivate: () => void,
-) {
+function inspectProps(label: string, onInspect: (() => void) | undefined, onActivate: () => void) {
   if (!onInspect) return {};
   return {
     tabIndex: 0,
     role: "button" as const,
     "aria-label": label || "Bubble",
     onFocus: onInspect,
-    onBlur: onUninspect,
     onKeyDown: (event: KeyboardEvent) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
@@ -513,7 +506,6 @@ export function GraphBubble({
   onMouseMove,
   onMouseLeave,
   onInspect,
-  onUninspect,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
@@ -552,7 +544,7 @@ export function GraphBubble({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
-      {...inspectProps(title, onInspect, onUninspect, onClick)}
+      {...inspectProps(title, onInspect, onClick)}
     >
       <circle r={emphasis ? r + 26 : r + 10} className={`node-halo${statusClass}`} />
       {emphasis && PRIMARY_SPOKES.has(id) ? <RingMotes radius={r} /> : null}
@@ -589,7 +581,6 @@ export function GraphHub({
   onMouseMove,
   onMouseLeave,
   onInspect,
-  onUninspect,
 }: BubbleProps) {
   const faceR = contentRadius ?? r;
   const faceScale = faceR > 0 && r !== faceR ? r / faceR : 1;
@@ -626,7 +617,7 @@ export function GraphHub({
       onMouseEnter={onMouseEnter}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
-      {...inspectProps(title, onInspect, onUninspect, onClick)}
+      {...inspectProps(title, onInspect, onClick)}
     >
       <circle r={pulseR} fill="url(#brandHubGradient)" opacity="0.45" className="node-pulse-ring hub-halo-pulse" />
       {emphasis ? <RingMotes radius={r} /> : null}

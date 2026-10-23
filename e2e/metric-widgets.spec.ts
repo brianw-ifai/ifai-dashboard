@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test.describe("bubble signal slots", () => {
-  test("shows three slots only while a bubble is hovered or focused", async ({ canvas, page }) => {
+  test("shows three slots for the hovered or focused bubble, absent at rest", async ({ canvas, page }) => {
     await expect(page.locator("[data-hub-slot]")).toHaveCount(0);
     await expect(page.locator(".metric-widget-config")).toHaveCount(0);
     await expect(page.getByRole("dialog", { name: /Choose metric/ })).toHaveCount(0);
@@ -28,10 +28,21 @@ test.describe("bubble signal slots", () => {
     await expect(canvas.activeTab).toContainText(tab ?? "Suppressed");
   });
 
-  test("a click outside every bubble and the slots closes the slots", async ({ page }) => {
+  test("the slots stay up after the cursor leaves the bubble, until a click outside", async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 950 });
     await page.locator("[data-graph-node-id='spoke-retail']").focus();
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("Catalog Health");
+
+    // Moving focus elsewhere on the page (the equivalent of the cursor drifting
+    // off the bubble) must not close the panel: only an outside click does.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await expect(page.locator("[data-hub-slots]")).toHaveCount(1);
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("Catalog Health");
+
+    // Hovering a different bubble swaps to its own slots without ever closing.
+    await page.locator("[data-graph-node-id='spoke-aeo']").focus();
+    await expect(page.locator("[data-hub-slots]")).toHaveCount(1);
+    await expect(page.locator("[data-hub-slot-source]")).toHaveText("AI Search Visibility");
 
     // Just below the header, in the empty corner of the map, clear of every bubble.
     await page.mouse.click(10, 90);

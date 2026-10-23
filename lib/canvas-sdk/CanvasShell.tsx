@@ -696,10 +696,6 @@ export function CanvasShell({ spec, children }: Props) {
     setHubSlotsVisible(true);
   }, []);
 
-  const uninspectBubble = useCallback(() => {
-    setHubSlotsVisible(false);
-  }, []);
-
   // Opening a spoke panel, or returning from one, leaves no bubble hovered or focused.
   useEffect(() => {
     setHubSlotsVisible(false);
@@ -1033,7 +1029,6 @@ export function CanvasShell({ spec, children }: Props) {
     tourCategory: currentTour?.category ?? "",
     focusNode,
     inspectBubble,
-    uninspectBubble,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
