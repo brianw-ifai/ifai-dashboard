@@ -303,10 +303,23 @@ export function aiCommandSummary(read: AiSearchRead): string | null {
   return `In the published AI run, ${headlineLine(s)} Shopping guidance and product-fact questions are not in either rate.`;
 }
 
-export function competitorsSpokeDesc(read: AiSearchRead): string {
-  if (read.phase !== "ready") return aiSpokeDesc(read);
+/**
+ * The Competitive Radar sentence. The N-of-M clause is the figure.
+ * The other clauses are the explainer and stay under that figure.
+ */
+export function competitorsSpokeLead(read: AiSearchRead): { figure: string; explainer: string } {
+  if (read.phase !== "ready") return { figure: aiSpokeDesc(read), explainer: "" };
   const s = summarizeRun(read.snapshot);
-  return `Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Competitors led ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.`;
+  return {
+    figure: `Competitors led ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers.`,
+    explainer:
+      "Which brands AI engines name over Fender/Squier on unbranded discovery prompts. Branded consideration, product fact checks, provider errors, and answers with no clear leader are left out.",
+  };
+}
+
+export function competitorsSpokeDesc(read: AiSearchRead): string {
+  const { figure, explainer } = competitorsSpokeLead(read);
+  return explainer ? `${figure} ${explainer}` : figure;
 }
 
 /** Client priorities this run can prove. Nothing appears while the run is loading or missing. */

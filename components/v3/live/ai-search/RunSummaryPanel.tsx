@@ -62,8 +62,10 @@ function RoleRate({
   const rate = tally.resolved > 0 ? pct(tally.fenderWins, tally.resolved) : "No resolved answers";
   return (
     <div className="metric-card-sm" data-ai-role={tally.role}>
+      <div className="metric-card-val" data-ai-lead-figure={tally.role}>
+        {tally.resolved > 0 ? `${tally.fenderWins} of ${tally.resolved}` : "No resolved answers"}
+      </div>
       <span className="metric-card-label"><AiTerm term={term}>{ROLE_LABELS[tally.role]}</AiTerm></span>
-      <div className="metric-card-val" data-ai-win-rate={tally.role}>{rate}</div>
       <span className="metric-card-sub">
         {tally.resolved > 0 ? (
           <>
@@ -74,7 +76,7 @@ function RoleRate({
             <EvidenceLink focus={{ field: "role", value: `${tally.role}/resolved` }} tab={SIM}>
               {tally.resolved}
             </EvidenceLink>{" "}
-            <AiTerm term="resolved" /> answers
+            <AiTerm term="resolved" /> answers (<span data-ai-win-rate={tally.role}>{rate}</span>)
           </>
         ) : (
           `No resolved answers in this ${unit}`
@@ -94,10 +96,7 @@ function keptOut(tally: RoleTally): string {
 function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: "run" | "selection"; mixed: boolean }) {
   const s = summarizeRun(snapshot);
   return (
-    <div className="content-box ai-win-card" style={{ marginTop: 12 }}>
-      <div className="content-box-title">
-        <span>How often Fender/Squier is named, by the kind of question</span>
-      </div>
+    <div className="content-box ai-win-card">
       <div className="metric-grid-2">
         <RoleRate tally={s.roles.unbranded} term="unbranded discovery" unit={unit} />
         <RoleRate tally={s.roles.branded} term="branded consideration" unit={unit} />
@@ -107,6 +106,9 @@ function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: 
           {MIXED_SCORING_NOTE}
         </p>
       ) : null}
+      <div className="content-box-title">
+        <span>How often Fender/Squier is named, by the kind of question</span>
+      </div>
       <ul style={{ ...mutedText, margin: "10px 0 0", paddingLeft: 16 }}>
         <li>
           <AiTerm term="brand-associated discovery">Brand-associated discovery</AiTerm>:{" "}

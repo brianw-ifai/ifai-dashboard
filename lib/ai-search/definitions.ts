@@ -23,6 +23,8 @@ export const AI_DEFINITIONS = {
   "shopping answer": "A usable response from one AI engine to one shopping prompt.",
   "cited link":
     "A web URL the AI engine explicitly returned with its answer. It does not prove that the source caused or endorsed the recommendation.",
+  association:
+    "A stored answer and a page that answer cited, shown together. The link records that the engine cited the page. It does not show that the page caused the engine to name another brand.",
   "Fender-owned": "A cited site controlled by Fender or another FMIC brand, classified by IntoFocus.",
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",

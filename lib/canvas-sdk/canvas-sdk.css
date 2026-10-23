@@ -1540,6 +1540,21 @@
       line-height: 1.4;
     }
 
+    .ai-lead-figure {
+      display: block;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: var(--metric-value-size);
+      font-weight: var(--metric-value-weight);
+      letter-spacing: var(--metric-value-tracking);
+      line-height: 1.15;
+    }
+
+    .ai-lead-explainer {
+      display: block;
+      margin-top: 6px;
+    }
+
     .drilldown-close-btn {
       width: 28px;
       height: 28px;

@@ -108,24 +108,13 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <>
       <div className="content-box ai-engine-comparison ai-role-rates">
-        <div className="content-box-title">Commercial outcomes by engine</div>
-        <RoleSumLine groups={engines} preface="Fender/Squier leads, by the kind of question." />
+        <RoleSumLine groups={engines} preface="" />
         {mixed ? (
           <p className="ai-role-footnote" data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}
           </p>
         ) : null}
-        <p className="ai-role-footnote">
-          Each engine is compared on its own for <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and for{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>.
-          {showSmallSample ? (
-            <>
-              {" "}
-              A <AiTerm term="small sample" /> keeps its percentage and is not ranked.
-            </>
-          ) : null}{" "}
-          Competitor columns count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
-        </p>
+        <div className="content-box-title">Commercial outcomes by engine</div>
         <ResizableTable
           tableId="engine-comparison"
           columns={columns}
@@ -171,6 +160,17 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
             })}
           </tbody>
         </ResizableTable>
+        <p className="ai-role-footnote">
+          Each engine is compared on its own for <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and for{" "}
+          <AiTerm term="branded consideration">branded consideration</AiTerm>.
+          {showSmallSample ? (
+            <>
+              {" "}
+              A <AiTerm term="small sample" /> keeps its percentage and is not ranked.
+            </>
+          ) : null}{" "}
+          Competitor columns count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
+        </p>
       </div>
 
       <div className="content-box ai-engine-category ai-role-rates" style={{ marginTop: 12 }}>

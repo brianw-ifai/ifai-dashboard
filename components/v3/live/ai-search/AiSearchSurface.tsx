@@ -7,7 +7,7 @@ import { LegacyRunInspect } from "@/components/v3/live/ai-search/LegacyRunInspec
 
 /**
  * Month, range, and all open the tab children on the pooled selection.
- * Run Summary also keeps the trend chart above those children.
+ * Run Summary leads with its figures. The trend chart sits under those children.
  * Citation Ecosystem still follows range and all through followsRange.
  * Legacy stays on LegacyRunInspect. The map stays on the published run.
  */
@@ -28,8 +28,8 @@ export function AiSearchSurface({
   if (windowed && trend) {
     return (
       <>
-        <HistoryTrendsPanel />
         {children}
+        <HistoryTrendsPanel />
       </>
     );
   }

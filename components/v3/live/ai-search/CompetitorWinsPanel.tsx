@@ -7,6 +7,7 @@ import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryCo
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
+import { WhyNotFender } from "@/components/v3/live/ai-search/WhyNotFender";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
@@ -77,10 +78,6 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
     <>
       <div className="content-box ai-competitor-tallies">
         <div className="content-box-title">Competitors named more than Fender/Squier</div>
-        <p style={mutedText}>
-          Each lead is a win of that many resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
-          answers. Branded consideration is not in this rate.
-        </p>
         {mixed ? (
           <p style={mutedText} data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}
@@ -116,6 +113,10 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
             ))}
           </tbody>
         </ResizableTable>
+        <p style={mutedText}>
+          Each lead is a win of that many resolved <AiTerm term="unbranded discovery">unbranded discovery</AiTerm>{" "}
+          answers. Branded consideration is not in this rate.
+        </p>
       </div>
 
       <div className="content-box ai-competitor-answers" style={{ marginTop: 12 }}>
@@ -141,6 +142,7 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
                 {categoryLabel(row.category)} · {engineLabel(row.engine)} · {modelLabel(row.model)} ·{" "}
                 {domains.length ? `cited ${domains.map((d) => d.key).join(", ")}` : "no valid cited page"}
               </div>
+              <WhyNotFender row={row} pages={cited.filter((citation) => citation.simulationId === row.id)} />
             </div>
           );
         })}

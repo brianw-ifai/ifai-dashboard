@@ -65,27 +65,14 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
   return (
     <div className="ai-role-rates">
-      <div className="ceo-callout">
-        <div className="ceo-callout-header">
-          <span>Who out-mentions Fender/Squier in AI buying answers?</span>
-        </div>
-        <div className="ceo-callout-body">
-          Each category shows two Fender-lead rates, <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
-          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
-          entry-level line against Yamaha and Ibanez. The top competitor and Competitor leads columns use unbranded
-          discovery only.
-        </div>
-      </div>
-
-      <div className="content-box ai-battlecards" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Category battlecards</div>
-        <RoleSumLine groups={battles} preface="Fender/Squier leads, by the kind of question." />
+      <div className="content-box ai-battlecards">
+        <RoleSumLine groups={battles} preface="" />
         {mixed ? (
           <p className="ai-role-footnote" data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}
           </p>
         ) : null}
+        <div className="content-box-title">Category battlecards</div>
         <ResizableTable
           tableId="category-battlecards"
           columns={COLUMNS}
@@ -136,6 +123,19 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           question kept out below does not appear in these columns.
         </p>
         <KeptOutNote snapshot={snapshot} />
+      </div>
+
+      <div className="ceo-callout" style={{ marginTop: 12 }}>
+        <div className="ceo-callout-header">
+          <span>Who out-mentions Fender/Squier in AI buying answers?</span>
+        </div>
+        <div className="ceo-callout-body">
+          Each category shows two Fender-lead rates, <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and{" "}
+          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
+          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
+          entry-level line against Yamaha and Ibanez. The top competitor and Competitor leads columns use unbranded
+          discovery only.
+        </div>
       </div>
     </div>
   );

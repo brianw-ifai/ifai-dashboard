@@ -133,7 +133,7 @@ export function RoleSumLine({
 }) {
   return (
     <p className="ai-role-footnote" data-ai-role-totals>
-      {preface}{" "}
+      {preface ? <>{preface} </> : null}
       {HEADLINE_ROLES.map((role, index) => {
         const tally = sumRoleTallies(groups, role);
         const name = ROLE_LABELS[role];
