@@ -133,7 +133,9 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.deepEqual(face.stats, ["1 listing withheld above outside price"]);
   assert.equal(face.meta, undefined);
   assert.doesNotMatch(face.stats.join(" "), /\d[\d,]* of \d/);
-  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
+  // The headline bubble carries its own count; it keeps no hover explainer.
+  assert.equal(face.tooltip.title, "");
+  assert.equal(face.tooltip.desc, "");
   assert.doesNotMatch(visible(face), /incomplete|unavailable/i);
   assert.doesNotMatch(visible(face), FORBIDDEN);
 
@@ -226,8 +228,13 @@ test("a higher unfinished reading is not replaced by a later count", () => {
   });
   const face = headlineBubble(source);
   assert.equal(face.subTab, "Retail Overview");
-  assert.deepEqual(face.stats, ["Suppressed Listings"]);
-  assert.ok(face.tooltip.desc.includes(source.suppressedListings.missingMessage ?? ""));
+  // An unfinished reading keeps its own coverage line visible as a second stat, not in a hover.
+  assert.equal(face.stats[0], "Suppressed Listings");
+  assert.equal(
+    face.stats[1],
+    shortCoverageLine(source.suppressedListings.missingMessage),
+  );
+  assert.equal(face.tooltip.desc, "");
   assert.doesNotMatch(face.stats.join(" "), /2 listings/);
 });
 

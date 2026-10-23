@@ -352,20 +352,21 @@ test("the readiness face uses outcome counts instead of the older found percenta
     { phase: "ready", rows, dealerBundleLoaded: true },
     "91.8%",
   );
-  const visible = [face.meta, face.tooltipDesc, ...face.stats].join(" ");
+  const visible = [face.meta, ...face.stats].join(" ");
   assert.match(face.stats[0] ?? "", /89 exact/);
   assert.match(face.stats[1] ?? "", /548 family/);
   assert.match(face.meta, /342 no page/);
   assert.match(face.meta, /8 ambiguous/);
   assert.match(face.meta, /5 unchecked/);
-  assert.match(visible, /not an exact product page/);
-  assert.match(visible, /older spec read/);
   assert.doesNotMatch(visible, /13\.3|10\.8|one third|Found/);
   assert.doesNotMatch(face.stats.join(" "), /%/);
+  // The bubble carries its own counts; it keeps no hover explainer.
+  assert.equal(face.tooltipTitle, "");
+  assert.equal(face.tooltipDesc, "");
 
   const loading = readinessFindabilityFace({ phase: "loading" }, "91.8%");
   assert.doesNotMatch(loading.stats.join(" "), /13\.3|10\.8/);
-  assert.match(loading.tooltipDesc, /counted separately/);
+  assert.equal(loading.tooltipDesc, "");
 
   const root = new URL("..", import.meta.url);
   const nodes = readFileSync(new URL("lib/fender-canvas/nodes-from-live.ts", root), "utf8");

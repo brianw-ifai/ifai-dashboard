@@ -71,6 +71,11 @@ export function CanvasGraphNode({
       onMouseEnter={(evt) => {
         onInspect?.();
         onGroupEnter?.();
+        // A bubble with no stored explainer (title is self-sufficient) shows no hover box at all.
+        if (!node.tooltip.desc.trim()) {
+          onHideTooltip();
+          return;
+        }
         onShowTooltip(
           evt,
           node.tooltip.title,
@@ -79,6 +84,7 @@ export function CanvasGraphNode({
         );
       }}
       onMouseMove={(evt) => {
+        if (!node.tooltip.desc.trim()) return;
         onShowTooltip(
           evt,
           node.tooltip.title,

@@ -16,7 +16,6 @@ import {
 import { questionRole } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 import {
-  engineModelLine,
   errorLine,
   headlineLine,
   pct,
@@ -43,7 +42,11 @@ export const RADAR_TABS = {
   engines: "Engine Comparison",
 } as const;
 
-function stateFace(read: AiSearchRead, title: string, subTab: string): NodeFace | null {
+/**
+ * A main-spoke bubble's status word is self-sufficient (e.g. "Loading run"). It carries no
+ * hover explainer. A satellite keeps its explainer, since it is reached by a deliberate click.
+ */
+function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless = false): NodeFace | null {
   if (read.phase === "ready") return null;
   const copy = {
     loading: ["Loading run", "Reading the published AI run."],
@@ -56,7 +59,7 @@ function stateFace(read: AiSearchRead, title: string, subTab: string): NodeFace 
     stats: [copy[0]],
     meta: "AI Search Visibility",
     subTab,
-    tooltip: { title, desc: copy[1].trim() },
+    tooltip: hoverless ? { title: "", desc: "" } : { title, desc: copy[1].trim() },
   };
 }
 
@@ -86,14 +89,15 @@ export type AiNodeFaces = Record<
 >;
 
 export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
-  const pending = (title: string, subTab: string) => stateFace(read, title, subTab) as NodeFace;
+  const pending = (title: string, subTab: string, hoverless = false) =>
+    stateFace(read, title, subTab, hoverless) as NodeFace;
   if (read.phase !== "ready") {
     return {
-      spokeAeo: pending("AI Search Visibility", AI_TABS.summary),
+      spokeAeo: pending("AI Search Visibility", AI_TABS.summary, true),
       satPrompts: pending("AI Calls", AI_TABS.simulations),
       satCitations: pending("Citations", AI_TABS.citations),
       satDrift: pending("Product Fact Checks", AI_TABS.drift),
-      spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards),
+      spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
       satGap: pending("Category Gap", RADAR_TABS.wins),
       satLead: pending("Category Lead", RADAR_TABS.battlecards),
     };
@@ -102,9 +106,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const s = summarizeRun(read.snapshot);
   const { commercial: c, completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const engines = engineModelLine(s.enginesAndModels);
   const small = s.smallSampleEngines.map(engineLabel);
-  const runLine = `${state} published run ${s.shortRunId}, completed ${s.completedAt}. ${run.answered ?? "Unknown"} of ${run.expected ?? "unknown"} calls answered. ${errorLine(s)}.`;
   const lead = strongestCategory(categoryBattles(read.snapshot.calls));
   const gap = s.largestGap;
 
@@ -113,15 +115,13 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       status: winStatus(s),
       title: "AI Search Visibility",
       stats: [
-        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved}`,
-        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved}`,
+        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} (${pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved)})`,
+        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved} (${pct(s.roles.branded.fenderWins, s.roles.branded.resolved)})`,
       ],
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
-      tooltip: {
-        title: "AI Search Visibility",
-        desc: `${headlineLine(s)} Shopping guidance and product-fact questions are not in either rate. Brand-associated discovery is counted on its own. Answers with no clear leader and provider errors stay out of both denominators. Engines: ${engines}. ${runLine}`,
-      },
+      // The two rates above are the whole explanation. Open Run Summary for the engine and run detail.
+      tooltip: { title: "", desc: "" },
     },
     satPrompts: {
       status: run.isPartial ? "warning" : "success",
@@ -166,14 +166,15 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       status: s.competitorWins > 0 ? "warning" : "success",
       title: "Competitive Radar",
       stats: s.topCompetitor
-        ? [`${s.topCompetitor.brand} ${s.topCompetitor.wins} wins`, `of ${s.topCompetitor.resolved} resolved`]
+        ? [
+            `${s.topCompetitor.brand} ${s.topCompetitor.wins} wins (${pct(s.topCompetitor.wins, s.topCompetitor.resolved)})`,
+            `of ${s.topCompetitor.resolved} resolved`,
+          ]
         : ["No competitor wins", `${s.roles.unbranded.resolved} resolved`],
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      tooltip: {
-        title: "Competitive Radar",
-        desc: `Competitor brands were named more than Fender/Squier in ${s.competitorWins} of ${s.roles.unbranded.resolved} resolved unbranded discovery answers in the published run.${gap ? ` Largest gap: ${battleSentence(gap)}.` : ""}`,
-      },
+      // The wins-and-share stat above is the whole explanation. Open Competitive Radar for the gap detail.
+      tooltip: { title: "", desc: "" },
     },
     satGap: gap
       ? {

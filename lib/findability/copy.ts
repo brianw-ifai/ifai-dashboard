@@ -155,22 +155,21 @@ export type ReadinessFace = {
   tooltipDesc: string;
 };
 
-const SEPARATE_OUTCOMES =
-  "Exact official product pages, official family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings are counted separately.";
-
-/** Map bubble face. The findability lines are counts, not the older found percentage. */
+/**
+ * Map bubble face. The findability lines are counts, not the older found percentage.
+ * The stat and meta lines carry the full count; the bubble keeps no hover explainer.
+ */
 export function readinessFindabilityFace(
   read: FindabilityRead,
   amazonSpecsLabel: string,
 ): ReadinessFace {
   const amazonStat = `${amazonSpecsLabel} Amazon specs`;
-  const amazonSentence = `Amazon structured completeness averages ${amazonSpecsLabel} on the older spec read.`;
   if (read.phase !== "ready") {
     return {
       stats: ["Official pages", amazonStat],
       meta: read.phase === "error" ? "Official-page read unavailable" : "Five outcomes loading",
-      tooltipTitle: "Official product pages",
-      tooltipDesc: `${SEPARATE_OUTCOMES} ${FAMILY_IS_NOT_EXACT} ${amazonSentence}`,
+      tooltipTitle: "",
+      tooltipDesc: "",
     };
   }
   const counts = countFindability(read.rows);
@@ -178,8 +177,8 @@ export function readinessFindabilityFace(
     return {
       stats: ["0 listings", amazonStat],
       meta: "No rows in this read",
-      tooltipTitle: "Official product pages",
-      tooltipDesc: `This official-page read has no listings. ${SEPARATE_OUTCOMES} ${FAMILY_IS_NOT_EXACT} ${amazonSentence}`,
+      tooltipTitle: "",
+      tooltipDesc: "",
     };
   }
   const other = counts.other > 0 ? ` · ${formatInt(counts.other)} other` : "";
@@ -189,8 +188,8 @@ export function readinessFindabilityFace(
       `${formatInt(counts.official_family_page)} family`,
     ],
     meta: `${formatInt(counts.completed_not_found)} no page · ${formatInt(counts.ambiguous_candidate)} ambiguous · ${formatInt(counts.not_checked)} unchecked${other}`,
-    tooltipTitle: "Official product pages",
-    tooltipDesc: `${findabilityHeadline(counts)} ${FAMILY_IS_NOT_EXACT} ${amazonSentence}`,
+    tooltipTitle: "",
+    tooltipDesc: "",
   };
 }
 

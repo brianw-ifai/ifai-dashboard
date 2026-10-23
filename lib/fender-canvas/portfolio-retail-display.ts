@@ -200,22 +200,22 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
       meta: "Stored zeros",
       status: "success",
       subTab: RETAIL_OVERVIEW_TAB,
-      tooltip: {
-        title: "Catalog Health",
-        desc: "Suppressed Buy Boxes, MAP leakage, and unnested bundles are each a stored zero.",
-      },
+      // "Stored zeros" meta is the whole explanation; no hover needed.
+      tooltip: { title: "", desc: "" },
     };
   }
 
-  const label = readingLabel(headline.reading, headline.label);
-  const tooltip = headline.reading.missingMessage ?? `${label} is the current retail headline.`;
+  // An unfinished reading with no usable count keeps its coverage visible as a second
+  // stat, not hidden in a hover. A reading that already has a count needs no second line.
+  const headlineStat = combinedHeadlineStat(headline);
+  const coverage = headline.reading.issueCount == null ? coveragePill(headline.reading) : null;
 
   return {
     title: "Catalog Health",
-    stats: [combinedHeadlineStat(headline)],
+    stats: coverage ? [headlineStat, coverage] : [headlineStat],
     status: tone(headline.reading),
     subTab: RETAIL_OVERVIEW_TAB,
-    tooltip: { title: label, desc: tooltip },
+    tooltip: { title: "", desc: "" },
   };
 }
 
@@ -285,7 +285,8 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "loading") {
     const desc = "The retail reading is still loading.";
     return {
-      main: waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Loading"], desc),
+      // The main spoke's "Loading" stat is self-sufficient; no hover explainer.
+      main: { ...waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Loading"], desc), tooltip: { title: "", desc: "" } },
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
@@ -295,7 +296,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "error") {
     const desc = "The retail read could not be loaded.";
     return {
-      main: waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Read failed"], desc),
+      main: { ...waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Read failed"], desc), tooltip: { title: "", desc: "" } },
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),

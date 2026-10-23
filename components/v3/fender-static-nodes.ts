@@ -84,10 +84,8 @@ export const fenderStaticNodes: CanvasNode[] = [
       stats: ["Official pages", "Five outcomes"],
       meta: "Exact, family, no page, ambiguous, unchecked",
       spokeId: "specs",
-      tooltip: {
-        title: "Official product pages",
-        desc: "Exact official product pages, official family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings are counted separately. A family page is not an exact product page. Those counts load with the official-page read.",
-      },
+      // The stats and meta above carry the counts; no hover explainer needed.
+      tooltip: { title: "", desc: "" },
     },
     {
       ...aiFaces.spokeCompetitors,
