@@ -23,6 +23,11 @@ export type CanvasNode = {
   faceRadius?: number;
   stats: string[];
   meta?: string;
+  /**
+   * A single big status-colored number in place of the stacked stat pills. Use when a
+   * bubble has one scored headline value instead of several short facts to list.
+   */
+  heroValue?: { value: string; label: string };
   /** Opens this spoke on click. Omit to reset the camera. Set on the hub when it has its own drilldown. */
   spokeId?: string;
   subTab?: string;

@@ -867,6 +867,29 @@
       font-weight: 500;
     }
 
+    .graph-node .node-hero-value {
+      font-weight: 800;
+      fill: var(--text-main);
+    }
+
+    .graph-node .node-hero-value.status-danger {
+      fill: var(--danger-red);
+    }
+
+    .graph-node .node-hero-value.status-warning {
+      fill: var(--warning-amber);
+    }
+
+    .graph-node .node-hero-value.status-success {
+      fill: var(--success-green);
+    }
+
+    .graph-node .node-hero-label {
+      fill: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
     .correlation-badge {
       fill: var(--correlation-badge-bg);
       stroke: var(--danger-red);

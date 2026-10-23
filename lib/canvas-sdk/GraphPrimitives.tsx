@@ -84,6 +84,71 @@ function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
   return { width, height, lines, lineH };
 }
 
+/**
+ * One big status-colored number with a short label, in place of the stacked stat pills.
+ * The value's font size shrinks to the circle's width, and the whole value-plus-label
+ * stack shrinks together if the label still wraps to more lines than the circle has
+ * room for below `startY`, so neither line ever crosses the ring.
+ */
+function HeroValue({
+  value,
+  label,
+  status,
+  radius,
+  startY,
+}: {
+  value: string;
+  label: string;
+  status: NodeStatus;
+  radius: number;
+  startY: number;
+}) {
+  const maxWidth = Math.max(40, radius * 2 - 16);
+  const bottomLimit = radius - 7;
+  const fitToWidth = (text: string, size: number) => {
+    const width = textWidth(text, size);
+    return width > maxWidth ? size * (maxWidth / width) : size;
+  };
+
+  let valueSize = fitToWidth(value, Math.max(14, radius * 0.46));
+  let labelSize = Math.max(7, valueSize * 0.33);
+  let labelLines = wrapText(label, maxWidth, labelSize);
+  let labelLineH = labelSize + 2;
+
+  // However many lines the label wraps to, shrink the value and the label together
+  // until the stack clears the circle's bottom edge (a few passes converge quickly).
+  for (let pass = 0; pass < 4; pass += 1) {
+    const gap = Math.max(3, valueSize * 0.18);
+    const stackBottom = startY + valueSize * 0.78 + gap + labelLines.length * labelLineH;
+    if (stackBottom <= bottomLimit || valueSize <= 9) break;
+    const scale = Math.max(0.7, (bottomLimit - startY) / (stackBottom - startY));
+    valueSize *= scale;
+    labelSize = Math.max(6, labelSize * scale);
+    labelLines = wrapText(label, maxWidth, labelSize);
+    labelLineH = labelSize + 2;
+  }
+
+  const gap = Math.max(3, valueSize * 0.18);
+  const valueY = startY + valueSize * 0.78;
+  const labelY = valueY + gap + labelSize * 0.82;
+  const statusClass = status !== "neutral" ? ` status-${status}` : "";
+
+  return (
+    <g className="node-hero">
+      <text className={`node-hero-value${statusClass}`} y={valueY} textAnchor="middle" fontSize={valueSize}>
+        {value}
+      </text>
+      <text className="node-hero-label" y={labelY} textAnchor="middle" fontSize={labelSize}>
+        {labelLines.map((line, index) => (
+          <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : labelLineH}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+}
+
 export function CurvedHeader({
   id,
   radius,
@@ -340,6 +405,7 @@ function CenteredFace({
   plate,
   titleSize: titleSizeOverride,
   statPillSize,
+  heroValue,
 }: {
   title: string;
   stats: string[];
@@ -353,6 +419,7 @@ function CenteredFace({
   plate?: boolean;
   titleSize?: number;
   statPillSize?: number;
+  heroValue?: { value: string; label: string };
 }) {
   const pillFont = statPillSize ?? IOM_STAT_PILL_FONT;
 
@@ -408,7 +475,7 @@ function CenteredFace({
   const lineH = titleSize + 3;
   const iconY = icon ? -radius * (prominent ? 0.44 : 0.36) : 0;
   const titleStart = icon ? (prominent ? 4 : -radius * 0.02) : -lineH * (lines.length / 2);
-  const stackStartY = titleStart + lines.length * lineH + (stats.length || meta ? 5 : 0);
+  const stackStartY = titleStart + lines.length * lineH + (stats.length || meta || heroValue ? 5 : 0);
 
   return (
     <g className="node-face">
@@ -429,7 +496,15 @@ function CenteredFace({
           {line}
         </text>
       ))}
-      {stats.length || meta ? (
+      {heroValue ? (
+        <HeroValue
+          value={heroValue.value}
+          label={heroValue.label}
+          status={status}
+          radius={radius}
+          startY={stackStartY}
+        />
+      ) : stats.length || meta ? (
         <CenteredStack
           radius={radius}
           stats={stats}
@@ -457,6 +532,7 @@ type BubbleProps = {
   titleSize?: number;
   stats: string[];
   meta?: string;
+  heroValue?: { value: string; label: string };
   centered?: boolean;
   logoSrc?: string;
   emphasis?: boolean;
@@ -496,6 +572,7 @@ export function GraphBubble({
   titleSize,
   stats,
   meta,
+  heroValue,
   centered = false,
   emphasis = false,
   selected = false,
@@ -526,6 +603,7 @@ export function GraphBubble({
       plate={centered && Boolean(SPOKE_ICONS[id])}
       titleSize={titleSize}
       statPillSize={statPillFont}
+      heroValue={heroValue}
     />
   ) : (
     <>

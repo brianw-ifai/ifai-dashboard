@@ -52,6 +52,7 @@ export function CanvasGraphNode({
       titleSize={titleSize}
       stats={node.stats}
       meta={node.id === "spoke-retail" || node.id === "spoke-roadmap" ? node.meta : undefined}
+      heroValue={node.heroValue}
       centered={centered}
       logoSrc={node.logoSrc}
       emphasis={emphasis}
