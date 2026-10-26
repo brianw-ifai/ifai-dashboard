@@ -9,6 +9,7 @@ import {
   FACT_CHECK_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE_WINDOW,
+  factCheckAccuracyLead,
   factCheckCoverageNote,
   factCheckHeadline,
   factCheckPendingNote,
@@ -22,14 +23,34 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const windowed = isWindowHistoryKind(history?.mode.kind);
   const drift = driftRead(snapshot.calls, snapshot.probes);
   const { coverage } = drift;
+  const accuracy = factCheckAccuracyLead(coverage);
   const contradictions = drift.probes.filter((row) => row.state === "confirmed");
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
   const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
+  const headline = factCheckHeadline(coverage, windowed);
 
   return (
     <>
       <div className="content-box ai-drift-summary">
+        {accuracy.rate ? (
+          <>
+            <span className="ai-lead-figure" data-ai-accuracy-figure>
+              {accuracy.rate} Accuracy
+            </span>
+            <span className="ai-lead-explainer" data-ai-accuracy-lead>
+              <span data-ai-accuracy-population>{accuracy.population}</span>{" "}
+              <span data-ai-fact-headline>{headline}</span> {FACT_CHECK_SCOPE}
+            </span>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
+              {headline}
+            </p>
+            <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
+          </>
+        )}
         <div className="content-box-title">
           <span>Do AI answers match Fender&apos;s published product facts?</span>
           <span
@@ -39,10 +60,6 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
             {coverage.contradictions ? `${coverage.contradictions} contradictions` : "No contradictions found"}
           </span>
         </div>
-        <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
-          {factCheckHeadline(coverage, windowed)}
-        </p>
-        <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
         <p style={{ ...mutedText, marginBottom: 0 }}>
           IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each
           answer with a fact taken from an official Fender page. A{" "}

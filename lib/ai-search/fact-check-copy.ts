@@ -1,9 +1,32 @@
 import type { FactCheckCoverage } from "@/lib/ai-search/drift";
 import { joinBrands } from "@/lib/ai-search/competitors";
+import { pct } from "@/lib/ai-search/summary";
 
 const FACT = (n: number) => `${n} Fender product fact${n === 1 ? "" : "s"}`;
 const ANSWER = (n: number) => `${n} answer${n === 1 ? "" : "s"}`;
 const CALL = (n: number) => `${n} fact-check call${n === 1 ? "" : "s"}`;
+
+/**
+ * Product Fact Checks lead figure. Same rate as the Fact Checks satellite:
+ * (answersChecked - contradictions) / answersChecked via pct(). Empty when nothing was checked.
+ */
+export function factCheckAccuracyLead(c: FactCheckCoverage): {
+  rate: string | null;
+  matched: number;
+  checked: number;
+  population: string | null;
+} {
+  if (c.answersChecked === 0) {
+    return { rate: null, matched: 0, checked: 0, population: null };
+  }
+  const matched = c.answersChecked - c.contradictions;
+  return {
+    rate: pct(matched, c.answersChecked),
+    matched,
+    checked: c.answersChecked,
+    population: `${matched} of ${c.answersChecked} answers matched.`,
+  };
+}
 
 /** The business result, first: what was checked, on which engines, and what came back. */
 export function factCheckHeadline(c: FactCheckCoverage, windowed = false): string {
