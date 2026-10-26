@@ -61,7 +61,7 @@ function SlotCard({ slot, onOpen }: { slot: HubSlot; onOpen: Props["onOpen"] }) 
       <span className="hub-slot-label">{slot.label}</span>
       <span className="hub-slot-detail">{slot.detail}</span>
       {slot.chart ? <SlotChart chart={slot.chart} /> : null}
-      <span className="hub-slot-note">{slot.note}</span>
+      {slot.note ? <span className="hub-slot-note">{slot.note}</span> : null}
     </button>
   );
 }
