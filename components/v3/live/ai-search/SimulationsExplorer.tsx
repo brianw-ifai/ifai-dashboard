@@ -129,12 +129,6 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
   return (
     <div className="content-box ai-simulations">
-      <div className="content-box-title">
-        <span>Run Details</span>
-        <span className="tag-badge tag-neutral" data-ai-row-count>
-          {rows.length} of {snapshot.calls.length} calls
-        </span>
-      </div>
       <div data-ai-role="branded_consideration">
         <span className="ai-lead-figure" data-ai-lead-figure="branded_consideration">
           {brandLead.figure}
@@ -143,9 +137,7 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <span style={mutedText} data-ai-win-rate="branded_consideration">
             {brandLead.rate}
           </span>
-        ) : (
-          <span style={mutedText}>There are no resolved answers in this {unit}.</span>
-        )}
+        ) : null}
         <div>
           <AiTerm term="branded consideration">Brand Consideration</AiTerm>
         </div>
@@ -154,6 +146,12 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
             {MIXED_SCORING_NOTE}
           </p>
         ) : null}
+      </div>
+      <div className="content-box-title">
+        <span>Run Details</span>
+        <span className="tag-badge tag-neutral" data-ai-row-count>
+          {rows.length} of {snapshot.calls.length} calls
+        </span>
       </div>
       <p className="ai-lead-explainer" style={mutedText}>
         Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
