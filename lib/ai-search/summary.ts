@@ -111,6 +111,23 @@ export function pct(numerator: number, denominator: number): string {
   return denominator > 0 ? `${((100 * numerator) / denominator).toFixed(1)}%` : "No resolved answers";
 }
 
+/**
+ * Brand Consideration lead on Run Details: "N of M" plus pct(), or an empty message.
+ * Zero resolved never becomes 100% or a percentage string.
+ */
+export function brandedConsiderationLead(tally: Pick<RoleTally, "fenderWins" | "resolved">): {
+  figure: string;
+  rate: string | null;
+} {
+  if (tally.resolved <= 0) {
+    return { figure: "No resolved answers", rate: null };
+  }
+  return {
+    figure: `${tally.fenderWins} of ${tally.resolved}`,
+    rate: pct(tally.fenderWins, tally.resolved),
+  };
+}
+
 /** Visible label on a rate that is too small to rank against the rows beside it. */
 export const SMALL_SAMPLE_LABEL = "Small sample";
 

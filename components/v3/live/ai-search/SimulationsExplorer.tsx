@@ -31,8 +31,9 @@ import {
   type CallOutcome,
 } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+import { brandedConsiderationLead, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
-import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 const SIM_COLUMNS = [
   clientColumn("prompt", "Prompt", "text", 280, 160),
@@ -76,6 +77,8 @@ const OUTCOME_TONE: Record<CallOutcome, string> = {
 function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const unit = isWindowHistoryKind(history?.mode.kind) ? "selection" : "run";
+  const mixed = hasMixedScoringMethods(snapshot);
+  const brandLead = brandedConsiderationLead(summarizeRun(snapshot).roles.branded);
   const focus = useEvidenceFocus();
   const [filter, setFilter] = useState<ExplorerFilter>(() => filterFromEvidence(focus));
   const openFromFilter = (next: ExplorerFilter): string | null => {
@@ -132,7 +135,27 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
           {rows.length} of {snapshot.calls.length} calls
         </span>
       </div>
-      <p style={mutedText}>
+      <div data-ai-role="branded_consideration">
+        <span className="ai-lead-figure" data-ai-lead-figure="branded_consideration">
+          {brandLead.figure}
+        </span>
+        {brandLead.rate != null ? (
+          <span style={mutedText} data-ai-win-rate="branded_consideration">
+            {brandLead.rate}
+          </span>
+        ) : (
+          <span style={mutedText}>There are no resolved answers in this {unit}.</span>
+        )}
+        <div>
+          <AiTerm term="branded consideration">Brand Consideration</AiTerm>
+        </div>
+        {mixed ? (
+          <p style={{ ...mutedText, margin: "6px 0 0" }} data-ai-mixed-scoring>
+            {MIXED_SCORING_NOTE}
+          </p>
+        ) : null}
+      </div>
+      <p className="ai-lead-explainer" style={mutedText}>
         Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
         <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead, so it is
         never scored as a win. A <AiTerm term="provider error" /> or an answer with <AiTerm term="no clear leader" /> is
