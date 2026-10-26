@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { HistoryTrendsPanel } from "@/components/v3/live/ai-search/HistoryTrendsPanel";
 import { LegacyRunInspect } from "@/components/v3/live/ai-search/LegacyRunInspect";
 
 const TREND_OPEN_KEY = "ifai-ai-trend-open";
 
+const trendListeners = new Set<() => void>();
+
+function subscribeTrendOpen(listener: () => void) {
+  trendListeners.add(listener);
+  return () => trendListeners.delete(listener);
+}
+
+function readTrendOpen() {
+  return window.localStorage.getItem(TREND_OPEN_KEY) !== "0";
+}
+
 /** The trend chart opens first on Run Summary. A reader can collapse it, and the choice is kept. */
 function CollapsibleTrend() {
-  const [open, setOpen] = useState(true);
-  useEffect(() => {
-    if (window.localStorage.getItem(TREND_OPEN_KEY) === "0") setOpen(false);
-  }, []);
+  const open = useSyncExternalStore(subscribeTrendOpen, readTrendOpen, () => true);
   return (
     <details
       className="content-box ai-trend-section"
@@ -20,8 +28,9 @@ function CollapsibleTrend() {
       data-ai-trend-section
       onToggle={(event) => {
         const next = event.currentTarget.open;
-        setOpen(next);
+        if (next === readTrendOpen()) return;
         window.localStorage.setItem(TREND_OPEN_KEY, next ? "1" : "0");
+        trendListeners.forEach((listener) => listener());
       }}
     >
       <summary className="content-box-title">Trend over the selected runs</summary>
