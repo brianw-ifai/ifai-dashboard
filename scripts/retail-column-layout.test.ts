@@ -84,35 +84,42 @@ test("pickFillColumnId uses the preferred id or the widest declared column", () 
   assert.equal(pickFillColumnId(runDetailColumns, "missing"), "prompt");
 });
 
-test("fitResizableColumnWidths fills the panel and widens short columns from content floors", () => {
-  const panel = 1600;
+test("fitResizableColumnWidths fills the panel and sizes short columns from content floors", () => {
+  const panel = 1109;
   const contentMins = {
-    outcome: 300,
-    checked: 200,
+    outcome: 222,
+    engine: 90,
+    model: 100,
+    category: 110,
+    fact: 120,
+    cited: 100,
+    checked: 175,
   };
   const widths = fitResizableColumnWidths(runDetailColumns, panel, { contentMins });
-  assert.equal(widths.outcome, 300);
-  assert.equal(widths.checked, 200);
-  assert.equal(widths.engine, 120);
+  assert.equal(widths.outcome, 222);
+  assert.equal(widths.checked, 175);
+  // Declared engine width was 120; content floor may shrink it to minWidth.
+  assert.equal(widths.engine, 90);
   const others = Object.entries(widths)
     .filter(([id]) => id !== "prompt")
     .reduce((sum, [, width]) => sum + width, 0);
-  assert.ok(widths.prompt > 280, `prompt should absorb leftover, got ${widths.prompt}`);
   assert.equal(widths.prompt, panel - others);
+  assert.ok(widths.prompt >= 160);
   assert.equal(Object.values(widths).reduce((sum, width) => sum + width, 0), panel);
 
-  const facts = fitResizableColumnWidths(factCheckColumns, 1400, {
+  const facts = fitResizableColumnWidths(factCheckColumns, 1589, {
     contentMins: {
-      question: 360,
-      result: 300,
-      checked: 180,
+      question: 325,
+      engine: 93,
+      result: 217,
+      checked: 165,
     },
   });
-  assert.equal(facts.question, 360);
-  assert.equal(facts.result, 300);
-  assert.equal(facts.checked, 180);
+  assert.equal(facts.question, 325);
+  assert.equal(facts.result, 217);
+  assert.equal(facts.checked, 165);
   assert.ok(facts.fact > 260, `fact should absorb leftover, got ${facts.fact}`);
-  assert.equal(Object.values(facts).reduce((sum, width) => sum + width, 0), 1400);
+  assert.equal(Object.values(facts).reduce((sum, width) => sum + width, 0), 1589);
 });
 
 test("a stored drag wins over the shared fit rule", () => {

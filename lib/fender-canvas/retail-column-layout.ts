@@ -66,8 +66,10 @@ export function pickFillColumnId(
 
 /**
  * Default widths that fill the panel. One column absorbs leftover space.
- * Optional content floors widen the other columns so short values stay on one line.
- * A stored resize wins, and the other columns stay at their own widths.
+ * Optional content floors size the other columns so short values stay on one line
+ * (they may shrink below the declared width down to minWidth).
+ * The fill column takes the remaining panel width and may wrap.
+ * A stored resize wins.
  */
 export function filledColumnWidths(
   columns: readonly ColumnWidthSpec[],
@@ -78,14 +80,15 @@ export function filledColumnWidths(
 ): Record<string, number> {
   const base = mergeColumnWidths(columns, stored ?? null);
   if (hasStoredWidth(columns, stored) || containerWidth <= 0) return base;
-  if (!columns.some((column) => column.id === fillColumnId)) return base;
+  const fillColumn = columns.find((column) => column.id === fillColumnId);
+  if (!fillColumn) return base;
 
   const next = { ...base };
   for (const column of columns) {
     if (column.id === fillColumnId) continue;
     const contentMin = contentMins?.[column.id];
-    if (typeof contentMin !== "number" || !Number.isFinite(contentMin)) continue;
-    next[column.id] = Math.max(next[column.id], Math.ceil(contentMin));
+    if (typeof contentMin !== "number" || !Number.isFinite(contentMin) || contentMin <= 0) continue;
+    next[column.id] = Math.max(column.minWidth ?? 72, Math.ceil(contentMin));
   }
 
   const others = columns.reduce(
@@ -95,6 +98,8 @@ export function filledColumnWidths(
   const room = Math.floor(containerWidth) - others;
   return {
     ...next,
+    // Grow-only vs the declared fill width. Callers that need the fill column
+    // to shrink into leftover panel space use fitResizableColumnWidths.
     [fillColumnId]: Math.max(next[fillColumnId], room),
   };
 }
@@ -102,6 +107,8 @@ export function filledColumnWidths(
 /**
  * Shared ResizableTable default: fill the panel, keep short cells on one line,
  * and let an explicit fill column or the widest declared column take the leftover.
+ * Unlike filledColumnWidths alone, the fill column may shrink below its declared
+ * width down to minWidth so the row matches the panel.
  */
 export function fitResizableColumnWidths(
   columns: readonly ColumnWidthSpec[],
@@ -112,11 +119,24 @@ export function fitResizableColumnWidths(
     contentMins?: Record<string, number>;
   },
 ): Record<string, number> {
-  return filledColumnWidths(
+  const fillId = pickFillColumnId(columns, options?.fillColumnId);
+  const fitted = filledColumnWidths(
     columns,
-    pickFillColumnId(columns, options?.fillColumnId),
+    fillId,
     containerWidth,
     options?.stored,
     options?.contentMins,
   );
+  if (hasStoredWidth(columns, options?.stored) || containerWidth <= 0) return fitted;
+  const fill = columns.find((column) => column.id === fillId);
+  if (!fill) return fitted;
+  const others = columns.reduce(
+    (sum, column) => (column.id === fillId ? sum : sum + fitted[column.id]),
+    0,
+  );
+  const room = Math.floor(containerWidth) - others;
+  return {
+    ...fitted,
+    [fillId]: Math.max(fill.minWidth ?? 72, room),
+  };
 }
