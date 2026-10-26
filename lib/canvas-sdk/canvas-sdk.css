@@ -1581,6 +1581,44 @@
       margin-top: 6px;
     }
 
+    .ai-why-not {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    .ai-why-not-summary {
+      margin: 0 0 6px;
+      color: var(--text-main);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .ai-why-not details > summary {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .ai-why-not-pages {
+      margin: 4px 0 6px;
+      padding-left: 18px;
+      color: var(--text-muted);
+    }
+
+    .ai-why-not-pages li {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      justify-content: space-between;
+      max-width: 720px;
+    }
+
+    .ai-why-not-owner {
+      flex: none;
+      color: var(--text-subtle);
+      font-size: 12px;
+    }
+
     .drilldown-close-btn {
       width: 28px;
       height: 28px;

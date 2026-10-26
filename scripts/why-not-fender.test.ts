@@ -10,33 +10,51 @@ test("a namespaced evidence id is not looked up on the current-run view", () => 
   assert.equal(answerLookupId("36d23589-bc34-4d05-b6d4-939e0d20ebab"), "36d23589-bc34-4d05-b6d4-939e0d20ebab");
 });
 
-test("why not Fender uses the stored answer and stored pages, and adds no cause", () => {
+test("why not Fender states what the stored answer did, in one plain sentence", () => {
   const view = whyNotFender({
     answerText: "  Players often start with a Yamaha Pacifica.  ",
+    winner: "Yamaha",
     pages: [
       { href: "https://www.yamaha.com/pacifica?utm_source=ai", label: "Pacifica" },
       { href: "https://www.yamaha.com/pacifica?utm_source=ai", label: "duplicate" },
       { href: "not a url", label: "dropped" },
-      { href: "https://www.google.com/search?q=yamaha", label: "Search" },
+      { href: "https://www.sweetwater.com/c/pacifica", label: "Sweetwater" },
       { href: null, label: "missing" },
     ],
   });
-  assert.equal(view.label, "Association");
   assert.equal(view.answer, "Players often start with a Yamaha Pacifica.");
-  assert.equal(view.pages.length, 2);
-  assert.equal(view.pages[0].label, "Pacifica");
-  assert.match(view.pages[0].href, /^https:\/\/www\.yamaha\.com\/pacifica/);
-  assert.equal(view.pages[1].label, "Search");
-  assert.match(view.note, /association with the stored answer/i);
-  assert.match(view.note, /does not show that the page caused/);
-  assert.doesNotMatch(view.answer ?? "", /because|root cause/i);
-  assert.doesNotMatch(`${view.note} ${view.answer}`, /\u2014/);
+  assert.equal(view.fenderMentioned, false);
+  assert.deepEqual(
+    view.pages.map((page) => [page.label, page.owner]),
+    [
+      ["Pacifica", "Yamaha site"],
+      ["Sweetwater", "Retailer"],
+    ],
+  );
+  assert.equal(
+    view.summary,
+    "Yamaha was named most. Fender/Squier was not mentioned. None of its 2 cited pages is a Fender page. 1 is on Yamaha's own site.",
+  );
+  assert.doesNotMatch(view.summary, /because|caused|root cause|association/i);
+  assert.doesNotMatch(view.summary, /\u2014/);
+});
+
+test("a Fender mention and a Fender page are counted, not hidden", () => {
+  const view = whyNotFender({
+    answerText: "The Squier Classic Vibe is fine, but the Taylor GS Mini is the pick.",
+    winner: "Taylor",
+    pages: [{ href: "https://www.fender.com/en-US/acoustic", label: "Fender acoustics" }],
+  });
+  assert.equal(view.fenderMentioned, true);
+  assert.equal(view.summary, "Taylor was named most. Fender/Squier was mentioned, but named less often. Its one cited page is a Fender page.");
 });
 
 test("a missing answer and a missing page stay missing", () => {
-  const view = whyNotFender({ answerText: "  ", pages: [] });
+  const view = whyNotFender({ answerText: "  ", winner: "PRS", pages: [] });
   assert.equal(view.answer, null);
+  assert.equal(view.fenderMentioned, null);
   assert.deepEqual(view.pages, []);
+  assert.equal(view.summary, "PRS was named most. No cited page was stored.");
 });
 
 test("the Competitive Radar sentence leads with the N-of-M figure", () => {

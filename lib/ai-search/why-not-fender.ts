@@ -1,16 +1,17 @@
-import { isValidCitationUrl } from "@/lib/ai-search/citations";
+import { classifySource, isValidCitationUrl, type SourceClass } from "@/lib/ai-search/citations";
 
-export const WHY_NOT_NOTE =
-  "Each cited page is an association with the stored answer. It does not show that the page caused the engine to name another brand.";
-
-export type WhyNotPage = { href: string; label: string };
+export type WhyNotPage = { href: string; label: string; owner: string };
 
 export type WhyNotFenderView = {
-  label: "Association";
-  note: string;
+  /** True or false once the stored answer is read; null while it is loading or missing. */
+  fenderMentioned: boolean | null;
+  /** One plain sentence built only from the stored answer and its cited pages. */
+  summary: string;
   answer: string | null;
   pages: WhyNotPage[];
 };
+
+const FENDER_NAME = /\b(fender|squier)\b/i;
 
 /**
  * Pooled evidence ids are `${audit_run_id}:${call.id}`.
@@ -21,19 +22,70 @@ export function answerLookupId(id: string): string | null {
   return id;
 }
 
-/** Stored answer text and stored http(s) pages only. No cause is added. */
+function hostOf(href: string): string {
+  try {
+    return new URL(href).hostname.replace(/^www\./, "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function brandKey(brand: string): string {
+  return brand.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function ownerLabel(sourceClass: SourceClass, domain: string, winner: string | null): string {
+  if (sourceClass === "fender_owned") return "Fender";
+  if (sourceClass === "competitor_brand") {
+    if (winner && brandKey(domain).includes(brandKey(winner))) return `${winner} site`;
+    return "Other brand site";
+  }
+  if (sourceClass === "retailer") return "Retailer";
+  if (sourceClass === "editorial") return "Review site";
+  if (sourceClass === "community") return "Forum";
+  if (sourceClass === "video") return "Video";
+  if (sourceClass === "reference") return "Reference";
+  return "Other site";
+}
+
+function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+function summarize(winner: string | null, mentioned: boolean | null, pages: WhyNotPage[]): string {
+  const named = winner ? `${winner} was named most.` : "Another brand was named most.";
+  const mention =
+    mentioned === null ? "" : mentioned ? " Fender/Squier was mentioned, but named less often." : " Fender/Squier was not mentioned.";
+  if (pages.length === 0) return `${named}${mention} No cited page was stored.`;
+  const fender = pages.filter((page) => page.owner === "Fender").length;
+  const winnerSite = winner ? pages.filter((page) => page.owner === `${winner} site`).length : 0;
+  const cited =
+    pages.length === 1
+      ? `Its one cited page ${fender === 1 ? "is" : "is not"} a Fender page.`
+      : fender === 0
+        ? `None of its ${pages.length} cited pages is a Fender page.`
+        : `${fender} of its ${plural(pages.length, "cited page", "cited pages")} ${fender === 1 ? "is a Fender page" : "are Fender pages"}.`;
+  const rival = winnerSite > 0 ? ` ${winnerSite} ${winnerSite === 1 ? "is" : "are"} on ${winner}'s own site.` : "";
+  return `${named}${mention} ${cited}${rival}`;
+}
+
+/** Stored answer text and stored http(s) pages only. Facts about the answer, no inferred reason. */
 export function whyNotFender(input: {
   answerText: string | null | undefined;
+  winner?: string | null;
   pages: ReadonlyArray<{ href: string | null | undefined; label: string | null | undefined }>;
 }): WhyNotFenderView {
   const answer = input.answerText?.trim() || null;
+  const winner = input.winner?.trim() || null;
   const pages: WhyNotPage[] = [];
   const seen = new Set<string>();
   for (const page of input.pages) {
     const href = page.href?.trim() ?? "";
     if (!isValidCitationUrl(href) || seen.has(href)) continue;
     seen.add(href);
-    pages.push({ href, label: page.label?.trim() || href });
+    const domain = hostOf(href);
+    pages.push({ href, label: page.label?.trim() || href, owner: ownerLabel(classifySource(domain), domain, winner) });
   }
-  return { label: "Association", note: WHY_NOT_NOTE, answer, pages };
+  const fenderMentioned = answer === null ? null : FENDER_NAME.test(answer);
+  return { fenderMentioned, summary: summarize(winner, fenderMentioned, pages), answer, pages };
 }

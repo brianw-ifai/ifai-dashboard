@@ -10,7 +10,7 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { WhyNotFender } from "@/components/v3/live/ai-search/WhyNotFender";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { citationEvidence, groupCitations } from "@/lib/ai-search/citations";
+import { citationEvidence } from "@/lib/ai-search/citations";
 import { competitorTallies, isUnbrandedDiscovery, type CompetitorTally } from "@/lib/ai-search/competitors";
 import { callOutcome, categoryLabel, cleanPrompt, engineLabel, modelLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
@@ -124,28 +124,19 @@ function Wins({ snapshot }: { snapshot: AiSearchSnapshot }) {
           <span>{brand ? `Answers where ${brand} led` : "Every answer a competitor led"}</span>
           <span className="tag-badge tag-neutral">{shown.length} answers</span>
         </div>
-        <p style={mutedText}>
-          The stored evidence for each loss is the prompt, the engine and model, the brand named most, and the pages
-          the answer cited. Open a prompt to read the full answer.
-        </p>
-        {shown.map((row) => {
-          const domains = groupCitations(cited.filter((c) => c.simulationId === row.id), (c) => c.domain);
-          return (
-            <div key={row.id} className="action-card" data-sim-id={row.sim_id} style={{ marginTop: 6 }}>
-              <div className="action-head">
-                <EvidenceLink focus={{ field: "sim", value: row.id }} tab={AI_TABS.simulations}>
-                  {cleanPrompt(row.prompt)}
-                </EvidenceLink>
-                <span className="tag-badge tag-danger">{row.primary_brand} named most</span>
-              </div>
-              <div className="action-details" style={{ fontSize: 11 }}>
-                {categoryLabel(row.category)} · {engineLabel(row.engine)} · {modelLabel(row.model)} ·{" "}
-                {domains.length ? `cited ${domains.map((d) => d.key).join(", ")}` : "no valid cited page"}
-              </div>
-              <WhyNotFender row={row} pages={cited.filter((citation) => citation.simulationId === row.id)} />
+        {shown.map((row) => (
+          <div key={row.id} className="action-card" data-sim-id={row.sim_id} style={{ marginTop: 6 }}>
+            <div className="action-head">
+              <EvidenceLink focus={{ field: "sim", value: row.id }} tab={AI_TABS.simulations}>
+                {cleanPrompt(row.prompt)}
+              </EvidenceLink>
             </div>
-          );
-        })}
+            <div className="action-details" style={{ fontSize: 12 }}>
+              {categoryLabel(row.category)} · {engineLabel(row.engine)} · {modelLabel(row.model)}
+            </div>
+            <WhyNotFender row={row} pages={cited.filter((citation) => citation.simulationId === row.id)} />
+          </div>
+        ))}
       </div>
     </>
   );
