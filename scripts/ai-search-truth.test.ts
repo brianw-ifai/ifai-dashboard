@@ -617,7 +617,8 @@ test("a small sample shows its exact percentage and stays unranked", () => {
 
 test("publishing a finished run does not require an engine answer rate", () => {
   const sql = readFileSync("supabase/migrations/20261026160000_publish_without_engine_floor.sql", "utf8");
+  const body = sql.slice(sql.indexOf("AS $f$"));
   assert.match(sql, /CREATE OR REPLACE FUNCTION command\.fmic_ai_publish_run/);
-  assert.match(sql, /attempted_calls IS DISTINCT FROM n/);
-  assert.doesNotMatch(sql, /ceil\(0\.7|engine below 70/);
+  assert.match(body, /attempted_calls IS DISTINCT FROM n/);
+  assert.doesNotMatch(body, /ceil\(0\.7|engine below 70/);
 });
