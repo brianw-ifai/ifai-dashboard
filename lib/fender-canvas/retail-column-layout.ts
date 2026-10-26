@@ -46,22 +46,15 @@ function hasStoredWidth(columns: readonly ColumnWidthSpec[], raw: unknown): bool
 
 /**
  * Column that absorbs leftover panel width when the caller does not name one.
- * Prefer the widest declared column so long text (prompt, model, title) wraps there.
+ * Prefer the first column (prompt, question, listing, …) so long prose wraps there
+ * while later short labels and badges keep one-line content floors.
  */
 export function pickFillColumnId(
   columns: readonly ColumnWidthSpec[],
   preferred?: string,
 ): string {
   if (preferred && columns.some((column) => column.id === preferred)) return preferred;
-  let bestId = columns[0]?.id ?? "";
-  let bestWidth = -1;
-  for (const column of columns) {
-    if (column.width > bestWidth) {
-      bestWidth = column.width;
-      bestId = column.id;
-    }
-  }
-  return bestId;
+  return columns[0]?.id ?? "";
 }
 
 /**

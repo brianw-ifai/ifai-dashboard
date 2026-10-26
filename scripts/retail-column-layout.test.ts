@@ -77,9 +77,9 @@ test("a missing or broken store falls back to the defaults", () => {
   });
 });
 
-test("pickFillColumnId uses the preferred id or the widest declared column", () => {
+test("pickFillColumnId uses the preferred id or the first column", () => {
   assert.equal(pickFillColumnId(runDetailColumns), "prompt");
-  assert.equal(pickFillColumnId(factCheckColumns), "fact");
+  assert.equal(pickFillColumnId(factCheckColumns), "question");
   assert.equal(pickFillColumnId(runDetailColumns, "outcome"), "outcome");
   assert.equal(pickFillColumnId(runDetailColumns, "missing"), "prompt");
 });
@@ -109,16 +109,19 @@ test("fitResizableColumnWidths fills the panel and sizes short columns from cont
 
   const facts = fitResizableColumnWidths(factCheckColumns, 1589, {
     contentMins: {
-      question: 325,
       engine: 93,
-      result: 217,
-      checked: 165,
+      result: 294,
+      fact: 636,
+      checked: 175,
     },
   });
-  assert.equal(facts.question, 325);
-  assert.equal(facts.result, 217);
-  assert.equal(facts.checked, 165);
-  assert.ok(facts.fact > 260, `fact should absorb leftover, got ${facts.fact}`);
+  // Question is the fill column; short columns keep one-line floors.
+  assert.equal(facts.engine, 100);
+  assert.equal(facts.result, 294);
+  assert.equal(facts.fact, 636);
+  assert.equal(facts.checked, 175);
+  assert.equal(facts.question, 1589 - (100 + 294 + 636 + 175));
+  assert.ok(facts.question >= 140);
   assert.equal(Object.values(facts).reduce((sum, width) => sum + width, 0), 1589);
 });
 

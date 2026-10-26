@@ -173,9 +173,10 @@ async function main() {
     }
   }
 
-  const pf = report.productFactChecksWide || report.productFactChecks;
+  const pf = report.productFactChecksWide;
   if (pf?.error) checks.push(`product-fact-checks: ${pf.error}`);
   else if (pf) {
+    if (pf.fill !== "question") checks.push(`fact-checks fill=${pf.fill}, expected question`);
     if (Math.abs(pf.gap) > 8) checks.push(`fact-checks gap ${pf.gap}px`);
     for (const cell of pf.cells || []) {
       if (cell.colId === "engine") continue;
@@ -185,6 +186,8 @@ async function main() {
         checks.push(`fact-checks ${cell.colId} wraps (${cell.contentWidth}>${cell.colWidth}): ${cell.text}`);
       }
     }
+  } else {
+    checks.push("product-fact-checks: missing wide viewport measurement");
   }
 
   const bc = report.battlecards;
