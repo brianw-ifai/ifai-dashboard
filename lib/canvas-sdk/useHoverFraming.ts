@@ -9,13 +9,16 @@ import type { CanvasSpec } from "@/lib/canvas-sdk/types";
 const SLOT_COLUMN_RIGHT = 302;
 /** Pointer travel that counts as the reader moving on, not the map sliding under a still cursor. */
 const POINTER_TRAVEL = 6;
+/** A hover must rest this long before the map slides, so a quick click lands where it was aimed. */
+const DWELL_MS = 350;
 
 /**
  * Hovering or focusing a main bubble slides the map so that bubble and its satellites sit
  * clear of the signal slots and as central as the other bubbles allow (see hoverSlide).
  * Closing the slots slides the map back.
- * The slide waits for the camera to settle and for the pointer to move, so a bubble that
- * lands under a still cursor does not reframe the map again.
+ * The slide waits for a short hover rest and is cancelled by any click. A later slide also
+ * waits for the camera to settle and for the pointer to move, so a bubble that lands under
+ * a still cursor does not reframe the map again.
  */
 export function useHoverFraming({
   spec,
@@ -52,29 +55,33 @@ export function useHoverFraming({
   }, [groups, spec.nodes]);
   const framed = useRef<{ id: string; at: number; x: number; y: number } | null>(null);
   const pointer = useRef({ x: 0, y: 0 });
+  const dwell = useRef(0);
+  const enabledRef = useRef(enabled);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+    if (!enabled) window.clearTimeout(dwell.current);
+  }, [enabled]);
 
   useEffect(() => {
     const onMove = (event: PointerEvent) => {
       pointer.current = { x: event.clientX, y: event.clientY };
     };
+    const onDown = () => window.clearTimeout(dwell.current);
     document.addEventListener("pointermove", onMove);
-    return () => document.removeEventListener("pointermove", onMove);
+    document.addEventListener("pointerdown", onDown, true);
+    return () => {
+      window.clearTimeout(dwell.current);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerdown", onDown, true);
+    };
   }, []);
 
-  const frameBubble = useCallback(
+  const slide = useCallback(
     (nodeId: string) => {
-      if (!enabled) return;
       const node = spec.nodes?.find((item) => item.id === nodeId);
       const viewport = viewportRef.current;
-      if (!node || !viewport) return;
-      const last = framed.current;
-      if (last?.id === nodeId) return;
-      if (last) {
-        const settling = performance.now() - last.at < settleMs;
-        const keyboard = document.activeElement?.matches?.(".graph-node:focus-visible") ?? false;
-        const travel = Math.hypot(pointer.current.x - last.x, pointer.current.y - last.y);
-        if (settling || (!keyboard && travel < POINTER_TRAVEL)) return;
-      }
+      if (!enabledRef.current || !node || !viewport) return;
       const viewBox = spec.viewBox ?? { w: 1600, h: 1000 };
       const w = viewport.clientWidth;
       const h = viewport.clientHeight;
@@ -96,10 +103,28 @@ export function useHoverFraming({
         ? { id: nodeId, at: performance.now(), ...pointer.current }
         : { id: nodeId, at: -Infinity, x: Number.NaN, y: Number.NaN };
     },
-    [enabled, groups, mains, pan, panBy, settleMs, spec.nodes, spec.viewBox, viewportRef],
+    [groups, mains, pan, panBy, spec.nodes, spec.viewBox, viewportRef],
+  );
+
+  const frameBubble = useCallback(
+    (nodeId: string) => {
+      window.clearTimeout(dwell.current);
+      if (!enabled) return;
+      const last = framed.current;
+      if (last?.id === nodeId) return;
+      if (last) {
+        const settling = performance.now() - last.at < settleMs;
+        const keyboard = document.activeElement?.matches?.(".graph-node:focus-visible") ?? false;
+        const travel = Math.hypot(pointer.current.x - last.x, pointer.current.y - last.y);
+        if (settling || (!keyboard && travel < POINTER_TRAVEL)) return;
+      }
+      dwell.current = window.setTimeout(() => slide(nodeId), DWELL_MS);
+    },
+    [enabled, settleMs, slide],
   );
 
   useEffect(() => {
+    if (!slotsVisible) window.clearTimeout(dwell.current);
     if (slotsVisible || !framed.current) return;
     framed.current = null;
     if (enabled) frameOverview();
