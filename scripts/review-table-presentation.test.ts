@@ -127,11 +127,11 @@ test("AI Readiness gives leftover width to Missing Amazon fields", () => {
 });
 
 const FACT_CHECK_COLUMNS = [
-  { id: "question", width: 380, minWidth: 220 },
+  { id: "question", width: 390, minWidth: 240 },
   { id: "engine", width: 130, minWidth: 100 },
-  { id: "result", width: 290, minWidth: 200 },
-  { id: "fact", width: 420, minWidth: 220 },
-  { id: "checked", width: 190, minWidth: 150 },
+  { id: "result", width: 340, minWidth: 240 },
+  { id: "fact", width: 700, minWidth: 280 },
+  { id: "checked", width: 200, minWidth: 160 },
 ];
 
 const FACT_QUESTION = "Fender Player II Stratocaster neck radius and fret size";
@@ -142,27 +142,29 @@ const FACT_CHECKED = "Oct 11, 2026, 6:11 AM UTC";
 
 test("Product Fact Checks defaults fill the panel and leave room for one-line cells", () => {
   const widths = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 1112);
-  assert.equal(widths.question, 380);
+  assert.equal(widths.question, 390);
   assert.equal(widths.engine, 130);
-  assert.equal(widths.result, 290);
-  assert.equal(widths.checked, 190);
-  assert.ok(widths.fact >= 420, `fact width ${widths.fact} should keep its default floor`);
+  assert.equal(widths.result, 340);
+  assert.equal(widths.checked, 200);
+  assert.ok(widths.fact >= 700, `fact width ${widths.fact} should keep its one-line default`);
   assert.ok(widths.question >= FACT_QUESTION.length * 6);
-  assert.ok(widths.result >= FACT_BADGE.length * 6.5);
+  assert.ok(widths.result >= FACT_BADGE.length * 7);
   assert.ok(widths.checked >= FACT_CHECKED.length * 6);
-  // On a wide panel the fact column grows to fill and holds the representative claim.
-  const wide = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 1680);
-  assert.equal(Object.values(wide).reduce((sum, width) => sum + width, 0), 1680);
-  assert.ok(wide.fact >= FACT_CLAIM.length * 6.5, `wide fact ${wide.fact} too narrow for claim`);
+  assert.ok(widths.fact >= FACT_CLAIM.length * 6.5);
+  // On a wider panel the fact column grows so the table fills the width.
+  const wide = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 2000);
+  assert.equal(Object.values(wide).reduce((sum, width) => sum + width, 0), 2000);
+  assert.ok(wide.fact > 700);
 
   const stored = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 1112, { fact: 200, question: 240 });
-  assert.equal(stored.fact, 220); // minWidth floor
+  assert.equal(stored.fact, 280); // minWidth floor
   assert.equal(stored.question, 240);
 
   const table = read("components/v3/live/ai-search/FactCheckTable.tsx");
   assert.match(table, /fillColumnId="fact"/);
   assert.match(table, /tableId="product-fact-checks"/);
   assert.doesNotMatch(table, /wordBreak:\s*"break-word"/);
+  assert.match(table, /whiteSpace:\s*"nowrap"/);
 });
 
 test("Machine Readability gives leftover width to Model without shrinking the others", () => {
