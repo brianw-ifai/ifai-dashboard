@@ -2,7 +2,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { driftRead } from "../lib/ai-search/drift.ts";
-import { factCheckAccuracyLead, factCheckHeadline } from "../lib/ai-search/fact-check-copy.ts";
+import {
+  factCheckAccuracyColor,
+  factCheckAccuracyLead,
+  factCheckAccuracyPie,
+  factCheckAccuracyPieTip,
+  factCheckHeadline,
+} from "../lib/ai-search/fact-check-copy.ts";
 import { pct } from "../lib/ai-search/summary.ts";
 import type { AiProbeRow } from "../lib/ai-search/types.ts";
 
@@ -40,28 +46,75 @@ test("accuracy lead matches satellite formula and population wording", () => {
   const lead = factCheckAccuracyLead(coverage);
   assert.equal(lead.checked, 3);
   assert.equal(lead.matched, 2);
+  assert.equal(lead.contradictions, 1);
   assert.equal(lead.rate, pct(2, 3));
   assert.equal(lead.rate, "66.7%");
   assert.equal(lead.population, "2 of 3 answers matched.");
+  assert.equal(lead.tone, "danger");
+  assert.equal(factCheckAccuracyColor(lead.tone), "var(--danger-red)");
 });
 
-test("perfect accuracy is 100.0% with matching population", () => {
+test("perfect accuracy is 100.0% green with a single pie slice", () => {
   const probes = [
     probe({ sim_id: 1, prompt_key: "p1", engine: "chatgpt" }),
     probe({ sim_id: 2, prompt_key: "p1", engine: "gemini" }),
   ];
-  const lead = factCheckAccuracyLead(driftRead([], probes).coverage);
+  const coverage = driftRead([], probes).coverage;
+  const lead = factCheckAccuracyLead(coverage);
   assert.equal(lead.rate, "100.0%");
-  assert.equal(lead.population, "2 of 2 answers matched.");
+  assert.equal(lead.tone, "success");
+  assert.equal(factCheckAccuracyColor(lead.tone), "var(--success-green)");
+  const pie = factCheckAccuracyPie(coverage);
+  assert.ok(pie);
+  assert.equal(pie.id, "accuracy");
+  assert.equal(pie.total, 2);
+  assert.deepEqual(
+    pie.slices.map((slice) => slice.key),
+    ["matched"],
+  );
+  assert.match(factCheckAccuracyPieTip(coverage), /2 answers matched/);
+  assert.match(factCheckAccuracyPieTip(coverage), /0 answers contradicted/);
 });
 
-test("empty checks show no percentage and no fake 100%", () => {
+test("satellite yellow band includes 95% and 98%", () => {
+  const twenty = Array.from({ length: 20 }, (_, i) =>
+    probe({
+      sim_id: i + 1,
+      prompt_key: `p${i}`,
+      engine: i % 2 ? "chatgpt" : "gemini",
+      material_hallucination: i < 1 ? "confirmed" : "none",
+      hallucination_evidence: i < 1 ? "Wrong radius" : null,
+    }),
+  );
+  // 19 of 20 = 95.0% -> yellow
+  assert.equal(factCheckAccuracyLead(driftRead([], twenty).coverage).tone, "warning");
+  assert.equal(
+    factCheckAccuracyColor(factCheckAccuracyLead(driftRead([], twenty).coverage).tone),
+    "var(--warning-amber)",
+  );
+
+  const fifty = Array.from({ length: 50 }, (_, i) =>
+    probe({
+      sim_id: i + 1,
+      prompt_key: `p${i}`,
+      engine: "chatgpt",
+      material_hallucination: i < 1 ? "confirmed" : "none",
+      hallucination_evidence: i < 1 ? "Wrong" : null,
+    }),
+  );
+  // 49 of 50 = 98.0% -> yellow (closed high end)
+  assert.equal(factCheckAccuracyLead(driftRead([], fifty).coverage).tone, "warning");
+});
+
+test("empty checks show no percentage, tone, or pie", () => {
   const emptyCoverage = driftRead([], []).coverage;
   const empty = factCheckAccuracyLead(emptyCoverage);
   assert.equal(empty.rate, null);
   assert.equal(empty.population, null);
-  assert.equal(empty.matched, 0);
-  assert.equal(empty.checked, 0);
+  assert.equal(empty.tone, null);
+  assert.equal(empty.ratePct, null);
+  assert.equal(factCheckAccuracyColor(empty.tone), undefined);
+  assert.equal(factCheckAccuracyPie(emptyCoverage), null);
   assert.equal(factCheckHeadline(emptyCoverage), "This run sent no product fact checks.");
 
   const failedOnly = [
@@ -77,6 +130,7 @@ test("empty checks show no percentage and no fake 100%", () => {
   const failedCoverage = driftRead([], failedOnly).coverage;
   const failedLead = factCheckAccuracyLead(failedCoverage);
   assert.equal(failedLead.rate, null);
+  assert.equal(factCheckAccuracyPie(failedCoverage), null);
   assert.doesNotMatch(String(failedLead.rate ?? ""), /100/);
   assert.match(factCheckHeadline(failedCoverage), /No product fact check completed/);
 });
