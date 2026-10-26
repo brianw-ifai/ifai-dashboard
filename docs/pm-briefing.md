@@ -17,11 +17,9 @@ Two approvals, each one sentence:
 
 > Continue as Project Manager. Read `docs/pm-handoff.md` and do the first job.
 
-Copy the role card into `docs/pm-handoff.md` once, at the first handoff after PM10's session is closed. After that, only a Project Manager writes the file, and only the State section changes.
+`docs/pm-handoff.md` is the live card. It was copied once on October 26, 2026, after PM10 finished, without a handoff from PM10. After that, only a Project Manager writes the file, and only the State section changes.
 
-When PM10's session is closed, add this first line to `docs/pm8-handoff.md`, `docs/pm9-handoff.md`, and `docs/pm10-handoff.md`:
-
-> Archive. Do not follow. The live handoff is `docs/pm-handoff.md`.
+`docs/pm8-handoff.md`, `docs/pm9-handoff.md`, and `docs/pm10-handoff.md` open with: Archive. Do not follow. The live handoff is `docs/pm-handoff.md`.
 
 ## Why the card stays standing
 
@@ -31,7 +29,7 @@ A card that lists the next batch, the status table, and the last build log has t
 
 ## The role card
 
-Copy this block into `docs/pm-handoff.md` once. Leave the State section as written for that first copy. The Project Manager replaces State only when you say to hand off.
+The block below matches `docs/pm-handoff.md` as of 3:18 PM ET on October 26, 2026. Both Google Docs were on documentation version 10.5 then, so the first job is the next batch. The Project Manager replaces State only when you say to hand off.
 
 ```
 # PM handoff
@@ -101,18 +99,13 @@ Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
 - You are PM11. Next feature workers are 11.1, 11.2, 11.3.
-- At 1:35 PM ET on October 26, 2026, both docs opened on Documentation
-  version: 8.7. Re-read the first line before acting.
-- He approved the preview and it is on main. Pull request 47 merged into
-  pull request 46. Pull request 46 merged at 11:55 AM ET on October 26.
-- He set the closeout label at 10.5. Use 10.1 through 10.4 for the four
-  themes in pull request 47's title, in that order: trend chart, plain Why
-  not Fender, bubbles that fit their text, no self-evident qualifiers.
-  10.5 is commit d9911c9, the spoke header. Hover-slide commits 731ad1c and
-  3539b10 belong with the bubble work.
-- First job is the 10.5 doc closeout if the first line is still behind main.
-  Propose the statuses from the FDD. Wait for "go ahead." Then edit the docs.
-- After that, propose the next small batch from the FDD.
+- Confirmed at 3:18 PM ET on October 26, 2026. Both docs open on
+  Documentation version: 10.5. Workers 9.1 through 10.5 are written there.
+  X-22 stays TARGET. Do not redo that closeout.
+- Approved code is on main at d9911c9. Pull request 46 is merged.
+  Production: https://ifai-dashboard.netlify.app/dashboard
+- Nothing is in flight. First job is the next small batch from the FDD.
+  Propose it and wait for "go ahead."
 ```
 
 ## Worker brief
@@ -160,7 +153,6 @@ The worker who extends the 9.5 hero-value pattern reads that commit. The Project
 
 ## Before the first kickoff
 
-- PM10's session is finished.
-- `docs/pm-handoff.md` is the role card above, copied once.
-- The three older handoffs open with the archive line.
-- The chat paste is the one kickoff sentence.
+PM10's session is finished. The live card and the archive lines are in this branch. Merge it to `main` before starting PM11. A new Project Manager reads `main`, and the older handoffs there still open with "You are Project Manager 9" and "You are Project Manager 10" until this branch lands.
+
+After the merge, the chat paste is the one kickoff sentence.

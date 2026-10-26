@@ -1,3 +1,5 @@
+Archive. Do not follow. The live handoff is `docs/pm-handoff.md`.
+
 # PM9 handoff
 
 You are Project Manager 9. Written Thursday, October 22, 2026 (America/New_York) after Brian Magazu approved PM8's preview and the documentation closeout.

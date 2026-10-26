@@ -1,3 +1,5 @@
+Archive. Do not follow. The live handoff is `docs/pm-handoff.md`.
+
 # PM10 handoff
 
 You are Project Manager 10. Written Friday, October 23, 2026 (America/New_York) after Brian Magazu asked to stop at the AI Search Visibility example and hand the next batch to a new PM.

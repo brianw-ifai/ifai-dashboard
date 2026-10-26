@@ -1,3 +1,5 @@
+Archive. Do not follow. The live handoff is `docs/pm-handoff.md`.
+
 # PM8 handoff
 
 Internal note for the next product manager. Written Thursday, October 22, 2026 (America/New_York) after Brian Magazu reviewed the Citation Ecosystem preview and asked to stop before the next batch.
