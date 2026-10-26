@@ -111,21 +111,32 @@ export function pct(numerator: number, denominator: number): string {
   return denominator > 0 ? `${((100 * numerator) / denominator).toFixed(1)}%` : "No resolved answers";
 }
 
+/** Map hero bands for Unbranded Discovery (red below 30, green above 65). */
+export const UNBRANDED_RATE_BANDS = { redBelow: 30, greenAbove: 65 } as const;
+
+/** Map hero bands for Branded Consideration (red below 70, green above 90). */
+export const BRANDED_RATE_BANDS = { redBelow: 70, greenAbove: 90 } as const;
+
 /**
- * Brand Consideration lead on Run Details: "N of M" plus pct(), or an empty message.
- * Zero resolved never becomes 100% or a percentage string.
+ * One Run Details lead rate: pct() string and the same traffic-light color as the map
+ * heroes (red below redBelow, yellow through greenAbove inclusive, green above).
+ * Zero resolved never becomes a percentage or a color.
  */
-export function brandedConsiderationLead(tally: Pick<RoleTally, "fenderWins" | "resolved">): {
-  figure: string;
-  rate: string | null;
-} {
+export function roleRateLead(
+  tally: Pick<RoleTally, "fenderWins" | "resolved">,
+  bands: { redBelow: number; greenAbove: number },
+): { rate: string | null; color: string | null } {
   if (tally.resolved <= 0) {
-    return { figure: "No resolved answers", rate: null };
+    return { rate: null, color: null };
   }
-  return {
-    figure: `${tally.fenderWins} of ${tally.resolved}`,
-    rate: pct(tally.fenderWins, tally.resolved),
-  };
+  const rateNum = (100 * tally.fenderWins) / tally.resolved;
+  const color =
+    rateNum < bands.redBelow
+      ? "var(--danger-red)"
+      : rateNum > bands.greenAbove
+        ? "var(--success-green)"
+        : "var(--warning-amber)";
+  return { rate: pct(tally.fenderWins, tally.resolved), color };
 }
 
 /** Visible label on a rate that is too small to rank against the rows beside it. */
