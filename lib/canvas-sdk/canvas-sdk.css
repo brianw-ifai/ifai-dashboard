@@ -3449,11 +3449,17 @@
       border-spacing: 0;
     }
 
-    /* Fixed columns must keep a long status badge inside its own cell. */
+    /* Short status badges stay on one line; column fit gives them room. */
     .resizable-table .tag-badge {
-      white-space: normal;
-      max-width: 100%;
+      white-space: nowrap;
+      max-width: none;
       vertical-align: top;
+    }
+
+    /* Do not shatter dates and short labels when the column already has room. */
+    .resizable-table td {
+      overflow-wrap: break-word;
+      word-break: normal;
     }
 
     /* Field names read at the same size as the cell text around them. */

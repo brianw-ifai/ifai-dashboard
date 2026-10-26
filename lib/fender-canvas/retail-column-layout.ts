@@ -45,7 +45,28 @@ function hasStoredWidth(columns: readonly ColumnWidthSpec[], raw: unknown): bool
 }
 
 /**
+ * Column that absorbs leftover panel width when the caller does not name one.
+ * Prefer the widest declared column so long text (prompt, model, title) wraps there.
+ */
+export function pickFillColumnId(
+  columns: readonly ColumnWidthSpec[],
+  preferred?: string,
+): string {
+  if (preferred && columns.some((column) => column.id === preferred)) return preferred;
+  let bestId = columns[0]?.id ?? "";
+  let bestWidth = -1;
+  for (const column of columns) {
+    if (column.width > bestWidth) {
+      bestWidth = column.width;
+      bestId = column.id;
+    }
+  }
+  return bestId;
+}
+
+/**
  * Default widths that fill the panel. One column absorbs leftover space.
+ * Optional content floors widen the other columns so short values stay on one line.
  * A stored resize wins, and the other columns stay at their own widths.
  */
 export function filledColumnWidths(
@@ -53,17 +74,49 @@ export function filledColumnWidths(
   fillColumnId: string,
   containerWidth: number,
   stored?: unknown,
+  contentMins?: Record<string, number>,
 ): Record<string, number> {
   const base = mergeColumnWidths(columns, stored ?? null);
   if (hasStoredWidth(columns, stored) || containerWidth <= 0) return base;
   if (!columns.some((column) => column.id === fillColumnId)) return base;
+
+  const next = { ...base };
+  for (const column of columns) {
+    if (column.id === fillColumnId) continue;
+    const contentMin = contentMins?.[column.id];
+    if (typeof contentMin !== "number" || !Number.isFinite(contentMin)) continue;
+    next[column.id] = Math.max(next[column.id], Math.ceil(contentMin));
+  }
+
   const others = columns.reduce(
-    (sum, column) => (column.id === fillColumnId ? sum : sum + base[column.id]),
+    (sum, column) => (column.id === fillColumnId ? sum : sum + next[column.id]),
     0,
   );
   const room = Math.floor(containerWidth) - others;
   return {
-    ...base,
-    [fillColumnId]: Math.max(base[fillColumnId], room),
+    ...next,
+    [fillColumnId]: Math.max(next[fillColumnId], room),
   };
+}
+
+/**
+ * Shared ResizableTable default: fill the panel, keep short cells on one line,
+ * and let an explicit fill column or the widest declared column take the leftover.
+ */
+export function fitResizableColumnWidths(
+  columns: readonly ColumnWidthSpec[],
+  containerWidth: number,
+  options?: {
+    fillColumnId?: string;
+    stored?: unknown;
+    contentMins?: Record<string, number>;
+  },
+): Record<string, number> {
+  return filledColumnWidths(
+    columns,
+    pickFillColumnId(columns, options?.fillColumnId),
+    containerWidth,
+    options?.stored,
+    options?.contentMins,
+  );
 }

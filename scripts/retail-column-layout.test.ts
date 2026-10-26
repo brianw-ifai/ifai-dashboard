@@ -1,12 +1,20 @@
 // node --experimental-strip-types --import ./scripts/register-ts-extensions.mjs --test scripts/retail-column-layout.test.ts
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 import {
   MAP_LISTING_COLUMN_MEASURED_WIDTH,
   MAP_LISTING_COLUMN_WIDTH,
   columnWidthStorageKey,
+  filledColumnWidths,
+  fitResizableColumnWidths,
   mergeColumnWidths,
+  pickFillColumnId,
 } from "../lib/fender-canvas/retail-column-layout.ts";
+
+const root = new URL("..", import.meta.url).pathname;
+const read = (path: string) => readFileSync(join(root, path), "utf8");
 
 const mapColumns = [
   { id: "listing", width: MAP_LISTING_COLUMN_WIDTH, minWidth: 96 },
@@ -16,6 +24,25 @@ const mapColumns = [
 const suppressedColumns = [
   { id: "listing", width: 240, minWidth: 140 },
   { id: "offer", width: 120, minWidth: 100 },
+];
+
+const runDetailColumns = [
+  { id: "prompt", width: 280, minWidth: 160 },
+  { id: "outcome", width: 220, minWidth: 140 },
+  { id: "engine", width: 120, minWidth: 90 },
+  { id: "model", width: 150, minWidth: 100 },
+  { id: "category", width: 160, minWidth: 110 },
+  { id: "fact", width: 180, minWidth: 120 },
+  { id: "cited", width: 110, minWidth: 90 },
+  { id: "checked", width: 180, minWidth: 130 },
+];
+
+const factCheckColumns = [
+  { id: "question", width: 240, minWidth: 140 },
+  { id: "engine", width: 140, minWidth: 100 },
+  { id: "result", width: 240, minWidth: 160 },
+  { id: "fact", width: 260, minWidth: 140 },
+  { id: "checked", width: 170, minWidth: 120 },
 ];
 
 test("the MAP listing default is about 60 percent of the measured column", () => {
@@ -48,4 +75,67 @@ test("a missing or broken store falls back to the defaults", () => {
     listing: MAP_LISTING_COLUMN_WIDTH,
     asin: 118,
   });
+});
+
+test("pickFillColumnId uses the preferred id or the widest declared column", () => {
+  assert.equal(pickFillColumnId(runDetailColumns), "prompt");
+  assert.equal(pickFillColumnId(factCheckColumns), "fact");
+  assert.equal(pickFillColumnId(runDetailColumns, "outcome"), "outcome");
+  assert.equal(pickFillColumnId(runDetailColumns, "missing"), "prompt");
+});
+
+test("fitResizableColumnWidths fills the panel and widens short columns from content floors", () => {
+  const panel = 1600;
+  const contentMins = {
+    outcome: 300,
+    checked: 200,
+  };
+  const widths = fitResizableColumnWidths(runDetailColumns, panel, { contentMins });
+  assert.equal(widths.outcome, 300);
+  assert.equal(widths.checked, 200);
+  assert.equal(widths.engine, 120);
+  const others = Object.entries(widths)
+    .filter(([id]) => id !== "prompt")
+    .reduce((sum, [, width]) => sum + width, 0);
+  assert.ok(widths.prompt > 280, `prompt should absorb leftover, got ${widths.prompt}`);
+  assert.equal(widths.prompt, panel - others);
+  assert.equal(Object.values(widths).reduce((sum, width) => sum + width, 0), panel);
+
+  const facts = fitResizableColumnWidths(factCheckColumns, 1400, {
+    contentMins: {
+      question: 360,
+      result: 300,
+      checked: 180,
+    },
+  });
+  assert.equal(facts.question, 360);
+  assert.equal(facts.result, 300);
+  assert.equal(facts.checked, 180);
+  assert.ok(facts.fact > 260, `fact should absorb leftover, got ${facts.fact}`);
+  assert.equal(Object.values(facts).reduce((sum, width) => sum + width, 0), 1400);
+});
+
+test("a stored drag wins over the shared fit rule", () => {
+  const stored = { prompt: 200, outcome: 180 };
+  const widths = fitResizableColumnWidths(runDetailColumns, 1400, {
+    stored,
+    contentMins: { outcome: 310, checked: 220 },
+  });
+  assert.equal(widths.prompt, 200);
+  assert.equal(widths.outcome, 180);
+  assert.equal(widths.checked, 180);
+  assert.deepEqual(
+    widths,
+    filledColumnWidths(runDetailColumns, "prompt", 1400, stored, { outcome: 310 }),
+  );
+});
+
+test("ResizableTable applies the shared fit rule without a call-site fillColumnId", () => {
+  const table = read("components/v3/live/ResizableTable.tsx");
+  assert.match(table, /fitResizableColumnWidths/);
+  assert.match(table, /measureColumnOneLineMins/);
+  assert.match(table, /pickFillColumnId/);
+  assert.doesNotMatch(table, /fillColumnId && !manual \? filledColumnWidths/);
+  assert.doesNotMatch(read("components/v3/live/ai-search/SimulationsExplorer.tsx"), /fillColumnId=/);
+  assert.doesNotMatch(read("components/v3/live/ai-search/FactCheckTable.tsx"), /fillColumnId=/);
 });
