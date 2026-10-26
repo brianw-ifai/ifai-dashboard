@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { SATELLITE_HERO_TEXT, satelliteHeroLayout } from "../lib/canvas-sdk/hero-fit.ts";
+import { hoverSlide } from "../lib/canvas-sdk/hover-frame.ts";
 import { fittedSatelliteClusters, groupBounds } from "../lib/canvas-sdk/satellite-fit.ts";
 import type { CanvasNode, CanvasSpec } from "../lib/canvas-sdk/types.ts";
 import { HUB_LAYOUT, fenderCanvasEdges, primarySpokeLayouts, satelliteNode, type SatelliteId } from "../lib/fender-canvas/primary-spoke-layout.ts";
@@ -92,4 +93,18 @@ test("the framing box holds the bubble and its satellites", () => {
     assert.ok(sat.x - sat.r >= box.minX && sat.x + sat.r <= box.maxX);
     assert.ok(sat.y - sat.r >= box.minY && sat.y + sat.r <= box.maxY);
   }
+});
+
+test("the hover slide clears the slots without pushing other bubbles under them", () => {
+  const room = { left: 302, top: 64, right: 1175, bottom: 640 };
+  const mains = { minX: 300, minY: 70, maxX: 900, maxY: 630 };
+  const left = hoverSlide({ minX: 134, minY: 120, maxX: 520, maxY: 440 }, mains, room);
+  assert.ok(left.dx >= 302 + 16 - 134, "the left group clears the slots");
+  assert.ok(left.dx <= 1175 - 900, "the right-hand bubbles stay on screen");
+  assert.equal(left.dy, 0);
+  const right = hoverSlide({ minX: 640, minY: 150, maxX: 1060, maxY: 520 }, mains, room);
+  assert.ok(right.dx >= 302 - 300, "a right-hand group does not slide the left bubbles under the slots");
+  assert.ok(right.dx <= 2);
+  const hub = hoverSlide({ minX: 520, minY: 250, maxX: 700, maxY: 450 }, mains, room);
+  assert.equal(hub.dx, Math.round((302 + 1175) / 2 - 610));
 });

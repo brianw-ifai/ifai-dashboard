@@ -121,6 +121,7 @@ export function CanvasShell({ spec, children }: Props) {
     transform,
     applyTransform,
     framePoint,
+    panBy,
     frameOverview,
     frameOverviewInstant,
     zoomBy,
@@ -698,7 +699,7 @@ export function CanvasShell({ spec, children }: Props) {
     slotsVisible: hubSlotsVisible,
     viewportRef,
     pan,
-    framePoint,
+    panBy,
     frameOverview,
     settleMs: iom ? iomMotionMs(1200) : 600,
   });

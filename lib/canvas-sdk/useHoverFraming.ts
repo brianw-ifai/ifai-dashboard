@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
+import { hoverSlide, type Box } from "@/lib/canvas-sdk/hover-frame";
 import { fittedSatelliteClusters, groupBounds } from "@/lib/canvas-sdk/satellite-fit";
 import type { CanvasSpec } from "@/lib/canvas-sdk/types";
 
@@ -11,7 +12,8 @@ const POINTER_TRAVEL = 6;
 
 /**
  * Hovering or focusing a main bubble slides the map so that bubble and its satellites sit
- * centered in the space the signal slots leave free. Closing the slots slides the map back.
+ * clear of the signal slots and as central as the other bubbles allow (see hoverSlide).
+ * Closing the slots slides the map back.
  * The slide waits for the camera to settle and for the pointer to move, so a bubble that
  * lands under a still cursor does not reframe the map again.
  */
@@ -21,7 +23,7 @@ export function useHoverFraming({
   slotsVisible,
   viewportRef,
   pan,
-  framePoint,
+  panBy,
   frameOverview,
   settleMs,
 }: {
@@ -29,12 +31,25 @@ export function useHoverFraming({
   enabled: boolean;
   slotsVisible: boolean;
   viewportRef: RefObject<HTMLDivElement | null>;
-  pan: MutableRefObject<{ scale: number }>;
-  framePoint: (x: number, y: number, scale: number, insetRight?: number, insetLeft?: number) => void;
+  pan: MutableRefObject<{ scale: number; x: number; y: number }>;
+  panBy: (dx: number, dy: number) => void;
   frameOverview: () => void;
   settleMs: number;
 }) {
   const groups = useMemo(() => fittedSatelliteClusters(spec).groups, [spec]);
+  const mains = useMemo(() => {
+    const satellites = new Set(groups.flatMap((group) => group.nodes.map((node) => node.id)));
+    const circles = (spec.nodes ?? []).filter((node) => !satellites.has(node.id));
+    return circles.reduce<Box>(
+      (box, c) => ({
+        minX: Math.min(box.minX, c.x - c.r - 30),
+        minY: Math.min(box.minY, c.y - c.r - 30),
+        maxX: Math.max(box.maxX, c.x + c.r + 30),
+        maxY: Math.max(box.maxY, c.y + c.r + 30),
+      }),
+      { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
+    );
+  }, [groups, spec.nodes]);
   const framed = useRef<{ id: string; at: number; x: number; y: number } | null>(null);
   const pointer = useRef({ x: 0, y: 0 });
 
@@ -60,12 +75,28 @@ export function useHoverFraming({
         const travel = Math.hypot(pointer.current.x - last.x, pointer.current.y - last.y);
         if (settling || (!keyboard && travel < POINTER_TRAVEL)) return;
       }
-      const box = groupBounds(groups, node);
-      const insetLeft = Math.max(0, SLOT_COLUMN_RIGHT - viewport.offsetLeft);
-      framePoint((box.minX + box.maxX) / 2, (box.minY + box.maxY) / 2, pan.current.scale, 0, insetLeft);
-      framed.current = { id: nodeId, at: performance.now(), ...pointer.current };
+      const viewBox = spec.viewBox ?? { w: 1600, h: 1000 };
+      const w = viewport.clientWidth;
+      const h = viewport.clientHeight;
+      const fit = Math.min(w / viewBox.w, h / viewBox.h);
+      const { scale, x, y } = pan.current;
+      const toScreen = (box: Box): Box => ({
+        minX: ((w - viewBox.w * fit) / 2 + box.minX * fit) * scale + x,
+        maxX: ((w - viewBox.w * fit) / 2 + box.maxX * fit) * scale + x,
+        minY: ((h - viewBox.h * fit) / 2 + box.minY * fit) * scale + y,
+        maxY: ((h - viewBox.h * fit) / 2 + box.maxY * fit) * scale + y,
+      });
+      const header = parseFloat(getComputedStyle(viewport).getPropertyValue("--canvas-header-height")) || 64;
+      const room = { left: Math.max(0, SLOT_COLUMN_RIGHT - viewport.offsetLeft), top: header, right: w, bottom: h };
+      const { dx, dy } = hoverSlide(toScreen(groupBounds(groups, node)), toScreen(mains), room);
+      const moved = dx !== 0 || dy !== 0;
+      if (moved) panBy(dx, dy);
+      // Only a slide needs the settle and pointer-travel guard; a still map does not.
+      framed.current = moved
+        ? { id: nodeId, at: performance.now(), ...pointer.current }
+        : { id: nodeId, at: -Infinity, x: Number.NaN, y: Number.NaN };
     },
-    [enabled, framePoint, groups, pan, settleMs, spec.nodes, viewportRef],
+    [enabled, groups, mains, pan, panBy, settleMs, spec.nodes, spec.viewBox, viewportRef],
   );
 
   useEffect(() => {

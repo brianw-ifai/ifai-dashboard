@@ -61,16 +61,26 @@ export function useCanvasCamera({
   );
 
   const framePoint = useCallback(
-    (viewX: number, viewY: number, scale: number, insetRight = 0, insetLeft = 0) => {
+    (viewX: number, viewY: number, scale: number, insetRight = 0) => {
       const viewport = viewportRef.current;
       if (!viewport) return;
       const point = viewBoxToLocal(viewX, viewY);
       pan.current.scale = scale;
-      pan.current.x = insetLeft + (viewport.clientWidth - insetRight - insetLeft) / 2 - point.x * scale;
+      pan.current.x = (viewport.clientWidth - insetRight) / 2 - point.x * scale;
       pan.current.y = viewport.clientHeight / 2 - point.y * scale;
       runCameraAnimation();
     },
     [runCameraAnimation, viewBoxToLocal, viewportRef],
+  );
+
+  /** Slide the map by a screen-pixel offset, keeping the current zoom. */
+  const panBy = useCallback(
+    (dx: number, dy: number) => {
+      pan.current.x += dx;
+      pan.current.y += dy;
+      runCameraAnimation();
+    },
+    [runCameraAnimation],
   );
 
   const frameOverview = useCallback(() => {
@@ -121,6 +131,7 @@ export function useCanvasCamera({
     transform,
     applyTransform,
     framePoint,
+    panBy,
     frameOverview,
     frameOverviewInstant,
     zoomBy,
