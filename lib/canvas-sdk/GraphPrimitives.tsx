@@ -1,6 +1,7 @@
 "use client";
 
 import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
+import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
 /** Stat pill label size inside IOM / v3 bubbles (SVG units before optional face scale). */
@@ -467,6 +468,10 @@ function CenteredFace({
         ) : null}
       </g>
     );
+  }
+
+  if (heroValue && !icon) {
+    return <SatelliteHeroFace title={title} value={heroValue.value} label={heroValue.label} status={status} />;
   }
 
   const lines = titleLines(title);

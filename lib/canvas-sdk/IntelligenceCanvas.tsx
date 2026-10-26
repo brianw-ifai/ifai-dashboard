@@ -28,6 +28,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           mapExiting={ctx.mapExiting}
           mapEntering={ctx.mapEntering}
           columnRailExiting={ctx.columnRailExiting}
+          heldGroupId={ctx.heldGroupId}
           onShowTooltip={ctx.showTooltip}
           onHideTooltip={ctx.hideTooltip}
         />

@@ -24,6 +24,7 @@ import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
 import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
+import { useHoverFraming } from "@/lib/canvas-sdk/useHoverFraming";
 import { useCanvasUrlApply } from "@/lib/canvas-sdk/useCanvasUrlApply";
 import { useCanvasUrlSync } from "@/lib/canvas-sdk/useCanvasUrlSync";
 import {
@@ -691,10 +692,22 @@ export function CanvasShell({ spec, children }: Props) {
     if (activeSpoke || panelView === "command") hideTooltip();
   }, [activeSpoke, hideTooltip, panelView]);
 
+  const frameHoveredBubble = useHoverFraming({
+    spec,
+    enabled: iom && !activeSpoke && panelView !== "command" && panelLayout === "hidden" && !tourActive && !graphColumnLayout,
+    slotsVisible: hubSlotsVisible,
+    viewportRef,
+    pan,
+    framePoint,
+    frameOverview,
+    settleMs: iom ? iomMotionMs(1200) : 600,
+  });
+
   const inspectBubble = useCallback((nodeId: string) => {
     setInspectedBubbleId(nodeId);
     setHubSlotsVisible(true);
-  }, []);
+    frameHoveredBubble(nodeId);
+  }, [frameHoveredBubble]);
 
   // Opening a spoke panel, or returning from one, leaves no bubble hovered or focused.
   useEffect(() => {
@@ -1029,6 +1042,7 @@ export function CanvasShell({ spec, children }: Props) {
     tourCategory: currentTour?.category ?? "",
     focusNode,
     inspectBubble,
+    heldGroupId: hubSlotsVisible && panelLayout === "hidden" ? inspectedBubbleId : null,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,

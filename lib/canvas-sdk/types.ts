@@ -288,6 +288,8 @@ export type CanvasRenderContext = {
   /** A main bubble is hovered or focused: show its signal slots. They stay up,
    *  tracking the latest hovered bubble, until a click outside dismisses them. */
   inspectBubble: (nodeId: string) => void;
+  /** The inspected main bubble while its slots show; its satellites stay out with them. */
+  heldGroupId: string | null;
   resetView: () => void;
   overviewNonce: number;
   focusedSpokeId: string | null;
