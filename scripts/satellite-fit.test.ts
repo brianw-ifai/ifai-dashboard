@@ -100,11 +100,11 @@ test("the hover slide clears the slots without pushing other bubbles under them"
   const mains = { minX: 300, minY: 70, maxX: 900, maxY: 630 };
   const left = hoverSlide({ minX: 134, minY: 120, maxX: 520, maxY: 440 }, mains, room);
   assert.ok(left.dx >= 302 + 16 - 134, "the left group clears the slots");
-  assert.ok(left.dx <= 1175 - 900, "the right-hand bubbles stay on screen");
+  assert.ok(left.dx <= 1175 - 16 - 900, "the right-hand bubbles stay on screen");
   assert.equal(left.dy, 0);
   const right = hoverSlide({ minX: 640, minY: 150, maxX: 1060, maxY: 520 }, mains, room);
-  assert.ok(right.dx >= 302 - 300, "a right-hand group does not slide the left bubbles under the slots");
-  assert.ok(right.dx <= 2);
+  assert.ok(right.dx >= 302 + 16 - 300, "a right-hand group does not slide the left bubbles under the slots");
+  assert.ok(right.dx <= 18);
   const hub = hoverSlide({ minX: 520, minY: 250, maxX: 700, maxY: 450 }, mains, room);
   assert.equal(hub.dx, Math.round((302 + 1175) / 2 - 610));
 });

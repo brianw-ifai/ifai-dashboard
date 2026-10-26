@@ -42,10 +42,10 @@ export function useHoverFraming({
     const circles = (spec.nodes ?? []).filter((node) => !satellites.has(node.id));
     return circles.reduce<Box>(
       (box, c) => ({
-        minX: Math.min(box.minX, c.x - c.r - 30),
-        minY: Math.min(box.minY, c.y - c.r - 30),
-        maxX: Math.max(box.maxX, c.x + c.r + 30),
-        maxY: Math.max(box.maxY, c.y + c.r + 30),
+        minX: Math.min(box.minX, c.x - c.r - 40),
+        minY: Math.min(box.minY, c.y - c.r - 40),
+        maxX: Math.max(box.maxX, c.x + c.r + 40),
+        maxY: Math.max(box.maxY, c.y + c.r + 40),
       }),
       { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity },
     );

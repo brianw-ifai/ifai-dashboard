@@ -6,8 +6,8 @@
 export const SATELLITE_HERO_TEXT = { title: 13, value: 30, label: 12.5 } as const;
 
 /** Width estimates per character, as a share of font size. Generous so text clears the ring. */
-const WIDTH_PER_CHAR = { title: 0.6, value: 0.6, valueText: 0.58, label: 0.58 } as const;
-const RING_PAD = 7;
+const WIDTH_PER_CHAR = { title: 0.62, value: 0.6, valueText: 0.62, label: 0.62 } as const;
+const RING_PAD = 10;
 const TITLE_GAP = 5;
 const LABEL_GAP = 4;
 

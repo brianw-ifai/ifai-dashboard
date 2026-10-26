@@ -24,8 +24,8 @@ function clamp(value: number, low: number, high: number): number {
 export function hoverSlide(group: Box, mains: Box, room: FrameRoom): { dx: number; dy: number } {
   const groupLow = room.left + MARGIN - group.minX;
   const groupHigh = room.right - MARGIN - group.maxX;
-  const mainsLow = room.left - mains.minX;
-  const mainsHigh = room.right - mains.maxX;
+  const mainsLow = room.left + MARGIN - mains.minX;
+  const mainsHigh = room.right - MARGIN - mains.maxX;
   const toCenter = (room.left + room.right) / 2 - (group.minX + group.maxX) / 2;
 
   const low = Math.max(groupLow, mainsLow);
