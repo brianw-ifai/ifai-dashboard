@@ -16,6 +16,7 @@ import {
   CitationHero,
   type CitationPick,
 } from "@/components/v3/live/ai-search/CitationHero";
+import { CitationLeadFigure } from "@/components/v3/live/ai-search/CitationLeadFigure";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import {
   citationEvidence,
@@ -176,6 +177,11 @@ function Ecosystem({
   return (
     <>
       <div className="content-box ai-citation-summary">
+        <CitationLeadFigure
+          owned={fender.length}
+          total={read.rows.length}
+          ready={!caution && citationUrlsLoaded}
+        />
         <div className="content-box-title">
           <span>Which web sources AI answers cite</span>
         </div>
