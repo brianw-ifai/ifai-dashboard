@@ -6,7 +6,6 @@ import { CitationEcosystemPanel } from "@/components/v3/live/ai-search/CitationE
 import { CompetitorWinsPanel } from "@/components/v3/live/ai-search/CompetitorWinsPanel";
 import { EngineComparisonPanel } from "@/components/v3/live/ai-search/EngineComparisonPanel";
 import { AiSearchSurface } from "@/components/v3/live/ai-search/AiSearchSurface";
-import { AiSearchHeaderStats } from "@/components/v3/live/ai-search/AiSearchHeaderStats";
 import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/CompetitorsSpokeDescription";
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
@@ -126,7 +125,6 @@ function wrapSpoke(
       ? {
           desc: aiSpokeDesc(ai),
           headerAccessory: <RunHistoryControl />,
-          headerStats: <AiSearchHeaderStats />,
         }
       : {}),
     ...(id === "competitors"
