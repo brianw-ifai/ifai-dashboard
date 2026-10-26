@@ -3648,6 +3648,19 @@
       font-size: 14px;
     }
 
+    .ai-trend-section {
+      margin-bottom: 12px;
+    }
+
+    .ai-trend-section > summary {
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    .ai-trend-section:not([open]) > summary {
+      margin-bottom: 0;
+    }
+
     .ai-history-quick,
     .ai-history-actions,
     .ai-history-toggles {
