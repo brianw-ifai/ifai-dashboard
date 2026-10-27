@@ -267,35 +267,14 @@ export function attemptLabel(iso: string | null, bucket: FindabilityBucket): str
 export function dealerBundleLabel(value: boolean | null | undefined): string {
   if (value === true) return "Yes";
   if (value === false) return "No";
-  if (value === null) return "Not in the retail read";
+  if (value === null) return "Not in this read";
   return "Not loaded";
-}
-
-export function countFlagLine(row: FindabilityRow): string {
-  const outcome = findabilityOutcome(row);
-  if (outcome === "exact_official_product") {
-    return row.counts_as_confirmed === true
-      ? "Counted as a confirmed exact official product page."
-      : "Stored as an exact official product page.";
-  }
-  if (outcome === "official_family_page") {
-    return row.counts_as_confirmed === true
-      ? "Counted as a confirmed official page, and as a family page. Not an exact product page."
-      : "Stored as an official family page, not an exact product page.";
-  }
-  if (outcome === "completed_not_found") return "The search finished with no defensible page.";
-  if (outcome === "ambiguous_candidate") {
-    return "The search finished with an ambiguous match. No official page was accepted.";
-  }
-  if (outcome === "not_checked") return "Not checked. A missing address is not a finished search.";
-  return "This stored result sits outside the five official-page outcomes.";
 }
 
 export function presentExplanation(row: FindabilityRow): string {
   const stored = row.explanation?.trim();
   if (stored) return stored;
-  if (findabilityOutcome(row) === "not_checked") return "Not checked yet.";
-  return "No explanation was stored.";
+  return "None";
 }
 
 export function listingTitle(row: FindabilityRow): string {
@@ -330,8 +309,6 @@ export function findabilitySortValue(row: FindabilityRow, columnId: string): Sor
       return bucket === "not_checked" ? null : row.latest_attempt_at;
     case "explanation":
       return presentExplanation(row);
-    case "flags":
-      return countFlagLine(row);
     case "bundle":
       return dealerBundleLabel(row.dealer_bundle);
     default:

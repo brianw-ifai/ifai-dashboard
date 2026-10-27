@@ -6,7 +6,6 @@ import {
   attemptLabel,
   bucketLabel,
   confidenceLabel,
-  countFlagLine,
   dealerBundleLabel,
   findabilitySortValue,
   httpStatusLabel,
@@ -23,6 +22,12 @@ import {
   type FindabilityRow,
 } from "@/lib/findability/outcomes";
 
+const VARIANT_SKU_TOOLTIP = {
+  title: "Variant SKU",
+  description:
+    "The brand's variant code stored with this official-page match. It is not the Amazon ASIN.",
+} as const;
+
 const COLUMNS = [
   clientColumn("asin", "ASIN", "text", 124, 108, "asin-col"),
   clientColumn("title", "Listing", "text", 280, 180),
@@ -30,13 +35,15 @@ const COLUMNS = [
   clientColumn("category", "Category", "text", 150, 110),
   clientColumn("kind", "Product kind", "text", 130, 110),
   clientColumn("page", "Official page", "text", 240, 160),
-  clientColumn("sku", "Variant SKU", "text", 140, 110),
+  {
+    ...clientColumn("sku", "Variant SKU", "text", 140, 110),
+    headerTooltip: VARIANT_SKU_TOOLTIP,
+  },
   clientColumn("confidence", "Confidence", "text", 150, 120),
   clientColumn("source", "How it was matched", "text", 170, 130),
   clientColumn("http", "HTTP status", "number", 110, 90),
   clientColumn("checked", "Checked", "date", 180, 140),
   clientColumn("explanation", "Explanation", "text", 320, 200),
-  clientColumn("flags", "How it is counted", "text", 260, 180),
   clientColumn("bundle", "Dealer bundle", "text", 150, 120),
 ];
 
@@ -110,7 +117,6 @@ export function FindabilityTable({ rows }: { rows: readonly FindabilityRow[] }) 
                   <td>{httpStatusLabel(row.http_status, bucket)}</td>
                   <td>{attemptLabel(row.latest_attempt_at, bucket)}</td>
                   <td>{presentExplanation(row)}</td>
-                  <td>{countFlagLine(row)}</td>
                   <td>{dealerBundleLabel(row.dealer_bundle)}</td>
                 </tr>
               );
