@@ -18,13 +18,25 @@ const STATE_TONE: Record<ProbeState, string> = {
   unverified: "tag-warning",
 };
 
+/**
+ * Defaults sized so the representative one-line cells fit:
+ * question, uppercase result badge, verified fact + Fender source, and checked date.
+ * Fact absorbs leftover width on a wider panel until someone drags a column.
+ */
 const COLUMNS = [
-  clientColumn("question", "Question checked", "text", 240, 140),
-  clientColumn("engine", "Engine", "text", 140, 100),
-  clientColumn("result", "Result", "text", 240, 160),
-  clientColumn("fact", "Verified Fender fact", "text", 260, 140),
-  clientColumn("checked", "Checked", "date", 170, 120),
+  clientColumn("question", "Question checked", "text", 390, 240),
+  clientColumn("engine", "Engine", "text", 130, 100),
+  clientColumn("result", "Result", "text", 340, 240),
+  clientColumn("fact", "Verified Fender fact", "text", 700, 280),
+  clientColumn("checked", "Checked", "date", 200, 160),
 ];
+
+/** Keep the short row: no mid-word wrap, and no soft wrap in the one-line cells. */
+const ONE_LINE = {
+  overflowWrap: "normal" as const,
+  wordBreak: "normal" as const,
+  whiteSpace: "nowrap" as const,
+};
 
 function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
   if (columnId === "question") return row.prompt.trim() || null;
@@ -45,6 +57,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
         <ResizableTable
           tableId="product-fact-checks"
           columns={COLUMNS}
+          fillColumnId="fact"
           freezeHeader
           maxHeight={520}
           sort={sorted.sort}
@@ -53,7 +66,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
           <tbody>
             {sorted.rows.map((row) => (
               <tr key={row.key} data-probe-state={row.state} data-sim-id={row.simId}>
-                <td>
+                <td style={ONE_LINE}>
                   <EvidenceLink
                     focus={{ field: "sim", value: row.callId ?? String(row.simId) }}
                     tab={AI_TABS.simulations}
@@ -65,10 +78,15 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                   {engineLabel(row.engine)}
                   <div style={mutedText}>{modelLabel(row.model)}</div>
                 </td>
-                <td>
-                  <span className={`tag-badge ${STATE_TONE[row.state]}`}>{PROBE_STATE_LABELS[row.state]}</span>
+                <td style={ONE_LINE}>
+                  <span
+                    className={`tag-badge ${STATE_TONE[row.state]}`}
+                    style={{ whiteSpace: "nowrap", maxWidth: "none" }}
+                  >
+                    {PROBE_STATE_LABELS[row.state]}
+                  </span>
                 </td>
-                <td style={{ wordBreak: "break-word" }}>
+                <td style={row.evidence ? { overflowWrap: "normal", wordBreak: "normal" } : ONE_LINE}>
                   {row.claim ? (
                     <>
                       {row.claim} <ExternalLink href={row.sourceUrl}>Fender source</ExternalLink>
@@ -78,7 +96,7 @@ export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence
                   )}
                   {row.evidence ? <div style={mutedText}>Conflicting text: {row.evidence}</div> : null}
                 </td>
-                <td>{formatRunTime(row.checkedAt)}</td>
+                <td style={ONE_LINE}>{formatRunTime(row.checkedAt)}</td>
               </tr>
             ))}
           </tbody>

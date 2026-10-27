@@ -1,10 +1,12 @@
-import type { CitationPie, CitationPieSlice } from "@/lib/ai-search/citation-pies";
+import type { CitationPieSlice, PieDiscData } from "@/lib/ai-search/citation-pies";
 
 const SLICE_COLOR: Record<string, string> = {
   cited: "#22d3ee",
   none: "#64748b",
   owned: "#38bdf8",
   other: "#94a3b8",
+  matched: "#10b981",
+  contradicted: "#ef4444",
   fender_owned: "#38bdf8",
   retailer: "#818cf8",
   editorial: "#34d399",
@@ -45,21 +47,18 @@ function gradient(slices: CitationPieSlice[], total: number): string {
     .join(", ");
 }
 
-/** Disc pie shape. Role-rate leads reuse this without the citation id union. */
-export type PieDiscInput = {
-  id: string;
-  title: string;
-  total: number;
-  totalLabel: string;
-  slices: CitationPie["slices"];
-};
+/**
+ * Structural pie for CitationPieDisc. Run Details role rates and Product Fact
+ * Checks Accuracy reuse this; citation views keep the closed id union on CitationPie.
+ */
+export type PieDiscInput = PieDiscData;
 
 export function CitationPieDisc({
   pie,
   sizeClass = "citation-pie-disc",
   tip,
 }: {
-  pie: PieDiscInput;
+  pie: PieDiscData;
   sizeClass?: string;
   /** Custom tooltip. Same chrome as definition terms, without a native title. */
   tip?: string;
@@ -80,7 +79,7 @@ export function CitationPieDisc({
   );
 }
 
-export function CitationPieLegend({ pie }: { pie: CitationPie }) {
+export function CitationPieLegend({ pie }: { pie: PieDiscData }) {
   return (
     <ul className="citation-pie-legend">
       {pie.slices.map((slice) => (

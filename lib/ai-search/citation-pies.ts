@@ -8,12 +8,17 @@ export type CitationPieSlice = {
   count: number;
 };
 
-export type CitationPie = {
-  id: "classes" | "owned" | "unbranded" | "brands";
+/** Structural pie shape for CitationPieDisc. Citation views keep a closed id union below. */
+export type PieDiscData = {
+  id: string;
   title: string;
   total: number;
   totalLabel: string;
   slices: CitationPieSlice[];
+};
+
+export type CitationPie = PieDiscData & {
+  id: "classes" | "owned" | "unbranded" | "brands";
 };
 
 /**

@@ -3,12 +3,17 @@
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { FactCheckTable } from "@/components/v3/live/ai-search/FactCheckTable";
 import { driftRead } from "@/lib/ai-search/drift";
 import {
   FACT_CHECK_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE,
   FACT_CHECK_SHOPPING_SCOPE_WINDOW,
+  factCheckAccuracyColor,
+  factCheckAccuracyLead,
+  factCheckAccuracyPie,
+  factCheckAccuracyPieTip,
   factCheckCoverageNote,
   factCheckHeadline,
   factCheckPendingNote,
@@ -22,33 +27,78 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const windowed = isWindowHistoryKind(history?.mode.kind);
   const drift = driftRead(snapshot.calls, snapshot.probes);
   const { coverage } = drift;
+  const accuracy = factCheckAccuracyLead(coverage);
+  const pie = factCheckAccuracyPie(coverage);
   const contradictions = drift.probes.filter((row) => row.state === "confirmed");
   const coverageNote = factCheckCoverageNote(coverage);
   const pendingNote = factCheckPendingNote(coverage);
   const shoppingScope = windowed ? FACT_CHECK_SHOPPING_SCOPE_WINDOW : FACT_CHECK_SHOPPING_SCOPE;
+  const headline = factCheckHeadline(coverage, windowed);
+  const rateColor = factCheckAccuracyColor(accuracy.tone);
+
+  const explainer = (
+    <div className="ai-lead-explainer" data-ai-accuracy-lead style={{ marginTop: 0 }}>
+      <div className="content-box-title" style={{ marginTop: 0 }}>
+        <span>Do AI answers match Fender&apos;s published product facts?</span>
+        <span
+          className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
+          data-ai-fact-result
+        >
+          {coverage.contradictions ? `${coverage.contradictions} contradictions` : "No contradictions found"}
+        </span>
+      </div>
+      <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
+        {headline}
+      </p>
+      <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
+      <p style={{ ...mutedText, marginBottom: 0 }}>
+        IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each
+        answer with a fact taken from an official Fender page. A{" "}
+        <AiTerm term="product fact check">product fact check</AiTerm> is not a buying prompt, so it never counts
+        toward a win rate or a competitor&apos;s share.
+      </p>
+    </div>
+  );
 
   return (
     <>
       <div className="content-box ai-drift-summary">
-        <div className="content-box-title">
-          <span>Do AI answers match Fender&apos;s published product facts?</span>
-          <span
-            className={`tag-badge ${coverage.contradictions ? "tag-danger" : "tag-success"}`}
-            data-ai-fact-result
+        {accuracy.rate && pie ? (
+          <div
+            data-ai-accuracy-row
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+              gap: "20px 28px",
+            }}
           >
-            {coverage.contradictions ? `${coverage.contradictions} contradictions` : "No contradictions found"}
-          </span>
-        </div>
-        <p style={{ fontSize: 13, lineHeight: 1.5, margin: "0 0 6px" }} data-ai-fact-headline>
-          {factCheckHeadline(coverage, windowed)}
-        </p>
-        <p style={{ ...mutedText, margin: 0 }}>{FACT_CHECK_SCOPE}</p>
-        <p style={{ ...mutedText, marginBottom: 0 }}>
-          IntoFocus sends {coverage.questionsSent} product questions to every engine on purpose, and compares each
-          answer with a fact taken from an official Fender page. A{" "}
-          <AiTerm term="product fact check">product fact check</AiTerm> is not a buying prompt, so it never counts
-          toward a win rate or a competitor&apos;s share.
-        </p>
+            <div data-ai-accuracy-figure-col style={{ flex: "0 0 auto", maxWidth: "100%" }}>
+              <span
+                className="ai-lead-figure"
+                data-ai-accuracy-figure
+                style={{
+                  color: rateColor,
+                  fontSize: "clamp(36px, 4vw, 56px)",
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                }}
+              >
+                {accuracy.rate} Accuracy
+              </span>
+              <div style={{ marginTop: 14 }}>
+                <CitationPieDisc
+                  pie={pie}
+                  sizeClass="citation-pie-disc citation-pie-disc-owned"
+                  tip={factCheckAccuracyPieTip(coverage)}
+                />
+              </div>
+            </div>
+            <div style={{ flex: "1 1 280px", minWidth: 0 }}>{explainer}</div>
+          </div>
+        ) : (
+          explainer
+        )}
       </div>
 
       {contradictions.length ? (
