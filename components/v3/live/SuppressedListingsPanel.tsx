@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
@@ -15,7 +15,6 @@ import {
   featuredOfferReadingCountQuery,
   suppressedListingsQuery,
 } from "@/lib/canvasData";
-import { formatInt } from "@/lib/fender-canvas/format";
 import {
   aboveBenchmarkDollars,
   benchmarkDollars,
@@ -40,6 +39,37 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
+const TOP_ROW_STYLE = {
+  display: "flex",
+  flexWrap: "wrap" as const,
+  alignItems: "flex-start" as const,
+  gap: 12,
+};
+
+/** Keep the share card tight around the figure; do not stretch to the panel edge. */
+const HERO_CARD_STYLE = {
+  flex: "0 0 auto",
+  width: "fit-content",
+  maxWidth: "100%",
+  alignSelf: "flex-start" as const,
+};
+
+const NOTES_BOX_STYLE = {
+  flex: "1 1 280px",
+  minWidth: 0,
+  margin: 0,
+};
+
+const TABLE_BLOCK_STYLE = {
+  marginTop: 12,
+};
+
+const TABLE_HINT_STYLE = {
+  fontSize: 11.5,
+  color: "var(--text-muted)",
+  margin: "0 0 8px",
+};
 
 function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
@@ -76,7 +106,7 @@ async function loadWithheldListings(): Promise<
 
 function explanation() {
   return (
-    <div className="ceo-callout" style={{ marginTop: 12 }}>
+    <div className="ceo-callout">
       <div className="ceo-callout-header">
         <span>Why can a listing lose the Buy Box?</span>
       </div>
@@ -93,19 +123,27 @@ function explanation() {
 
 /**
  * Same Buy Box withheld share as Retail Overview: percentage, N of M, and disc.
- * Static in-tab lead (not a navigation control).
+ * Static in-tab lead (not a navigation control). Card width follows the figure.
  */
 function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
   if (read.phase === "loading") {
     return (
-      <div className="content-box" data-suppressed-listings-lead="">
+      <div
+        className="content-box"
+        data-suppressed-listings-lead=""
+        style={HERO_CARD_STYLE}
+      >
         <span className="ai-lead-figure">Loading the Buy Box reading…</span>
       </div>
     );
   }
   if (read.phase === "error") {
     return (
-      <div className="content-box" data-suppressed-listings-lead="">
+      <div
+        className="content-box"
+        data-suppressed-listings-lead=""
+        style={HERO_CARD_STYLE}
+      >
         <span className="ai-lead-figure">The retail read could not be loaded.</span>
       </div>
     );
@@ -114,7 +152,11 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
   const hero = buyBoxHero(read.snapshot);
 
   return (
-    <div className="content-box findability-lead-card" data-suppressed-listings-lead="">
+    <div
+      className="content-box findability-lead-card"
+      data-suppressed-listings-lead=""
+      style={HERO_CARD_STYLE}
+    >
       <div>
         <span data-suppressed-listings-lead-label="">{hero.label}</span>
       </div>
@@ -154,37 +196,55 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
   );
 }
 
-/** Counts and freshness from the same reading the bubble and overview use. */
-function ReadingNote({
+/** Callout plus reading passages that sit beside the share hero. */
+function SuppressedListingsNotes({
   read,
   freshness,
 }: {
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
+  let readingPassages: ReactNode;
   if (read.phase === "loading") {
-    return <p className="retail-missing">Loading the Buy Box reading…</p>;
+    readingPassages = <p className="retail-missing">Loading the Buy Box reading…</p>;
+  } else if (read.phase === "error") {
+    readingPassages = <p className="retail-missing">The retail read could not be loaded.</p>;
+  } else {
+    const counts = read.snapshot.suppressedListings.detail?.counts;
+    if (!counts) {
+      readingPassages = (
+        <p className="retail-missing">
+          {read.snapshot.suppressedListings.missingMessage ??
+            "The Buy Box reading has not been stored."}
+        </p>
+      );
+    } else {
+      readingPassages = (
+        <>
+          <p className="retail-missing">{confirmedSuppressionSentence(counts)}</p>
+          <p className="retail-missing">{benchmarkCoverageSentence(counts)}</p>
+          <p className="retail-missing">
+            {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
+          </p>
+        </>
+      );
+    }
   }
-  if (read.phase === "error") {
-    return <p className="retail-missing">The retail read could not be loaded.</p>;
-  }
-  const counts = read.snapshot.suppressedListings.detail?.counts;
-  if (!counts) {
-    return (
-      <p className="retail-missing">
-        {read.snapshot.suppressedListings.missingMessage ??
-          "The Buy Box reading has not been stored."}
-      </p>
-    );
-  }
+
   return (
-    <>
-      <p className="retail-missing">{confirmedSuppressionSentence(counts)}</p>
-      <p className="retail-missing">{benchmarkCoverageSentence(counts)}</p>
-      <p className="retail-missing">
-        {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
+    <div
+      className="content-box"
+      data-suppressed-listings-notes=""
+      style={NOTES_BOX_STYLE}
+    >
+      {explanation()}
+      {readingPassages}
+      <p style={TABLE_HINT_STYLE}>
+        The observed offer and the Competitive External Price come from the same Amazon
+        listing read, so the gap compares one moment. A blank gap means this reading has
+        no comparable pair yet, not a gap of zero.
       </p>
-    </>
+    </div>
   );
 }
 
@@ -216,22 +276,14 @@ export function SuppressedListingsPanel({
 
   const rows = typeof state === "object" ? state.rows : null;
   const sorted = useClientTableSort(rows ?? [], FEATURED_OFFER_TABLE_COLUMNS, suppressedSortValue);
-  const counts = read.phase === "ready" ? read.snapshot.suppressedListings.detail?.counts : null;
 
   return (
     <div className="suppressed-listings retail-surface">
-      <SuppressedListingsLead read={read} />
-      {explanation()}
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">
-          <span>Buy Box withheld</span>
-          {counts ? (
-            <span className="tag-badge tag-danger suppressed-count">
-              {formatInt(counts.withheld)}
-            </span>
-          ) : null}
-        </div>
-        <ReadingNote read={read} freshness={freshness} />
+      <div data-suppressed-listings-top="" style={TOP_ROW_STYLE}>
+        <SuppressedListingsLead read={read} />
+        <SuppressedListingsNotes read={read} freshness={freshness} />
+      </div>
+      <div data-suppressed-listings-table="" style={TABLE_BLOCK_STYLE}>
         {state === "loading" ? (
           <p className="retail-missing">Loading withheld listings…</p>
         ) : null}
@@ -239,35 +291,28 @@ export function SuppressedListingsPanel({
           <p className="retail-missing">The withheld listings could not be loaded.</p>
         ) : null}
         {rows ? (
-          <>
-            <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "8px 0" }}>
-              The observed offer and the Competitive External Price come from the same Amazon
-              listing read, so the gap compares one moment. A blank gap means this reading has
-              no comparable pair yet, not a gap of zero.
-            </p>
-            <ResizableTable
-              tableId="suppressed-listings"
-              columns={FEATURED_OFFER_TABLE_COLUMNS}
-              freezeHeader
-              maxHeight={520}
-              sort={sorted.sort}
-              onSort={sorted.onSort}
-            >
-              <tbody>
-                {sorted.rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={FEATURED_OFFER_TABLE_COLUMN_COUNT}>
-                      No monitored listing has a withheld Buy Box in the current reading.
-                    </td>
-                  </tr>
-                ) : (
-                  sorted.rows.map((row) => (
-                    <FeaturedOfferTableRow key={String(row.asin ?? "")} row={row} />
-                  ))
-                )}
-              </tbody>
-            </ResizableTable>
-          </>
+          <ResizableTable
+            tableId="suppressed-listings"
+            columns={FEATURED_OFFER_TABLE_COLUMNS}
+            freezeHeader
+            maxHeight={520}
+            sort={sorted.sort}
+            onSort={sorted.onSort}
+          >
+            <tbody>
+              {sorted.rows.length === 0 ? (
+                <tr>
+                  <td colSpan={FEATURED_OFFER_TABLE_COLUMN_COUNT}>
+                    No monitored listing has a withheld Buy Box in the current reading.
+                  </td>
+                </tr>
+              ) : (
+                sorted.rows.map((row) => (
+                  <FeaturedOfferTableRow key={String(row.asin ?? "")} row={row} />
+                ))
+              )}
+            </tbody>
+          </ResizableTable>
         ) : null}
       </div>
     </div>
