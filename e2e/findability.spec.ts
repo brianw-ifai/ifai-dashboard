@@ -130,8 +130,9 @@ const ROWS: Row[] = [
 async function openFindability(page: Page) {
   const canvas = new Canvas(page);
   await canvas.open();
-  await canvas.openSpokeFromMap("AI Readiness");
-  await canvas.openTab("Findability");
+  await page.goto("/dashboard?spoke=specs&tab=findability");
+  await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+  await expect(canvas.activeTab).toContainText("Findability");
   await expect(page.locator("[data-findability-headline]")).toBeVisible();
   return canvas;
 }
@@ -140,7 +141,18 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await mockCanvasRead(page, { findability: ROWS });
   await openFindability(page);
 
+  const lead = page.locator("[data-findability-lead]");
+  const leadFigure = page.locator("[data-findability-lead-figure]");
   const headline = page.locator("[data-findability-headline]");
+  await expect(lead).toBeVisible();
+  await expect(leadFigure).toHaveText("2 of 6");
+  await expect(leadFigure).toHaveAttribute("data-findability-exact", "2");
+  await expect(lead.locator("[data-citation-pie-disc='findability-exact-pages']")).toBeVisible();
+  await expect(lead).toContainText("Exact official product page");
+  const leadBox = await lead.boundingBox();
+  const headlineBox = await headline.boundingBox();
+  expect(leadBox && headlineBox && leadBox.y < headlineBox.y).toBeTruthy();
+
   await expect(headline).toContainText("2 exact official product pages");
   await expect(headline).toContainText("1 official family page");
   await expect(headline).toContainText("1 finished search with no defensible page");
