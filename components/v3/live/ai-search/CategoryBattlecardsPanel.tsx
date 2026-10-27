@@ -5,8 +5,10 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CategoryCompetitorLeadGraph } from "@/components/v3/live/ai-search/CategoryCompetitorLeadGraph";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { KeptOutNote, RoleCount, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
   categoryRoleTallies,
@@ -66,7 +68,8 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <div className="ai-role-rates">
       <div className="content-box ai-battlecards">
-        <RoleSumLine groups={battles} preface="" />
+        <RunDetailsLead snapshot={snapshot} />
+        <CategoryCompetitorLeadGraph groups={battles} />
         {mixed ? (
           <p className="ai-role-footnote" data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}

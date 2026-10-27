@@ -258,7 +258,8 @@ test.describe("drill-downs", () => {
     const desc = await page.locator(".drilldown-desc").innerText();
     const led = desc.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
     expect(led).not.toBeNull();
-    await expect(page.locator("[data-ai-role-total='unbranded_discovery']")).toContainText(`${led![2]} resolved`);
+    await expect(page.locator("[data-ai-run-details-lead] [data-ai-win-rate='unbranded_discovery']")).toBeVisible();
+    await expect(page.locator("[data-ai-battle-lead-graph]")).toBeVisible();
     await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
 
     const body = page.locator(".drilldown-body");
