@@ -5,8 +5,8 @@ import { test } from "node:test";
 import {
   findabilityHeadline,
   findabilitySortValue,
-  findabilitySpokeDescription,
   findabilityWidgetCopy,
+  OUTCOME_LABEL,
   readinessFindabilityFace,
 } from "../lib/findability/copy.ts";
 import { orderFullResult } from "../lib/fender-canvas/full-result-sort.ts";
@@ -99,7 +99,10 @@ test("the five outcomes stay distinct and sum to the stored row count", () => {
   const headline = findabilityHeadline(counts);
   assert.match(headline, /89 exact official product pages/);
   assert.match(headline, /548 official family pages/);
-  assert.match(headline, /342 finished searches with no defensible page/);
+  assert.match(headline, /342 No Defensible Pages/);
+  assert.equal(OUTCOME_LABEL.completed_not_found, "No Defensible Page");
+  assert.doesNotMatch(headline, /finished search(?:es)? with no defensible page/i);
+  assert.doesNotMatch(headline, /Finished search, no defensible page/);
   assert.match(headline, /8 ambiguous matches/);
   assert.match(headline, /5 unchecked listings/);
   assert.doesNotMatch(headline, /%|one third|13\.3|about one third/i);
@@ -145,9 +148,10 @@ test("empty and partial reads keep every outcome, including the zeros", () => {
   assert.equal(empty.completed_not_found, 0);
   assert.equal(empty.ambiguous_candidate, 0);
   assert.equal(empty.not_checked, 0);
-  const emptyDesc = findabilitySpokeDescription({ phase: "ready", rows: [], dealerBundleLoaded: true });
-  assert.match(emptyDesc, /no listings/);
-  assert.doesNotMatch(emptyDesc, /%|13\.3|one third/i);
+  const buildLive = readFileSync(new URL("../components/v3/build-live-spokes.tsx", import.meta.url), "utf8");
+  assert.match(buildLive, /id === "specs" \? \{ desc: "" \}/);
+  assert.doesNotMatch(buildLive, /findabilitySpokeDescription/);
+  assert.doesNotMatch(findabilityHeadline(empty), /%|13\.3|one third/i);
 
   const partialRows = [
     flagged("exact_official_product", 0),
@@ -164,7 +168,7 @@ test("empty and partial reads keep every outcome, including the zeros", () => {
   assert.equal(outcomesSumToRows(partial), true);
   const partialHeadline = findabilityHeadline(partial);
   assert.match(partialHeadline, /0 official family pages/);
-  assert.match(partialHeadline, /0 finished searches with no defensible page/);
+  assert.match(partialHeadline, /0 No Defensible Pages/);
   assert.match(partialHeadline, /1 unchecked listing/);
 });
 
@@ -251,7 +255,8 @@ test("the findability widget uses the exact count and keeps the older percentage
   const copy = findabilityWidgetCopy({ phase: "ready", rows, dealerBundleLoaded: true });
   assert.equal(copy.value, "89");
   assert.match(copy.detail, /548 family pages/);
-  assert.match(copy.detail, /342 finished searches with no defensible page/);
+  assert.match(copy.detail, /342 No Defensible Pages/);
+  assert.doesNotMatch(copy.detail, /finished search(?:es)? with no defensible page/i);
   assert.match(copy.detail, /8 ambiguous matches/);
   assert.match(copy.detail, /5 unchecked listings/);
   assert.doesNotMatch(`${copy.value} ${copy.detail}`, /%|13\.3|29\.2|pages found|one third/i);

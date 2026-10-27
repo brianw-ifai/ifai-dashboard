@@ -155,12 +155,15 @@ test("the five outcome counts stay distinct and open the listings behind them", 
 
   await expect(headline).toContainText("2 exact official product pages");
   await expect(headline).toContainText("1 official family page");
-  await expect(headline).toContainText("1 finished search with no defensible page");
+  await expect(headline).toContainText("1 No Defensible Page");
   await expect(headline).toContainText("1 ambiguous match");
   await expect(headline).toContainText("1 unchecked listing");
   await expect(headline).not.toContainText("13.3%");
   await expect(headline).not.toContainText("one third");
-  await expect(page.locator(".drilldown-desc")).not.toContainText("13.3%");
+  await expect(page.locator(".drilldown-desc")).toHaveCount(0);
+  await expect(page.locator(".drilldown-title-main")).not.toContainText("finished search");
+  await expect(page.locator(".drilldown-title-main")).not.toContainText("Machine Readability is a separate");
+  await expect(page.getByText("No Defensible Page", { exact: true }).first()).toBeVisible();
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
   await expect(page.locator(".findability-note").filter({ hasText: "JSON-LD was not audited" })).toBeVisible();
   await expect(page.locator(".findability-note").filter({ hasText: "older spec read" })).toBeVisible();
@@ -243,7 +246,7 @@ test("a partial read keeps zero outcomes separate from the rows that were checke
   await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "partial");
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "3");
   await expect(page.locator("[data-findability-headline]")).toContainText("0 official family pages");
-  await expect(page.locator("[data-findability-headline]")).toContainText("0 finished searches with no defensible page");
+  await expect(page.locator("[data-findability-headline]")).toContainText("0 No Defensible Pages");
   await expect(page.getByText("A zero is a real count.")).toBeVisible();
 
   await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
@@ -264,7 +267,7 @@ async function openFindabilityFromBubble(page: Page) {
   const slot = page.locator("[data-hub-slot='opportunity']");
   await expect(slot.locator("[data-hub-slot-figure]")).toHaveText("2");
   await expect(slot).toContainText("1 family page");
-  await expect(slot).toContainText("1 finished search with no defensible page");
+  await expect(slot).toContainText("1 No Defensible Page");
   await expect(slot).toContainText("1 ambiguous match");
   await expect(slot).toContainText("1 unchecked listing");
   await expect(slot).not.toContainText("%");

@@ -13,7 +13,7 @@ import {
 export const OUTCOME_LABEL: Record<FindabilityOutcome, string> = {
   exact_official_product: "Exact official product page",
   official_family_page: "Official family page",
-  completed_not_found: "Finished search, no defensible page",
+  completed_not_found: "No Defensible Page",
   ambiguous_candidate: "Ambiguous match",
   not_checked: "Unchecked",
 };
@@ -34,10 +34,7 @@ export const OUTCOME_DEFINITION: Record<FindabilityOutcome, string> = {
 const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
   exact_official_product: ["exact official product page", "exact official product pages"],
   official_family_page: ["official family page", "official family pages"],
-  completed_not_found: [
-    "finished search with no defensible page",
-    "finished searches with no defensible page",
-  ],
+  completed_not_found: ["No Defensible Page", "No Defensible Pages"],
   ambiguous_candidate: ["ambiguous match", "ambiguous matches"],
   not_checked: ["unchecked listing", "unchecked listings"],
 };
@@ -93,8 +90,8 @@ const WIDGET_DETAIL: Array<{ key: FindabilityOutcome; singular: string; plural: 
   { key: "official_family_page", singular: "family page", plural: "family pages" },
   {
     key: "completed_not_found",
-    singular: "finished search with no defensible page",
-    plural: "finished searches with no defensible page",
+    singular: "No Defensible Page",
+    plural: "No Defensible Pages",
   },
   { key: "ambiguous_candidate", singular: "ambiguous match", plural: "ambiguous matches" },
   { key: "not_checked", singular: "unchecked listing", plural: "unchecked listings" },
@@ -122,21 +119,6 @@ export function findabilityWidgetCopy(read: FindabilityRead): FindabilityWidgetC
     value: formatInt(counts.exact_official_product),
     detail: parts.join(", "),
   };
-}
-
-export function findabilitySpokeDescription(read: FindabilityRead): string {
-  const tail = `${FAMILY_IS_NOT_EXACT} ${MACHINE_READABILITY_DISTINCTION}`;
-  if (read.phase === "loading") {
-    return `Official-page outcomes are loading. Exact product pages, family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings stay separate. ${tail}`;
-  }
-  if (read.phase === "error") {
-    return `The official-page read did not load. Exact product pages, family pages, finished searches with no defensible page, ambiguous matches, and unchecked listings stay separate. ${tail}`;
-  }
-  const counts = countFindability(read.rows);
-  if (counts.total === 0) {
-    return `This official-page read has no listings. ${tail}`;
-  }
-  return `${findabilityHeadline(counts)} ${tail}`;
 }
 
 export function findabilityTourLine(read: FindabilityRead): string {
@@ -283,7 +265,9 @@ export function countFlagLine(row: FindabilityRow): string {
       ? "Counted as a confirmed official page, and as a family page. Not an exact product page."
       : "Stored as an official family page, not an exact product page.";
   }
-  if (outcome === "completed_not_found") return "The search finished with no defensible page.";
+  if (outcome === "completed_not_found") {
+    return "No Defensible Page. The search finished and did not accept an official page.";
+  }
   if (outcome === "ambiguous_candidate") {
     return "The search finished with an ambiguous match. No official page was accepted.";
   }
