@@ -134,10 +134,8 @@ function fromHeadline(headline: RetailHeadline): BriefingRetailLead {
     label,
     figure: formatInt(count),
     color: count > 0 ? "var(--danger-red)" : "var(--success-green)",
-    missingMessage:
-      headline.reading.status === "incomplete" || headline.reading.status === "unavailable"
-        ? headline.reading.missingMessage
-        : null,
+    // Coverage detail for an unfinished read stays in the disc tip, not under the figure.
+    missingMessage: null,
     pie: disc?.pie ?? null,
     tip: disc?.tip ?? null,
   };
