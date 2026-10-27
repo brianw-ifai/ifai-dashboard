@@ -28,7 +28,9 @@ export function EngineUnbrandedGraph({
   return (
     <div className="ai-engine-unbranded-graph" data-ai-engine-unbranded-graph="">
       <div className="content-box-title" style={{ marginTop: 12 }}>
-        <AiTerm term="unbranded discovery">Unbranded discovery</AiTerm> by engine
+        <span>
+          <AiTerm term="unbranded discovery">Unbranded discovery</AiTerm> by engine
+        </span>
       </div>
       {marks.length === 0 ? (
         <p className="ai-role-footnote" data-ai-engine-unbranded-empty="">
