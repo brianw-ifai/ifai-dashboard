@@ -126,6 +126,50 @@ test("AI Readiness gives leftover width to Missing Amazon fields", () => {
   assert.match(css, /\.resizable-table \.spec-field-pill \{[^}]*font-size:\s*12px/s);
 });
 
+const FACT_CHECK_COLUMNS = [
+  { id: "question", width: 390, minWidth: 240 },
+  { id: "engine", width: 130, minWidth: 100 },
+  { id: "result", width: 340, minWidth: 240 },
+  { id: "fact", width: 700, minWidth: 280 },
+  { id: "checked", width: 200, minWidth: 160 },
+];
+
+const FACT_QUESTION = "Fender Player II Stratocaster neck radius and fret size";
+const FACT_BADGE = "NO CONTRADICTION FOUND FOR THIS FACT";
+const FACT_CLAIM =
+  "Player II Stratocaster fingerboard radius is 9.5 inches (241 mm) with 22 medium jumbo frets.";
+const FACT_CHECKED = "Oct 11, 2026, 6:11 AM UTC";
+
+test("Product Fact Checks defaults fill the panel and leave room for one-line cells", () => {
+  const widths = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 1112);
+  assert.equal(widths.question, 390);
+  assert.equal(widths.engine, 130);
+  assert.equal(widths.result, 340);
+  assert.equal(widths.checked, 200);
+  assert.ok(widths.fact >= 700, `fact width ${widths.fact} should keep its one-line default`);
+  assert.ok(widths.question >= FACT_QUESTION.length * 6);
+  assert.ok(widths.result >= FACT_BADGE.length * 7);
+  assert.ok(widths.checked >= FACT_CHECKED.length * 6);
+  assert.ok(widths.fact >= FACT_CLAIM.length * 6.5);
+  // On a wider panel the fact column grows so the table fills the width.
+  const wide = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 2000);
+  assert.equal(Object.values(wide).reduce((sum, width) => sum + width, 0), 2000);
+  assert.ok(wide.fact > 700);
+
+  const stored = filledColumnWidths(FACT_CHECK_COLUMNS, "fact", 1112, { fact: 200, question: 240 });
+  assert.equal(stored.fact, 280); // minWidth floor
+  assert.equal(stored.question, 240);
+
+  const table = read("components/v3/live/ai-search/FactCheckTable.tsx");
+  assert.match(table, /fillColumnId="fact"/);
+  assert.match(table, /tableId="product-fact-checks"/);
+  assert.doesNotMatch(table, /whiteSpace:\s*"nowrap"/);
+  assert.doesNotMatch(table, /maxWidth:\s*"none"/);
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
+  assert.match(css, /\.ai-probe-table \.resizable-table \.tag-badge \{[^}]*white-space:\s*normal/s);
+  assert.match(css, /\.ai-probe-table \.resizable-table \.tag-badge \{[^}]*max-width:\s*100%/s);
+});
+
 test("Machine Readability gives leftover width to Model without shrinking the others", () => {
   const widths = filledColumnWidths(SCHEMA_COLUMNS, "model", 1112);
   assert.equal(widths.asin, 120);

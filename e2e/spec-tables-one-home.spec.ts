@@ -48,7 +48,7 @@ test("spec tables live on one surface each", async ({ page }) => {
   await expect(page.getByText("Top missing schema fields")).toHaveCount(0);
   await expect(page.getByText("Spec readiness by ASIN")).toHaveCount(0);
 
-  await canvas.openSpokeFromMap("Portfolio Retail");
+  await canvas.openSpokeFromMap("Catalog Health");
   await canvas.openTab("Catalog Governance");
   await expect(page.getByText("Unnested bundles", { exact: true })).toBeVisible();
   await expect(page.getByText("Twin Amp Bundle")).toBeVisible();

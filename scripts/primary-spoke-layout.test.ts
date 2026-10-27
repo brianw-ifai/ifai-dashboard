@@ -116,7 +116,7 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.equal(staticRoadmap.meta, undefined);
   assert.deepEqual(staticRoadmap.stats, ["90 Days", "3 Phases"]);
   assert.equal(staticRoadmap.title, "Strategy Roadmap");
-  assert.ok(staticRoadmap.tooltip?.desc);
+  assert.equal(staticRoadmap.tooltip?.desc, "");
 
   const bundle = { m: {}, divisions: [], cats: [], engines: [], sov: [], missing: [], fresh: [] } as CanvasBundle;
   const liveRoadmap = buildLiveNodes(bundle, buildLiveMetrics(bundle)).find((node) => node.id === "spoke-roadmap");
@@ -125,7 +125,7 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.equal(liveRoadmap.meta, undefined);
   assert.deepEqual(liveRoadmap.stats, ["90 Days", "3 Phases"]);
   assert.equal(liveRoadmap.spokeId, "roadmap");
-  assert.match(liveRoadmap.tooltip?.desc ?? "", /not optimized to live data/);
+  assert.equal(liveRoadmap.tooltip?.desc, "");
 
   const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
   assert.equal(specs?.meta, "Exact, family, no page, ambiguous, unchecked");

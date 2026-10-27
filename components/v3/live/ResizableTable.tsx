@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   columnWidthStorageKey,
-  filledColumnWidths,
+  fitResizableColumnWidths,
   mergeColumnWidths,
+  pickFillColumnId,
   type ColumnWidthSpec,
 } from "@/lib/fender-canvas/retail-column-layout";
+import { measureColumnOneLineMins } from "@/lib/fender-canvas/table-column-measure";
 import {
   ariaSortValue,
   tableScrollClass,
@@ -74,7 +76,7 @@ function useColumnWidths(tableId: string, columns: readonly RetailColumn[]) {
     });
   }, [tableId]);
 
-  return { widths, setWidth };
+  return { widths, setWidth, signature };
 }
 
 function ColumnResizeHandle({
@@ -158,11 +160,13 @@ export function ResizableTable({
   onSort?: (columnId: string) => void;
   children: ReactNode;
 }) {
-  const { widths, setWidth } = useColumnWidths(tableId, columns);
+  const { widths, setWidth, signature } = useColumnWidths(tableId, columns);
   const tableRef = useRef<HTMLTableElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [contentMins, setContentMins] = useState<Record<string, number>>({});
   const [manual, setManual] = useState(false);
+  const fillId = pickFillColumnId(columns, fillColumnId);
 
   useEffect(() => {
     setManual(readStoredRaw(tableId) != null);
@@ -170,16 +174,40 @@ export function ResizableTable({
 
   useEffect(() => {
     const node = scrollRef.current;
-    if (!node || !fillColumnId) return;
+    if (!node) return;
     const measure = () => setContainerWidth(node.clientWidth);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [fillColumnId]);
+  }, []);
 
-  const displayWidths =
-    fillColumnId && !manual ? filledColumnWidths(columns, fillColumnId, containerWidth) : widths;
+  useEffect(() => {
+    if (manual) return;
+    const table = tableRef.current;
+    if (!table) return;
+    const columnIds = signature.split("|").map((part) => part.split(":")[0]).filter(Boolean);
+    const run = () => {
+      const next = measureColumnOneLineMins(table, columnIds, fillId);
+      setContentMins((current) => {
+        const same = columnIds.every((id) => (current[id] ?? 0) === (next[id] ?? 0));
+        return same ? current : next;
+      });
+    };
+    run();
+    const body = table.tBodies[0];
+    if (!body) return;
+    const observer = new MutationObserver(run);
+    observer.observe(body, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [manual, fillId, signature, containerWidth]);
+
+  const displayWidths = manual
+    ? widths
+    : fitResizableColumnWidths(columns, containerWidth, {
+        fillColumnId: fillId,
+        contentMins,
+      });
   const displayRef = useRef(displayWidths);
   displayRef.current = displayWidths;
   const total = columns.reduce((sum, column) => sum + (displayWidths[column.id] ?? column.width), 0);
@@ -216,7 +244,7 @@ export function ResizableTable({
       style={maxHeight != null ? { maxHeight } : undefined}
       data-table-id={tableId}
       data-freeze-header={freezeHeader ? "true" : "false"}
-      data-fill-column={fillColumnId}
+      data-fill-column={fillId}
     >
       <table ref={tableRef} className="table-sm resizable-table" style={{ width: total }}>
         <colgroup>

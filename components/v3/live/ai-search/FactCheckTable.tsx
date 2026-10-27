@@ -18,12 +18,18 @@ const STATE_TONE: Record<ProbeState, string> = {
   unverified: "tag-warning",
 };
 
+/**
+ * Defaults sized so the representative one-line cells fit:
+ * question, uppercase result badge, verified fact + Fender source, and checked date.
+ * Fact absorbs leftover width on a wider panel until someone drags a column.
+ * Cells wrap inside the column when a drag makes it narrower than one line.
+ */
 const COLUMNS = [
-  clientColumn("question", "Question checked", "text", 240, 140),
-  clientColumn("engine", "Engine", "text", 140, 100),
-  clientColumn("result", "Result", "text", 240, 160),
-  clientColumn("fact", "Verified Fender fact", "text", 260, 140),
-  clientColumn("checked", "Checked", "date", 170, 120),
+  clientColumn("question", "Question checked", "text", 390, 240),
+  clientColumn("engine", "Engine", "text", 130, 100),
+  clientColumn("result", "Result", "text", 340, 240),
+  clientColumn("fact", "Verified Fender fact", "text", 700, 280),
+  clientColumn("checked", "Checked", "date", 200, 160),
 ];
 
 function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
@@ -34,16 +40,18 @@ function factSortValue(row: ProbeEvidence, columnId: string): SortInput {
   return row.checkedAt;
 }
 
-export function FactCheckTable({ rows }: { rows: ProbeEvidence[] }) {
+export function FactCheckTable({ rows, windowed = false }: { rows: ProbeEvidence[]; windowed?: boolean }) {
   const sorted = useClientTableSort(rows, COLUMNS, factSortValue);
+  const unit = windowed ? "selection" : "run";
   return (
     <div className="content-box ai-probe-table" style={{ marginTop: 12 }}>
-      <div className="content-box-title">Every product fact check in this run</div>
-      {rows.length === 0 ? <EmptyRows>This run sent no product fact checks.</EmptyRows> : null}
+      <div className="content-box-title">Every product fact check in this {unit}</div>
+      {rows.length === 0 ? <EmptyRows>This {unit} sent no product fact checks.</EmptyRows> : null}
       {rows.length ? (
         <ResizableTable
           tableId="product-fact-checks"
           columns={COLUMNS}
+          fillColumnId="fact"
           freezeHeader
           maxHeight={520}
           sort={sorted.sort}
@@ -53,7 +61,10 @@ export function FactCheckTable({ rows }: { rows: ProbeEvidence[] }) {
             {sorted.rows.map((row) => (
               <tr key={row.key} data-probe-state={row.state} data-sim-id={row.simId}>
                 <td>
-                  <EvidenceLink focus={{ field: "sim", value: String(row.simId) }} tab={AI_TABS.simulations}>
+                  <EvidenceLink
+                    focus={{ field: "sim", value: row.callId ?? String(row.simId) }}
+                    tab={AI_TABS.simulations}
+                  >
                     {row.prompt}
                   </EvidenceLink>
                 </td>
@@ -64,7 +75,7 @@ export function FactCheckTable({ rows }: { rows: ProbeEvidence[] }) {
                 <td>
                   <span className={`tag-badge ${STATE_TONE[row.state]}`}>{PROBE_STATE_LABELS[row.state]}</span>
                 </td>
-                <td style={{ wordBreak: "break-word" }}>
+                <td>
                   {row.claim ? (
                     <>
                       {row.claim} <ExternalLink href={row.sourceUrl}>Fender source</ExternalLink>

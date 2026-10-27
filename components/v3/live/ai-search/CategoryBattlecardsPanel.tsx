@@ -2,10 +2,13 @@
 
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
+import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { CategoryCompetitorLeadGraph } from "@/components/v3/live/ai-search/CategoryCompetitorLeadGraph";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { KeptOutNote, RoleCount, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
   categoryRoleTallies,
@@ -16,6 +19,7 @@ import {
 import { categoryLabel } from "@/lib/ai-search/run-metrics";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
+import { hasMixedScoringMethods, isWindowHistoryKind, MIXED_SCORING_NOTE } from "@/lib/ai-search/window-display";
 
 const COLUMNS = [
   clientColumn("category", "Category", "text", 160, 110),
@@ -44,6 +48,9 @@ function battleSortValue(
 }
 
 function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
+  const history = useAiHistoryOptional();
+  const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
+  const mixed = hasMixedScoringMethods(snapshot);
   const battles = [...categoryRoleTallies(snapshot.calls)].sort((a, b) => {
     const wins = (row: RoleGroupTally) => headlineAside(row).competitorWins;
     return wins(b) - wins(a) || a.key.localeCompare(b.key);
@@ -60,21 +67,15 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
   return (
     <div className="ai-role-rates">
-      <div className="ceo-callout">
-        <div className="ceo-callout-header">
-          <span>Who out-mentions Fender/Squier in AI buying answers?</span>
-        </div>
-        <div className="ceo-callout-body">
-          Each category shows two Fender-lead rates, <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and{" "}
-          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
-          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
-          entry-level line against Yamaha and Ibanez. The top competitor is the brand named most inside those two rates.
-        </div>
-      </div>
-
-      <div className="content-box ai-battlecards" style={{ marginTop: 12 }}>
+      <div className="content-box ai-battlecards">
+        <RunDetailsLead snapshot={snapshot} />
+        <CategoryCompetitorLeadGraph groups={battles} />
+        {mixed ? (
+          <p className="ai-role-footnote" data-ai-mixed-scoring>
+            {MIXED_SCORING_NOTE}
+          </p>
+        ) : null}
         <div className="content-box-title">Category battlecards</div>
-        <RoleSumLine groups={battles} preface="Fender/Squier leads, by the kind of question." />
         <ResizableTable
           tableId="category-battlecards"
           columns={COLUMNS}
@@ -95,10 +96,20 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
                     </EvidenceLink>
                   </td>
                   <td>
-                    <RoleCount role="unbranded_discovery" tally={battle.roles.unbranded_discovery} largestResolved={largest.unbranded} />
+                    <RoleCount
+                      role="unbranded_discovery"
+                      tally={battle.roles.unbranded_discovery}
+                      largestResolved={largest.unbranded}
+                      showSmallSample={showSmallSample}
+                    />
                   </td>
                   <td>
-                    <RoleCount role="branded_consideration" tally={battle.roles.branded_consideration} largestResolved={largest.branded} />
+                    <RoleCount
+                      role="branded_consideration"
+                      tally={battle.roles.branded_consideration}
+                      largestResolved={largest.branded}
+                      showSmallSample={showSmallSample}
+                    />
                   </td>
                   <td>{top ? `${top.brand} (${top.wins})` : "None"}</td>
                   <td>{aside.competitorWins}</td>
@@ -110,10 +121,24 @@ function Battlecards({ snapshot }: { snapshot: AiSearchSnapshot }) {
           </tbody>
         </ResizableTable>
         <p className="ai-role-footnote">
-          Competitor leads count wins inside the two rates only. A competitor win on a question kept out below does not
-          appear in these columns.
+          Competitor leads count wins inside <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> only.
+          Branded consideration stays in its Fender-lead column and is not part of this rate. A competitor win on a
+          question kept out below does not appear in these columns.
         </p>
         <KeptOutNote snapshot={snapshot} />
+      </div>
+
+      <div className="ceo-callout" style={{ marginTop: 12 }}>
+        <div className="ceo-callout-header">
+          <span>Who out-mentions Fender/Squier in AI buying answers?</span>
+        </div>
+        <div className="ceo-callout-body">
+          Each category shows two Fender-lead rates, <AiTerm term="unbranded discovery">unbranded discovery</AiTerm> and{" "}
+          <AiTerm term="branded consideration">branded consideration</AiTerm>. A <AiTerm term="Fender lead" /> means
+          Fender or Squier was named more than any other brand. Squier counts with Fender because it is Fender&apos;s
+          entry-level line against Yamaha and Ibanez. The top competitor and Competitor leads columns use unbranded
+          discovery only.
+        </div>
       </div>
     </div>
   );

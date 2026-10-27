@@ -148,7 +148,7 @@ export function buildLiveMetrics(
       value: formatInt(m.catalog_skus),
       detail: `${formatInt(m.catalog_bundles)} bundles · ${formatInt(bundle.divisions.length || m.division_count)} divisions`,
       tone: "neutral",
-      subTab: "Division Performance",
+      subTab: "Performance",
       provenance: "live",
     },
     activeOfferCoverage: {
@@ -158,7 +158,7 @@ export function buildLiveMetrics(
       value: formatPct(m.active_offer_coverage_pct),
       detail: formatRatio(m.bb_total, m.catalog_skus),
       tone: toneFromPct(m.active_offer_coverage_pct, 35, 50),
-      subTab: "Executive Briefing",
+      subTab: "Briefing",
       provenance: "live",
     },
     buyBoxRetention: {
@@ -232,7 +232,7 @@ export function buildLiveMetrics(
       value: formatPct(beginner?.fender_win_pct ?? null),
       detail: `${beginner?.top_competitor ?? pendingLabel()} ${formatPct(beginner?.top_competitor_pct ?? null)}`,
       tone: toneFromPct(beginner?.fender_win_pct ?? null, 50, 70),
-      subTab: "Simulations",
+      subTab: "Run Details",
       provenance: "live",
     },
     resolvedSimulations: {
@@ -242,7 +242,7 @@ export function buildLiveMetrics(
       value: `${formatInt(m.sim_resolved)} / ${formatInt(m.sim_total)}`,
       detail: `${formatInt(m.sim_unclear)} unclear · ${formatInt(m.sim_errors)} errors`,
       tone: "warning",
-      subTab: "Simulations",
+      subTab: "Run Details",
       provenance: "live",
     },
     confirmedHallucinations: {

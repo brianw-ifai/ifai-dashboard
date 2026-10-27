@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
+import { citationMonthBounds, poolWindowSnapshots } from "@/lib/ai-search/citation-aggregate";
 import { compareRuns, utcDay, type HistoryRunSummary } from "@/lib/ai-search/history-eligibility";
 import { historyFixtureSnapshot, historyFixtureSummaries } from "@/lib/ai-search/history-fixtures";
 import { historyControlLabel, rangeFromMode, type HistoryMode } from "@/lib/ai-search/history-mode";
@@ -32,7 +33,7 @@ type AiHistoryValue = {
   selected: SelectedState;
   trend: TrendLoad;
   controlLabel: string;
-  viewCurrent: () => void;
+  viewMonth: () => void;
   viewRun: (runId: string) => void;
   viewLegacy: (runId: string) => void;
   viewRange: (from: string, to: string) => void;
@@ -41,7 +42,21 @@ type AiHistoryValue = {
 
 const AiHistoryContext = createContext<AiHistoryValue | null>(null);
 
-function runsInScope(runs: readonly HistoryRunSummary[], mode: HistoryMode): HistoryRunSummary[] {
+function runsInScope(
+  runs: readonly HistoryRunSummary[],
+  mode: HistoryMode,
+  publishedDay: string | null,
+): HistoryRunSummary[] {
+  if (mode.kind === "month") {
+    if (!publishedDay) return [];
+    const bounds = citationMonthBounds(publishedDay);
+    if (!bounds) return [];
+    return runs.filter(isReviewHistoryRun).filter((run) => {
+      const day = utcDay(run.published_at ?? run.completed_at);
+      if (!day) return false;
+      return day >= bounds.from && day <= bounds.to;
+    });
+  }
   const { from, to } = rangeFromMode(mode);
   return runs.filter(isReviewHistoryRun).filter((run) => {
     const day = utcDay(run.published_at ?? run.completed_at);
@@ -52,10 +67,14 @@ function runsInScope(runs: readonly HistoryRunSummary[], mode: HistoryMode): His
   });
 }
 
+function isWindowMode(mode: HistoryMode): boolean {
+  return mode.kind === "month" || mode.kind === "range" || mode.kind === "all";
+}
+
 export function AiHistoryProvider({ current, children }: { current: AiSearchRead; children: ReactNode }) {
   const params = useSearchParams();
   const source = params.get("ai-history") === "fixture" ? "fixture" : "live";
-  const [mode, setMode] = useState<HistoryMode>({ kind: "current" });
+  const [mode, setMode] = useState<HistoryMode>({ kind: "month" });
   const [liveCatalog, setLiveCatalog] = useState<CatalogState>({ phase: "loading" });
   const [selected, setSelected] = useState<SelectedState>({ phase: "idle" });
   const [remoteTrend, setRemoteTrend] = useState<{ key: string; trend: TrendLoad }>({
@@ -67,6 +86,8 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
     () => (source === "fixture" ? { phase: "ready", runs: fixtureRuns } : liveCatalog),
     [fixtureRuns, liveCatalog, source],
   );
+  const publishedDay =
+    current.phase === "ready" ? utcDay(current.snapshot.run.published_at ?? current.snapshot.run.completed_at) : null;
 
   useEffect(() => {
     if (source === "fixture") return;
@@ -79,32 +100,25 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
     };
   }, [source]);
 
-  const viewCurrent = useCallback(() => {
-    setMode({ kind: "current" });
+  const viewMonth = useCallback(() => {
+    setMode({ kind: "month" });
     setSelected({ phase: "idle" });
   }, []);
 
-  const viewRun = useCallback(
-    (runId: string) => {
-      if (current.phase === "ready" && current.snapshot.run.audit_run_id === runId && source === "live") {
-        viewCurrent();
-        return;
-      }
-      setMode({ kind: "run", runId });
-      if (source === "fixture") {
-        const snapshot = historyFixtureSnapshot(runId);
-        setSelected(
-          snapshot
-            ? { phase: "ready", snapshot }
-            : { phase: "unavailable", message: "That sample run has no stored calls, so no rate is shown." },
-        );
-        return;
-      }
-      setSelected({ phase: "loading" });
-      void loadHistorySnapshot(getCanvasSupabase() as never, runId).then(setSelected);
-    },
-    [current, source, viewCurrent],
-  );
+  const viewRun = useCallback((runId: string) => {
+    setMode({ kind: "run", runId });
+    if (source === "fixture") {
+      const snapshot = historyFixtureSnapshot(runId);
+      setSelected(
+        snapshot
+          ? { phase: "ready", snapshot }
+          : { phase: "unavailable", message: "That sample run has no stored calls, so no rate is shown." },
+      );
+      return;
+    }
+    setSelected({ phase: "loading" });
+    void loadHistorySnapshot(getCanvasSupabase() as never, runId).then(setSelected);
+  }, [source]);
 
   const viewLegacy = useCallback((runId: string) => {
     setMode({ kind: "legacy", runId });
@@ -123,13 +137,14 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
   }, []);
 
   const trendKey = useMemo(() => {
-    const trusted = catalog.phase === "ready" ? runsInScope(catalog.runs, mode) : [];
+    const trusted = catalog.phase === "ready" ? runsInScope(catalog.runs, mode, publishedDay) : [];
     const range = mode.kind === "range" ? `${mode.from}:${mode.to}` : "";
-    return `${source}:${mode.kind}:${range}:${trusted.map((run) => run.audit_run_id).join(",")}`;
-  }, [catalog, mode, source]);
+    return `${source}:${mode.kind}:${range}:${publishedDay ?? ""}:${trusted.map((run) => run.audit_run_id).join(",")}`;
+  }, [catalog, mode, publishedDay, source]);
   const localTrend = useMemo<TrendLoad | null>(() => {
-    const trusted = catalog.phase === "ready" ? runsInScope(catalog.runs, mode) : [];
-    if (mode.kind !== "range" && mode.kind !== "all") return { phase: "idle" };
+    const trusted = catalog.phase === "ready" ? runsInScope(catalog.runs, mode, publishedDay) : [];
+    if (!isWindowMode(mode)) return { phase: "idle" };
+    if (mode.kind === "month" && !publishedDay && current.phase === "loading") return { phase: "loading" };
     if (catalog.phase === "loading") return { phase: "loading" };
     if (catalog.phase === "error") return { phase: "error", message: catalog.message };
     if (trusted.length < 2 || source === "fixture") {
@@ -139,7 +154,7 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       return { phase: "ready", snapshots };
     }
     return null;
-  }, [catalog, mode, source]);
+  }, [catalog, current.phase, mode, publishedDay, source]);
   const trend = useMemo<TrendLoad>(
     () => localTrend ?? (remoteTrend.key === trendKey ? remoteTrend.trend : { phase: "loading" }),
     [localTrend, remoteTrend, trendKey],
@@ -147,9 +162,9 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
 
   useEffect(() => {
     if (localTrend || catalog.phase !== "ready") return;
-    if (mode.kind !== "range" && mode.kind !== "all") return;
+    if (!isWindowMode(mode)) return;
     const key = trendKey;
-    const trusted = runsInScope(catalog.runs, mode);
+    const trusted = runsInScope(catalog.runs, mode, publishedDay);
     let cancelled = false;
     void (async () => {
       const snapshots: AiSearchSnapshot[] = [];
@@ -173,9 +188,8 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
     return () => {
       cancelled = true;
     };
-  }, [catalog, localTrend, mode, source, trendKey]);
+  }, [catalog, localTrend, mode, publishedDay, source, trendKey]);
 
-  const currentDay = current.phase === "ready" ? utcDay(current.snapshot.run.published_at ?? current.snapshot.run.completed_at) : null;
   const selectedDay = useMemo(() => {
     if (catalog.phase !== "ready") return null;
     const runId = mode.kind === "run" || mode.kind === "legacy" ? mode.runId : null;
@@ -192,14 +206,14 @@ export function AiHistoryProvider({ current, children }: { current: AiSearchRead
       current,
       selected,
       trend,
-      controlLabel: historyControlLabel(mode, currentDay, selectedDay),
-      viewCurrent,
+      controlLabel: historyControlLabel(mode, publishedDay, selectedDay),
+      viewMonth,
       viewRun,
       viewLegacy,
       viewRange,
       viewAll,
     }),
-    [catalog, current, currentDay, mode, selected, selectedDay, source, trend, viewAll, viewCurrent, viewLegacy, viewRange, viewRun],
+    [catalog, current, mode, publishedDay, selected, selectedDay, source, trend, viewAll, viewMonth, viewLegacy, viewRange, viewRun],
   );
 
   return <AiHistoryContext.Provider value={value}>{children}</AiHistoryContext.Provider>;
@@ -218,10 +232,25 @@ export function useAiHistoryOptional(): AiHistoryValue | null {
 /** Panels read this. The map keeps the live published run passed beside the provider. */
 export function useDisplayedAiSearch(current: AiSearchRead): AiSearchRead {
   const history = useAiHistory();
-  if (history.mode.kind !== "run") return current;
-  if (history.selected.phase === "loading") return { phase: "loading" };
-  if (history.selected.phase === "idle") return { phase: "loading" };
-  if (history.selected.phase === "unavailable") return current;
-  if (history.selected.phase === "error") return { phase: "error", message: history.selected.message };
-  return { phase: "ready", snapshot: history.selected.snapshot };
+  if (history.mode.kind === "legacy") return current;
+  if (history.mode.kind === "run") {
+    if (history.selected.phase === "loading") return { phase: "loading" };
+    if (history.selected.phase === "idle") return { phase: "loading" };
+    if (history.selected.phase === "unavailable") return current;
+    if (history.selected.phase === "error") return { phase: "error", message: history.selected.message };
+    return { phase: "ready", snapshot: history.selected.snapshot };
+  }
+  if (history.mode.kind === "month" && current.phase === "loading") return { phase: "loading" };
+  if (history.trend.phase === "idle" || history.trend.phase === "loading") return { phase: "loading" };
+  if (history.trend.phase === "error" || history.trend.phase === "unavailable") {
+    return { phase: "error", message: history.trend.message };
+  }
+  const pooled = poolWindowSnapshots(history.trend.snapshots);
+  if (!pooled) {
+    return {
+      phase: "error",
+      message: "No stored review runs in this selection have calls.",
+    };
+  }
+  return { phase: "ready", snapshot: pooled };
 }

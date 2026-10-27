@@ -134,13 +134,13 @@ function bundle(): CanvasBundle {
   } as CanvasBundle;
 }
 
-test("every copied surface carries the same Featured Offer label and count", () => {
+test("every copied surface carries the same Buy Box label and count", () => {
   const surface = headlineSurface(READ);
-  assert.equal(surface.label, "Featured Offer withheld above Amazon's outside price");
+  assert.equal(surface.label, "Buy Box withheld above Amazon's outside price");
   assert.equal(surface.countLabel, "1 listing");
   const sentence = headlineSentence(surface);
 
-  // Command center priority, guided tour, and the briefing var. The roadmap bubble is an example notice.
+  // Command center priority, guided tour, and the briefing var.
   const command = buildLiveCommandCenter(bundle(), READ);
   const priority = command.items.find((item) => item.id === "buybox-suppression");
   assert.equal(priority?.title, `${surface.label}: ${surface.countLabel}`);
@@ -150,10 +150,7 @@ test("every copied surface carries the same Featured Offer label and count", () 
   const roadmap = nodes.find((node) => node.id === "spoke-roadmap");
   assert.equal(roadmap?.meta, undefined);
   assert.equal(Object.hasOwn(roadmap ?? {}, "meta"), false);
-  assert.match(
-    roadmap?.tooltip?.desc ?? "",
-    /not optimized to live data/,
-  );
+  assert.equal(roadmap?.tooltip?.desc, "");
 
   const tour = buildLiveTourSteps(bundle(), READ);
   assert.ok(tour.some((step) => step.displays?.includes(sentence)));
@@ -164,8 +161,8 @@ test("every copied surface carries the same Featured Offer label and count", () 
   // The technical coverage sentence never lands in an unrelated client priority.
   const unrelated = command.items.filter((item) => item.id !== "buybox-suppression");
   for (const item of unrelated) {
-    assert.doesNotMatch(item.why ?? "", /Featured Offer audit has a current reading/);
-    assert.doesNotMatch(item.title ?? "", /Featured Offer audit/);
+    assert.doesNotMatch(item.why ?? "", /Buy Box audit has a current reading/);
+    assert.doesNotMatch(item.title ?? "", /Buy Box audit/);
   }
 });
 
@@ -180,10 +177,10 @@ test("the client-facing label holds even when the confirmed count clears", () =>
   const cleared = suppressedListingsFinding([present]);
   assert.equal(cleared.status, "available_with_zero");
   assert.equal(cleared.issueCount, 0);
-  assert.equal(cleared.headlineLabel, "Featured Offer withheld");
+  assert.equal(cleared.headlineLabel, "Buy Box withheld");
 
   const partial = suppressedListingsFinding([withheld(), notChecked()]);
-  assert.match(partial.headlineLabel ?? "", /^Featured Offer withheld/);
+  assert.match(partial.headlineLabel ?? "", /^Buy Box withheld/);
 
   // No reading at all makes no claim about withheld listings.
   assert.equal(suppressedListingsFinding(null).headlineLabel, undefined);
@@ -225,12 +222,16 @@ test("definition terms use the custom tooltip attributes, never a bare title", (
     "components/v3/live/SuppressedListingsPanel.tsx",
     "components/v3/live/RetailOverview.tsx",
   ];
+  // Bare native title attrs only. data-ifai-tooltip-title is the custom chrome.
+  const bareTitle = /(?<![\w-])title=\{|(?<![\w-])title="/;
   for (const file of files) {
     const source = readFileSync(file, "utf8");
-    assert.doesNotMatch(source, /\btitle=\{/, file);
-    assert.doesNotMatch(source, /\btitle="/, file);
-    assert.doesNotMatch(source, /ifai-term/, file);
+    assert.doesNotMatch(source, bareTitle, file);
   }
+  const overview = readFileSync("components/v3/live/RetailOverview.tsx", "utf8");
+  assert.match(overview, /className="ifai-term"/);
+  assert.match(overview, /data-ifai-tooltip-title="Buy Box"/);
+  assert.match(overview, /Amazon also calls it the Featured Offer\./);
 });
 
 function tsxFiles(dir: string, out: string[] = []): string[] {

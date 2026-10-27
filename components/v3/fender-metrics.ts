@@ -13,7 +13,7 @@ export const FENDER_METRICS = {
     value: "See read",
     detail: "Division count loads with the division table",
     tone: "neutral",
-    subTab: "Division Performance",
+    subTab: "Performance",
     provenance: "live",
   },
   activeOfferCoverage: {
@@ -23,7 +23,7 @@ export const FENDER_METRICS = {
     value: "See read",
     detail: "Active offers load with the catalog read",
     tone: "warning",
-    subTab: "Executive Briefing",
+    subTab: "Briefing",
     provenance: "live",
   },
   buyBoxRetention: {
@@ -103,7 +103,7 @@ export const FENDER_METRICS = {
     value: "Loading",
     detail: "Reading the published AI run",
     tone: "neutral",
-    subTab: "Simulations",
+    subTab: "Run Details",
     provenance: "live",
   },
   resolvedSimulations: {

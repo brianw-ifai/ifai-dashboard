@@ -23,11 +23,13 @@ export const AI_DEFINITIONS = {
   "shopping answer": "A usable response from one AI engine to one shopping prompt.",
   "cited link":
     "A web URL the AI engine explicitly returned with its answer. It does not prove that the source caused or endorsed the recommendation.",
+  association:
+    "A stored answer and a page that answer cited, shown together. The link records that the engine cited the page. It does not show that the page caused the engine to name another brand.",
   "Fender-owned": "A cited site controlled by Fender or another FMIC brand, classified by IntoFocus.",
   "partial run":
     "The run was published with some calls unanswered. Every figure covers the answered calls only, and the unanswered calls are listed.",
   "published run":
-    "The one audit run IntoFocus has published as current. Figures use that run unless you open a historical run from the run control. Unpublished runs and development fragments are not mixed in.",
+    "The one audit run IntoFocus has published as current. The map stays on that run. AI Search tabs follow the run control, which starts on the last 30 days of stored review runs. The published run itself is not a blend of those runs.",
   "question set":
     "The full list of questions sent in one AI Search run. A change means a later run asked a different list, so the rates on each side are not one continuous series.",
   "query version":

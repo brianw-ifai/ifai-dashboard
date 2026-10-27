@@ -4,6 +4,7 @@ import "@/lib/canvas-sdk/canvas-sdk.css";
 import "@/lib/canvas-sdk/iom-theme.css";
 import { UserMenuDropdown } from "@/components/auth/UserMenuDropdown";
 import { CommandCenter } from "@/lib/canvas-sdk/CommandCenter";
+import { HubSlots } from "@/lib/canvas-sdk/HubSlots";
 import { MetricWidgets } from "@/lib/canvas-sdk/MetricWidgets";
 import { usePanelInteractions } from "@/lib/canvas-sdk/panel-interactions";
 import type {
@@ -23,6 +24,7 @@ import { CanvasHudZoomControls } from "@/lib/canvas-sdk/CanvasHudZoomControls";
 import { TourLauncher } from "@/lib/canvas-sdk/TourLauncher";
 import { useDefinitionTooltips } from "@/lib/canvas-sdk/useDefinitionTooltips";
 import { useCanvasCamera } from "@/lib/canvas-sdk/useCanvasCamera";
+import { useHoverFraming } from "@/lib/canvas-sdk/useHoverFraming";
 import { useCanvasUrlApply } from "@/lib/canvas-sdk/useCanvasUrlApply";
 import { useCanvasUrlSync } from "@/lib/canvas-sdk/useCanvasUrlSync";
 import {
@@ -119,6 +121,7 @@ export function CanvasShell({ spec, children }: Props) {
     transform,
     applyTransform,
     framePoint,
+    panBy,
     frameOverview,
     frameOverviewInstant,
     zoomBy,
@@ -138,6 +141,9 @@ export function CanvasShell({ spec, children }: Props) {
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [inspectedBubbleId, setInspectedBubbleId] = useState("hub");
+  /** The signal slots show only while a main bubble is hovered or focused. */
+  const [hubSlotsVisible, setHubSlotsVisible] = useState(false);
   const [tourActive, setTourActive] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   /** Set when the tour is parked behind an open drilldown rather than ended. */
@@ -459,6 +465,8 @@ export function CanvasShell({ spec, children }: Props) {
       setActiveSpoke(null);
       restoreTourLauncher();
     }
+    setInspectedBubbleId("hub");
+    setHubSlotsVisible(false);
     setOverviewNonce((nonce) => nonce + 1);
     frameOverview();
   }, [frameOverview, iom, restoreTourLauncher]);
@@ -492,7 +500,11 @@ export function CanvasShell({ spec, children }: Props) {
         const found = spoke.tabs.findIndex((tab) =>
           tab.toLowerCase().includes(subTab.toLowerCase()),
         );
-        setActiveTab(found >= 0 ? found : 0);
+        const nextTab = found >= 0 ? found : 0;
+        setActiveTab(nextTab);
+        if (spoke.tabs[nextTab] === "Citation Ecosystem") {
+          setPanelLayout((current) => (current === "narrow" ? "wide" : current));
+        }
       } else {
         setActiveTab(0);
       }
@@ -680,6 +692,43 @@ export function CanvasShell({ spec, children }: Props) {
   useEffect(() => {
     if (activeSpoke || panelView === "command") hideTooltip();
   }, [activeSpoke, hideTooltip, panelView]);
+
+  const frameHoveredBubble = useHoverFraming({
+    spec,
+    enabled: iom && !activeSpoke && panelView !== "command" && panelLayout === "hidden" && !tourActive && !graphColumnLayout,
+    slotsVisible: hubSlotsVisible,
+    viewportRef,
+    pan,
+    panBy,
+    frameOverview,
+    settleMs: iom ? iomMotionMs(1200) : 600,
+  });
+
+  const inspectBubble = useCallback((nodeId: string) => {
+    setInspectedBubbleId(nodeId);
+    setHubSlotsVisible(true);
+    frameHoveredBubble(nodeId);
+  }, [frameHoveredBubble]);
+
+  // Opening a spoke panel, or returning from one, leaves no bubble hovered or focused.
+  useEffect(() => {
+    setHubSlotsVisible(false);
+  }, [activeSpoke]);
+
+  // A click outside every bubble and the slots themselves closes the slots,
+  // the same way a click outside a menu closes the menu.
+  useEffect(() => {
+    if (!hubSlotsVisible) return;
+    function onPointerDown(e: PointerEvent) {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest(".graph-node")) return;
+      if (target.closest("[data-hub-slots]")) return;
+      setHubSlotsVisible(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [hubSlotsVisible]);
 
   const showDefinitionTooltip = useCallback((target: Element) => {
     if (tourActiveRef.current && !tourSuspendedRef.current) return;
@@ -993,6 +1042,8 @@ export function CanvasShell({ spec, children }: Props) {
     tourRadius: currentTour?.radius ?? 160,
     tourCategory: currentTour?.category ?? "",
     focusNode,
+    inspectBubble,
+    heldGroupId: hubSlotsVisible && panelLayout === "hidden" ? inspectedBubbleId : null,
     resetView: resetCanvasView,
     overviewNonce,
     focusedSpokeId: activeSpoke,
@@ -1209,7 +1260,11 @@ export function CanvasShell({ spec, children }: Props) {
           </div>
         ) : null}
 
-        {spec.metricWidgets ? (
+        {spec.hubSlots ? (
+          hubSlotsVisible && panelLayout === "hidden" ? (
+            <HubSlots feeds={spec.hubSlots} bubbleId={inspectedBubbleId} onOpen={focusNode} />
+          ) : null
+        ) : spec.metricWidgets ? (
           <MetricWidgets
             config={spec.metricWidgets}
             spokes={spec.spokes}
@@ -1286,24 +1341,24 @@ export function CanvasShell({ spec, children }: Props) {
         <aside className={`drilldown-panel${panelOpen && !tourOverlayVisible ? " open" : ""}`}>
           <div className="drilldown-header">
             <div className="drilldown-title-wrap">
-              {commandCenter && !showingCommand ? (
-                <button className="drilldown-back-btn" onClick={openCommandCenter}>
-                  <ChevronLeft size={12} />
-                  Priorities
-                </button>
-              ) : null}
-              <span className="drilldown-badge">
-                {showingCommand
-                  ? (commandCenter?.badge ?? "COMMAND CENTER")
-                  : (spoke?.badge ?? "SPOKE")}
-              </span>
-              <h2 className="drilldown-title">
-                {showingCommand ? commandCenter?.title : (spoke?.title ?? "")}
-              </h2>
-              <p className="drilldown-desc">
-                {showingCommand ? commandCenter?.desc : (spoke?.desc ?? "")}
-              </p>
-              {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
+              <div className="drilldown-title-main">
+                {commandCenter && !showingCommand ? (
+                  <button className="drilldown-back-btn" onClick={openCommandCenter}>
+                    <ChevronLeft size={12} />
+                    Priorities
+                  </button>
+                ) : null}
+                {showingCommand ? (
+                  <>
+                    <span className="drilldown-badge">{commandCenter?.badge ?? "COMMAND CENTER"}</span>
+                    <h2 className="drilldown-title">{commandCenter?.title}</h2>
+                  </>
+                ) : null}
+                <p className="drilldown-desc">
+                  {showingCommand ? commandCenter?.desc : (spoke?.descSlot ?? spoke?.desc ?? "")}
+                </p>
+                {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
+              </div>
             </div>
 
             <div className="drilldown-header-actions">
@@ -1375,7 +1430,12 @@ export function CanvasShell({ spec, children }: Props) {
                     role="tab"
                     aria-selected={idx === activeTab}
                     className={`drilldown-tab-btn${idx === activeTab ? " active" : ""}`}
-                    onClick={() => setActiveTab(idx)}
+                    onClick={() => {
+                      setActiveTab(idx);
+                      if (spoke.tabs[idx] === "Citation Ecosystem") {
+                        setPanelLayout((current) => (current === "narrow" ? "wide" : current));
+                      }
+                    }}
                   >
                     {tabName}
                   </button>

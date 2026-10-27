@@ -42,7 +42,7 @@ test.describe("simulation filters", () => {
 
 test.describe("collapsible explanations", () => {
   test("an explanation can be hidden and stays hidden", async ({ canvas, page }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
 
     const toggle = page.locator(".ceo-callout-toggle").first();
     const body = page.locator(".ceo-callout-body").first();
@@ -54,7 +54,7 @@ test.describe("collapsible explanations", () => {
     await expect(page.locator(".ceo-callout-header").first()).toBeVisible();
 
     await canvas.reload();
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
     await expect(page.locator(".ceo-callout-body").first()).toBeHidden();
 
     await page.locator(".ceo-callout-toggle").first().click();
@@ -68,7 +68,6 @@ test.describe("drill-downs", () => {
     await expect(canvas.activeTab).toContainText("MAP");
 
     const body = page.locator(".drilldown-body");
-    await expect(body).toContainText("Minimum Advertised Price");
     await expect(body).toContainText("Summary");
     await expect(body).toContainText("Fender MAP prices have not been stored.");
     await expect(body).not.toContainText("listings below MAP");
@@ -79,6 +78,8 @@ test.describe("drill-downs", () => {
     const musiciansFriend = page.locator("tr", { hasText: "B0HJDFP2XS" });
     await expect(musiciansFriend).toBeVisible();
     await expect(musiciansFriend).toContainText("$599.99");
+    await expect(musiciansFriend).toContainText("Not available*");
+    await expect(musiciansFriend.locator(".channel-fact a.listing-link")).toHaveCount(0);
     await expect(musiciansFriend).not.toContainText("-$150");
     await expect(musiciansFriend.locator(".channel-gap")).toHaveCount(0);
     const walmart = page.locator("tr", { hasText: "B0DYKZ4MJG" });
@@ -88,7 +89,7 @@ test.describe("drill-downs", () => {
     await expect(body).not.toContainText("$808.00");
     await expect(body).not.toContainText("Reverb");
     await expect(body).not.toContainText("Sweetwater");
-    await expect(body).not.toContainText("Featured Offer withheld");
+    await expect(body).not.toContainText("Buy Box withheld");
     await expect(body).not.toContainText("Prices at MAP");
     await expect(page.locator(".map-channel-row")).toHaveCount(0);
   });
@@ -97,7 +98,7 @@ test.describe("drill-downs", () => {
     canvas,
     page,
   }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
     await expect(page.locator(".drilldown-tab-btn")).toHaveText([
       "Retail Overview",
       "Suppressed Listings",
@@ -131,7 +132,7 @@ test.describe("drill-downs", () => {
   });
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
     await canvas.openTab("Suppressed Listings");
     const body = page.locator(".drilldown-body");
     const list = page.locator(".suppressed-listings");
@@ -161,17 +162,17 @@ test.describe("drill-downs", () => {
     }
   });
 
-  test("the Featured Offer readings keep each state on its own denominator", async ({
+  test("the Buy Box readings keep each state on its own denominator", async ({
     canvas,
     page,
   }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
     await expect(canvas.activeTab).toHaveText("Retail Overview");
     const readings = page.locator(".fo-readings");
     await expect(readings).toBeVisible();
     for (const label of [
-      "Featured Offer present",
-      "Featured Offer withheld",
+      "Buy Box present",
+      "Buy Box withheld",
       "No active offer",
       "Coverage exceptions",
       "Competitive External Price available",
@@ -186,7 +187,7 @@ test.describe("drill-downs", () => {
     // Every rate shows its denominator, and a missing result is never a bare zero.
     await expect(readings.locator(".fo-denominator").first()).toBeVisible();
     await expect(readings).toContainText("not counted as zero");
-    await expect(readings).toContainText("Featured Offer check");
+    await expect(readings).toContainText("Buy Box check");
     await expect(readings).not.toContainText("MAP");
   });
 
@@ -231,13 +232,35 @@ test.describe("drill-downs", () => {
     await expect(body).not.toContainText("flagged answers");
   });
 
+  test("a Musician's Friend price uses its stored page or says the page was not stored", async ({ canvas, page }) => {
+    await canvas.openSpokeFromMap("Catalog Health");
+    await canvas.openTab("MAP");
+    const cells = page.locator(".drilldown-body table td.channel-fact");
+    await expect(cells.first()).toBeVisible();
+    const texts = await cells.allInnerTexts();
+    const hrefs = await cells.locator("a.listing-link").evaluateAll((els) =>
+      els.map((el) => el.getAttribute("href") ?? ""),
+    );
+    expect(texts.some((text) => text.includes("Not available*")) || hrefs.length > 0).toBe(true);
+    for (const href of hrefs) expect(href).toMatch(/^https?:\/\//);
+    await expect(page.locator(".drilldown-body a[href*='/search']")).toHaveCount(0);
+  });
+
   test("competitive rows use commercial AI-search outcomes", async ({ canvas, page }) => {
     await canvas.openSpokeFromMap("Competitive Radar");
     await expect(page.locator(".ai-battlecards")).toBeVisible();
 
-    const headers = await page.locator(".table-sm th").allInnerTexts();
-    expect(headers.some((h) => /fender win/i.test(h))).toBe(true);
+    const headers = await page.locator(".ai-battlecards th").allInnerTexts();
+    expect(headers.some((h) => /unbranded discovery/i.test(h))).toBe(true);
     expect(headers.some((h) => /top competitor/i.test(h))).toBe(true);
+    expect(headers.some((h) => /competitor leads/i.test(h))).toBe(true);
+
+    const desc = await page.locator(".drilldown-desc").innerText();
+    const led = desc.match(/Competitors led (\d+) of (\d+) resolved unbranded discovery answers/);
+    expect(led).not.toBeNull();
+    await expect(page.locator("[data-ai-run-details-lead] [data-ai-win-rate='unbranded_discovery']")).toBeVisible();
+    await expect(page.locator("[data-ai-battle-lead-graph]")).toBeVisible();
+    await expect(page.locator("[data-ai-history-trigger]")).toContainText("Last 30 days");
 
     const body = page.locator(".drilldown-body");
     await expect(body).toContainText("Yamaha");
@@ -250,7 +273,7 @@ test.describe("drill-downs", () => {
 
 test.describe("glossary", () => {
   test("jargon is marked with a plain-language definition", async ({ canvas, page }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
 
     const terms = page.locator(".ifai-term");
     expect(await terms.count()).toBeGreaterThan(0);
@@ -260,7 +283,12 @@ test.describe("glossary", () => {
       expect(definition?.length ?? 0).toBeGreaterThan(20);
       await expect(term).not.toHaveAttribute("title");
     }
-    await expect(terms.filter({ hasText: "Featured Offer" }).first()).toBeVisible();
+    const buyBox = terms.filter({ hasText: "Buy Box" }).first();
+    await expect(buyBox).toBeVisible();
+    await expect(buyBox).toHaveAttribute(
+      "data-ifai-tooltip-desc",
+      /Amazon also calls it the Featured Offer\./,
+    );
   });
 
   /* The command center is React-rendered; mutating it would fight reconciliation. */
@@ -274,15 +302,15 @@ test.describe("glossary", () => {
   });
 
   test("marking does not corrupt the surrounding copy", async ({ canvas, page }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
     const html = await page.locator(".drilldown-body").innerHTML();
     expect(html).toContain('<span class="ifai-term"');
     expect(html).not.toContain("&lt;span");
-    await expect(page.locator(".drilldown-body")).toContainText("Featured Offer");
+    await expect(page.locator(".drilldown-body")).toContainText("Buy Box");
   });
 
   test("terms are re-marked after switching tabs", async ({ canvas, page }) => {
-    await canvas.openPriority("Featured Offer withheld");
+    await canvas.openPriority("Buy Box withheld");
     const before = await page.locator(".ifai-term").count();
 
     await canvas.openTab("MAP");

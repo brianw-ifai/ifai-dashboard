@@ -23,8 +23,8 @@ function openedTab(tabs: string[], subTab: string | undefined): string | null {
 }
 
 const EXPECTED_SUBTAB: Record<string, string> = {
-  "catalog-skus": "Division Performance",
-  "active-offer-coverage": "Executive Briefing",
+  "catalog-skus": "Performance",
+  "active-offer-coverage": "Briefing",
   "buy-box-retention": "Retail Overview",
   "seller-data-coverage": "Retail Overview",
   "flagged-asins": "MAP",
@@ -32,7 +32,7 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "stranded-reviews": "Catalog Governance",
   "amazon-map-drift": "MAP",
   "overall-ai-win-rate": "Run Summary",
-  "beginner-ai-win-rate": "Simulations",
+  "beginner-ai-win-rate": "Run Details",
   "resolved-simulations": "Run Summary",
   "confirmed-hallucinations": "Product Fact Checks",
   "fender-findability": "Findability",

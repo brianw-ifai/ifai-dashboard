@@ -2,7 +2,7 @@
 
 Captured 5 Oct 2026. This is drill-down guidance, not a change to the live canvas.
 
-**Featured Offer** is Amazon's name for the button this project has called the Buy Box (BB). They are the same thing. New writing says Featured Offer. Buy Box and BB are accepted aliases.
+**Buy Box** is the primary client name for Amazon's purchasing button. Amazon also calls it the Featured Offer. Database columns such as `featured_offer_state` keep the internal name. The drill-down notes below were captured when client copy used Featured Offer; the stored facts are unchanged.
 
 Fender's seller type is **Partner-led**. The five seller types, and the question each one is meant to answer, are in `docs/client-seller-models.md`. How each type is drawn on the dashboard is not decided.
 

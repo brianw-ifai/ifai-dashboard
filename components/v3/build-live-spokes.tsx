@@ -6,6 +6,7 @@ import { CitationEcosystemPanel } from "@/components/v3/live/ai-search/CitationE
 import { CompetitorWinsPanel } from "@/components/v3/live/ai-search/CompetitorWinsPanel";
 import { EngineComparisonPanel } from "@/components/v3/live/ai-search/EngineComparisonPanel";
 import { AiSearchSurface } from "@/components/v3/live/ai-search/AiSearchSurface";
+import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/CompetitorsSpokeDescription";
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
@@ -77,7 +78,7 @@ const TAB_OVERRIDES: Partial<
       </AiSearchSurface>
     ),
     3: () => (
-      <AiSearchSurface>
+      <AiSearchSurface followsRange>
         <CitationEcosystemPanel />
       </AiSearchSurface>
     ),
@@ -115,13 +116,24 @@ function wrapSpoke(
     ...bound,
     ...(id === "ecommerce"
       ? {
-          title: "Portfolio Retail",
-          desc: "Suppressed Featured Offers, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
+          title: "Catalog Health",
+          desc: "Suppressed Buy Boxes, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
         }
       : {}),
-    ...(id === "aeo" ? { desc: aiSpokeDesc(ai), headerAccessory: <RunHistoryControl /> } : {}),
-    ...(id === "competitors" ? { desc: competitorsSpokeDesc(ai) } : {}),
+    ...(id === "aeo"
+      ? {
+          desc: aiSpokeDesc(ai),
+          headerAccessory: <RunHistoryControl />,
+        }
+      : {}),
+    ...(id === "competitors"
+      ? {
+          desc: competitorsSpokeDesc(ai),
+          descSlot: <CompetitorsSpokeDescription />,
+          headerAccessory: <RunHistoryControl />,
+        }
+      : {}),
     ...(id === "specs" ? { desc: findabilitySpokeDescription(findability) } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);

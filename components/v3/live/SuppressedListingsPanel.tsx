@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
@@ -74,10 +75,10 @@ function explanation() {
   return (
     <div className="ceo-callout" style={{ marginTop: 12 }}>
       <div className="ceo-callout-header">
-        <span>Why can a listing lose the Featured Offer?</span>
+        <span>Why can a listing lose the Buy Box?</span>
       </div>
       <div className="ceo-callout-body">
-        Amazon withholds the <strong>Featured Offer</strong> when the offer it observed,
+        Amazon withholds the <DefinedTerm term="Buy Box" /> when the offer it observed,
         including shipping, is above the Competitive External Price: the lowest price it
         recently found outside Amazon. Amazon does not name that retailer, and a listing can
         be withheld for other reasons too, so a withheld listing with no published benchmark
@@ -96,7 +97,7 @@ function ReadingNote({
   freshness?: CanvasFreshnessRow[] | null;
 }) {
   if (read.phase === "loading") {
-    return <p className="retail-missing">Loading the Featured Offer reading…</p>;
+    return <p className="retail-missing">Loading the Buy Box reading…</p>;
   }
   if (read.phase === "error") {
     return <p className="retail-missing">The retail read could not be loaded.</p>;
@@ -106,7 +107,7 @@ function ReadingNote({
     return (
       <p className="retail-missing">
         {read.snapshot.suppressedListings.missingMessage ??
-          "The Featured Offer reading has not been stored."}
+          "The Buy Box reading has not been stored."}
       </p>
     );
   }
@@ -156,7 +157,7 @@ export function SuppressedListingsPanel({
       {explanation()}
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">
-          <span>Featured Offer withheld</span>
+          <span>Buy Box withheld</span>
           {counts ? (
             <span className="tag-badge tag-danger suppressed-count">
               {formatInt(counts.withheld)}
@@ -189,7 +190,7 @@ export function SuppressedListingsPanel({
                 {sorted.rows.length === 0 ? (
                   <tr>
                     <td colSpan={FEATURED_OFFER_TABLE_COLUMN_COUNT}>
-                      No monitored listing has a withheld Featured Offer in the current reading.
+                      No monitored listing has a withheld Buy Box in the current reading.
                     </td>
                   </tr>
                 ) : (

@@ -14,6 +14,7 @@ export function CanvasGraphNode({
   onGroupEnter,
   onGroupLeave,
   onSelect,
+  onInspect,
   emphasis,
   selected,
   dimmed,
@@ -30,6 +31,7 @@ export function CanvasGraphNode({
   onGroupEnter?: () => void;
   onGroupLeave?: () => void;
   onSelect?: () => void;
+  onInspect?: () => void;
   emphasis?: boolean;
   selected?: boolean;
   dimmed?: boolean;
@@ -50,14 +52,17 @@ export function CanvasGraphNode({
       titleSize={titleSize}
       stats={node.stats}
       meta={node.id === "spoke-retail" || node.id === "spoke-roadmap" ? node.meta : undefined}
+      heroValue={node.heroValue}
       centered={centered}
       logoSrc={node.logoSrc}
       emphasis={emphasis}
       selected={selected}
       dimmed={dimmed}
       enterDelay={enterDelay}
+      onInspect={onInspect}
       onClick={() => {
         onSelect?.();
+        onInspect?.();
         // The center node is the portfolio overview. A click always reopens it,
         // including when the camera is already framed on the hub.
         if (node.spokeId) onFocusNode(node.spokeId, node.subTab);
@@ -65,7 +70,13 @@ export function CanvasGraphNode({
         onHideTooltip();
       }}
       onMouseEnter={(evt) => {
+        onInspect?.();
         onGroupEnter?.();
+        // A bubble with no stored explainer (title is self-sufficient) shows no hover box at all.
+        if (!node.tooltip.desc.trim()) {
+          onHideTooltip();
+          return;
+        }
         onShowTooltip(
           evt,
           node.tooltip.title,
@@ -74,6 +85,7 @@ export function CanvasGraphNode({
         );
       }}
       onMouseMove={(evt) => {
+        if (!node.tooltip.desc.trim()) return;
         onShowTooltip(
           evt,
           node.tooltip.title,

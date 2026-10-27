@@ -1,7 +1,8 @@
 import { formatDay } from "@/lib/ai-search/history-eligibility";
+import { citationMonthBounds } from "@/lib/ai-search/citation-aggregate";
 
 export type HistoryMode =
-  | { kind: "current" }
+  | { kind: "month" }
   | { kind: "run"; runId: string }
   | { kind: "legacy"; runId: string }
   | { kind: "range"; from: string; to: string }
@@ -12,7 +13,12 @@ export function historyControlLabel(
   currentDay: string | null,
   selectedDay: string | null,
 ): string {
-  if (mode.kind === "current") return currentDay ? `Current run · ${formatDay(currentDay)}` : "Current run";
+  if (mode.kind === "month") {
+    if (!currentDay) return "Last 30 days";
+    const bounds = citationMonthBounds(currentDay);
+    if (!bounds) return "Last 30 days";
+    return `Last 30 days · ${formatDay(bounds.from)} to ${formatDay(bounds.to)}`;
+  }
   if (mode.kind === "all") return "All time";
   if (mode.kind === "range") return `${formatDay(mode.from)} to ${formatDay(mode.to)}`;
   if (mode.kind === "legacy") return selectedDay ? `Legacy run · ${formatDay(selectedDay)}` : "Legacy run";
@@ -25,7 +31,8 @@ export function rangeFromMode(mode: HistoryMode): { from: string | null; to: str
 }
 
 /**
- * Panel introduction while history is open. Null keeps the current-run description.
+ * Panel introduction while history is open. Null keeps the normal area description.
+ * Month, range, all, and a loaded single run stay null: the pill already names the selection.
  * The map is not given this string.
  */
 export function historySpokeDescription(input: {
@@ -35,16 +42,13 @@ export function historySpokeDescription(input: {
   selectedMessage: string | null;
   runDescription: string | null;
 }): string | null {
-  if (input.mode === "current") return null;
+  if (input.mode === "month" || input.mode === "range" || input.mode === "all") {
+    return null;
+  }
   if (input.mode === "legacy") {
     return "Legacy test run. These calls stay out of the two rates and out of the trend.";
   }
-  if (input.mode === "range" || input.mode === "all") {
-    return input.source === "fixture"
-      ? "Copy of the stored runs for review. The chart uses that copy, not a live read. Current returns to the live published run."
-      : "Trends use the stored review runs. The map stays on the current published run.";
-  }
   if (input.selectedPhase === "loading" || input.selectedPhase === "idle") return "Loading the selected run.";
   if (input.selectedPhase === "unavailable" || input.selectedPhase === "error") return input.selectedMessage;
-  return input.runDescription ? `Historical run. ${input.runDescription}` : "Historical run.";
+  return null;
 }

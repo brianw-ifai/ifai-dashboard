@@ -1,7 +1,14 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/ai-search-truth.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { aiMetrics, aiNodeFaces, aiPriorityItems, aiSpokeDesc } from "../lib/ai-search/canvas-surfaces.ts";
+import {
+  aiMetrics,
+  aiNodeFaces,
+  aiPriorityItems,
+  aiSpokeDesc,
+  aiSpokeFullDesc,
+  aiSpokeHeaderChips,
+} from "../lib/ai-search/canvas-surfaces.ts";
 import { canonicalUrl, citationEvidence, classifySource, groupCitations, isValidCitationUrl } from "../lib/ai-search/citations.ts";
 import { categoryBattles, competitorTallies } from "../lib/ai-search/competitors.ts";
 import { driftRead, PROBE_STATE_LABELS } from "../lib/ai-search/drift.ts";
@@ -183,14 +190,22 @@ test("commercial win rate: exact numerator and denominator, probes and errors ap
   assert.equal(t.winPct, 40);
   const s = summarizeRun(snapshot);
   assert.equal(s.probesAnswered, 1);
-  assert.match(aiSpokeDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
-  assert.match(aiSpokeDesc(ready), /Branded consideration: no resolved answers/);
+  assert.match(aiSpokeDesc(ready), /whether Fender-owned pages show up/);
+  assert.doesNotMatch(aiSpokeDesc(ready), /Partial/);
   assert.doesNotMatch(aiSpokeDesc(ready), /2 of 5/);
+  assert.match(aiSpokeFullDesc(ready), /Unbranded discovery: Fender\/Squier named most in 0 of 1 resolved answers \(0\.0%\)/);
+  assert.match(aiSpokeFullDesc(ready), /Branded consideration: no resolved answers/);
+  const chips = aiSpokeHeaderChips(ready);
+  assert.ok(chips.some((chip) => chip.id === "unbranded" && /0 of 1/.test(chip.value)));
+  assert.ok(chips.some((chip) => chip.id === "errors" && /provider errors/i.test(chip.value)));
 });
 
 test("probes never appear as a commercial category or competitor", () => {
   assert.ok(categoryBattles(calls).every((b) => b.category !== "hallucinations"));
-  assert.deepEqual(competitorTallies(calls).map((t) => t.brand), ["Taylor", "Yamaha"]);
+  // Only unbranded discovery competitor wins: c8 (Taylor). c2 Yamaha is not unbranded discovery.
+  assert.deepEqual(competitorTallies(calls).map((t) => t.brand), ["Taylor"]);
+  assert.equal(competitorTallies(calls)[0]?.wins, 1);
+  assert.equal(competitorTallies(calls)[0]?.resolved, 1);
   assert.ok(summarizeRun(snapshot).categories.every((c) => c.key !== "hallucinations"));
 });
 
@@ -200,7 +215,7 @@ test("engine and model provenance, with small samples flagged", () => {
     { engine: "gemini", models: ["3.6 Flash"] },
     { engine: "perplexity", models: ["turbo"] },
   ]);
-  assert.equal(modelLabel(null), "Model not recorded");
+  assert.equal(modelLabel(null), "not recorded");
   const engines = engineTallies(calls);
   assert.deepEqual(engines.map((e) => [e.key, e.resolved]), [["chatgpt", 2], ["gemini", 2], ["perplexity", 1]]);
   assert.equal(isSmallSample(7, 28), true);
@@ -258,14 +273,20 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
   assert.match(faces.satPrompts.meta ?? "", /Completed Oct 12, 2026, 5:02 PM UTC/);
   assert.match(faces.spokeAeo.meta ?? "", /Partial run · 7 of 9 answered/);
   assert.doesNotMatch(faces.satPrompts.tooltip.desc, /latest battery/i);
-  assert.match(aiSpokeDesc(ready), /provider errors/);
+  assert.match(aiSpokeFullDesc(ready), /provider errors/);
+  assert.ok(aiSpokeHeaderChips(ready).some((chip) => /provider errors/i.test(chip.value)));
 });
 
 test("client priorities come from run evidence, never pipeline work", () => {
   const items = aiPriorityItems(ready);
   assert.deepEqual(items.map((i) => i.id), ["ai-confirmed-contradiction", "ai-competitor-gap"]);
   const gap = items[1];
-  assert.match(gap.title, /Taylor and Yamaha out-mention Fender\/Squier in 2 of 3 resolved acoustics answers/);
+  assert.match(
+    gap.title,
+    /Taylor out-mention Fender\/Squier in 1 of 1 resolved unbranded discovery acoustics answers/,
+  );
+  assert.match(gap.why, /unbranded discovery/);
+  assert.doesNotMatch(gap.title + gap.why, /commercial prompts/i);
   assert.equal(gap.subTab, "Competitor Wins");
   const text = items.map((i) => `${i.title} ${i.why} ${i.impact}`).join(" ");
   assert.doesNotMatch(text, /collector|battery|normaliz|parse|schema column|database|retry/i);
@@ -544,17 +565,27 @@ test("shopping questions split into the audited discovery and consideration rate
   assert.ok(categories.every((group) => group.key !== "hallucinations"));
   assert.equal(rows.filter((row) => questionRole(row) === "other").length, 0);
 
+  const unbrandedCompetitorWins = roleTally(rows, "unbranded_discovery").competitorWins;
+  const brandedCompetitorWins = roleTally(rows, "branded_consideration").competitorWins;
   const headlineWins = headlineCompetitorWins(rows).reduce((sum, brand) => sum + brand.wins, 0);
-  const keptOutWins = (["brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const).reduce(
-    (sum, role) => sum + roleTally(rows, role).competitorWins,
-    0,
-  );
+  const keptOutWins = (
+    ["branded_consideration", "brand_associated_discovery", "shopping_guidance", "product_fact", "other"] as const
+  ).reduce((sum, role) => sum + roleTally(rows, role).competitorWins, 0);
   assert.ok(keptOutWins > 0, "a kept-out question has a competitor win");
-  assert.equal(
-    headlineWins,
-    roleTally(rows, "unbranded_discovery").competitorWins + roleTally(rows, "branded_consideration").competitorWins,
-  );
+  assert.ok(brandedCompetitorWins > 0, "branded consideration still has competitor wins outside the rate");
+  assert.equal(headlineWins, unbrandedCompetitorWins);
+  assert.notEqual(headlineWins, unbrandedCompetitorWins + brandedCompetitorWins);
   assert.equal(headlineWins + keptOutWins, tallyCommercial(rows).competitorWins);
+
+  const tallies = competitorTallies(rows);
+  assert.equal(
+    tallies.reduce((sum, row) => sum + row.wins, 0),
+    unbrandedCompetitorWins,
+  );
+  assert.ok(tallies.every((row) => row.resolved === unbranded.resolved));
+  assert.equal(summary.competitorWins, unbrandedCompetitorWins);
+  assert.equal(summary.topCompetitor?.resolved, unbranded.resolved);
+
   assert.equal(formatObservedRate(unbranded.fenderWins, unbranded.resolved), "56.5% (13 of 23)");
   assert.equal(formatObservedRate(branded.fenderWins, branded.resolved), "95.7% (22 of 23)");
   assert.equal(roleRatePlainText(unbranded.fenderWins, unbranded.resolved, unbranded.resolved), "56.5% (13 of 23)");

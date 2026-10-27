@@ -6,7 +6,8 @@ import { ConnLine, TourSpotlight } from "@/lib/canvas-sdk/GraphPrimitives";
 import { IomGraphBackdrop } from "@/lib/canvas-sdk/IomGraphBackdrop";
 import { buildColumnLayout, isColumnNode } from "@/lib/canvas-sdk/column-layout";
 import { iomMotionMs } from "@/lib/canvas-sdk/iom-motion";
-import { MAIN_BUBBLES, satelliteClusters } from "@/lib/canvas-sdk/satellite-clusters";
+import { MAIN_BUBBLES } from "@/lib/canvas-sdk/satellite-clusters";
+import { fittedSatelliteClusters } from "@/lib/canvas-sdk/satellite-fit";
 import { useColumnRailScroll } from "@/lib/canvas-sdk/useColumnRailScroll";
 import type { CanvasEdge, CanvasNode, CanvasSpec } from "@/lib/canvas-sdk/types";
 
@@ -21,6 +22,7 @@ type Props = {
   tourRadius: number;
   tourCategory: string;
   onFocusNode: (spokeId: string, subTab?: string) => void;
+  onInspectBubble?: (nodeId: string) => void;
   onResetView: () => void;
   overviewNonce: number;
   focusedSpokeId?: string | null;
@@ -29,6 +31,8 @@ type Props = {
   mapExiting?: boolean;
   mapEntering?: boolean;
   columnRailExiting?: boolean;
+  /** This main bubble's satellites stay out while its signal slots are showing. */
+  heldGroupId?: string | null;
   onShowTooltip: (evt: MouseEvent, title: string, desc: string, hasMoreInfo?: boolean) => void;
   onHideTooltip: () => void;
 };
@@ -44,6 +48,7 @@ export function CanvasGraph({
   tourRadius,
   tourCategory,
   onFocusNode,
+  onInspectBubble,
   onResetView,
   overviewNonce,
   focusedSpokeId = null,
@@ -52,6 +57,7 @@ export function CanvasGraph({
   mapExiting = false,
   mapEntering = false,
   columnRailExiting = false,
+  heldGroupId = null,
   onShowTooltip,
   onHideTooltip,
 }: Props) {
@@ -67,7 +73,7 @@ export function CanvasGraph({
   const revealSatellites = spec.appearance === "iom";
   const motionMs = (baseMs: number) => (revealSatellites ? iomMotionMs(baseMs) : baseMs);
   const clusters = useMemo(
-    () => (revealSatellites ? satelliteClusters(spec) : null),
+    () => (revealSatellites ? fittedSatelliteClusters(spec) : null),
     [revealSatellites, spec],
   );
   const satelliteIds = new Set(
@@ -169,6 +175,9 @@ export function CanvasGraph({
         onGroupEnter={parentId ? () => revealGroup(parentId) : undefined}
         onGroupLeave={parentId ? holdGroup : undefined}
         onSelect={MAIN_BUBBLES.has(node.id) && node.id !== "hub" ? () => pinGroup(node.id) : undefined}
+        onInspect={
+          onInspectBubble && MAIN_BUBBLES.has(node.id) ? () => onInspectBubble(node.id) : undefined
+        }
       />
     );
   };
@@ -245,7 +254,7 @@ export function CanvasGraph({
         ? clusters.groups.map((group) => (
             <g
               key={`satellites-${group.parent.id}`}
-              className={`satellite-group${openParentId === group.parent.id || pinnedParentId === group.parent.id ? " visible" : ""}`}
+              className={`satellite-group${[openParentId, pinnedParentId, heldGroupId].includes(group.parent.id) ? " visible" : ""}`}
             >
               {group.edges.map((edge, idx) => (
                 <ConnLine key={`sat-edge-${group.parent.id}-${idx}`} {...edge} hot={touchesFocus(edge)} />

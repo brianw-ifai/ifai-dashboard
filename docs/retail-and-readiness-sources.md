@@ -1,6 +1,6 @@
-# Portfolio Retail and AI Readiness sources
+# Catalog Health and AI Readiness sources
 
-This is a reading of what Fender sees on Portfolio Retail and AI Readiness, and where each number comes from. It does not change the screen, the copy, the queries, or the database.
+This is a reading of what Fender sees on Catalog Health and AI Readiness, and where each number comes from. It does not change the screen, the copy, the queries, or the database.
 
 **Read at:** 2026-10-07 23:43:13 UTC.
 
@@ -10,12 +10,12 @@ A second check at 2026-10-07 23:44:22 UTC still showed 1,030 retail rows, 47 sup
 
 ## What is in this map
 
-- The Portfolio Retail bubble, its three satellites (Suppressed Listings, MAP Leakage, Catalog Governance), and its four tabs.
+- The Catalog Health bubble, its three satellites (Suppressed Listings, MAP Leakage, Catalog Governance), and its four tabs.
 - The AI Readiness bubble, the Machine Readability satellite, the Amazon A+ Matrix satellite, and its three tabs.
 - The command-center items and metric widgets that open those hubs.
 - The freshness line, because it sits on the canvas while those hubs are open.
 
-Action Items, Commercial Sizing, Competitive Radar, the AI simulation battery, and social harvests are out of this map. Header tickers are off (`SHOW_HEADER_TICKERS` is false), so the ticker sentences are not on screen. These hubs do not show a delegation or paid-tier control. Partner-led is not copy on these screens. Dollar gaps on these screens are price gaps. Revenue figures elsewhere stay estimates.
+Action Items, Opportunity (hub), Competitive Radar, the AI simulation battery, and social harvests are out of this map. Header tickers are off (`SHOW_HEADER_TICKERS` is false), so the ticker sentences are not on screen. These hubs do not show a delegation or paid-tier control. Partner-led appears on the Catalog Health Retail Overview seller-type line. Dollar gaps on these screens are price gaps. Revenue figures elsewhere stay estimates.
 
 ## How a status is used
 
@@ -28,11 +28,11 @@ Action Items, Commercial Sizing, Competitive Radar, the AI simulation battery, a
 | failed collection | The checker ran and did not bring back a result. |
 | not measured | No column, no job, or the cell does not read the column that exists. |
 
-## Portfolio Retail
+## Catalog Health
 
-The bubble title stays **Portfolio Retail**. The headline is the first retail finding that is not a confirmed zero. Suppressed Listings is unfinished, so it stays the headline. MAP and catalog nesting do not replace it.
+The bubble title stays **Catalog Health**. The headline is the first retail finding that is not a confirmed zero. Suppressed Listings is unfinished, so it stays the headline. MAP and catalog nesting do not replace it.
 
-The panel title is **Portfolio Retail**. The line under it is: "Suppressed Featured Offers, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend."
+The panel title is **Catalog Health**. The line under it is: "Suppressed Buy Boxes, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend."
 
 Tabs: **Retail Overview**, **Suppressed Listings**, **MAP**, **Catalog Governance**.
 
@@ -42,8 +42,8 @@ Retail rows come from `public.canvas_retail_listings`, which selects `command.fm
 
 | Screen | Words Fender sees | Table and column | Writer | Status |
 | --- | --- | --- | --- | --- |
-| Portfolio Retail bubble | **Suppressed Listings** and **47 listings** | `command.fmic_retail_buybox_map.featured_offer_withheld`, `competitive_price_threshold_cents`, `offer_price`. The view also exposes the derived flag `competitive_offer_suppressed`. | Not named. No database function writes these columns. | partial reading |
-| Portfolio Retail bubble, tooltip | "The hourly audit has stored a Featured Offer reading for 1,009 of 1,030 listings. 47 listings in that partial read are above the Competitive External Price with the Featured Offer withheld. 21 listings are still missing, so this is not a final count." | Same columns. 1,009 rows have the withheld flag stored (69 true, 940 false). 21 flags are null. 440 rows have a positive Competitive External Price. 590 do not. A missing price is not a zero and does not put the listing on this list. | Not named. Newest `updated_at` on the retail table is 2026-10-07 23:41:24 UTC. That clock does not match any named job's `last_run_at`. | partial reading |
+| Catalog Health bubble | **Suppressed Listings** and **47 listings** | `command.fmic_retail_buybox_map.featured_offer_withheld`, `competitive_price_threshold_cents`, `offer_price`. The view also exposes the derived flag `competitive_offer_suppressed`. | Not named. No database function writes these columns. | partial reading |
+| Catalog Health bubble, tooltip | "The hourly audit has stored a Buy Box reading for 1,009 of 1,030 listings. 47 listings in that partial read are above the Competitive External Price with the Buy Box withheld. 21 listings are still missing, so this is not a final count." | Same columns. 1,009 rows have the withheld flag stored (69 true, 940 false). 21 flags are null. 440 rows have a positive Competitive External Price. 590 do not. A missing price is not a zero and does not put the listing on this list. | Not named. Newest `updated_at` on the retail table is 2026-10-07 23:41:24 UTC. That clock does not match any named job's `last_run_at`. | partial reading |
 | Suppressed Listings satellite | **47 listings** and **1,009 of 1,030** | Same columns. A row is counted only when the withheld flag is true, the Competitive External Price is a positive cent value, and the offer in cents is above that price. `offer_price` is dollars and already includes shipping. | Not named. | partial reading |
 | MAP Leakage satellite | **532 below MAP**, **-$209.47 gap**, **1,013 of 1,030** | `leakage_amount` (shown as Amazon leakage), `wmt_leakage`, `mf_leakage`. The gap is the average of each violating listing's worst stored channel gap. | Amazon leakage writer not named. Walmart: `map_leakage_walmart`. Musician's Friend: `map_parity_musiciansfriend`. | partial reading |
 | MAP Leakage satellite, tooltip | "Average worst stored price gap -$209.47. This is a price gap, not a revenue estimate." Then: "MAP leakage is stored for 1,013 of 1,030 listings. 532 stored listings are below MAP. 17 listings have a price and no stored MAP comparison, so they are missing from this count and are not counted as zero. This is not a final count." | 1,013 rows have at least one channel leakage. 17 have none. Every retail row has an `offer_price`, so those 17 are the undecided rows. 17 rows also have a null `map_price`. | Same as the MAP satellite. | partial reading |
@@ -76,9 +76,9 @@ The Channels tag matches stored prices, not checks: the strings that include MF 
 
 ### Suppressed Listings tab
 
-The callout explains that a listing at MAP can still have no Featured Offer when the offer, including shipping, is above the Competitive External Price. Amazon does not name that retailer.
+The callout explains that a listing at MAP can still have no Buy Box when the offer, including shipping, is above the Competitive External Price. Amazon does not name that retailer.
 
-The badge is **47**. The table lists those 47 rows. Columns Fender sees: Listing, Offer price, Competitive External Price, Featured Offer withheld, Above benchmark. The gap is the offer minus the Competitive External Price. Withheld is **Yes** on these rows because the list requires the flag to be true.
+The badge is **47**. The table lists those 47 rows. Columns Fender sees: Listing, Offer price, Competitive External Price, Buy Box withheld, Above benchmark. The gap is the offer minus the Competitive External Price. Withheld is **Yes** on these rows because the list requires the flag to be true.
 
 Those 47 are a confirmed set inside an unfinished audit. The screen itself says the 47 are not a final count, because 21 listings have no withheld flag. Status for the number on the badge: **partial reading**.
 
@@ -114,17 +114,17 @@ The count is the stored list of checked listings with at least one missing Amazo
 
 The callout says a stronger unified review record does not guarantee a higher rank or an AI recommendation. That is explanation, not a measured rank change.
 
-### Widgets that open Portfolio Retail
+### Widgets that open Catalog Health
 
 | Widget | Words Fender sees | Opens | Table and column | Writer | Status |
 | --- | --- | --- | --- | --- | --- |
 | MAP violations | **532**. "Listings below MAP in this partial listing read. This is not a final count." | MAP | Same 532 as the MAP summary. This widget uses the retail reading, not `canvas_metrics.map_violation_skus`. | See the MAP satellite. | partial reading |
 | Average Amazon Price Drift | **-$221.19**. "Across 456 ASINs below MAP on Amazon". | MAP | `leakage_amount` | Not named. | confirmed issue |
-| Confirmed Amazon 1P Buy Box | **7.9%**. "81 1P vs 857 3P". | Retail Overview | `buybox_status`. 81 are `Amazon 1P`, 857 are `3P Confirmed`, 66 are `Unknown/Not Harvested`, 26 are `No Active Offer`. The percent is 81 of all 1,030 retail rows, rounded to one decimal. None of the rows are still on the column default `Fender 1P Win`. This is not the Featured Offer withheld flag. | Not named. `buybox_seller_harvester` last ran at 2026-10-07 23:30:18 UTC and processed 0. | confirmed issue |
+| Confirmed Amazon 1P Buy Box | **7.9%**. "81 1P vs 857 3P". | Retail Overview | `buybox_status`. 81 are `Amazon 1P`, 857 are `3P Confirmed`, 66 are `Unknown/Not Harvested`, 26 are `No Active Offer`. The percent is 81 of all 1,030 retail rows, rounded to one decimal. None of the rows are still on the column default `Fender 1P Win`. This is not the Buy Box withheld flag. | Not named. `buybox_seller_harvester` last ran at 2026-10-07 23:30:18 UTC and processed 0. | confirmed issue |
 | Seller Data Harvested | **1,030**. "28.6% of catalog". | Retail Overview | `command.fmic_electric_catalog.buybox_checked_at`. 1,030 of 3,599 catalog rows have a timestamp, from 2026-10-01 16:00:43 UTC through 2026-10-07 23:00:21 UTC. | `buybox_seller_harvester` is the named seller job. Its latest run processed 0 and did not move that newest timestamp. | partial reading |
 | Stranded Customer Reviews | **Pending data** | Catalog Governance | `reviews_count`, then null in `canvas_metrics.bundle_reviews` | No writer found. | not measured |
 
-The label "Confirmed Amazon 1P Buy Box" still says Buy Box. The retail panels say Featured Offer. Both are on screen. New writing says Featured Offer.
+The primary client name for Amazon's purchasing button is Buy Box. Tooltips may note that Amazon also calls it the Featured Offer. Database columns such as `featured_offer_state` keep the internal name.
 
 ## AI Readiness
 
@@ -274,7 +274,7 @@ That statistic is not a stored price of zero. The screen already hides a channel
 
 | Reading | Writer |
 | --- | --- |
-| Competitive External Price and Featured Offer withheld | Not named. The columns exist on `command.fmic_retail_buybox_map`. No function in this database writes them, and no `job_key` names them. |
+| Competitive External Price and Buy Box withheld (columns still `featured_offer_*`) | Not named. The columns exist on `command.fmic_retail_buybox_map`. No function in this database writes them, and no `job_key` names them. |
 | Walmart price, leakage, URL, checked time | `map_leakage_walmart` |
 | Musician's Friend price, leakage, checked time | `map_parity_musiciansfriend` |
 | Spec rows, including fender.com findability and Amazon completeness | `spec_readiness` |

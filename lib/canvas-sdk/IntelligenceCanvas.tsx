@@ -19,6 +19,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           tourRadius={ctx.tourRadius}
           tourCategory={ctx.tourCategory}
           onFocusNode={ctx.focusNode}
+          onInspectBubble={ctx.inspectBubble}
           onResetView={ctx.resetView}
           overviewNonce={ctx.overviewNonce}
           focusedSpokeId={ctx.focusedSpokeId}
@@ -27,6 +28,7 @@ export function IntelligenceCanvas({ spec }: { spec: CanvasSpec }) {
           mapExiting={ctx.mapExiting}
           mapEntering={ctx.mapEntering}
           columnRailExiting={ctx.columnRailExiting}
+          heldGroupId={ctx.heldGroupId}
           onShowTooltip={ctx.showTooltip}
           onHideTooltip={ctx.hideTooltip}
         />

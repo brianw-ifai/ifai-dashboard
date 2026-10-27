@@ -11,10 +11,6 @@ import {
 } from "@/lib/fender-canvas/portfolio-retail-display";
 import { primarySpoke, satelliteNode } from "@/lib/fender-canvas/primary-spoke-layout";
 
-/** Shown until Action Items and Strategy Roadmap are wired to live data. */
-export const EXAMPLE_BUBBLE_NOTE =
-  "The information in this bubble is not optimized to live data, and is simply a visual example of what will eventually be displayed.";
-
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
 export function buildLiveNodes(
@@ -129,13 +125,7 @@ export function buildLiveNodes(
       stats: [`${metrics.phaseOneLift.value} est.`, metrics.enterprisePotential.value],
       meta: metrics.enterprisePotential.value + " Enterprise",
       spokeId: "suggestions",
-      tooltip: {
-        // title: "Action Items",
-        // desc: `Phase 1 estimate ${metrics.phaseOneLift.value}. Enterprise estimate ${metrics.enterprisePotential.value}.`,
-        title: "",
-        desc: EXAMPLE_BUBBLE_NOTE,
-        hasMoreInfo: false,
-      },
+      tooltip: { title: "", desc: "" },
     },
     {
       ...primarySpoke("spoke-roadmap"),
@@ -143,13 +133,7 @@ export function buildLiveNodes(
       title: "Strategy Roadmap",
       stats: ["90 Days", "3 Phases"],
       spokeId: "roadmap",
-      tooltip: {
-        // title: "90-Day Portfolio Roadmap",
-        // desc: headlineSentence(headline),
-        title: "",
-        desc: EXAMPLE_BUBBLE_NOTE,
-        hasMoreInfo: false,
-      },
+      tooltip: { title: "", desc: "" },
     },
     {
       id: "hub",
@@ -158,7 +142,7 @@ export function buildLiveNodes(
       r: 98,
       status: "danger",
       variant: "hub",
-      title: "Brand Portfolio",
+      title: "Summary",
       stats: [
         `${formatInt(m.catalog_skus)} SKUs`,
         `${formatInt(bundle.divisions.length || m.division_count)} Divisions`,
@@ -167,8 +151,8 @@ export function buildLiveNodes(
       meta: "Click for Master View",
       spokeId: "hub",
       tooltip: {
-        title: "Brand Portfolio Overview",
-        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for executive briefing and division performance.`,
+        title: "Summary",
+        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for Briefing and Performance.`,
       },
     },
   ];

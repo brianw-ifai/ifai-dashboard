@@ -73,6 +73,16 @@ export function useCanvasCamera({
     [runCameraAnimation, viewBoxToLocal, viewportRef],
   );
 
+  /** Slide the map by a screen-pixel offset, keeping the current zoom. */
+  const panBy = useCallback(
+    (dx: number, dy: number) => {
+      pan.current.x += dx;
+      pan.current.y += dy;
+      runCameraAnimation();
+    },
+    [runCameraAnimation],
+  );
+
   const frameOverview = useCallback(() => {
     pan.current.scale = 1;
     pan.current.x = 0;
@@ -121,6 +131,7 @@ export function useCanvasCamera({
     transform,
     applyTransform,
     framePoint,
+    panBy,
     frameOverview,
     frameOverviewInstant,
     zoomBy,
