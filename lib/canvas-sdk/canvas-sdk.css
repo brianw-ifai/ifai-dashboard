@@ -4046,6 +4046,44 @@
       margin: 0;
     }
 
+    /* Five outcome heroes in one row; wrap when the panel is narrow. */
+    .findability-leads {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .findability-lead-card {
+      flex: 1 1 160px;
+      min-width: 148px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .findability-lead-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      max-width: 100%;
+    }
+
+    .findability-lead-figures {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .findability-lead-ratio {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
     .findability-outcomes {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
@@ -4592,6 +4630,13 @@
     .citation-pie-disc-accuracy {
       width: 48px;
       height: 48px;
+    }
+
+    /* Findability outcome heroes only. 30% larger than the 48px accuracy disc.
+       Citation-tab discs stay at 170px / 220px. */
+    .citation-pie-disc-findability {
+      width: 62px;
+      height: 62px;
     }
 
     .citation-pie-disc-mix,

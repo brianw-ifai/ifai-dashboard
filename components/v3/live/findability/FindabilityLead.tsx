@@ -2,20 +2,101 @@
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import {
-  exactPageFigure,
-  exactPageLeadPie,
-  exactPageLeadTip,
-  exactPageShareColor,
+  findabilityLeadBuckets,
+  outcomeLeadPie,
+  outcomeLeadTip,
+  outcomeRatioFigure,
+  outcomeShareColor,
+  outcomeShareFigure,
 } from "@/lib/findability/lead";
-import { OUTCOME_DEFINITION, OUTCOME_LABEL } from "@/lib/findability/copy";
-import type { OutcomeCounts } from "@/lib/findability/outcomes";
+import { OUTCOME_DEFINITION, OUTCOME_LABEL, bucketLabel } from "@/lib/findability/copy";
+import type { FindabilityBucket, OutcomeCounts } from "@/lib/findability/outcomes";
 
-const LABEL = OUTCOME_LABEL.exact_official_product;
-const DEFINITION = OUTCOME_DEFINITION.exact_official_product;
+const FINDABILITY_PIE_SIZE = "citation-pie-disc citation-pie-disc-findability";
+
+function outcomeLabel(bucket: FindabilityBucket): string {
+  return bucket === "other" ? bucketLabel("other") : OUTCOME_LABEL[bucket];
+}
+
+function outcomeDefinition(bucket: FindabilityBucket): string | null {
+  return bucket === "other" ? null : OUTCOME_DEFINITION[bucket];
+}
 
 /**
- * Findability tab hero: exact official product pages out of this read, beside
- * a disc of exact versus the rest. Prose and outcome cards stay below.
+ * One Findability outcome hero: label, share percentage, N of M, and a disc of
+ * that outcome versus the rest of this read.
+ */
+function OutcomeHero({
+  counts,
+  bucket,
+}: {
+  counts: OutcomeCounts;
+  bucket: FindabilityBucket;
+}) {
+  const label = outcomeLabel(bucket);
+  const definition = outcomeDefinition(bucket);
+  const pct = outcomeShareFigure(counts, bucket);
+  const ratio = outcomeRatioFigure(counts, bucket);
+  const pie = outcomeLeadPie(counts, bucket);
+  const color = outcomeShareColor(counts, bucket);
+
+  return (
+    <div
+      className="content-box findability-lead-card"
+      data-findability-lead-outcome={bucket}
+    >
+      <div>
+        {definition ? (
+          <span
+            className="ifai-term"
+            data-ifai-tooltip-title={label}
+            data-ifai-tooltip-desc={definition}
+            tabIndex={0}
+            aria-label={`${label}: ${definition}`}
+          >
+            {label}
+          </span>
+        ) : (
+          <span>{label}</span>
+        )}
+      </div>
+      <div
+        data-findability-lead-row=""
+        className="findability-lead-row"
+      >
+        <div className="findability-lead-figures">
+          <span
+            className="ai-lead-figure"
+            style={color ? { color } : undefined}
+            data-findability-lead-figure=""
+            data-findability-lead-pct=""
+            data-findability-lead-count={counts[bucket]}
+            data-findability-lead-total={counts.total}
+            {...(bucket === "exact_official_product"
+              ? { "data-findability-exact": counts.exact_official_product }
+              : {})}
+          >
+            {pct}
+          </span>
+          <span className="findability-lead-ratio" data-findability-lead-ratio="">
+            {ratio}
+          </span>
+        </div>
+        {pie ? (
+          <CitationPieDisc
+            pie={pie}
+            sizeClass={FINDABILITY_PIE_SIZE}
+            tip={outcomeLeadTip(counts, bucket)}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Findability tab heroes: one bubble per outcome (and Other when present).
+ * Each shows share of this read, N of M, and a disc. Prose and count cards stay below.
  */
 export function FindabilityLead({ counts }: { counts: OutcomeCounts }) {
   if (counts.total <= 0) {
@@ -24,7 +105,7 @@ export function FindabilityLead({ counts }: { counts: OutcomeCounts }) {
         <span
           className="ai-lead-figure"
           data-findability-lead-figure=""
-          data-findability-headline=""
+          data-findability-empty=""
         >
           This official-page read has no listings.
         </span>
@@ -32,51 +113,13 @@ export function FindabilityLead({ counts }: { counts: OutcomeCounts }) {
     );
   }
 
-  const figure = exactPageFigure(counts);
-  const pie = exactPageLeadPie(counts);
-  const color = exactPageShareColor(counts);
+  const buckets = findabilityLeadBuckets(counts);
 
   return (
-    <div className="content-box" data-findability-lead="">
-      <div>
-        <span
-          className="ifai-term"
-          data-ifai-tooltip-title={LABEL}
-          data-ifai-tooltip-desc={DEFINITION}
-          tabIndex={0}
-          aria-label={`${LABEL}: ${DEFINITION}`}
-        >
-          {LABEL}
-        </span>
-      </div>
-      <div
-        data-findability-lead-row=""
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: 12,
-          marginTop: 4,
-          maxWidth: "100%",
-        }}
-      >
-        <span
-          className="ai-lead-figure"
-          style={color ? { color } : undefined}
-          data-findability-lead-figure=""
-          data-findability-exact={counts.exact_official_product}
-          data-findability-lead-total={counts.total}
-        >
-          {figure}
-        </span>
-        {pie ? (
-          <CitationPieDisc
-            pie={pie}
-            sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-            tip={exactPageLeadTip(counts)}
-          />
-        ) : null}
-      </div>
+    <div className="findability-leads" data-findability-lead="">
+      {buckets.map((bucket) => (
+        <OutcomeHero key={bucket} counts={counts} bucket={bucket} />
+      ))}
     </div>
   );
 }
