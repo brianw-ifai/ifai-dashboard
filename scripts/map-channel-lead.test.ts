@@ -118,34 +118,43 @@ test("MAP lead shows Not available* when MAP prices are not stored", () => {
   assert.equal(hero.percent, mapHero(snapshot({ mapLeakage: reading })).percent);
 });
 
-test("MAP panel leads with mapHero share above Summary and keeps the not-stored sentence", () => {
+test("MAP panel places notes beside the share and listings under the row", () => {
   const panel = read("components/v3/live/MapChannelPanel.tsx");
 
   assert.match(panel, /mapHero/);
   assert.match(panel, /data-map-lead/);
   assert.match(panel, /data-map-lead-percent/);
   assert.match(panel, /data-map-lead-ratio/);
+  assert.match(panel, /data-map-notes/);
+  assert.match(panel, /data-map-top/);
+  assert.match(panel, /data-map-listings/);
   assert.match(panel, /CitationPieDisc/);
   assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);
-  assert.match(panel, /hero\.explainer/);
-  assert.match(panel, /hero\.tip/);
+  assert.match(panel, /Average price gap/);
+  assert.match(panel, /Price gap, not revenue/);
   assert.match(panel, /MAP_PRICES_NOT_STORED/);
-  assert.match(panel, /Fender MAP prices have not been stored|MAP_PRICES_NOT_STORED/);
+  assert.match(panel, /width:\s*["']fit-content["']/);
+  assert.match(panel, /alignItems:\s*["']flex-start["']/);
 
-  const leadAt = panel.indexOf("data-map-lead");
-  const summaryAt = panel.indexOf("content-box-title\">Summary");
-  assert.ok(leadAt > 0, "MAP lead wrapper is present");
-  assert.ok(summaryAt > 0, "Summary box is present");
-  assert.ok(leadAt < summaryAt, "MAP lead appears before Summary in source");
-
+  assert.doesNotMatch(panel, /content-box-title">Summary/);
+  assert.doesNotMatch(panel, /Listings below MAP/);
+  assert.doesNotMatch(panel, /Stored channel leakage below MAP/);
   assert.doesNotMatch(panel, /data-ifai-open/);
   assert.doesNotMatch(panel, /data-ifai-tab/);
   assert.doesNotMatch(panel, /\u2014/);
   assert.doesNotMatch(panel, /lost revenue/i);
   assert.doesNotMatch(panel, /retainer|IntoFocus fee|service fee/i);
+
+  const topAt = panel.indexOf("data-map-top");
+  const leadAt = panel.indexOf("data-map-lead");
+  const notesAt = panel.indexOf("data-map-notes");
+  const listingsAt = panel.indexOf("data-map-listings");
+  assert.ok(topAt > 0 && leadAt > 0 && notesAt > 0 && listingsAt > 0);
+  assert.ok(leadAt < notesAt, "share lead precedes notes in source");
+  assert.ok(notesAt < listingsAt, "notes precede the listings block in source");
 
   const lines = panel.split("\n").length;
   assert.ok(lines <= 400, `MapChannelPanel.tsx is ${lines} lines`);
