@@ -1530,6 +1530,49 @@
       margin-top: 6px;
     }
 
+    /* Competitor Wins tab: one horizontal mark per brand under the N-of-M hero. */
+    .ai-competitor-win-bars {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .ai-competitor-win-bars > li + li {
+      margin-top: 8px;
+    }
+
+    .ai-competitor-win-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px 12px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .ai-competitor-win-meta strong {
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .ai-competitor-win-track {
+      display: block;
+      width: 100%;
+      height: 12px;
+      margin-top: 4px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--border-color) 70%, transparent);
+      overflow: hidden;
+    }
+
+    .ai-competitor-win-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      min-width: 4px;
+    }
+
     .ai-why-not {
       margin-top: 8px;
       font-size: 13px;
