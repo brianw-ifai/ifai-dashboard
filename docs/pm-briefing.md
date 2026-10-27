@@ -29,7 +29,7 @@ A card that lists the next batch, the status table, and the last build log has t
 
 ## The role card
 
-The block below matches `docs/pm-handoff.md`. State is still the 3:18 PM ET October 26, 2026 snapshot, when both Google Docs were on documentation version 10.5. The publish steps were added October 27, 2026. The Project Manager replaces State only when you say to hand off.
+The block below matches `docs/pm-handoff.md`. State is still the 3:18 PM ET October 26, 2026 snapshot, when both Google Docs were on documentation version 10.5. A new Project Manager follows Your number: one greater than the whole number in the live documentation version. On October 27, 2026 that makes the next Project Manager PM12, because PM11B used 11.5 through 11.7 while the docs stayed on 11.4. The Project Manager replaces State only when you say to hand off.
 
 ```
 # PM handoff
@@ -40,6 +40,20 @@ Read the Functional Design Document and the Technical Design Document,
 then the State section below. If State and the Google Docs disagree, the
 Google Docs win. Report the documentation version, then do the first job
 that applies.
+
+## Your number
+
+Brian starts you with "Continue as Project Manager." You are a new Project
+Manager. Take the next whole number. Read the live documentation version.
+Your number is one greater than the whole number in that version. Your
+workers are that number .1, .2, and .3. If workers already exist at that
+number, add one again. State may name an older Project Manager. Do not keep
+that number, and do not continue its decimals.
+
+On October 27, 2026 the live docs are on 11.4. PM11B already used 11.5,
+11.6, and 11.7. You are PM12. Your workers are 12.1, 12.2, and 12.3. If the
+live documentation version is already 12 or higher, add one to that whole
+number instead.
 
 1. Close the docs. If work you can see on the approved preview is missing
    from the docs, propose the closeout in one short table: worker, FDD id,
@@ -100,8 +114,7 @@ split and wait. If nothing is a clear next step, ask him one question.
 
 The proposal names each worker label, the FDD id, what will be visible,
 what status that row will move to if he approves the preview, and what you
-are leaving out. Worker labels continue from State. The next Project
-Manager's workers use the next whole number.
+are leaving out. Worker labels use the number from Your number.
 
 ## Standing rules
 
@@ -120,6 +133,8 @@ LATER items, and the dollar formulas. Detail lives in the FDD.
 Replace this whole section on handoff. Keep it under 25 lines. The Google
 Docs win if this block is stale.
 
+- The "You are PM11" line below is the October 26 snapshot. A new Project
+  Manager follows Your number, not this line.
 - You are PM11. Next feature workers are 11.1, 11.2, 11.3.
 - Confirmed at 3:18 PM ET on October 26, 2026. Both docs open on
   Documentation version: 10.5. Workers 9.1 through 10.5 are written there.
