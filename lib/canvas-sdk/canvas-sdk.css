@@ -4411,6 +4411,13 @@
       height: 170px;
     }
 
+    /* Product Fact Checks Accuracy lead only. Keeps the rate beside the disc
+       inside the explainer's height; citation-tab discs stay at 170px. */
+    .citation-pie-disc-accuracy {
+      width: 48px;
+      height: 48px;
+    }
+
     .citation-pie-disc-mix,
     .citation-pie-disc-brands {
       width: 220px;

@@ -73,26 +73,34 @@ function FactChecks({ snapshot }: { snapshot: AiSearchSnapshot }) {
               gap: "20px 28px",
             }}
           >
-            <div data-ai-accuracy-figure-col style={{ flex: "0 0 auto", maxWidth: "100%" }}>
+            <div
+              data-ai-accuracy-figure-col
+              style={{
+                display: "flex",
+                flex: "0 0 auto",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 12,
+                maxWidth: "100%",
+              }}
+            >
               <span
                 className="ai-lead-figure"
                 data-ai-accuracy-figure
                 style={{
                   color: rateColor,
-                  fontSize: "clamp(36px, 4vw, 56px)",
+                  fontSize: "clamp(22px, 2.2vw, 28px)",
                   fontWeight: 800,
                   lineHeight: 1.05,
                 }}
               >
                 {accuracy.rate} Accuracy
               </span>
-              <div style={{ marginTop: 14 }}>
-                <CitationPieDisc
-                  pie={pie}
-                  sizeClass="citation-pie-disc citation-pie-disc-owned"
-                  tip={factCheckAccuracyPieTip(coverage)}
-                />
-              </div>
+              <CitationPieDisc
+                pie={pie}
+                sizeClass="citation-pie-disc citation-pie-disc-accuracy"
+                tip={factCheckAccuracyPieTip(coverage)}
+              />
             </div>
             <div style={{ flex: "1 1 280px", minWidth: 0 }}>{explainer}</div>
           </div>
