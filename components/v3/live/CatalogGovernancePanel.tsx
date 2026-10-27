@@ -56,21 +56,6 @@ function reasonCopy(row: UnnestedBundleOpportunity): string {
   return `is_bundle is true and parent ASIN ${row.parentAsin ?? "stored"} cannot nest this bundle.`;
 }
 
-function CountLine({ reading, noun }: { reading: RetailReading<unknown>; noun: string }) {
-  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
-  return (
-    <>
-      <div className="metric-card-val">
-        {reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount)}
-      </div>
-      <span className="metric-card-sub">{noun}</span>
-      {showMissing && reading.missingMessage ? (
-        <p className="retail-missing">{reading.missingMessage}</p>
-      ) : null}
-    </>
-  );
-}
-
 function Pager({
   page,
   total,
@@ -169,7 +154,7 @@ function AmazonSpecGapCount({ reading }: { reading: RetailReading<unknown> }) {
   const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
   const count = reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount);
   return (
-    <div className="content-box">
+    <div data-catalog-governance-spec-gap="">
       <button
         type="button"
         className="retail-finding-hit"
@@ -192,12 +177,16 @@ function AmazonSpecGapCount({ reading }: { reading: RetailReading<unknown> }) {
 
 /**
  * Same unnested-bundle share as Retail Overview: percentage, N of M, and disc.
- * Static in-tab lead (not a navigation button). Retail Overview remains the click path.
+ * Card width hugs the figure. Static in-tab lead (not a navigation button).
  */
 function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
   const hero = catalogHero(snapshot);
   return (
-    <div className="content-box findability-lead-card" data-catalog-governance-lead="">
+    <div
+      className="content-box findability-lead-card"
+      data-catalog-governance-lead=""
+      style={{ flex: "0 0 auto", width: "fit-content", maxWidth: "100%" }}
+    >
       <div>
         <span>{hero.label}</span>
       </div>
@@ -219,6 +208,27 @@ function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot
   );
 }
 
+/** Explainer and Amazon spec-gap control share one notes column beside the hero. */
+function CatalogGovernanceNotes({ specs }: { specs: RetailReading<unknown> }) {
+  return (
+    <div
+      className="content-box"
+      data-catalog-governance-notes=""
+      style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
+    >
+      <div className="ceo-callout" style={{ margin: 0 }}>
+        <div className="ceo-callout-header">
+          <span>What is catalog governance?</span>
+        </div>
+        <div className="ceo-callout-body">
+          <DefinedCopy text={CATALOG_GOVERNANCE_EXPLAINER} />
+        </div>
+      </div>
+      <AmazonSpecGapCount reading={specs} />
+    </div>
+  );
+}
+
 export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
@@ -233,29 +243,17 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
 
   return (
     <div className="catalog-governance retail-surface">
-      <CatalogGovernanceLead snapshot={read.snapshot} />
-
-      <div className="ceo-callout">
-        <div className="ceo-callout-header">
-          <span>What is catalog governance?</span>
-        </div>
-        <div className="ceo-callout-body">
-          <DefinedCopy text={CATALOG_GOVERNANCE_EXPLAINER} />
-        </div>
+      <div
+        data-catalog-governance-lead-row=""
+        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
+      >
+        <CatalogGovernanceLead snapshot={read.snapshot} />
+        <CatalogGovernanceNotes specs={specs} />
       </div>
 
-      <div className="content-box">
-        <div className="content-box-title">
-          <span>Unnested bundles</span>
-        </div>
-        <CountLine reading={bundles} noun="Bundles in this retail read with no usable parent ASIN" />
-        <p className="retail-missing">
-          This group lists the bundles this retail read can show. It is not the full catalog.
-        </p>
+      <div className="content-box" style={{ marginTop: 12 }} data-catalog-governance-table="">
         {bundles.detail ? <BundleRows rows={opportunities} /> : null}
       </div>
-
-      <AmazonSpecGapCount reading={specs} />
     </div>
   );
 }
