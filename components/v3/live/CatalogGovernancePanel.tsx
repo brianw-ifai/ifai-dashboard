@@ -1,19 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import type {
+  PortfolioRetailSnapshot,
   RetailReading,
   UnnestedBundleOpportunity,
 } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { catalogHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const PAGE = 20;
+const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 const BUNDLE_COLUMNS: RetailColumn[] = [
   { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120, sort: "text" },
@@ -186,6 +190,35 @@ function AmazonSpecGapCount({ reading }: { reading: RetailReading<unknown> }) {
   );
 }
 
+/**
+ * Same unnested-bundle share as Retail Overview: percentage, N of M, and disc.
+ * Static in-tab lead (not a navigation button). Retail Overview remains the click path.
+ */
+function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
+  const hero = catalogHero(snapshot);
+  return (
+    <div className="content-box findability-lead-card" data-catalog-governance-lead="">
+      <div>
+        <span>{hero.label}</span>
+      </div>
+      <div className="findability-lead-row">
+        <div className="findability-lead-figures">
+          <span className="ai-lead-figure" style={{ color: hero.color }}>
+            {hero.percent}
+          </span>
+          {hero.ratio ? (
+            <span className="findability-lead-ratio">{hero.ratio}</span>
+          ) : null}
+        </div>
+        {hero.pie ? (
+          <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
+        ) : null}
+      </div>
+      <span className="metric-card-sub">{hero.explainer}</span>
+    </div>
+  );
+}
+
 export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
@@ -200,6 +233,8 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
 
   return (
     <div className="catalog-governance retail-surface">
+      <CatalogGovernanceLead snapshot={read.snapshot} />
+
       <div className="ceo-callout">
         <div className="ceo-callout-header">
           <span>What is catalog governance?</span>
