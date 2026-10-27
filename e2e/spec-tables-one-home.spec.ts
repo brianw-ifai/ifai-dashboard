@@ -50,7 +50,8 @@ test("spec tables live on one surface each", async ({ page }) => {
 
   await canvas.openSpokeFromMap("Catalog Health");
   await canvas.openTab("Catalog Governance");
-  await expect(page.getByText("Unnested bundles", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-catalog-governance-lead]")).toBeVisible();
+  await expect(page.locator("[data-catalog-governance-notes]")).toBeVisible();
   await expect(page.getByText("Twin Amp Bundle")).toBeVisible();
   await expect(page.getByText("Missing Amazon spec fields")).toHaveCount(0);
   await expect(page.locator("#catalog-specs")).toHaveCount(0);
