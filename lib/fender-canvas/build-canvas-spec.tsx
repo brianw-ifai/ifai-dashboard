@@ -4,6 +4,7 @@ import { fenderCommandCenter } from "@/components/v3/command-center-data";
 import { fenderGlossary } from "@/components/v3/glossary";
 import { FENDER_METRICS } from "@/components/v3/fender-metrics";
 import { fenderStaticNodes } from "@/components/v3/fender-static-nodes";
+import { PromptsEditor } from "@/components/v3/prompts/PromptsEditor";
 import { spokeData } from "@/components/v3/spoke-data";
 import staticTourSteps from "@/data/fender-v3-tour.json";
 import graphLayout from "@/data/fender-v3-spokes.json";
@@ -60,6 +61,7 @@ export function buildFenderCanvasSpec(
   return defineCanvas({
     appearance: "iom",
     commandCenter,
+    promptsEditor: (close) => <PromptsEditor onClose={close} />,
     glossary: fenderGlossary,
     hubSlots: buildHubSlots({
       suppressed: retail.phase === "ready" ? retail.snapshot.suppressedListings : retail.phase,

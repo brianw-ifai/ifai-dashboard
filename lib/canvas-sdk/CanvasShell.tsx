@@ -35,6 +35,7 @@ import {
   Layout,
   ListChecks,
   Maximize2,
+  MessageSquareText,
   Minimize2,
   Moon,
   Route,
@@ -137,6 +138,8 @@ export function CanvasShell({ spec, children }: Props) {
     [spec.nodes],
   );
   const [lightTheme, setLightTheme] = useState(!iom);
+  const [promptsOpen, setPromptsOpen] = useState(false);
+  const closePrompts = useCallback(() => setPromptsOpen(false), []);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [activeSpoke, setActiveSpoke] = useState<string | null>(null);
@@ -1162,6 +1165,17 @@ export function CanvasShell({ spec, children }: Props) {
               </div>
             ) : null}
 
+            {spec.promptsEditor ? (
+              <button
+                className={`hdr-btn${promptsOpen ? " hdr-btn-active" : ""}`}
+                onClick={() => setPromptsOpen(true)}
+                title="View and edit the AI-Search prompts"
+              >
+                <MessageSquareText size={12} />
+                <span>Prompts</span>
+              </button>
+            ) : null}
+
             {commandCenter ? (
               <button
                 className={`hdr-btn hdr-btn-priorities${showingCommand ? " hdr-btn-active" : ""}`}
@@ -1563,6 +1577,7 @@ export function CanvasShell({ spec, children }: Props) {
         </div>
         </div>
       </div>
+      {promptsOpen && spec.promptsEditor ? spec.promptsEditor(closePrompts) : null}
       {iom ? <IomCursor rootRef={rootRef} enabled /> : null}
     </div>
   );

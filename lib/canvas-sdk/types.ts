@@ -240,6 +240,8 @@ export type CanvasSpec = {
   drilldownExpandedWidth?: number;
   /** Priority queue shown above the spokes. Omit to keep the panel spoke-only. */
   commandCenter?: CommandCenterSpec;
+  /** Renders a "Prompts" header button (left of Priorities) that opens this content in a dialog. */
+  promptsEditor?: (close: () => void) => ReactNode;
   /** Jargon -> plain-language definition, shown on hover in the panel copy. */
   glossary?: Record<string, string>;
   filters?: CanvasFilter[];
