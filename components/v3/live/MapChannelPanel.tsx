@@ -9,7 +9,7 @@ import {
   listingsQuery,
   retailListingHeadCountQuery,
 } from "@/lib/canvasData";
-import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
+import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   mapTabModel,
   type ChannelPriceRow,
@@ -26,6 +26,8 @@ import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
+type MapChannelLine = { key: string; name: string; count: number };
 
 async function loadMapRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
   const rows: MapSourceRow[] = [];
@@ -82,14 +84,18 @@ function mapPricesNotStored(read: RetailCanvasRead): boolean {
 }
 
 /**
- * MAP tab hero: same MAP leakage share as Retail Overview (percent, N of M, disc).
+ * Compact MAP share: label, percent, N of M, disc. Width fits the figure only.
  * Static block; Retail Overview remains the click path into this tab.
  */
 function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
   if (read.phase !== "ready") return null;
   const hero = mapHero(read.snapshot);
   return (
-    <div className="content-box findability-lead-card" data-map-lead="" style={{ marginTop: 12 }}>
+    <div
+      className="content-box findability-lead-card"
+      data-map-lead=""
+      style={{ flex: "0 0 auto", width: "fit-content", maxWidth: "100%", marginTop: 0 }}
+    >
       <div data-map-lead-label="">{hero.label}</div>
       <div className="findability-lead-row" data-map-lead-row="">
         <div className="findability-lead-figures">
@@ -120,7 +126,21 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
   );
 }
 
-function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
+/**
+ * Notes beside the share: average price gap, not-stored sentence, channel lines.
+ * No Summary heading and no duplicative below-MAP count.
+ */
+function MapNotes({
+  read,
+  channels,
+  walmartMissing,
+  musiciansFriendLastRunAt,
+}: {
+  read: RetailCanvasRead;
+  channels: MapChannelLine[];
+  walmartMissing: number | null;
+  musiciansFriendLastRunAt?: string | null;
+}) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
   }
@@ -129,38 +149,82 @@ function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
   }
   if (mapPricesNotStored(read)) {
     return (
-      <p className="retail-missing">
+      <p className="retail-missing" data-map-notes-not-stored="">
         <DefinedCopy text={MAP_PRICES_NOT_STORED} />
       </p>
     );
   }
-  const reading = read.snapshot.mapLeakage;
-  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
-  const gap = reading.detail?.averageLeakage ?? null;
+
+  const gap = read.snapshot.mapLeakage.detail?.averageLeakage ?? null;
+
   return (
     <>
-      <div className="metric-grid-2" style={{ marginTop: 8 }}>
-        <div className="metric-card-sm">
-          <span className="metric-card-label">Listings below MAP</span>
-          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-            {reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount)}
-          </div>
-          <span className="metric-card-sub">Stored channel leakage below MAP</span>
+      <div className="metric-card-sm" data-map-notes-gap="">
+        <span className="metric-card-label">Average price gap</span>
+        <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
+          {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
         </div>
-        <div className="metric-card-sm">
-          <span className="metric-card-label">Average price gap</span>
-          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-            {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
-          </div>
-          <span className="metric-card-sub">Price gap, not revenue</span>
-        </div>
+        <span className="metric-card-sub">Price gap, not revenue</span>
       </div>
-      {showMissing && reading.missingMessage ? (
-        <p className="retail-missing">
-          <DefinedCopy text={reading.missingMessage} />
-        </p>
+      {channels.length ? (
+        <ul className="tour-card-list" style={{ margin: "12px 0 0" }} data-map-notes-channels="">
+          {channels.map((channel) => (
+            <li key={channel.key}>
+              <strong>{channel.name}</strong>
+              {" · "}
+              <DefinedCopy
+                text={channelSummaryText(
+                  channel.count,
+                  channelReadingNote(channel.name, {
+                    walmartMissing,
+                    musiciansFriendLastRunAt,
+                  }),
+                )}
+              />
+            </li>
+          ))}
+        </ul>
       ) : null}
     </>
+  );
+}
+
+function MapTopRow({
+  read,
+  channels,
+  walmartMissing,
+  musiciansFriendLastRunAt,
+}: {
+  read: RetailCanvasRead;
+  channels: MapChannelLine[];
+  walmartMissing: number | null;
+  musiciansFriendLastRunAt?: string | null;
+}) {
+  return (
+    <div
+      data-map-top=""
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 12,
+        alignItems: "flex-start",
+        marginTop: 12,
+      }}
+    >
+      <MapLeakageLead read={read} />
+      <div
+        className="content-box"
+        data-map-notes=""
+        style={{ flex: "1 1 220px", minWidth: 180, marginTop: 0 }}
+      >
+        <MapNotes
+          read={read}
+          channels={channels}
+          walmartMissing={walmartMissing}
+          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -177,6 +241,7 @@ export function MapChannelPanel({
   const [failed, setFailed] = useState(false);
 
   const pricesNotStored = mapPricesNotStored(read);
+  const musiciansFriendLastRunAt = musiciansFriendFreshness?.last_run_at;
 
   useEffect(() => {
     if (read.phase === "loading") return;
@@ -200,10 +265,13 @@ export function MapChannelPanel({
   if (failed) {
     return (
       <RetailSurface>
-        <MapLeakageLead read={read} />
-        <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Summary</div>
-          <MapReadingSummary read={read} />
+        <MapTopRow
+          read={read}
+          channels={[]}
+          walmartMissing={walmartMissing}
+          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        />
+        <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
           <p className="retail-missing">Below-MAP rows are not available.</p>
         </div>
       </RetailSurface>
@@ -213,10 +281,13 @@ export function MapChannelPanel({
   if (!rows) {
     return (
       <RetailSurface>
-        <MapLeakageLead read={read} />
-        <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Summary</div>
-          <MapReadingSummary read={read} />
+        <MapTopRow
+          read={read}
+          channels={[]}
+          walmartMissing={walmartMissing}
+          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        />
+        <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
           <p className="retail-missing">Loading MAP rows…</p>
         </div>
       </RetailSurface>
@@ -224,57 +295,38 @@ export function MapChannelPanel({
   }
 
   const model = mapTabModel(rows, channelPrices);
-  const summaryChannels = [
-    ...model.channels.map((channel) => ({
-      key: channel.name,
-      name: channel.name,
-      count: channel.count,
-    })),
-    ...model.extraChannels
-      .filter((channel) => channel.count > 0)
-      .map((channel) => ({
-        key: channel.channel,
-        name: channel.name,
-        count: channel.count,
-      })),
-  ];
+  const summaryChannels: MapChannelLine[] = pricesNotStored
+    ? []
+    : [
+        ...model.channels.map((channel) => ({
+          key: channel.name,
+          name: channel.name,
+          count: channel.count,
+        })),
+        ...model.extraChannels
+          .filter((channel) => channel.count > 0)
+          .map((channel) => ({
+            key: channel.channel,
+            name: channel.name,
+            count: channel.count,
+          })),
+      ];
 
   return (
     <RetailSurface>
-      <MapLeakageLead read={read} />
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Summary</div>
-        <MapReadingSummary read={read} />
-        {!pricesNotStored && summaryChannels.length ? (
-          <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
-            {summaryChannels.map((channel) => (
-              <li key={channel.key}>
-                <strong>{channel.name}</strong>
-                {" · "}
-                <DefinedCopy
-                  text={channelSummaryText(
-                    channel.count,
-                    channelReadingNote(channel.name, {
-                      walmartMissing,
-                      musiciansFriendLastRunAt: musiciansFriendFreshness?.last_run_at,
-                    }),
-                  )}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="content-box-title" style={{ marginTop: 14 }}>
-          Listings
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <MapListingsTable
-            rows={rows}
-            model={model}
-            channelPrices={channelPrices}
-            pricesNotStored={pricesNotStored}
-          />
-        </div>
+      <MapTopRow
+        read={read}
+        channels={summaryChannels}
+        walmartMissing={walmartMissing}
+        musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+      />
+      <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
+        <MapListingsTable
+          rows={rows}
+          model={model}
+          channelPrices={channelPrices}
+          pricesNotStored={pricesNotStored}
+        />
       </div>
     </RetailSurface>
   );
