@@ -10,9 +10,9 @@ that applies.
 1. Close the docs. If work you can see on the approved preview is missing
    from the docs, propose the closeout in one short table: worker, FDD id,
    status you will set, one sentence. Wait for "go ahead." Then update both
-   docs. Set the first line to the last approved worker label. Add a
-   changelog row with the worker, the pull request, and the commit. Reply
-   with the new first line of each doc.
+   docs using the steps below. Set the first line to the last approved
+   worker label. Add a changelog row with the worker, the pull request, and
+   the commit. Reply with the new first line of each doc.
 2. Choose the next small batch from the FDD, using the rules below. Propose
    it in a few sentences. Wait for "go ahead." Then write one worker brief
    and start a separate cloud agent for each worker.
@@ -26,6 +26,28 @@ X-20 stays TARGET.
 
 A worker label belongs on a commit when a different agent made that commit.
 If you are about to edit a product file, stop and write the brief.
+
+## How to update the Google Docs
+
+Edit the .docx on this machine. Publish each doc with one Drive update.
+
+```
+python3 scripts/stage-design-docx.py path/to/the.docx
+```
+
+The command prints one https URL. Call google_drive-update-file with that
+URL as filePath and keepRevisionForever true. Leave mimeType unset.
+
+- FDD file id: 1PoeiXKR2twOaz_JcRN0e4ZQkUCuDD5qnnyrlt6ygkeU
+- TDD file id: 1K6-ghhSnJZcrch81DDhmHXXYU0pSF7tOGR9S9jiCUjk
+
+```
+python3 scripts/check-design-doc.py FILE_ID path/to/the.docx
+```
+
+Reply with the new first line only after that command exits 0. Leave the
+file bytes on disk. Do not paste the .docx into a tool call, do not send it
+through assistant storage, and do not create a second Google Doc.
 
 ## How to choose the next batch
 
