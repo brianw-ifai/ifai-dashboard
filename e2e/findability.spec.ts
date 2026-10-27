@@ -189,27 +189,37 @@ test("the five outcome counts stay distinct and open the listings behind them", 
 
   await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
   await expect(table).toContainText("B00FAMILY");
-  await expect(table).toContainText("Not an exact product page");
+  await expect(table).toContainText("Official family page with 4 variants.");
   await expect(table).not.toContainText("B00ZEBRA");
+  await expect(table.locator("thead")).not.toContainText("How it is counted");
   await expect(table.locator("[data-findability-official-url]")).toHaveAttribute(
     "href",
     "https://brand.example/products/family",
   );
+  const skuHeader = table.locator("thead .ifai-term[data-ifai-tooltip-title='Variant SKU']");
+  await expect(skuHeader).toHaveAttribute(
+    "data-ifai-tooltip-desc",
+    "The brand's variant code stored with this official-page match. It is not the Amazon ASIN.",
+  );
+  await expect(skuHeader).toHaveAttribute("tabindex", "0");
+  await expect(skuHeader).not.toHaveAttribute("title");
 
   await page.locator("[data-findability-outcome='completed_not_found'] [data-findability-count]").click();
   await expect(table).toContainText("B00BUNDLE1");
-  await expect(table).toContainText("no defensible page");
+  await expect(table.locator("[data-findability-address='finished-without-page']")).toHaveText("not found");
+  await expect(table).toContainText("Search finished without a defensible official page.");
   await expect(table).toContainText("Yes");
 
   await page.locator("[data-findability-outcome='ambiguous_candidate'] [data-findability-count]").click();
   await expect(table).toContainText("B00AMBIG");
-  await expect(table).toContainText("No official page was accepted");
+  await expect(table.locator("[data-findability-address='ambiguous']")).toHaveText("not found");
 
   await page.locator("[data-findability-outcome='not_checked'] [data-findability-count]").click();
   await expect(table).toContainText("B00UNCHECKED");
-  await expect(table.locator("[data-findability-address='unchecked']")).toContainText("Not checked yet");
+  await expect(table.locator("[data-findability-address='unchecked']")).toHaveText("not checked");
   await expect(table.locator("[data-findability-address='unchecked']")).not.toContainText("no defensible page");
   await expect(table.locator("[data-findability-row='not_checked']")).not.toContainText("unsuccessful");
+  await expect(table.locator("[data-findability-row='not_checked']")).toContainText("None");
 });
 
 test("an empty official-page read does not describe unchecked as a finished search", async ({ page }) => {
