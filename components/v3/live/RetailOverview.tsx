@@ -3,65 +3,9 @@
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
-import { RetailFindingVisual } from "@/components/v3/live/RetailFindingVisual";
 import { RetailOverviewLead } from "@/components/v3/live/RetailOverviewLead";
-import { formatUsd } from "@/lib/fender-canvas/format";
-import {
-  RETAIL_FINDING_LABELS,
-  type PortfolioRetailSnapshot,
-} from "@/lib/fender-canvas/portfolio-retail";
-import { readingLabel, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
-
-function priceGap(snapshot: PortfolioRetailSnapshot): string | null {
-  const gap = snapshot.mapLeakage.detail?.averageLeakage;
-  if (gap == null) return null;
-  return `Average price gap ${formatUsd(gap, { signed: true })}. This is a price gap, not revenue.`;
-}
-
-function Findings({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
-  const suppressed = snapshot.suppressedListings.detail;
-  const map = snapshot.mapLeakage.detail;
-  const bundles = snapshot.unnestedBundles.detail;
-
-  return (
-    <div className="retail-finding-grid">
-      <RetailFindingVisual
-        label={readingLabel(
-          snapshot.suppressedListings,
-          RETAIL_FINDING_LABELS.suppressed_listings,
-        )}
-        tab={RETAIL_FINDING_LABELS.suppressed_listings}
-        reading={snapshot.suppressedListings}
-        coverage={
-          suppressed && suppressed.population > 0
-            ? { checked: suppressed.audited, total: suppressed.population }
-            : null
-        }
-      />
-      <RetailFindingVisual
-        label="MAP leakage"
-        tab={RETAIL_FINDING_LABELS.map_leakage}
-        reading={snapshot.mapLeakage}
-        extra={priceGap(snapshot)}
-        coverage={
-          map && map.population > 0 ? { checked: map.decided, total: map.population } : null
-        }
-      />
-      <RetailFindingVisual
-        label={RETAIL_FINDING_LABELS.unnested_bundles}
-        tab={RETAIL_FINDING_LABELS.unnested_bundles}
-        reading={snapshot.unnestedBundles}
-        extra="Bundles in this retail read with no usable parent ASIN."
-        coverage={
-          bundles && bundles.catalogBundles != null && bundles.catalogBundles > 0
-            ? { checked: bundles.bundlesInRead, total: bundles.catalogBundles }
-            : null
-        }
-      />
-    </div>
-  );
-}
 
 export function RetailOverview({
   read,
@@ -107,7 +51,6 @@ export function RetailOverview({
         </div>
       </div>
 
-      {read.phase === "ready" ? <Findings snapshot={read.snapshot} /> : null}
       {counts ? <FeaturedOfferReadings counts={counts} freshness={freshness} /> : null}
 
       <ExploreListings />

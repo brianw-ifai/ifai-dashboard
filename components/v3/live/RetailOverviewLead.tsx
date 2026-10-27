@@ -1,13 +1,63 @@
 "use client";
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
-import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
-import { retailOverviewLead } from "@/lib/fender-canvas/retail-overview-lead";
+import {
+  retailOverviewHeroes,
+  type RetailOverviewHeroModel,
+} from "@/lib/fender-canvas/retail-overview-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
+const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
 /**
- * First content on Retail Overview: large headline count beside a checked-population disc.
- * Matches the ai-lead-figure + CitationPieDisc language from AI Search tabs.
+ * One compact Retail Overview hero: label, share %, N of M, pie, short explainer.
+ * Click opens that finding's tab (same data-ifai-open path as the old finding cards).
+ */
+function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
+  return (
+    <div
+      className="retail-finding retail-overview-hero"
+      data-ifai-open="ecommerce"
+      data-ifai-tab={hero.tab}
+      data-retail-overview-hero={hero.id}
+    >
+      <button type="button" className="retail-finding-hit">
+        <span className="metric-card-label" data-retail-hero-label="">
+          {hero.label}
+        </span>
+        <span className="retail-overview-hero-row" data-retail-hero-row="">
+          <span className="retail-overview-hero-figures">
+            <span
+              className="ai-lead-figure"
+              data-retail-hero-percent=""
+              data-retail-hero-tone={hero.tone}
+              data-retail-hero-numerator={hero.numerator ?? ""}
+              data-retail-hero-denominator={hero.denominator ?? ""}
+              style={{ color: hero.color }}
+            >
+              {hero.percent}
+            </span>
+            {hero.ratio ? (
+              <span className="retail-overview-hero-ratio" data-retail-hero-ratio="">
+                {hero.ratio}
+              </span>
+            ) : null}
+          </span>
+          {hero.pie ? (
+            <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
+          ) : null}
+        </span>
+        <span className="metric-card-sub" data-retail-hero-explainer="">
+          {hero.explainer}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * First content on Retail Overview: three share heroes in one row.
+ * Matches the Findability percentage / ratio / pie idea in a short vertical budget.
  */
 export function RetailOverviewLead({ read }: { read: RetailCanvasRead }) {
   if (read.phase === "loading") {
@@ -17,45 +67,13 @@ export function RetailOverviewLead({ read }: { read: RetailCanvasRead }) {
     return <p className="retail-missing">The retail read could not be loaded.</p>;
   }
 
-  const lead = retailOverviewLead(read.snapshot);
+  const heroes = retailOverviewHeroes(read.snapshot);
 
   return (
-    <div className="content-box" data-retail-overview-lead="" data-retail-lead-finding={lead.findingId ?? "none"}>
-      <div className="metric-card-label" data-retail-lead-label="">
-        {lead.label}
-      </div>
-      <div
-        data-retail-lead-row=""
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: 12,
-          maxWidth: "100%",
-          marginTop: 4,
-        }}
-      >
-        <span
-          className="ai-lead-figure"
-          data-retail-lead-figure=""
-          data-retail-lead-tone={lead.tone}
-          style={{ color: lead.color }}
-        >
-          {lead.figure}
-        </span>
-        {lead.pie ? (
-          <CitationPieDisc
-            pie={lead.pie}
-            sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-            tip={lead.tip ?? undefined}
-          />
-        ) : null}
-      </div>
-      {lead.missingMessage ? (
-        <p className="retail-missing" data-retail-lead-missing="" style={{ marginTop: 8 }}>
-          <DefinedCopy text={lead.missingMessage} />
-        </p>
-      ) : null}
+    <div className="retail-overview-heroes" data-retail-overview-lead="">
+      {heroes.map((hero) => (
+        <RetailHeroCard key={hero.id} hero={hero} />
+      ))}
     </div>
   );
 }

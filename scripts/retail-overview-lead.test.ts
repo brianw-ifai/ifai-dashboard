@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
+import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
   mapLeakageFinding,
   selectRetailHeadline,
@@ -14,11 +15,10 @@ import {
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
 import {
-  retailHeadlineChecked,
-  retailHeadlinePie,
-  retailHeadlinePieTip,
-  retailHeadlineTone,
-  retailOverviewLead,
+  buyBoxHero,
+  catalogHero,
+  mapHero,
+  retailOverviewHeroes,
 } from "../lib/fender-canvas/retail-overview-lead.ts";
 
 const root = new URL("..", import.meta.url).pathname;
@@ -110,22 +110,7 @@ function snapshot(overrides: Partial<PortfolioRetailSnapshot> = {}): PortfolioRe
   return { ...merged, headline: selectRetailHeadline(merged) };
 }
 
-test("hero figure is the selectRetailHeadline issue count and merchant label", () => {
-  const snap = snapshot({
-    suppressedListings: suppressedListingsFinding([suppression(), present(), present()]),
-  });
-  const headline = selectRetailHeadline(snap);
-  assert.equal(headline?.findingId, "suppressed_listings");
-  assert.ok(headline?.reading.issueCount != null && headline.reading.issueCount > 0);
-
-  const lead = retailOverviewLead(snap);
-  assert.equal(lead.figure, String(headline!.reading.issueCount));
-  assert.equal(lead.label, headline!.reading.headlineLabel ?? headline!.label);
-  assert.equal(lead.tone, "danger");
-  assert.equal(lead.findingId, "suppressed_listings");
-});
-
-test("disc compares headline count with the rest of the checked population only", () => {
+test("Buy Box hero is withheld of current readings, not the monitored catalog", () => {
   const reading = suppressedListingsFinding([
     suppression(),
     present(),
@@ -133,101 +118,140 @@ test("disc compares headline count with the rest of the checked population only"
     notChecked(),
     notChecked(),
   ]);
-  assert.equal(reading.detail?.audited, 3);
-  assert.equal(reading.detail?.population, 5);
-  assert.equal(reading.issueCount, 1);
+  assert.equal(reading.detail?.counts.withheld, 1);
+  assert.equal(reading.detail?.counts.current, 3);
+  assert.equal(reading.detail?.counts.population, 5);
 
-  const snap = snapshot({ suppressedListings: reading });
-  const headline = selectRetailHeadline(snap);
-  assert.ok(headline);
-
-  const coverage = retailHeadlineChecked(headline);
-  assert.deepEqual(coverage, { checked: 3, population: 5 });
-
-  const pie = retailHeadlinePie(headline);
-  assert.ok(pie);
-  assert.equal(pie.total, 3);
+  const hero = buyBoxHero(snapshot({ suppressedListings: reading }));
+  assert.equal(hero.numerator, 1);
+  assert.equal(hero.denominator, 3);
+  assert.equal(hero.percent, formatPct(100 / 3));
+  assert.equal(hero.ratio, formatRatio(1, 3));
+  assert.ok(hero.pie);
+  assert.equal(hero.pie.total, 3);
   assert.equal(
-    pie.slices.reduce((sum, slice) => sum + slice.count, 0),
+    hero.pie.slices.reduce((sum, slice) => sum + slice.count, 0),
     3,
-    "unchecked listings must not appear as a fine slice",
+    "unchecked listings must not appear on the Buy Box pie",
   );
-  assert.deepEqual(
-    pie.slices.map((slice) => [slice.key, slice.count]),
+  assert.doesNotMatch(hero.tip ?? "", /of 5/);
+  assert.doesNotMatch(hero.explainer, /1,049 of 1,089|1049 of 1089|monitored listings/);
+  assert.match(hero.explainer, /no one-click offer/i);
+});
+
+test("MAP hero is below-MAP of listings with a stored MAP price", () => {
+  const reading = mapLeakageFinding([
+    mapRow(),
+    mapRow({ amz_leakage: 0, offer_price: 100 }),
+    mapRow({ amz_leakage: 5, offer_price: 105 }),
+    mapRow({ amz_leakage: null, offer_price: 90, map_price: null }),
+  ]);
+  assert.equal(reading.issueCount, 1);
+  assert.equal(reading.detail?.decided, 3);
+  assert.equal(reading.detail?.population, 4);
+
+  const hero = mapHero(
+    snapshot({
+      suppressedListings: suppressedListingsFinding([present()]),
+      mapLeakage: reading,
+    }),
+  );
+  assert.equal(hero.numerator, 1);
+  assert.equal(hero.denominator, 3);
+  assert.equal(hero.percent, formatPct(100 / 3));
+  assert.equal(hero.ratio, formatRatio(1, 3));
+  assert.ok(hero.pie);
+  assert.equal(hero.pie.total, 3);
+  assert.match(hero.explainer, /below MAP/i);
+  assert.doesNotMatch(hero.tip ?? "", /of 4/);
+});
+
+test("Catalog hero is unnested of bundles in this read, not catalog bundles", () => {
+  const reading = unnestedBundlesFinding(
     [
-      ["contradicted", 1],
-      ["matched", 2],
+      bundle({ asin: "B0000000A1", parent_asin: null }),
+      bundle({ asin: "B0000000A2", parent_asin: "B0000000ZZ" }),
+      bundle({ asin: "B0000000A3", parent_asin: "B0000000YY" }),
     ],
+    { catalogBundleCount: 20 },
   );
+  assert.equal(reading.issueCount, 1);
+  assert.equal(reading.detail?.bundlesInRead, 3);
+  assert.equal(reading.detail?.catalogBundles, 20);
 
-  const tip = retailHeadlinePieTip(headline);
-  assert.match(tip ?? "", /1 of 3|1 .+\. 2 checked/);
-  assert.match(tip ?? "", /3 of 5 listings were checked/);
+  const hero = catalogHero(
+    snapshot({
+      suppressedListings: suppressedListingsFinding([present()]),
+      unnestedBundles: reading,
+    }),
+  );
+  assert.equal(hero.numerator, 1);
+  assert.equal(hero.denominator, 3);
+  assert.equal(hero.percent, formatPct(100 / 3));
+  assert.ok(hero.pie);
+  assert.equal(hero.pie.total, 3);
+  assert.doesNotMatch(hero.explainer, /448 of 946|this read includes/i);
+  assert.match(hero.explainer, /reviews stay split/i);
 });
 
-test("a missing count shows Not available* and keeps the missing message", () => {
-  const snap = snapshot({
-    suppressedListings: suppressedListingsFinding(null),
-  });
-  const lead = retailOverviewLead(snap);
-  assert.equal(lead.figure, "Not available*");
-  assert.equal(lead.tone, "warning");
-  assert.ok(lead.missingMessage);
-  assert.equal(lead.pie, null);
-  assert.match(lead.missingMessage ?? "", /has not stored a reading|not been stored/i);
+test("a missing count shows Not available* and invents no zero", () => {
+  const heroes = retailOverviewHeroes(
+    snapshot({
+      suppressedListings: suppressedListingsFinding(null),
+      mapLeakage: mapLeakageFinding(null),
+      unnestedBundles: unnestedBundlesFinding(null),
+    }),
+  );
+  assert.equal(heroes.length, 3);
+  for (const hero of heroes) {
+    assert.equal(hero.percent, "Not available*");
+    assert.equal(hero.ratio, null);
+    assert.equal(hero.pie, null);
+    assert.equal(hero.numerator, null);
+  }
 });
 
-test("confirmed zeros across the rank show Catalog Health at 0 without inventing a disc", () => {
-  const lead = retailOverviewLead(snapshot());
-  assert.equal(lead.figure, "0");
-  assert.equal(lead.label, "Catalog Health");
-  assert.equal(lead.tone, "success");
-  assert.equal(lead.pie, null);
-  assert.equal(lead.missingMessage, null);
-});
-
-test("MAP headline uses decided as the checked population", () => {
-  const snap = snapshot({
-    suppressedListings: suppressedListingsFinding([present()]),
-    mapLeakage: mapLeakageFinding([
-      mapRow(),
-      mapRow({ amz_leakage: 0, offer_price: 100 }),
-      mapRow({ amz_leakage: null, offer_price: 90, map_price: null }),
-    ]),
-  });
-  // First finding is a confirmed zero (suppressed), so MAP is selected when it has issues.
-  // present() alone is available_with_zero for suppressed when fully classified.
-  const headline = selectRetailHeadline(snap);
-  assert.equal(headline?.findingId, "map_leakage");
-  assert.equal(retailHeadlineTone(headline!.reading), "danger");
-  const coverage = retailHeadlineChecked(headline!);
-  assert.ok(coverage);
-  assert.equal(coverage.checked, headline!.reading.detail && (headline!.reading.detail as { decided: number }).decided);
-  const pie = retailHeadlinePie(headline!);
-  assert.ok(pie);
-  assert.equal(pie.total, coverage.checked);
-});
-
-test("Retail Overview places the hero before the AI search essay", () => {
+test("Retail Overview places three heroes before the essay and drops the stacked cards", () => {
   const overview = read("components/v3/live/RetailOverview.tsx");
   const lead = read("components/v3/live/RetailOverviewLead.tsx");
+  const model = read("lib/fender-canvas/retail-overview-lead.ts");
+  const readings = read("components/v3/live/FeaturedOfferReadings.tsx");
+
   assert.match(overview, /RetailOverviewLead/);
   assert.match(overview, /Seller type: Partner-led/);
   assert.match(overview, /How do these retail findings change AI search\?/);
   assert.match(overview, /FeaturedOfferReadings/);
-  assert.match(overview, /retail-finding-grid|Findings/);
+  assert.doesNotMatch(overview, /RetailFindingVisual/);
+  assert.doesNotMatch(overview, /retail-finding-grid/);
 
   const heroAt = overview.indexOf("<RetailOverviewLead");
   const essayAt = overview.indexOf("How do these retail findings change AI search?");
-  assert.ok(heroAt >= 0 && essayAt > heroAt, "essay stays under the hero");
+  assert.ok(heroAt >= 0 && essayAt > heroAt, "essay stays under the heroes");
 
+  assert.match(lead, /retailOverviewHeroes/);
   assert.match(lead, /ai-lead-figure/);
   assert.match(lead, /CitationPieDisc/);
-  assert.match(lead, /retailOverviewLead/);
-  const model = read("lib/fender-canvas/retail-overview-lead.ts");
+  assert.match(lead, /data-ifai-open="ecommerce"/);
+  assert.match(lead, /data-ifai-tab=\{hero\.tab\}/);
+  assert.match(lead, /retail-overview-heroes/);
   assert.match(model, /Not available\*/);
+  assert.match(model, /counts\?\.withheld/);
+  assert.match(model, /counts\.current/);
+  assert.match(model, /detail\.decided/);
+  assert.match(model, /bundlesInRead/);
+
+  assert.doesNotMatch(readings, /confirmedSuppressionSentence/);
+  assert.doesNotMatch(readings, /classificationCoverageSentence/);
+  assert.match(readings, /benchmarkCoverageSentence/);
+  assert.match(readings, /Buy Box readings/);
+
   assert.doesNotMatch(overview, /\u2014/);
   assert.doesNotMatch(lead, /\u2014/);
-  assert.doesNotMatch(lead, /(?<![\w-])title=\{|(?<![\w-])title="/);
   assert.doesNotMatch(model, /\u2014/);
+  assert.doesNotMatch(lead, /(?<![\w-])title=\{|(?<![\w-])title="/);
+});
+
+test("Suppressed Listings still keeps the withheld-cause sentence", () => {
+  const panel = read("components/v3/live/SuppressedListingsPanel.tsx");
+  assert.match(panel, /confirmedSuppressionSentence/);
 });

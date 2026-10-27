@@ -1,19 +1,17 @@
 /**
- * Retail Overview hero: large issue count beside a checked-population disc.
- * Uses selectRetailHeadline. Unchecked listings are never drawn as fine.
+ * Retail Overview heroes: three compact shares (Buy Box, MAP, Catalog Governance).
+ * Each pie is N versus the rest of M for that finding's own population.
+ * Unchecked / unread listings are never drawn as fine.
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import type { NodeStatus } from "@/lib/canvas-sdk/types";
-import { formatInt } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import {
-  selectRetailHeadline,
-  type MapLeakageDetail,
+  RETAIL_FINDING_LABELS,
   type PortfolioRetailSnapshot,
-  type RetailHeadline,
+  type RetailFindingId,
   type RetailReading,
-  type SuppressionDetail,
-  type UnnestedBundleDetail,
 } from "@/lib/fender-canvas/portfolio-retail";
 import { readingLabel } from "@/lib/fender-canvas/portfolio-retail-display";
 
@@ -23,158 +21,155 @@ const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
   success: "var(--success-green)",
 };
 
-export type RetailCheckedPopulation = {
-  checked: number;
-  population: number;
+export type RetailOverviewHeroId = RetailFindingId;
+
+export type RetailOverviewHeroModel = {
+  id: RetailOverviewHeroId;
+  /** Tab the click opens (same labels RetailFindingVisual used). */
+  tab: string;
+  label: string;
+  /** Large share figure, or Not available*. */
+  percent: string;
+  /** Plain N of M when both sides are stored. Null when missing. */
+  ratio: string | null;
+  color: string;
+  tone: Exclude<NodeStatus, "neutral">;
+  pie: PieDiscData | null;
+  tip: string | null;
+  explainer: string;
+  numerator: number | null;
+  denominator: number | null;
 };
 
-/** Tone already used for this reading on Catalog Health surfaces. */
-export function retailHeadlineTone(reading: RetailReading<unknown>): Exclude<NodeStatus, "neutral"> {
-  if (reading.status === "available_with_zero") return "success";
-  if (reading.status === "unavailable") return "warning";
-  if ((reading.issueCount ?? 0) > 0) return "danger";
-  return "warning";
-}
-
-export function retailHeadlineColor(tone: Exclude<NodeStatus, "neutral">): string {
-  return TONE_COLOR[tone];
-}
-
-/**
- * Checked vs monitored population for the headline reading.
- * Suppressed listings: audited is checked; population is the monitored catalog.
- * MAP: decided is checked. Bundles: bundles in this read vs catalog bundle count.
- */
-export function retailHeadlineChecked(headline: RetailHeadline): RetailCheckedPopulation | null {
-  const detail = headline.reading.detail;
-  if (detail == null || typeof detail !== "object") return null;
-
-  if (headline.findingId === "suppressed_listings") {
-    const suppression = detail as SuppressionDetail;
-    if (!(suppression.audited > 0) || !(suppression.population > 0)) return null;
-    return { checked: suppression.audited, population: suppression.population };
+function toneForShare(
+  numerator: number | null,
+  denominator: number | null,
+  reading: RetailReading<unknown>,
+): Exclude<NodeStatus, "neutral"> {
+  if (numerator == null || denominator == null || denominator <= 0) {
+    if (reading.status === "unavailable") return "warning";
+    return "warning";
   }
-
-  if (headline.findingId === "map_leakage") {
-    const map = detail as MapLeakageDetail;
-    if (!(map.decided > 0) || !(map.population > 0)) return null;
-    return { checked: map.decided, population: map.population };
-  }
-
-  if (headline.findingId === "unnested_bundles") {
-    const bundles = detail as UnnestedBundleDetail;
-    if (!(bundles.bundlesInRead > 0) || bundles.catalogBundles == null || !(bundles.catalogBundles > 0)) {
-      return null;
-    }
-    return { checked: bundles.bundlesInRead, population: bundles.catalogBundles };
-  }
-
-  return null;
+  if (numerator === 0) return "success";
+  return "danger";
 }
 
-function issueSliceLabel(headline: RetailHeadline): string {
-  const label = readingLabel(headline.reading, headline.label);
-  if (headline.findingId === "map_leakage") return "Below MAP";
-  if (headline.findingId === "unnested_bundles") return "Unnested bundle";
-  return label;
-}
-
-/**
- * Disc of the headline count versus the rest of the checked population.
- * Unchecked listings are omitted so they cannot read as healthy.
- */
-export function retailHeadlinePie(headline: RetailHeadline): PieDiscData | null {
-  const count = headline.reading.issueCount;
-  const coverage = retailHeadlineChecked(headline);
-  if (count == null || coverage == null) return null;
-  if (count < 0 || count > coverage.checked) return null;
-
-  const clear = coverage.checked - count;
-  const issueLabel = issueSliceLabel(headline);
+function sharePie(
+  id: string,
+  title: string,
+  issueLabel: string,
+  numerator: number,
+  denominator: number,
+): PieDiscData | null {
+  if (denominator <= 0 || numerator < 0 || numerator > denominator) return null;
+  const rest = denominator - numerator;
   const slices = [
-    { key: "contradicted", label: issueLabel, count },
-    { key: "matched", label: "Checked without this issue", count: clear },
+    { key: "contradicted", label: issueLabel, count: numerator },
+    { key: "matched", label: "Rest of this population", count: rest },
   ].filter((slice) => slice.count > 0);
-
   if (slices.length === 0) return null;
-
   return {
-    id: `retail-overview-${headline.findingId}`,
-    title: readingLabel(headline.reading, headline.label),
-    total: coverage.checked,
-    totalLabel: "checked listings",
+    id,
+    title,
+    total: denominator,
+    totalLabel: "listings in this population",
     slices,
   };
 }
 
-/** Plain N of M tip, including how many were checked against the monitored catalog. */
-export function retailHeadlinePieTip(headline: RetailHeadline): string | null {
-  const count = headline.reading.issueCount;
-  const coverage = retailHeadlineChecked(headline);
-  if (count == null || coverage == null) return null;
-  const issueLabel = issueSliceLabel(headline);
-  const clear = Math.max(0, coverage.checked - count);
-  return `${formatInt(count)} ${issueLabel}. ${formatInt(clear)} checked without this issue. ${formatInt(coverage.checked)} of ${formatInt(coverage.population)} listings were checked.`;
-}
-
-export type RetailOverviewLeadModel = {
-  label: string;
-  figure: string;
-  color: string;
-  tone: Exclude<NodeStatus, "neutral">;
-  missingMessage: string | null;
-  pie: PieDiscData | null;
-  tip: string | null;
-  findingId: RetailHeadline["findingId"] | null;
-};
-
-/**
- * Hero model for Retail Overview. Does not invent a zero when the count was never stored.
- * When every ranked finding is a confirmed zero, show Catalog Health at 0.
- */
-export function retailOverviewLead(snapshot: PortfolioRetailSnapshot): RetailOverviewLeadModel {
-  const headline = selectRetailHeadline(snapshot);
-
-  if (!headline) {
-    return {
-      label: "Catalog Health",
-      figure: formatInt(0),
-      color: retailHeadlineColor("success"),
-      tone: "success",
-      missingMessage: null,
-      pie: null,
-      tip: null,
-      findingId: null,
-    };
-  }
-
-  const label = readingLabel(headline.reading, headline.label);
-  const tone = retailHeadlineTone(headline.reading);
-  const count = headline.reading.issueCount;
-  const unfinished =
-    headline.reading.status === "incomplete" || headline.reading.status === "unavailable";
-
-  if (count == null) {
-    return {
-      label,
-      figure: "Not available*",
-      color: retailHeadlineColor(tone),
-      tone,
-      missingMessage: headline.reading.missingMessage,
-      pie: null,
-      tip: null,
-      findingId: headline.findingId,
-    };
-  }
+/** Buy Box withheld / current Buy Box readings. Monitored catalog is not the denominator. */
+export function buyBoxHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
+  const reading = snapshot.suppressedListings;
+  const counts = reading.detail?.counts ?? null;
+  const label = readingLabel(reading, RETAIL_FINDING_LABELS.suppressed_listings);
+  const numerator = counts?.withheld ?? null;
+  const denominator = counts != null && counts.current > 0 ? counts.current : null;
+  const tone = toneForShare(numerator, denominator, reading);
+  const ready = numerator != null && denominator != null;
 
   return {
+    id: "suppressed_listings",
+    tab: RETAIL_FINDING_LABELS.suppressed_listings,
     label,
-    figure: formatInt(count),
-    color: retailHeadlineColor(tone),
+    percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
+    ratio: ready ? formatRatio(numerator, denominator) : null,
+    color: TONE_COLOR[tone],
     tone,
-    missingMessage: unfinished ? headline.reading.missingMessage : null,
-    pie: retailHeadlinePie(headline),
-    tip: retailHeadlinePieTip(headline),
-    findingId: headline.findingId,
+    pie: ready ? sharePie("retail-buy-box", label, "Buy Box withheld", numerator!, denominator!) : null,
+    tip: ready ? `${formatInt(numerator)} of ${formatInt(denominator)} current Buy Box readings.` : null,
+    explainer: ready
+      ? "The Buy Box is withheld, so there is no one-click offer."
+      : reading.missingMessage?.split(". ")[0] ?? "Buy Box reading not stored.",
+    numerator,
+    denominator,
   };
+}
+
+/**
+ * Below-MAP listings / listings with a stored MAP comparison (`decided`).
+ * Listings with no MAP price cannot leak MAP and stay out of the pie.
+ */
+export function mapHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
+  const reading = snapshot.mapLeakage;
+  const detail = reading.detail;
+  const label = "MAP leakage";
+  const numerator = reading.issueCount;
+  const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
+  const tone = toneForShare(numerator, denominator, reading);
+  const ready = numerator != null && denominator != null;
+
+  return {
+    id: "map_leakage",
+    tab: RETAIL_FINDING_LABELS.map_leakage,
+    label,
+    percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
+    ratio: ready ? formatRatio(numerator, denominator) : null,
+    color: TONE_COLOR[tone],
+    tone,
+    pie: ready ? sharePie("retail-map", label, "Below MAP", numerator!, denominator!) : null,
+    tip: ready ? `${formatInt(numerator)} of ${formatInt(denominator)} listings with a stored MAP price.` : null,
+    explainer: ready ? "Priced below MAP." : reading.missingMessage?.split(". ")[0] ?? "MAP reading not stored.",
+    numerator,
+    denominator,
+  };
+}
+
+/**
+ * Unnested bundles / bundles in this retail read.
+ * Catalog bundles outside the read are not fine and are not the rest of the pie.
+ */
+export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
+  const reading = snapshot.unnestedBundles;
+  const detail = reading.detail;
+  const label = RETAIL_FINDING_LABELS.unnested_bundles;
+  const numerator = reading.issueCount;
+  const denominator = detail != null && detail.bundlesInRead > 0 ? detail.bundlesInRead : null;
+  const tone = toneForShare(numerator, denominator, reading);
+  const ready = numerator != null && denominator != null;
+
+  return {
+    id: "unnested_bundles",
+    tab: label,
+    label,
+    percent: ready ? formatPct((100 * numerator!) / denominator!) : "Not available*",
+    ratio: ready ? formatRatio(numerator, denominator) : null,
+    color: TONE_COLOR[tone],
+    tone,
+    pie: ready
+      ? sharePie("retail-catalog", label, "Unnested bundle", numerator!, denominator!)
+      : null,
+    tip: ready
+      ? `${formatInt(numerator)} of ${formatInt(denominator)} bundles in this retail read.`
+      : null,
+    explainer: ready
+      ? "No parent listing, so the reviews stay split."
+      : reading.missingMessage?.split(". ")[0] ?? "Catalog reading not stored.",
+    numerator,
+    denominator,
+  };
+}
+
+/** The three Retail Overview heroes, Buy Box then MAP then Catalog Governance. */
+export function retailOverviewHeroes(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel[] {
+  return [buyBoxHero(snapshot), mapHero(snapshot), catalogHero(snapshot)];
 }
