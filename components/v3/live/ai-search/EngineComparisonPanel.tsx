@@ -5,8 +5,10 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { EngineComparisonLead } from "@/components/v3/live/ai-search/EngineComparisonLead";
+import { EngineUnbrandedGraph } from "@/components/v3/live/ai-search/EngineUnbrandedGraph";
 import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
-import { KeptOutNote, RoleCount, RolePair, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
+import { KeptOutNote, RoleCount, RolePair, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
   engineRoleTallies,
@@ -108,7 +110,8 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
   return (
     <>
       <div className="content-box ai-engine-comparison ai-role-rates">
-        <RoleSumLine groups={engines} preface="" />
+        <EngineComparisonLead engines={engines} />
+        <EngineUnbrandedGraph engines={engines} showSmallSample={showSmallSample} />
         {mixed ? (
           <p className="ai-role-footnote" data-ai-mixed-scoring>
             {MIXED_SCORING_NOTE}

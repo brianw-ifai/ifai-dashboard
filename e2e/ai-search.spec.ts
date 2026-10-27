@@ -253,18 +253,33 @@ test.describe("Competitive Radar", () => {
     await canvas.openSpokeFromMap("Competitive Radar");
     await canvas.openTab("Engine Comparison");
     const comparison = page.locator(".ai-engine-comparison");
-    await expect(comparison).toContainText("Unbranded discovery");
-    await expect(comparison).toContainText("Branded consideration");
+    const lead = comparison.locator("[data-ai-engine-comparison-lead]");
+    await expect(lead.locator("[data-ai-lead-figure='unbranded_discovery']")).toBeVisible();
+    await expect(lead.locator("[data-ai-lead-figure='branded_consideration']")).toBeVisible();
+    await expect(lead.locator("[data-ai-win-rate='unbranded_discovery']")).toContainText(/\d+\.\d%/);
+    await expect(lead.locator("[data-ai-win-rate='branded_consideration']")).toContainText(/\d+\.\d%/);
+    await expect(lead.locator("[data-citation-pie-disc]")).toHaveCount(2);
     await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText(/\d+ of \d+/);
-    await expect(comparison.locator("[data-ai-role-total='unbranded_discovery']")).toContainText(/\d+\.\d%/);
     await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText(/\d+ of \d+/);
-    await expect(comparison.locator("[data-ai-role-total='branded_consideration']")).toContainText(/\d+\.\d%/);
+
+    const graph = comparison.locator("[data-ai-engine-unbranded-graph]");
+    await expect(graph).toBeVisible();
+    const marks = graph.locator("[data-ai-engine-mark]");
+    await expect(marks).not.toHaveCount(0);
+    const rates = await marks.locator("[data-ai-engine-rate]").allInnerTexts();
+    const shares = rates.map((text) => parseFloat(text));
+    for (let i = 1; i < shares.length; i++) {
+      expect(shares[i]).toBeGreaterThanOrEqual(shares[i - 1]);
+    }
+    await expect(graph.locator("[data-ai-seg-label='fender']").first()).toContainText(/Fender\/Squier leads: \d+/);
+    await expect(graph.locator("[data-ai-seg-label='other']").first()).toContainText(/Rest of resolved answers: \d+/);
+
     const body = page.locator(".drilldown-body");
     await expect(body).not.toContainText("51 of 63");
     await expect(body).not.toContainText("All commercial prompts");
     await expect(body).not.toContainText("Fender win share");
     await expect(body).not.toContainText("Too few to compare");
-    await expect(comparison.locator("[data-small-sample='true']")).toHaveCount(0);
+    await expect(comparison.locator("tbody [data-small-sample='true']")).toHaveCount(0);
 
     const cell = await comparison.locator("td").first().evaluate((el) => getComputedStyle(el).fontSize);
     const header = await comparison.locator(".ifai-sort-btn").first().evaluate((el) => getComputedStyle(el).fontSize);
