@@ -114,12 +114,15 @@ test("missing Catalog Governance reading shows Not available* with no zero share
   assert.doesNotMatch(hero.percent, /^0%?$/);
 });
 
-test("Catalog Governance panel leads with catalogHero share before the explainer", () => {
+test("Catalog Governance places notes beside the share and the table under that row", () => {
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
 
   assert.match(panel, /catalogHero/);
   assert.match(panel, /from "@\/lib\/fender-canvas\/retail-overview-lead"/);
   assert.match(panel, /data-catalog-governance-lead/);
+  assert.match(panel, /data-catalog-governance-lead-row/);
+  assert.match(panel, /data-catalog-governance-notes/);
+  assert.match(panel, /data-catalog-governance-table/);
   assert.match(panel, /CitationPieDisc/);
   assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
@@ -127,27 +130,45 @@ test("Catalog Governance panel leads with catalogHero share before the explainer
   assert.match(panel, /hero\.ratio/);
   assert.match(panel, /hero\.explainer/);
   assert.match(panel, /hero\.tip/);
+  assert.match(panel, /width:\s*["']fit-content["']/);
+  assert.match(panel, /alignItems:\s*["']flex-start["']/);
   assert.match(panel, /What is catalog governance\?/);
-  assert.match(panel, /Unnested bundles/);
   assert.match(panel, /data-amazon-spec-gap-count/);
+  assert.match(panel, /CATALOG_GOVERNANCE_EXPLAINER/);
 
-  const renderStart = panel.indexOf("return (");
+  assert.doesNotMatch(panel, /Unnested bundles/);
+  assert.doesNotMatch(panel, /Bundles in this retail read with no usable parent ASIN/);
+  assert.doesNotMatch(
+    panel,
+    /This group lists the bundles this retail read can show\. It is not the full catalog\./,
+  );
+  assert.doesNotMatch(panel, /function CountLine/);
+
+  const renderStart = panel.indexOf("export function CatalogGovernancePanel");
   const render = panel.slice(renderStart);
+  const rowAt = render.indexOf("data-catalog-governance-lead-row");
   const leadAt = render.indexOf("<CatalogGovernanceLead");
-  const explainerAt = render.indexOf("What is catalog governance?");
-  const tableAt = render.indexOf("Unnested bundles");
-  const specAt = render.indexOf("<AmazonSpecGapCount");
-  assert.ok(leadAt >= 0 && explainerAt > leadAt, "explainer stays under the share");
-  assert.ok(tableAt > explainerAt, "bundle table stays under the explainer");
-  assert.ok(specAt > tableAt, "Amazon spec gap stays under the table");
+  const notesAt = render.indexOf("<CatalogGovernanceNotes");
+  const tableAt = render.indexOf("data-catalog-governance-table");
+  assert.ok(rowAt >= 0 && leadAt > rowAt, "lead sits in the lead row");
+  assert.ok(notesAt > leadAt, "notes sit beside the lead in the same row");
+  assert.ok(tableAt > notesAt, "bundle table is the next full-width block under the row");
 
   const leadBlock = panel.slice(
     panel.indexOf("function CatalogGovernanceLead"),
-    panel.indexOf("export function CatalogGovernancePanel"),
+    panel.indexOf("function CatalogGovernanceNotes"),
   );
   assert.doesNotMatch(leadBlock, /<button/);
   assert.doesNotMatch(leadBlock, /data-ifai-open/);
   assert.doesNotMatch(leadBlock, /data-ifai-tab/);
+
+  const notesBlock = panel.slice(
+    panel.indexOf("function CatalogGovernanceNotes"),
+    panel.indexOf("export function CatalogGovernancePanel"),
+  );
+  assert.match(notesBlock, /AmazonSpecGapCount/);
+  assert.match(notesBlock, /What is catalog governance\?/);
+
   assert.doesNotMatch(panel, /\u2014/);
   assert.doesNotMatch(panel, /retainer|service-fee/i);
 
