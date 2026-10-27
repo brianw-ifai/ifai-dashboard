@@ -8,8 +8,6 @@ import {
 import type { FeaturedOfferCounts } from "@/lib/fender-canvas/featured-offer";
 import {
   benchmarkCoverageSentence,
-  classificationCoverageSentence,
-  confirmedSuppressionSentence,
   featuredOfferFreshnessSentence,
   featuredOfferJob,
 } from "@/lib/fender-canvas/featured-offer-copy";
@@ -113,8 +111,6 @@ export function FeaturedOfferReadings({
           {formatInt(counts.current)} of {formatInt(counts.population)} current
         </span>
       </div>
-      <p className="retail-missing">{confirmedSuppressionSentence(counts)}</p>
-      <p className="retail-missing">{classificationCoverageSentence(counts)}</p>
       <p className="retail-missing">{benchmarkCoverageSentence(counts)}</p>
       <p className="retail-missing">
         {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}

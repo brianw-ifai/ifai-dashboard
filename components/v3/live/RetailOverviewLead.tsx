@@ -1,0 +1,79 @@
+"use client";
+
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import {
+  retailOverviewHeroes,
+  type RetailOverviewHeroModel,
+} from "@/lib/fender-canvas/retail-overview-lead";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+
+const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
+/**
+ * One compact Retail Overview hero: label, share %, N of M, pie, short explainer.
+ * Click opens that finding's tab (same data-ifai-open path as the old finding cards).
+ */
+function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
+  return (
+    <div
+      className="retail-finding retail-overview-hero"
+      data-ifai-open="ecommerce"
+      data-ifai-tab={hero.tab}
+      data-retail-overview-hero={hero.id}
+    >
+      <button type="button" className="retail-finding-hit">
+        <span className="metric-card-label" data-retail-hero-label="">
+          {hero.label}
+        </span>
+        <span className="retail-overview-hero-row" data-retail-hero-row="">
+          <span className="retail-overview-hero-figures">
+            <span
+              className="ai-lead-figure"
+              data-retail-hero-percent=""
+              data-retail-hero-tone={hero.tone}
+              data-retail-hero-numerator={hero.numerator ?? ""}
+              data-retail-hero-denominator={hero.denominator ?? ""}
+              style={{ color: hero.color }}
+            >
+              {hero.percent}
+            </span>
+            {hero.ratio ? (
+              <span className="retail-overview-hero-ratio" data-retail-hero-ratio="">
+                {hero.ratio}
+              </span>
+            ) : null}
+          </span>
+          {hero.pie ? (
+            <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
+          ) : null}
+        </span>
+        <span className="metric-card-sub" data-retail-hero-explainer="">
+          {hero.explainer}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * First content on Retail Overview: three share heroes in one row.
+ * Matches the Findability percentage / ratio / pie idea in a short vertical budget.
+ */
+export function RetailOverviewLead({ read }: { read: RetailCanvasRead }) {
+  if (read.phase === "loading") {
+    return <p className="retail-missing">Loading the retail reading…</p>;
+  }
+  if (read.phase === "error") {
+    return <p className="retail-missing">The retail read could not be loaded.</p>;
+  }
+
+  const heroes = retailOverviewHeroes(read.snapshot);
+
+  return (
+    <div className="retail-overview-heroes" data-retail-overview-lead="">
+      {heroes.map((hero) => (
+        <RetailHeroCard key={hero.id} hero={hero} />
+      ))}
+    </div>
+  );
+}
