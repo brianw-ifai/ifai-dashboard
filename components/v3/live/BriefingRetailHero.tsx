@@ -1,52 +1,102 @@
 "use client";
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
-import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
-import { briefingRetailLead } from "@/lib/fender-canvas/briefing-retail-lead";
+import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
+import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import {
+  briefingFindingsLead,
+  type BriefingFinding,
+  type BriefingLostRevenuePlaceholder,
+} from "@/lib/fender-canvas/briefing-retail-lead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 
+const BRIEFING_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
+function BriefingFindingCard({ finding }: { finding: BriefingFinding }) {
+  return (
+    <div
+      className="retail-finding retail-overview-hero briefing-finding"
+      data-ifai-open={finding.spokeId}
+      data-ifai-tab={finding.tab}
+      data-briefing-finding={finding.id}
+    >
+      <button type="button" className="retail-finding-hit">
+        <span className="metric-card-label" data-briefing-finding-label="">
+          {finding.label}
+        </span>
+        <span className="retail-overview-hero-row" data-briefing-finding-row="">
+          <span className="retail-overview-hero-figures">
+            <span
+              className="ai-lead-figure"
+              data-briefing-finding-percent=""
+              data-briefing-finding-tone={finding.tone}
+              data-briefing-finding-numerator={finding.numerator ?? ""}
+              data-briefing-finding-denominator={finding.denominator ?? ""}
+              style={{ color: finding.color }}
+            >
+              {finding.percent}
+            </span>
+            {finding.ratio ? (
+              <span className="retail-overview-hero-ratio" data-briefing-finding-ratio="">
+                {finding.ratio}
+              </span>
+            ) : null}
+          </span>
+          {finding.pie ? (
+            <CitationPieDisc
+              pie={finding.pie}
+              sizeClass={BRIEFING_PIE_SIZE}
+              tip={finding.tip ?? undefined}
+            />
+          ) : null}
+        </span>
+        <span className="metric-card-sub" data-briefing-finding-explainer="">
+          {finding.explainer}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+function LostRevenuePlaceholder({ placeholder }: { placeholder: BriefingLostRevenuePlaceholder }) {
+  return (
+    <div
+      className="briefing-revenue-placeholder"
+      data-briefing-revenue-placeholder=""
+      aria-label={`${placeholder.label}: ${placeholder.figure}`}
+    >
+      <span className="metric-card-label" data-briefing-revenue-label="">
+        {placeholder.label}
+      </span>
+      <span className="ai-lead-figure" data-briefing-revenue-figure="">
+        {placeholder.figure}
+      </span>
+      <span className="metric-card-sub" data-briefing-revenue-explainer="">
+        {placeholder.explainer}
+      </span>
+    </div>
+  );
+}
+
 /**
- * Opening figure on Summary Briefing: the same retail headline Catalog Health uses,
- * with a disc of that count versus the rest of the checked population.
+ * Summary Briefing hero: five executive findings in one row.
+ * Buy Box sits with the monthly lost-revenue placeholder; that placeholder is not a sixth finding.
  */
 export function BriefingRetailHero({ read }: { read: RetailCanvasRead }) {
-  const lead = briefingRetailLead(read);
+  const findability = useFindability();
+  const ai = useAiSearch();
+  const { findings, lostRevenue } = briefingFindingsLead(read, findability, ai);
+  const [buyBox, ...rest] = findings;
+
   return (
-    <div className="content-box" data-briefing-retail-hero="" style={{ marginBottom: 12 }}>
-      <div className="metric-card-label" data-briefing-retail-label="">
-        {lead.label}
+    <div className="briefing-findings" data-briefing-retail-hero="" data-briefing-findings="">
+      <div className="briefing-buy-box-cluster" data-briefing-buy-box-cluster="">
+        <BriefingFindingCard finding={buyBox} />
+        <LostRevenuePlaceholder placeholder={lostRevenue} />
       </div>
-      <div
-        data-briefing-retail-row=""
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: 12,
-          maxWidth: "100%",
-          marginTop: 4,
-        }}
-      >
-        <span
-          className="ai-lead-figure"
-          data-briefing-retail-figure=""
-          style={lead.color ? { color: lead.color } : undefined}
-        >
-          {lead.figure}
-        </span>
-        {lead.pie ? (
-          <CitationPieDisc
-            pie={lead.pie}
-            sizeClass="citation-pie-disc citation-pie-disc-accuracy"
-            tip={lead.tip ?? undefined}
-          />
-        ) : null}
-      </div>
-      {lead.missingMessage ? (
-        <p className="retail-missing" data-briefing-retail-missing="" style={{ marginTop: 8 }}>
-          <DefinedCopy text={lead.missingMessage} />
-        </p>
-      ) : null}
+      {rest.map((finding) => (
+        <BriefingFindingCard key={finding.id} finding={finding} />
+      ))}
     </div>
   );
 }

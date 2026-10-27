@@ -3507,6 +3507,58 @@
       line-height: 1.35;
     }
 
+    /* Summary Briefing: five executive findings in one short row. */
+    .briefing-findings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+
+    .briefing-buy-box-cluster {
+      flex: 1.4 1 220px;
+      min-width: 200px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .briefing-buy-box-cluster > .briefing-finding {
+      flex: 1 1 140px;
+      min-width: 130px;
+    }
+
+    .briefing-findings > .briefing-finding {
+      flex: 1 1 148px;
+      min-width: 136px;
+    }
+
+    .briefing-revenue-placeholder {
+      flex: 1 1 120px;
+      min-width: 110px;
+      box-sizing: border-box;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-color);
+      border-radius: 16px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .briefing-revenue-placeholder .ai-lead-figure {
+      font-size: clamp(20px, 2vw, 26px);
+      line-height: 1.05;
+      color: var(--text-muted);
+    }
+
+    .briefing-revenue-placeholder .metric-card-sub {
+      margin: 0;
+      line-height: 1.35;
+    }
+
     /* Featured Offer readings. Unchecked and failed share one card, still as two counts. */
     .fo-reading-grid {
       display: grid;

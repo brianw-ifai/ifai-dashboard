@@ -1,179 +1,304 @@
 /**
- * Briefing hero numbers for Summary. Same retail headline Catalog Health uses.
- * The disc is issue count versus the rest of the checked population only.
+ * Summary Briefing executive findings: five compact shares in one row.
+ * Retail shares reuse Retail Overview populations. Findability and unbranded
+ * discovery reuse their home-tab rates. No invented revenue dollars.
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
-import { formatInt } from "@/lib/fender-canvas/format";
 import {
-  headlineSurface,
-  readingLabel,
-  type RetailCanvasRead,
-} from "@/lib/fender-canvas/portfolio-retail-display";
+  roleRateLead,
+  summarizeRun,
+  UNBRANDED_RATE_BANDS,
+} from "@/lib/ai-search/summary";
+import type { AiSearchRead } from "@/lib/ai-search/types";
+import type { NodeStatus } from "@/lib/canvas-sdk/types";
+import { formatInt, formatRatio } from "@/lib/fender-canvas/format";
 import {
-  selectRetailHeadline,
-  type RetailFindingId,
-  type RetailHeadline,
-  type RetailReading,
-} from "@/lib/fender-canvas/portfolio-retail";
+  buyBoxHero,
+  catalogHero,
+  mapHero,
+  type RetailOverviewHeroModel,
+} from "@/lib/fender-canvas/retail-overview-lead";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { FindabilityRead } from "@/lib/findability/copy";
+import {
+  exactPageLeadPie,
+  exactPageLeadTip,
+  exactPageShareColor,
+  outcomeRatioFigure,
+  outcomeShareFigure,
+} from "@/lib/findability/lead";
+import { countFindability } from "@/lib/findability/outcomes";
 
 export const BRIEFING_COUNT_MISSING = "Not available*";
 
-export type BriefingRetailLead = {
+/**
+ * Searched PortfolioRetailSnapshot detail/counts and CanvasMetricsRow once.
+ * No stored field is clearly monthly potential lost brand revenue.
+ */
+export const BRIEFING_LOST_REVENUE_LABEL = "Monthly potential lost brand revenue";
+export const BRIEFING_LOST_REVENUE_FIGURE = BRIEFING_COUNT_MISSING;
+
+export type BriefingFindingId =
+  | "buy_box"
+  | "map_leakage"
+  | "splintered_bundles"
+  | "exact_official_product"
+  | "unbranded_discovery";
+
+export type BriefingFinding = {
+  id: BriefingFindingId;
+  spokeId: "ecommerce" | "specs" | "aeo";
+  tab: string;
   label: string;
-  /** Formatted issue count, or Not available* when the count was never stored. */
-  figure: string;
-  /** CSS color for the figure when a count is present. */
-  color: string | null;
-  missingMessage: string | null;
+  percent: string;
+  ratio: string | null;
+  color: string;
+  tone: Exclude<NodeStatus, "neutral">;
   pie: PieDiscData | null;
   tip: string | null;
+  explainer: string;
+  numerator: number | null;
+  denominator: number | null;
 };
 
-type CheckedShare = {
-  checked: number;
-  population: number | null;
-  noun: string;
+export type BriefingLostRevenuePlaceholder = {
+  label: string;
+  figure: string;
+  explainer: string;
 };
 
-function checkedShare(
-  findingId: RetailFindingId,
-  reading: RetailReading<unknown>,
-): CheckedShare | null {
-  const detail = reading.detail as {
-    audited?: number;
-    population?: number;
-    decided?: number;
-    bundlesInRead?: number;
-    catalogBundles?: number | null;
-  } | null;
-  if (!detail) return null;
+export type BriefingFindingsLead = {
+  findings: BriefingFinding[];
+  lostRevenue: BriefingLostRevenuePlaceholder;
+};
 
-  if (findingId === "suppressed_listings") {
-    if (typeof detail.audited !== "number" || detail.audited < 0) return null;
-    return {
-      checked: detail.audited,
-      population: typeof detail.population === "number" ? detail.population : null,
-      noun: reading.headlineNoun ?? "listing",
-    };
-  }
+const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
+  danger: "var(--danger-red)",
+  warning: "var(--warning-amber)",
+  success: "var(--success-green)",
+};
 
-  if (findingId === "map_leakage") {
-    if (typeof detail.decided !== "number" || detail.decided < 0) return null;
-    return {
-      checked: detail.decided,
-      population: typeof detail.population === "number" ? detail.population : null,
-      noun: "listing",
-    };
-  }
-
-  if (findingId === "unnested_bundles") {
-    if (typeof detail.bundlesInRead !== "number" || detail.bundlesInRead < 0) return null;
-    return {
-      checked: detail.bundlesInRead,
-      population:
-        typeof detail.catalogBundles === "number" ? detail.catalogBundles : null,
-      noun: "bundle",
-    };
-  }
-
-  return null;
+function fromRetailHero(
+  id: BriefingFindingId,
+  hero: RetailOverviewHeroModel,
+  label: string,
+  explainer: string,
+): BriefingFinding {
+  return {
+    id,
+    spokeId: "ecommerce",
+    tab: hero.tab,
+    label,
+    percent: hero.percent,
+    ratio: hero.ratio,
+    color: hero.color,
+    tone: hero.tone,
+    pie: hero.pie,
+    tip: hero.tip,
+    explainer,
+    numerator: hero.numerator,
+    denominator: hero.denominator,
+  };
 }
 
-function issuePie(
+function missingFinding(
+  id: BriefingFindingId,
+  spokeId: BriefingFinding["spokeId"],
+  tab: string,
   label: string,
-  issueCount: number,
-  share: CheckedShare,
-): { pie: PieDiscData; tip: string } | null {
-  const { checked, population, noun } = share;
-  if (checked <= 0 || issueCount < 0 || issueCount > checked) return null;
-  const fine = checked - issueCount;
-  const nounPlural = noun === "listing" ? "listings" : `${noun}s`;
-  const pie: PieDiscData = {
-    id: "briefing-retail-headline",
-    title: label,
-    total: checked,
-    totalLabel: `checked ${nounPlural}`,
-    slices: [
-      { key: "contradicted", label: label, count: issueCount },
-      { key: "matched", label: `Checked without this issue`, count: fine },
-    ].filter((slice) => slice.count > 0),
+  explainer: string,
+): BriefingFinding {
+  return {
+    id,
+    spokeId,
+    tab,
+    label,
+    percent: BRIEFING_COUNT_MISSING,
+    ratio: null,
+    color: TONE_COLOR.warning,
+    tone: "warning",
+    pie: null,
+    tip: null,
+    explainer,
+    numerator: null,
+    denominator: null,
   };
-  const tipParts = [
-    `${formatInt(issueCount)} of ${formatInt(checked)} checked ${
-      issueCount === 1 ? noun : nounPlural
-    }.`,
+}
+
+function retailFindings(read: RetailCanvasRead): BriefingFinding[] {
+  if (read.phase !== "ready") {
+    return [
+      missingFinding(
+        "buy_box",
+        "ecommerce",
+        "Suppressed Listings",
+        "Buy Box withheld",
+        "Buy Box reading not stored.",
+      ),
+      missingFinding("map_leakage", "ecommerce", "MAP", "MAP leakage", "MAP reading not stored."),
+      missingFinding(
+        "splintered_bundles",
+        "ecommerce",
+        "Catalog Governance",
+        "Splintered bundles",
+        "Catalog reading not stored.",
+      ),
+    ];
+  }
+
+  const snapshot = read.snapshot;
+  const buyBox = buyBoxHero(snapshot);
+  const map = mapHero(snapshot);
+  const catalog = catalogHero(snapshot);
+
+  return [
+    fromRetailHero(
+      "buy_box",
+      buyBox,
+      "Buy Box withheld",
+      buyBox.numerator != null && buyBox.denominator != null
+        ? "The Buy Box is withheld, so there is no one-click offer."
+        : buyBox.explainer,
+    ),
+    fromRetailHero(
+      "map_leakage",
+      map,
+      "MAP leakage",
+      map.numerator != null && map.denominator != null ? "Priced below MAP." : map.explainer,
+    ),
+    fromRetailHero(
+      "splintered_bundles",
+      { ...catalog, label: "Splintered bundles" },
+      "Splintered bundles",
+      catalog.numerator != null && catalog.denominator != null
+        ? "No usable parent ASIN, so reviews stay split."
+        : catalog.explainer,
+    ),
   ];
-  if (population != null && population >= checked) {
-    tipParts.push(
-      `${formatInt(checked)} of ${formatInt(population)} monitored ${
-        population === 1 ? noun : nounPlural
-      } were checked.`,
+}
+
+function findabilityFinding(read: FindabilityRead): BriefingFinding {
+  if (read.phase !== "ready") {
+    return missingFinding(
+      "exact_official_product",
+      "specs",
+      "Findability",
+      "Exact official product pages",
+      "Official-page reading not stored.",
     );
   }
-  return { pie, tip: tipParts.join(" ") };
-}
 
-function fromHeadline(headline: RetailHeadline): BriefingRetailLead {
-  const label = readingLabel(headline.reading, headline.label);
-  const count = headline.reading.issueCount;
-  if (count == null) {
-    return {
-      label,
-      figure: BRIEFING_COUNT_MISSING,
-      color: null,
-      missingMessage: headline.reading.missingMessage,
-      pie: null,
-      tip: null,
-    };
-  }
+  const counts = countFindability(read.rows);
+  const percent = outcomeShareFigure(counts, "exact_official_product");
+  const ratio = outcomeRatioFigure(counts, "exact_official_product");
+  const color = exactPageShareColor(counts);
+  const ready = percent != null && ratio != null && counts.total > 0;
+  const tone: Exclude<NodeStatus, "neutral"> = !ready
+    ? "warning"
+    : (100 * counts.exact_official_product) / counts.total < 25
+      ? "danger"
+      : (100 * counts.exact_official_product) / counts.total > 60
+        ? "success"
+        : "warning";
 
-  const share = checkedShare(headline.findingId, headline.reading);
-  const disc = share ? issuePie(label, count, share) : null;
   return {
-    label,
-    figure: formatInt(count),
-    color: count > 0 ? "var(--danger-red)" : "var(--success-green)",
-    // Coverage detail for an unfinished read stays in the disc tip, not under the figure.
-    missingMessage: null,
-    pie: disc?.pie ?? null,
-    tip: disc?.tip ?? null,
+    id: "exact_official_product",
+    spokeId: "specs",
+    tab: "Findability",
+    label: "Exact official product pages",
+    percent: ready ? percent! : BRIEFING_COUNT_MISSING,
+    ratio: ready ? ratio : null,
+    color: color ?? TONE_COLOR.warning,
+    tone,
+    pie: ready ? exactPageLeadPie(counts) : null,
+    tip: ready ? exactPageLeadTip(counts) : null,
+    explainer: ready
+      ? "One official product page for this variant. A family page is not an exact page."
+      : "Official-page reading not stored.",
+    numerator: ready ? counts.exact_official_product : null,
+    denominator: ready ? counts.total : null,
   };
 }
 
-/** Lead figure and disc for Summary Briefing. Matches Catalog Health headlineSurface. */
-export function briefingRetailLead(read: RetailCanvasRead): BriefingRetailLead {
-  const surface = headlineSurface(read);
+function unbrandedPie(fenderWins: number, resolved: number): PieDiscData | null {
+  if (resolved <= 0 || fenderWins < 0 || fenderWins > resolved) return null;
+  const rest = resolved - fenderWins;
+  return {
+    id: "briefing-unbranded",
+    title: "Unbranded discovery",
+    total: resolved,
+    totalLabel: "resolved unbranded discovery answers",
+    slices: [
+      { key: "fender", label: "Fender/Squier leads", count: fenderWins },
+      { key: "rest", label: "Rest of resolved answers", count: rest },
+    ].filter((slice) => slice.count > 0),
+  };
+}
+
+function unbrandedFinding(read: AiSearchRead): BriefingFinding {
   if (read.phase !== "ready") {
-    return {
-      label: surface.label,
-      figure: BRIEFING_COUNT_MISSING,
-      color: null,
-      missingMessage: surface.missingMessage,
-      pie: null,
-      tip: null,
-    };
+    return missingFinding(
+      "unbranded_discovery",
+      "aeo",
+      "Run Details",
+      "Unbranded discovery",
+      "AI Search reading not stored.",
+    );
   }
 
-  const headline = selectRetailHeadline(read.snapshot);
-  if (!headline) {
-    const suppressed = read.snapshot.suppressedListings;
-    const share = checkedShare("suppressed_listings", suppressed);
-    const disc =
-      share && suppressed.issueCount != null
-        ? issuePie("Catalog Health", suppressed.issueCount, share)
-        : share
-          ? issuePie("Catalog Health", 0, share)
-          : null;
-    return {
-      label: "Catalog Health",
-      figure: "0",
-      color: "var(--success-green)",
-      missingMessage: null,
-      pie: disc?.pie ?? null,
-      tip: disc?.tip ?? null,
-    };
-  }
+  const tally = summarizeRun(read.snapshot).roles.unbranded;
+  const lead = roleRateLead(tally, UNBRANDED_RATE_BANDS);
+  const ready = lead.rate != null && tally.resolved > 0;
+  const tone: Exclude<NodeStatus, "neutral"> = !ready
+    ? "warning"
+    : (100 * tally.fenderWins) / tally.resolved < UNBRANDED_RATE_BANDS.redBelow
+      ? "danger"
+      : (100 * tally.fenderWins) / tally.resolved > UNBRANDED_RATE_BANDS.greenAbove
+        ? "success"
+        : "warning";
 
-  return fromHeadline(headline);
+  return {
+    id: "unbranded_discovery",
+    spokeId: "aeo",
+    tab: "Run Details",
+    label: "Unbranded discovery",
+    percent: ready ? lead.rate! : BRIEFING_COUNT_MISSING,
+    ratio: ready ? formatRatio(tally.fenderWins, tally.resolved) : null,
+    color: lead.color ?? TONE_COLOR.warning,
+    tone,
+    pie: ready ? unbrandedPie(tally.fenderWins, tally.resolved) : null,
+    tip: ready
+      ? `${formatInt(tally.fenderWins)} of ${formatInt(tally.resolved)} resolved unbranded discovery answers.`
+      : null,
+    explainer: ready
+      ? "Fender/Squier named most on unbranded shopping questions."
+      : "No resolved unbranded discovery answers in this window.",
+    numerator: ready ? tally.fenderWins : null,
+    denominator: ready ? tally.resolved : null,
+  };
+}
+
+export function briefingLostRevenuePlaceholder(): BriefingLostRevenuePlaceholder {
+  return {
+    label: BRIEFING_LOST_REVENUE_LABEL,
+    figure: BRIEFING_LOST_REVENUE_FIGURE,
+    explainer: "Not stored in this reading yet.",
+  };
+}
+
+/**
+ * Five executive findings for Summary Briefing, plus the lost-revenue placeholder
+ * that sits beside Buy Box (not a sixth finding).
+ */
+export function briefingFindingsLead(
+  retail: RetailCanvasRead,
+  findability: FindabilityRead,
+  ai: AiSearchRead,
+): BriefingFindingsLead {
+  const [buyBox, map, bundles] = retailFindings(retail);
+  return {
+    findings: [buyBox, map, bundles, findabilityFinding(findability), unbrandedFinding(ai)],
+    lostRevenue: briefingLostRevenuePlaceholder(),
+  };
 }
