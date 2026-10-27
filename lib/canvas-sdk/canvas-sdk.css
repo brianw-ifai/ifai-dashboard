@@ -1855,6 +1855,67 @@
       color: var(--text-muted);
     }
 
+    /* Engine Comparison: unbranded discovery by engine (weakest Fender lead first). */
+    .ai-engine-unbranded-list {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-engine-unbranded-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 6px 12px;
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    .ai-engine-unbranded-rate {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .ai-engine-unbranded-bar {
+      display: flex;
+      width: 100%;
+      min-height: 22px;
+      overflow: hidden;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--border-color) 55%, transparent);
+    }
+
+    .ai-engine-unbranded-seg {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      color: #0f172a;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .ai-engine-unbranded-count {
+      padding: 0 4px;
+    }
+
+    .ai-engine-unbranded-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
     .tag-badge {
       display: inline-block;
       padding: 6px 12px;
