@@ -147,5 +147,4 @@ test("ResizableTable applies the shared fit rule without a call-site fillColumnI
   assert.match(table, /pickFillColumnId/);
   assert.doesNotMatch(table, /fillColumnId && !manual \? filledColumnWidths/);
   assert.doesNotMatch(read("components/v3/live/ai-search/SimulationsExplorer.tsx"), /fillColumnId=/);
-  assert.doesNotMatch(read("components/v3/live/ai-search/FactCheckTable.tsx"), /fillColumnId=/);
 });

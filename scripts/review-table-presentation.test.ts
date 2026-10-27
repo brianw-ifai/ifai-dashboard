@@ -163,8 +163,11 @@ test("Product Fact Checks defaults fill the panel and leave room for one-line ce
   const table = read("components/v3/live/ai-search/FactCheckTable.tsx");
   assert.match(table, /fillColumnId="fact"/);
   assert.match(table, /tableId="product-fact-checks"/);
-  assert.doesNotMatch(table, /wordBreak:\s*"break-word"/);
-  assert.match(table, /whiteSpace:\s*"nowrap"/);
+  assert.doesNotMatch(table, /whiteSpace:\s*"nowrap"/);
+  assert.doesNotMatch(table, /maxWidth:\s*"none"/);
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
+  assert.match(css, /\.ai-probe-table \.resizable-table \.tag-badge \{[^}]*white-space:\s*normal/s);
+  assert.match(css, /\.ai-probe-table \.resizable-table \.tag-badge \{[^}]*max-width:\s*100%/s);
 });
 
 test("Machine Readability gives leftover width to Model without shrinking the others", () => {
