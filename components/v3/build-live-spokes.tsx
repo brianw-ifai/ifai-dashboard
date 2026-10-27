@@ -10,6 +10,7 @@ import { CompetitorsSpokeDescription } from "@/components/v3/live/ai-search/Comp
 import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryControl";
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
+import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
@@ -20,6 +21,7 @@ import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/Fender
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
+import narrative from "@/data/fender-v3-spec.json";
 import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { findabilitySpokeDescription, type FindabilityRead } from "@/lib/findability/copy";
@@ -28,7 +30,7 @@ import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/po
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
-import { buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
 
 function htmlBlock(html: string) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
@@ -40,10 +42,19 @@ type TabOverride = (
   retail: RetailCanvasRead,
 ) => ReactNode | null;
 
+const HUB_BRIEFING_HTML = (narrative.spokes as { hub: { tabTemplates: string[] } }).hub
+  .tabTemplates[0];
+
 const TAB_OVERRIDES: Partial<
   Record<SpokeId, Partial<Record<number, TabOverride>>>
 > = {
   hub: {
+    0: (_bundle, vars, retail) => (
+      <>
+        <BriefingRetailHero read={retail} />
+        {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
+      </>
+    ),
     1: (bundle) => <FenderDivisionsTable divisions={bundle.divisions} />,
   },
   ecommerce: {
