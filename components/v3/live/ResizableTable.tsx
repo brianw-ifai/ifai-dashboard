@@ -23,6 +23,8 @@ export type RetailColumn = ColumnWidthSpec & {
   className?: string;
   /** When set, the header sorts this column. Currency and counts use "number". */
   sort?: SortKind;
+  /** Optional dotted-underline definition on the header label. */
+  headerTooltip?: { title: string; description: string };
 };
 
 export function clientColumn(
@@ -37,6 +39,23 @@ export function clientColumn(
 }
 
 const KEY_STEP = 16;
+
+function ColumnHeaderLabel({ column }: { column: RetailColumn }) {
+  const label = column.label;
+  if (!column.headerTooltip) return <>{label}</>;
+  const { title, description } = column.headerTooltip;
+  return (
+    <span
+      className="ifai-term"
+      data-ifai-tooltip-title={title}
+      data-ifai-tooltip-desc={description}
+      tabIndex={0}
+      aria-label={`${title}: ${description}`}
+    >
+      {label}
+    </span>
+  );
+}
 
 function readStoredRaw(tableId: string): unknown {
   if (typeof window === "undefined") return null;
@@ -279,10 +298,12 @@ export function ResizableTable({
                         onSort?.(column.id);
                       }}
                     >
-                      {column.label}
+                      <ColumnHeaderLabel column={column} />
                     </button>
                   ) : (
-                    <span className="resizable-th-label">{column.label}</span>
+                    <span className="resizable-th-label">
+                      <ColumnHeaderLabel column={column} />
+                    </span>
                   )}
                   <ColumnResizeHandle
                     name={column.name}

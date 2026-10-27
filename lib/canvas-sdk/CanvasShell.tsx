@@ -1368,9 +1368,15 @@ export function CanvasShell({ spec, children }: Props) {
                     <h2 className="drilldown-title">{commandCenter?.title}</h2>
                   </>
                 ) : null}
-                <p className="drilldown-desc">
-                  {showingCommand ? commandCenter?.desc : (spoke?.descSlot ?? spoke?.desc ?? "")}
-                </p>
+                {showingCommand ? (
+                  commandCenter?.desc?.trim() ? (
+                    <p className="drilldown-desc">{commandCenter.desc}</p>
+                  ) : null
+                ) : spoke?.descSlot ? (
+                  <p className="drilldown-desc">{spoke.descSlot}</p>
+                ) : spoke?.desc?.trim() ? (
+                  <p className="drilldown-desc">{spoke.desc}</p>
+                ) : null}
                 {!showingCommand && spoke?.headerAccessory ? spoke.headerAccessory : null}
               </div>
             </div>
