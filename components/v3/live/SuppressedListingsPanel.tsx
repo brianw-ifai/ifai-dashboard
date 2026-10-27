@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
@@ -34,9 +35,11 @@ import {
   featuredOfferJob,
 } from "@/lib/fender-canvas/featured-offer-copy";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { buyBoxHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
+const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
@@ -84,6 +87,69 @@ function explanation() {
         be withheld for other reasons too, so a withheld listing with no published benchmark
         is not a confirmed price problem.
       </div>
+    </div>
+  );
+}
+
+/**
+ * Same Buy Box withheld share as Retail Overview: percentage, N of M, and disc.
+ * Static in-tab lead (not a navigation control).
+ */
+function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
+  if (read.phase === "loading") {
+    return (
+      <div className="content-box" data-suppressed-listings-lead="">
+        <span className="ai-lead-figure">Loading the Buy Box reading…</span>
+      </div>
+    );
+  }
+  if (read.phase === "error") {
+    return (
+      <div className="content-box" data-suppressed-listings-lead="">
+        <span className="ai-lead-figure">The retail read could not be loaded.</span>
+      </div>
+    );
+  }
+
+  const hero = buyBoxHero(read.snapshot);
+
+  return (
+    <div className="content-box findability-lead-card" data-suppressed-listings-lead="">
+      <div>
+        <span data-suppressed-listings-lead-label="">{hero.label}</span>
+      </div>
+      <div className="findability-lead-row" data-suppressed-listings-lead-row="">
+        <div className="findability-lead-figures">
+          <span
+            className="ai-lead-figure"
+            style={{ color: hero.color }}
+            data-suppressed-listings-lead-percent=""
+            data-suppressed-listings-lead-tone={hero.tone}
+            data-suppressed-listings-lead-numerator={hero.numerator ?? ""}
+            data-suppressed-listings-lead-denominator={hero.denominator ?? ""}
+          >
+            {hero.percent}
+          </span>
+          {hero.ratio ? (
+            <span
+              className="findability-lead-ratio"
+              data-suppressed-listings-lead-ratio=""
+            >
+              {hero.ratio}
+            </span>
+          ) : null}
+        </div>
+        {hero.pie ? (
+          <CitationPieDisc
+            pie={hero.pie}
+            sizeClass={RETAIL_PIE_SIZE}
+            tip={hero.tip ?? undefined}
+          />
+        ) : null}
+      </div>
+      <span className="metric-card-sub" data-suppressed-listings-lead-explainer="">
+        {hero.explainer}
+      </span>
     </div>
   );
 }
@@ -154,6 +220,7 @@ export function SuppressedListingsPanel({
 
   return (
     <div className="suppressed-listings retail-surface">
+      <SuppressedListingsLead read={read} />
       {explanation()}
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">
