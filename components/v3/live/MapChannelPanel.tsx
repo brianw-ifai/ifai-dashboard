@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import {
@@ -20,9 +21,11 @@ import {
 } from "@/lib/fender-canvas/map-reading-status";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { mapHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
+const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 
 async function loadMapRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
   const rows: MapSourceRow[] = [];
@@ -76,6 +79,45 @@ function RetailSurface({ children }: { children: ReactNode }) {
 
 function mapPricesNotStored(read: RetailCanvasRead): boolean {
   return read.phase === "ready" && read.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
+}
+
+/**
+ * MAP tab hero: same MAP leakage share as Retail Overview (percent, N of M, disc).
+ * Static block; Retail Overview remains the click path into this tab.
+ */
+function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
+  if (read.phase !== "ready") return null;
+  const hero = mapHero(read.snapshot);
+  return (
+    <div className="content-box findability-lead-card" data-map-lead="" style={{ marginTop: 12 }}>
+      <div data-map-lead-label="">{hero.label}</div>
+      <div className="findability-lead-row" data-map-lead-row="">
+        <div className="findability-lead-figures">
+          <span
+            className="ai-lead-figure"
+            style={{ color: hero.color }}
+            data-map-lead-percent=""
+            data-map-lead-tone={hero.tone}
+            data-map-lead-numerator={hero.numerator ?? ""}
+            data-map-lead-denominator={hero.denominator ?? ""}
+          >
+            {hero.percent}
+          </span>
+          {hero.ratio ? (
+            <span className="findability-lead-ratio" data-map-lead-ratio="">
+              {hero.ratio}
+            </span>
+          ) : null}
+        </div>
+        {hero.pie ? (
+          <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
+        ) : null}
+      </div>
+      <span className="metric-card-sub" data-map-lead-explainer="">
+        {hero.explainer}
+      </span>
+    </div>
+  );
 }
 
 function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
@@ -158,6 +200,7 @@ export function MapChannelPanel({
   if (failed) {
     return (
       <RetailSurface>
+        <MapLeakageLead read={read} />
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
@@ -170,6 +213,7 @@ export function MapChannelPanel({
   if (!rows) {
     return (
       <RetailSurface>
+        <MapLeakageLead read={read} />
         <div className="content-box" style={{ marginTop: 12 }}>
           <div className="content-box-title">Summary</div>
           <MapReadingSummary read={read} />
@@ -197,6 +241,7 @@ export function MapChannelPanel({
 
   return (
     <RetailSurface>
+      <MapLeakageLead read={read} />
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">Summary</div>
         <MapReadingSummary read={read} />
