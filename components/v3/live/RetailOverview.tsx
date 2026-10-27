@@ -4,6 +4,7 @@ import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
 import { RetailFindingVisual } from "@/components/v3/live/RetailFindingVisual";
+import { RetailOverviewLead } from "@/components/v3/live/RetailOverviewLead";
 import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   RETAIL_FINDING_LABELS,
@@ -80,7 +81,10 @@ export function RetailOverview({
       >
         Seller type: Partner-led
       </p>
-      <div className="ceo-callout">
+
+      <RetailOverviewLead read={read} />
+
+      <div className="ceo-callout" style={{ marginTop: 12 }}>
         <div className="ceo-callout-header">
           <span>How do these retail findings change AI search?</span>
         </div>
@@ -103,12 +107,6 @@ export function RetailOverview({
         </div>
       </div>
 
-      {read.phase === "loading" ? (
-        <p className="retail-missing">Loading the retail reading…</p>
-      ) : null}
-      {read.phase === "error" ? (
-        <p className="retail-missing">The retail read could not be loaded.</p>
-      ) : null}
       {read.phase === "ready" ? <Findings snapshot={read.snapshot} /> : null}
       {counts ? <FeaturedOfferReadings counts={counts} freshness={freshness} /> : null}
 
