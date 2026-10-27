@@ -138,11 +138,14 @@ test("missing Buy Box reading shows Not available* without a zero share", () => 
   assert.doesNotMatch(hero.percent, /^0/);
 });
 
-test("Suppressed Listings panel leads with buyBoxHero before the Buy Box explainer", () => {
+test("Suppressed Listings places notes beside the share and drops the second title", () => {
   const panel = read("components/v3/live/SuppressedListingsPanel.tsx");
 
   assert.match(panel, /buyBoxHero/);
   assert.match(panel, /data-suppressed-listings-lead/);
+  assert.match(panel, /data-suppressed-listings-notes/);
+  assert.match(panel, /data-suppressed-listings-top/);
+  assert.match(panel, /data-suppressed-listings-table/);
   assert.match(panel, /CitationPieDisc/);
   assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
@@ -150,12 +153,27 @@ test("Suppressed Listings panel leads with buyBoxHero before the Buy Box explain
   assert.match(panel, /hero\.ratio/);
   assert.match(panel, /hero\.tip/);
   assert.match(panel, /hero\.explainer/);
+  assert.match(panel, /width:\s*"fit-content"/);
   assert.match(panel, /Why can a listing lose the Buy Box\?/);
   assert.match(panel, /confirmedSuppressionSentence/);
+  assert.match(panel, /benchmarkCoverageSentence/);
+  assert.match(panel, /featuredOfferFreshnessSentence/);
+  assert.match(
+    panel,
+    /The observed offer and the Competitive External Price come from the same Amazon/,
+  );
 
+  const topAt = panel.indexOf("data-suppressed-listings-top");
   const leadAt = panel.indexOf("<SuppressedListingsLead");
-  const explainerAt = panel.indexOf("{explanation()}");
-  assert.ok(leadAt >= 0 && explainerAt > leadAt, "share lead stays above the Buy Box explainer");
+  const notesAt = panel.indexOf("<SuppressedListingsNotes");
+  const tableAt = panel.indexOf("data-suppressed-listings-table");
+  assert.ok(topAt >= 0 && leadAt > topAt && notesAt > leadAt, "notes sit with the lead in one row");
+  assert.ok(tableAt > notesAt, "listings table stays under the share-and-notes row");
+
+  assert.doesNotMatch(panel, /content-box-title/);
+  assert.doesNotMatch(panel, /suppressed-count/);
+  assert.doesNotMatch(panel, /<span>Buy Box withheld<\/span>/);
+  assert.match(panel, /hero\.label/, "one share label comes from buyBoxHero");
 
   assert.doesNotMatch(panel, /data-ifai-open=/);
   assert.doesNotMatch(panel, /data-ifai-tab=/);
