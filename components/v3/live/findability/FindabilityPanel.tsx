@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { FindabilityLead } from "@/components/v3/live/findability/FindabilityLead";
 import { FindabilityTable } from "@/components/v3/live/findability/FindabilityTable";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import {
@@ -128,10 +129,7 @@ export function FindabilityPanel() {
   }
 
   const shape = findabilityShape(counts!);
-  const headline =
-    counts!.total === 0
-      ? "This official-page read has no listings."
-      : findabilityHeadline(counts!);
+  const headline = counts!.total === 0 ? null : findabilityHeadline(counts!);
 
   const choose = (outcome: FindabilityBucket) => {
     setSelected((current) => (current === outcome ? null : outcome));
@@ -139,9 +137,12 @@ export function FindabilityPanel() {
 
   return (
     <div className="findability-panel" data-findability-shape={shape} data-findability-total={counts!.total}>
-      <p className="findability-headline" data-findability-headline="">
-        {headline}
-      </p>
+      <FindabilityLead counts={counts!} />
+      {headline ? (
+        <p className="findability-headline" data-findability-headline="" style={{ marginTop: 12 }}>
+          {headline}
+        </p>
+      ) : null}
       <p className="findability-note">
         Each listing is one outcome. {FAMILY_IS_NOT_EXACT} Open a count to see the listings, titles,
         and official pages behind it.
