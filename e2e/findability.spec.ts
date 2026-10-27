@@ -130,9 +130,10 @@ const ROWS: Row[] = [
 async function openFindability(page: Page) {
   const canvas = new Canvas(page);
   await canvas.open();
-  await canvas.openSpokeFromMap("AI Readiness");
-  await canvas.openTab("Findability");
-  await expect(page.locator("[data-findability-headline]")).toBeVisible();
+  await page.goto("/dashboard?spoke=specs&tab=findability");
+  await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+  await expect(canvas.activeTab).toContainText("Findability");
+  await expect(page.locator("[data-findability-lead]")).toBeVisible();
   return canvas;
 }
 
@@ -140,16 +141,32 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await mockCanvasRead(page, { findability: ROWS });
   await openFindability(page);
 
-  const headline = page.locator("[data-findability-headline]");
-  await expect(headline).toContainText("2 exact official product pages");
-  await expect(headline).toContainText("1 official family page");
-  await expect(headline).toContainText("1 finished search with no defensible page");
-  await expect(headline).toContainText("1 ambiguous match");
-  await expect(headline).toContainText("1 unchecked listing");
-  await expect(headline).not.toContainText("13.3%");
-  await expect(headline).not.toContainText("one third");
+  const lead = page.locator("[data-findability-lead]");
+  await expect(lead).toBeVisible();
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
+  await expect(page.locator(".findability-headline")).toHaveCount(0);
+  await expect(page.locator("[data-findability-headline]")).toHaveCount(0);
+
+  const exactHero = page.locator("[data-findability-lead-outcome='exact_official_product']");
+  await expect(exactHero).toContainText("Exact official product page");
+  await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveText("33.3%");
+  await expect(exactHero.locator("[data-findability-lead-figure]")).toHaveAttribute("data-findability-exact", "2");
+  await expect(exactHero.locator("[data-findability-lead-ratio]")).toHaveText("2 of 6");
+  await expect(exactHero.locator("[data-citation-pie-disc='findability-exact_official_product']")).toBeVisible();
+  await expect(exactHero.locator(".citation-pie-disc-findability")).toBeVisible();
+
+  await expect(page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-figure]")).toHaveText(
+    "16.7%",
+  );
+  await expect(page.locator("[data-findability-lead-outcome='completed_not_found'] [data-findability-lead-ratio]")).toHaveText(
+    "1 of 6",
+  );
+  await expect(page.locator("[data-findability-lead-outcome='ambiguous_candidate']")).toBeVisible();
+  await expect(page.locator("[data-findability-lead-outcome='not_checked']")).toBeVisible();
+
   await expect(page.locator(".drilldown-desc")).not.toContainText("13.3%");
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
+  await expect(page.locator(".findability-note").filter({ hasText: "Each listing is one outcome" })).toBeVisible();
   await expect(page.locator(".findability-note").filter({ hasText: "JSON-LD was not audited" })).toBeVisible();
   await expect(page.locator(".findability-note").filter({ hasText: "older spec read" })).toBeVisible();
 
@@ -200,8 +217,9 @@ test("an empty official-page read does not describe unchecked as a finished sear
   await openFindability(page);
 
   await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "empty");
-  await expect(page.locator("[data-findability-headline]")).toContainText("no listings");
-  await expect(page.locator("[data-findability-headline]")).not.toContainText("%");
+  await expect(page.locator("[data-findability-empty]")).toContainText("no listings");
+  await expect(page.locator("[data-findability-empty]")).not.toContainText("%");
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(0);
   for (const outcome of [
     "exact_official_product",
     "official_family_page",
@@ -230,8 +248,16 @@ test("a partial read keeps zero outcomes separate from the rows that were checke
 
   await expect(page.locator("[data-findability-shape]")).toHaveAttribute("data-findability-shape", "partial");
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "3");
-  await expect(page.locator("[data-findability-headline]")).toContainText("0 official family pages");
-  await expect(page.locator("[data-findability-headline]")).toContainText("0 finished searches with no defensible page");
+  await expect(page.locator("[data-findability-lead-outcome]")).toHaveCount(5);
+  await expect(
+    page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-figure]"),
+  ).toHaveText("0.0%");
+  await expect(
+    page.locator("[data-findability-lead-outcome='official_family_page'] [data-findability-lead-ratio]"),
+  ).toHaveText("0 of 3");
+  await expect(
+    page.locator("[data-findability-lead-outcome='completed_not_found'] [data-findability-lead-ratio]"),
+  ).toHaveText("0 of 3");
   await expect(page.getByText("A zero is a real count.")).toBeVisible();
 
   await page.locator("[data-findability-outcome='official_family_page'] [data-findability-count]").click();
