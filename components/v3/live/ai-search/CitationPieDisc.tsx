@@ -45,12 +45,21 @@ function gradient(slices: CitationPieSlice[], total: number): string {
     .join(", ");
 }
 
+/** Disc pie shape. Role-rate leads reuse this without the citation id union. */
+export type PieDiscInput = {
+  id: string;
+  title: string;
+  total: number;
+  totalLabel: string;
+  slices: CitationPie["slices"];
+};
+
 export function CitationPieDisc({
   pie,
   sizeClass = "citation-pie-disc",
   tip,
 }: {
-  pie: CitationPie;
+  pie: PieDiscInput;
   sizeClass?: string;
   /** Custom tooltip. Same chrome as definition terms, without a native title. */
   tip?: string;

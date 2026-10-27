@@ -6,12 +6,12 @@ import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { useAiHistoryOptional } from "@/components/v3/live/ai-search/AiHistoryContext";
 import { AiReadGate, EmptyRows, mutedText } from "@/components/v3/live/ai-search/AiReadGate";
 import { AiTerm } from "@/components/v3/live/ai-search/AiTerm";
+import { RunDetailsLead } from "@/components/v3/live/ai-search/RunDetailsLead";
 import { SimulationEvidenceDrawer } from "@/components/v3/live/ai-search/SimulationEvidenceDrawer";
 import { SimulationFilters } from "@/components/v3/live/ai-search/SimulationFilters";
 import { useEvidenceFocus } from "@/components/v3/live/ai-search/useEvidenceFocus";
 import { citationEvidence, type CitationEvidence } from "@/lib/ai-search/citations";
 import { driftRead } from "@/lib/ai-search/drift";
-import { questionRole, ROLE_LABELS } from "@/lib/ai-search/question-role";
 import { setEvidenceFocus } from "@/lib/ai-search/evidence-focus";
 import {
   applyExplorerFilter,
@@ -20,6 +20,7 @@ import {
   sortExplorerRows,
   type ExplorerFilter,
 } from "@/lib/ai-search/explorer-filter";
+import { questionRole, ROLE_LABELS } from "@/lib/ai-search/question-role";
 import {
   callOutcome,
   categoryLabel,
@@ -30,9 +31,9 @@ import {
   OUTCOME_LABELS,
   type CallOutcome,
 } from "@/lib/ai-search/run-metrics";
-import type { SortInput } from "@/lib/fender-canvas/table-sort";
 import type { AiCallRow, AiSearchSnapshot } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const SIM_COLUMNS = [
   clientColumn("prompt", "Prompt", "text", 280, 160),
@@ -126,13 +127,8 @@ function Explorer({ snapshot }: { snapshot: AiSearchSnapshot }) {
 
   return (
     <div className="content-box ai-simulations">
-      <div className="content-box-title">
-        <span>Run Details</span>
-        <span className="tag-badge tag-neutral" data-ai-row-count>
-          {rows.length} of {snapshot.calls.length} calls
-        </span>
-      </div>
-      <p style={mutedText}>
+      <RunDetailsLead snapshot={snapshot} />
+      <p className="ai-lead-explainer" style={mutedText}>
         Shopping prompts are buying questions, scored by which brand the answer names most. A{" "}
         <AiTerm term="product fact check">product fact check</AiTerm> tests one published Fender fact instead, so it is
         never scored as a win. A <AiTerm term="provider error" /> or an answer with <AiTerm term="no clear leader" /> is
