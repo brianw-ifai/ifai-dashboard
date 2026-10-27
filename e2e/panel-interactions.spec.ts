@@ -211,10 +211,10 @@ test.describe("drill-downs", () => {
   test("the spec sample states the live schema result", async ({ canvas, page }) => {
     await canvas.openPriority("machine-readable spec");
     await canvas.openTab("Readiness");
-    await expect(page.locator(".drilldown-desc")).toContainText("additionalProperty");
-    await expect(page.locator(".drilldown-desc")).not.toContainText("29.2%");
-    await expect(page.locator(".drilldown-desc")).not.toContainText("7 of 22");
+    await expect(page.locator(".drilldown-desc")).toHaveCount(0);
     await expect(page.locator(".drilldown-body")).toContainText("additionalProperty");
+    await expect(page.locator(".drilldown-body")).not.toContainText("29.2%");
+    await expect(page.locator(".drilldown-body")).not.toContainText("7 of 22");
     await expect(page.locator(".drilldown-body")).not.toContainText("14 catalog");
   });
 

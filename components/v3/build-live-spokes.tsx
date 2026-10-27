@@ -24,7 +24,7 @@ import { spokeData } from "@/components/v3/spoke-data";
 import narrative from "@/data/fender-v3-spec.json";
 import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { findabilitySpokeDescription, type FindabilityRead } from "@/lib/findability/copy";
+import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
@@ -118,7 +118,7 @@ function wrapSpoke(
   vars: Record<string, string>,
   retail: RetailCanvasRead,
   ai: AiSearchRead,
-  findability: FindabilityRead,
+  _findability: FindabilityRead,
 ): SpokeDefinition {
   const bound = bindNarrativeSpoke(spokeData[id], vars);
   const overrides = TAB_OVERRIDES[id] ?? {};
@@ -145,7 +145,8 @@ function wrapSpoke(
           headerAccessory: <RunHistoryControl />,
         }
       : {}),
-    ...(id === "specs" ? { desc: findabilitySpokeDescription(findability) } : {}),
+    // Findability counts live in the tab body. An empty desc must not leave a gap.
+    ...(id === "specs" ? { desc: "" } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;
