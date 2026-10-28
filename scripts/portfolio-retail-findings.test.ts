@@ -502,7 +502,11 @@ test("query columns stay on the stored finding fields", () => {
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /parent_asin/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /bundle_name/);
   assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /product_url/);
-  assert.doesNotMatch(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_seller|authorized/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /category/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_seller_name/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_seller_id/);
+  assert.match(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /buybox_status/);
+  assert.doesNotMatch(RETAIL_CATALOG_GOVERNANCE_COLUMNS, /authorized/);
   assert.match(RETAIL_AMAZON_SPEC_COLUMNS, /amazon_missing_fields/);
   assert.doesNotMatch(RETAIL_AMAZON_SPEC_COLUMNS, /fender_missing_fields/);
 });

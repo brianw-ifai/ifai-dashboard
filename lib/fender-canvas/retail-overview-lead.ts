@@ -21,7 +21,7 @@ const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
   success: "var(--success-green)",
 };
 
-export type RetailOverviewHeroId = RetailFindingId;
+export type RetailOverviewHeroId = RetailFindingId | "amazon_spec_gaps";
 
 export type RetailOverviewHeroModel = {
   id: RetailOverviewHeroId;
@@ -51,6 +51,16 @@ function toneForShare(
     return "warning";
   }
   if (numerator === 0) return "success";
+  return "danger";
+}
+
+/**
+ * Specs-complete share bands on the unrounded percentage (complete / checked * 100).
+ * Not toneForShare: any missing field would paint red there; Brand Registry lift is the complete share.
+ */
+function toneForSpecComplete(completePct: number): Exclude<NodeStatus, "neutral"> {
+  if (completePct >= 98) return "success";
+  if (completePct >= 95) return "warning";
   return "danger";
 }
 
@@ -166,6 +176,55 @@ export function catalogHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHe
       : reading.missingMessage?.split(". ")[0] ?? "Catalog reading not stored.",
     numerator,
     denominator,
+  };
+}
+
+function specCompletePie(complete: number, missing: number, checked: number): PieDiscData | null {
+  if (checked <= 0 || complete < 0 || missing < 0 || complete + missing !== checked) return null;
+  const slices = [
+    { key: "matched", label: "Specs filled", count: complete },
+    { key: "contradicted", label: "Missing a field", count: missing },
+  ].filter((slice) => slice.count > 0);
+  if (slices.length === 0) return null;
+  return {
+    id: "catalog-spec",
+    title: "Specs complete",
+    total: checked,
+    totalLabel: "checked listings",
+    slices,
+  };
+}
+
+/**
+ * Share of checked listings with every Amazon spec field filled (Brand Registry lift).
+ * Unchecked listings stay out of the numerator and the denominator.
+ */
+export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroModel {
+  const reading = snapshot.amazonSpecGaps;
+  const checked = reading.detail != null && reading.detail.checked > 0 ? reading.detail.checked : null;
+  const missing = reading.issueCount;
+  const ready = checked != null && missing != null && missing >= 0 && missing <= checked;
+  const complete = ready ? checked! - missing! : null;
+  const completePct = ready ? (100 * complete!) / checked! : null;
+  const tone = completePct != null ? toneForSpecComplete(completePct) : "warning";
+
+  return {
+    id: "amazon_spec_gaps",
+    tab: "AI Readiness",
+    label: "Specs complete",
+    percent: ready ? formatPct(completePct) : "Not available*",
+    ratio: ready ? formatRatio(complete, checked) : null,
+    color: TONE_COLOR[tone],
+    tone,
+    pie: ready ? specCompletePie(complete!, missing!, checked!) : null,
+    tip: ready
+      ? `${formatInt(missing)} of ${formatInt(checked)} checked listings are missing an Amazon spec field.`
+      : null,
+    explainer: ready
+      ? "Every Amazon spec field is filled."
+      : reading.missingMessage?.split(". ")[0] ?? "Amazon spec-field reading not stored.",
+    numerator: complete,
+    denominator: checked,
   };
 }
 

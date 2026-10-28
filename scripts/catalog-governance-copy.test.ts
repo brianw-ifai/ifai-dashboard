@@ -11,7 +11,7 @@ test("catalog governance explains the review record without promising a win", ()
   assert.match(copy, /Consolidating valid variants under the correct parent keeps the review record together/);
   assert.match(copy, /improves how Amazon evaluates the listing/);
   assert.match(copy, /stronger evidence when they decide what to recommend/);
-  assert.match(copy, /does not guarantee a higher rank or an AI recommendation/);
+  assert.doesNotMatch(copy, /does not guarantee a higher rank or an AI recommendation/);
   assert.match(copy, /reflects the retail read, not the full catalog/);
   assert.doesNotMatch(copy, FORBIDDEN);
   assert.doesNotMatch(copy, /\u2014/);

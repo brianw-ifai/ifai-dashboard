@@ -77,7 +77,7 @@ export const RETAIL_MAP_LEAKAGE_COLUMNS =
   "asin,map_price,offer_price,amz_leakage,wmt_leakage,mf_leakage";
 
 export const RETAIL_CATALOG_GOVERNANCE_COLUMNS =
-  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle";
+  "asin,model_name,title,bundle_name,parent_asin,product_url,is_bundle,category,buybox_seller_name,buybox_seller_id,buybox_status";
 
 export const RETAIL_AMAZON_SPEC_COLUMNS =
   "asin,title,amazon_checked,amazon_missing_fields";
@@ -318,6 +318,10 @@ export type CatalogBundleRow = {
   parent_asin: string | null;
   product_url: string | null;
   is_bundle: boolean | null;
+  category?: string | null;
+  buybox_seller_name?: string | null;
+  buybox_seller_id?: string | null;
+  buybox_status?: string | null;
 };
 
 export type UnnestedBundleReason = "missing_parent_asin" | "unusable_parent_asin";
@@ -328,12 +332,51 @@ export type UnnestedBundleOpportunity = {
   bundleName: string | null;
   parentAsin: string | null;
   productUrl: string | null;
+  category?: string | null;
+  buyboxSellerName?: string | null;
+  buyboxSellerId?: string | null;
+  buyboxStatus?: string | null;
   justification: {
     isBundle: true;
     parentAsin: string | null;
     reason: UnnestedBundleReason;
   };
 };
+
+/** Cap a short table cell at 24 characters (21 + ellipsis when longer). */
+function shortCell(value: string): string {
+  return value.length <= 24 ? value : `${value.slice(0, 21)}...`;
+}
+
+/** Who holds the Buy Box for a catalog-governance bundle row. */
+export function catalogBundleSellerLabel(seller: string | null | undefined): string {
+  return shortCell(text(seller) ?? "Unknown");
+}
+
+/**
+ * Compact offer label for a catalog-governance bundle row.
+ * For 3P Confirmed, show the Amazon seller id when stored — never "Partner".
+ */
+export function catalogBundleOfferLabel(
+  status: string | null | undefined,
+  sellerId?: string | null,
+): string {
+  const value = text(status);
+  if (value === "3P Confirmed") return shortCell(text(sellerId) ?? "Unknown");
+  if (value === "Amazon 1P") return "Amazon";
+  if (value === "No Active Offer") return "No offer";
+  return "Unknown";
+}
+
+/** Compact product-line label for a catalog-governance bundle row. */
+export function catalogBundleLineLabel(category: string | null | undefined): string {
+  const value = text(category);
+  if (!value) return "Unknown";
+  if (value === "Solid Body") return "Solid Body";
+  if (value === "Electric Guitar Kits") return "Kits";
+  if (value === "Hollow & Semi-Hollow Body") return "Hollow";
+  return shortCell(value);
+}
 
 export type UnnestedBundleDetail = {
   opportunities: UnnestedBundleOpportunity[];
@@ -368,6 +411,10 @@ export function unnestedBundleOpportunities(rows: CatalogBundleRow[]): UnnestedB
       bundleName: text(row.bundle_name),
       parentAsin,
       productUrl: text(row.product_url),
+      category: text(row.category),
+      buyboxSellerName: text(row.buybox_seller_name),
+      buyboxSellerId: text(row.buybox_seller_id),
+      buyboxStatus: text(row.buybox_status),
       justification: {
         isBundle: true,
         parentAsin,

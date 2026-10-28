@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { MapListingsTable } from "@/components/v3/live/MapListingsTable";
 import {
@@ -8,7 +9,7 @@ import {
   listingsQuery,
   retailListingHeadCountQuery,
 } from "@/lib/canvasData";
-import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
+import { formatUsd } from "@/lib/fender-canvas/format";
 import {
   mapTabModel,
   type ChannelPriceRow,
@@ -20,9 +21,13 @@ import {
 } from "@/lib/fender-canvas/map-reading-status";
 import { MAP_PRICES_NOT_STORED } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import { mapHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
 const PAGE_SIZE = 1000;
+const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+
+type MapChannelLine = { key: string; name: string; count: number };
 
 async function loadMapRows(violationsOnly: boolean): Promise<MapSourceRow[]> {
   const rows: MapSourceRow[] = [];
@@ -78,7 +83,74 @@ function mapPricesNotStored(read: RetailCanvasRead): boolean {
   return read.phase === "ready" && read.snapshot.mapLeakage.missingMessage === MAP_PRICES_NOT_STORED;
 }
 
-function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
+/**
+ * MAP share plus the average price gap under the pie.
+ * The gap is copy inside this box, not a second card. Width fits the figure.
+ * Static block; Retail Overview remains the click path into this tab.
+ */
+function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
+  if (read.phase !== "ready") return null;
+  const hero = mapHero(read.snapshot);
+  const gap = read.snapshot.mapLeakage.detail?.averageLeakage ?? null;
+  return (
+    <div
+      className="content-box findability-lead-card"
+      data-map-lead=""
+      style={{
+        flex: "0 0 auto",
+        alignSelf: "flex-start",
+        width: "fit-content",
+        maxWidth: "100%",
+        marginTop: 0,
+      }}
+    >
+      <div data-map-lead-label="">{hero.label}</div>
+      <div className="findability-lead-row" data-map-lead-row="">
+        <div className="findability-lead-figures">
+          <span
+            className="ai-lead-figure"
+            style={{ color: hero.color }}
+            data-map-lead-percent=""
+            data-map-lead-tone={hero.tone}
+            data-map-lead-numerator={hero.numerator ?? ""}
+            data-map-lead-denominator={hero.denominator ?? ""}
+          >
+            {hero.percent}
+          </span>
+          {hero.ratio ? (
+            <span className="findability-lead-ratio" data-map-lead-ratio="">
+              {hero.ratio}
+            </span>
+          ) : null}
+        </div>
+        {hero.pie ? (
+          <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
+        ) : null}
+      </div>
+      <div data-map-lead-gap="">
+        <span className="metric-card-label">Average price gap</span>
+        <div className="metric-card-val" style={{ color: "var(--danger-red)" }} data-map-lead-gap-value="">
+          {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Right bubble: channel lines, or the not-stored sentence. The price gap stays in the hero.
+ */
+function MapNotes({
+  read,
+  channels,
+  walmartMissing,
+  musiciansFriendLastRunAt,
+}: {
+  read: RetailCanvasRead;
+  channels: MapChannelLine[];
+  walmartMissing: number | null;
+  musiciansFriendLastRunAt?: string | null;
+}) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
   }
@@ -87,38 +159,71 @@ function MapReadingSummary({ read }: { read: RetailCanvasRead }) {
   }
   if (mapPricesNotStored(read)) {
     return (
-      <p className="retail-missing">
+      <p className="retail-missing" data-map-notes-not-stored="">
         <DefinedCopy text={MAP_PRICES_NOT_STORED} />
       </p>
     );
   }
-  const reading = read.snapshot.mapLeakage;
-  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
-  const gap = reading.detail?.averageLeakage ?? null;
+
+  if (!channels.length) return null;
+
   return (
-    <>
-      <div className="metric-grid-2" style={{ marginTop: 8 }}>
-        <div className="metric-card-sm">
-          <span className="metric-card-label">Listings below MAP</span>
-          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-            {reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount)}
-          </div>
-          <span className="metric-card-sub">Stored channel leakage below MAP</span>
-        </div>
-        <div className="metric-card-sm">
-          <span className="metric-card-label">Average price gap</span>
-          <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-            {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
-          </div>
-          <span className="metric-card-sub">Price gap, not revenue</span>
-        </div>
+    <ul className="tour-card-list" style={{ margin: 0 }} data-map-notes-channels="">
+      {channels.map((channel) => (
+        <li key={channel.key}>
+          <strong>{channel.name}</strong>
+          {" · "}
+          <DefinedCopy
+            text={channelSummaryText(
+              channel.count,
+              channelReadingNote(channel.name, {
+                walmartMissing,
+                musiciansFriendLastRunAt,
+              }),
+            )}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function MapTopRow({
+  read,
+  channels,
+  walmartMissing,
+  musiciansFriendLastRunAt,
+}: {
+  read: RetailCanvasRead;
+  channels: MapChannelLine[];
+  walmartMissing: number | null;
+  musiciansFriendLastRunAt?: string | null;
+}) {
+  return (
+    <div
+      data-map-top=""
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 12,
+        alignItems: "stretch",
+        marginTop: 12,
+      }}
+    >
+      <MapLeakageLead read={read} />
+      <div
+        className="content-box"
+        data-map-notes=""
+        style={{ flex: "1 1 220px", alignSelf: "stretch", minWidth: 180, marginTop: 0 }}
+      >
+        <MapNotes
+          read={read}
+          channels={channels}
+          walmartMissing={walmartMissing}
+          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        />
       </div>
-      {showMissing && reading.missingMessage ? (
-        <p className="retail-missing">
-          <DefinedCopy text={reading.missingMessage} />
-        </p>
-      ) : null}
-    </>
+    </div>
   );
 }
 
@@ -135,6 +240,7 @@ export function MapChannelPanel({
   const [failed, setFailed] = useState(false);
 
   const pricesNotStored = mapPricesNotStored(read);
+  const musiciansFriendLastRunAt = musiciansFriendFreshness?.last_run_at;
 
   useEffect(() => {
     if (read.phase === "loading") return;
@@ -158,9 +264,13 @@ export function MapChannelPanel({
   if (failed) {
     return (
       <RetailSurface>
-        <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Summary</div>
-          <MapReadingSummary read={read} />
+        <MapTopRow
+          read={read}
+          channels={[]}
+          walmartMissing={walmartMissing}
+          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        />
+        <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
           <p className="retail-missing">Below-MAP rows are not available.</p>
         </div>
       </RetailSurface>
@@ -170,9 +280,13 @@ export function MapChannelPanel({
   if (!rows) {
     return (
       <RetailSurface>
-        <div className="content-box" style={{ marginTop: 12 }}>
-          <div className="content-box-title">Summary</div>
-          <MapReadingSummary read={read} />
+        <MapTopRow
+          read={read}
+          channels={[]}
+          walmartMissing={walmartMissing}
+          musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+        />
+        <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
           <p className="retail-missing">Loading MAP rows…</p>
         </div>
       </RetailSurface>
@@ -180,56 +294,38 @@ export function MapChannelPanel({
   }
 
   const model = mapTabModel(rows, channelPrices);
-  const summaryChannels = [
-    ...model.channels.map((channel) => ({
-      key: channel.name,
-      name: channel.name,
-      count: channel.count,
-    })),
-    ...model.extraChannels
-      .filter((channel) => channel.count > 0)
-      .map((channel) => ({
-        key: channel.channel,
-        name: channel.name,
-        count: channel.count,
-      })),
-  ];
+  const summaryChannels: MapChannelLine[] = pricesNotStored
+    ? []
+    : [
+        ...model.channels.map((channel) => ({
+          key: channel.name,
+          name: channel.name,
+          count: channel.count,
+        })),
+        ...model.extraChannels
+          .filter((channel) => channel.count > 0)
+          .map((channel) => ({
+            key: channel.channel,
+            name: channel.name,
+            count: channel.count,
+          })),
+      ];
 
   return (
     <RetailSurface>
-      <div className="content-box" style={{ marginTop: 12 }}>
-        <div className="content-box-title">Summary</div>
-        <MapReadingSummary read={read} />
-        {!pricesNotStored && summaryChannels.length ? (
-          <ul className="tour-card-list" style={{ margin: "12px 0 0" }}>
-            {summaryChannels.map((channel) => (
-              <li key={channel.key}>
-                <strong>{channel.name}</strong>
-                {" · "}
-                <DefinedCopy
-                  text={channelSummaryText(
-                    channel.count,
-                    channelReadingNote(channel.name, {
-                      walmartMissing,
-                      musiciansFriendLastRunAt: musiciansFriendFreshness?.last_run_at,
-                    }),
-                  )}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <div className="content-box-title" style={{ marginTop: 14 }}>
-          Listings
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <MapListingsTable
-            rows={rows}
-            model={model}
-            channelPrices={channelPrices}
-            pricesNotStored={pricesNotStored}
-          />
-        </div>
+      <MapTopRow
+        read={read}
+        channels={summaryChannels}
+        walmartMissing={walmartMissing}
+        musiciansFriendLastRunAt={musiciansFriendLastRunAt}
+      />
+      <div className="content-box" style={{ marginTop: 12 }} data-map-listings="">
+        <MapListingsTable
+          rows={rows}
+          model={model}
+          channelPrices={channelPrices}
+          pricesNotStored={pricesNotStored}
+        />
       </div>
     </RetailSurface>
   );
