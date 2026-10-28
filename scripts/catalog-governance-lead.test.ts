@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
-import { specFieldFindings, specFieldLabel } from "../lib/fender-canvas/catalog-governance-findings.ts";
+import {
+  listingMatchesSpecFilters,
+  specFieldFindings,
+  specFieldLabel,
+  specGapFieldsCell,
+} from "../lib/fender-canvas/catalog-governance-findings.ts";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
   catalogBundleLineLabel,
@@ -255,6 +260,78 @@ test("specFieldFindings ranks Fill first and How close from gap listings", () =>
   assert.equal(specFieldLabel("item_weight"), "Weight");
   assert.equal(specFieldLabel("unusual_custom_field_name_here"), "Unusual Custom Field...");
   assert.ok(specFieldLabel("unusual_custom_field_name_here").length <= 24);
+
+  // Repeated field names on one listing count once for how-close.
+  const dup = specFieldFindings([
+    { asin: "B0000000D1", modelOrTitle: "Dup", missingFields: ["scale_length", "scale_length"] },
+  ]);
+  assert.deepEqual(dup.howClose, { oneField: 1, twoFields: 0, mostOfTheSpec: 0 });
+});
+
+test("listingMatchesSpecFilters ANDs field buttons with how-close", () => {
+  const onlyScale: AmazonSpecGap = {
+    asin: "B0000000S1",
+    modelOrTitle: "Only scale",
+    missingFields: ["scale_length"],
+  };
+  const scaleAndHand: AmazonSpecGap = {
+    asin: "B0000000S2",
+    modelOrTitle: "Scale and hand",
+    missingFields: ["scale_length", "hand_orientation"],
+  };
+  const eleven: AmazonSpecGap = {
+    asin: "B0000000S3",
+    modelOrTitle: "Most",
+    missingFields: [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+    ],
+  };
+
+  assert.equal(listingMatchesSpecFilters(onlyScale, ["scale_length"], "one"), true);
+  assert.equal(listingMatchesSpecFilters(scaleAndHand, ["scale_length"], "two"), true);
+  assert.equal(listingMatchesSpecFilters(scaleAndHand, ["scale_length"], "one"), false);
+  assert.equal(listingMatchesSpecFilters(eleven, [], "most"), true);
+  assert.equal(listingMatchesSpecFilters(eleven, [], "one"), false);
+  assert.equal(listingMatchesSpecFilters(eleven, [], "two"), false);
+  // Two field buttons plus One field: nothing is missing only those two.
+  assert.equal(
+    listingMatchesSpecFilters(scaleAndHand, ["scale_length", "hand_orientation"], "one"),
+    false,
+  );
+  assert.equal(
+    listingMatchesSpecFilters(onlyScale, ["scale_length", "hand_orientation"], "one"),
+    false,
+  );
+
+  assert.equal(specGapFieldsCell(["scale_length"]), "Scale length");
+  assert.equal(specGapFieldsCell(["scale_length", "hand_orientation"]), "Scale length, Handedness");
+  assert.equal(specGapFieldsCell(["scale_length", "hand_orientation", "item_weight"]), "3 fields");
+  assert.equal(
+    specGapFieldsCell([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+    ]),
+    "Most of the spec",
+  );
 });
 
 test("Catalog Governance places notes beside the share and the table under that row", () => {
@@ -297,23 +374,24 @@ test("Catalog Governance places notes beside the share and the table under that 
   const leadAt = render.indexOf("<CatalogGovernanceLead");
   const specAt = render.indexOf("<CatalogSpecHero");
   const notesAt = render.indexOf("<CatalogGovernanceNotes");
-  const findingsAt = render.indexOf("<CatalogSpecFindings");
   const tableAt = render.indexOf("data-catalog-governance-table");
+  const specsTableAt = render.indexOf("<CatalogGovernanceSpecTable");
   assert.ok(rowAt >= 0 && leadAt > rowAt, "lead sits in the lead row");
   assert.ok(specAt > rowAt && specAt < notesAt, "spec hero sits in the lead row before notes");
   assert.ok(notesAt > leadAt, "notes sit beside the lead in the same row");
-  assert.ok(findingsAt > notesAt, "findings band sits under the lead row");
-  assert.ok(tableAt > findingsAt, "bundle table sits under the findings band");
+  assert.ok(tableAt > notesAt, "bundle table sits under the lead row");
+  assert.ok(specsTableAt > notesAt, "specs table sits under the lead row");
   assert.ok(panel.indexOf("data-catalog-spec-hero") < panel.indexOf("data-catalog-governance-notes"));
 
   const leadBlock = panel.slice(
     panel.indexOf("function CatalogGovernanceLead"),
-    panel.indexOf("function FindingLine"),
+    panel.indexOf("function CatalogGovernanceNotes"),
   );
-  assert.doesNotMatch(leadBlock, /<button/);
   assert.doesNotMatch(leadBlock, /data-ifai-open/);
   assert.doesNotMatch(leadBlock, /data-ifai-tab/);
   assert.match(leadBlock, /SPLINTERED_LISTINGS_LABEL/);
+  assert.match(leadBlock, /retail-explore/);
+  assert.match(leadBlock, /aria-expanded=\{open\}/);
 
   const notesBlock = panel.slice(
     panel.indexOf("function CatalogGovernanceNotes"),
@@ -330,28 +408,41 @@ test("Catalog Governance places notes beside the share and the table under that 
   assert.ok(lines <= 400, `CatalogGovernancePanel.tsx is ${lines} lines`);
 });
 
-test("Catalog Governance panel source shows Splintered listings and the findings band", () => {
+test("Catalog Governance panel source shows Splintered listings chevrons and specs table", () => {
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
+  const specs = read("components/v3/live/CatalogGovernanceSpecTable.tsx");
   assert.match(panel, /Splintered listings/);
-  assert.match(panel, /Fill first/);
-  assert.match(panel, /How close/);
-  assert.match(panel, /Most of the spec/);
-  assert.match(panel, /data-catalog-governance-findings/);
-  assert.match(panel, /data-ifai-tooltip-title="Most of the spec"/);
-  assert.match(panel, /data-ifai-tooltip-desc=\{MOST_OF_THE_SPEC_DESC\}/);
-  assert.match(panel, /className="ifai-term"/);
-  assert.match(panel, /specFieldFindings/);
-  assert.match(panel, /formatInt/);
-  assert.match(panel, /Not available\*/);
+  assert.match(panel, /Specs complete/);
+  assert.match(panel, /retail-explore-chevron/);
+  assert.match(panel, /aria-expanded=\{open\}/);
+  assert.match(panel, /useState<OpenTable>\("splintered"\)/);
+  assert.match(panel, /<CatalogGovernanceSpecTable/);
+  assert.match(panel, /aria-controls=\{SPLINTERED_TABLE_ID\}/);
+  assert.match(panel, /aria-controls=\{SPECS_TABLE_ID\}/);
+  assert.doesNotMatch(panel, /data-catalog-governance-findings/);
+  assert.doesNotMatch(panel, /CatalogSpecFindings/);
+  assert.doesNotMatch(panel, /Fill first/);
+  assert.doesNotMatch(specs, /data-catalog-governance-findings/);
+  assert.match(specs, /segmented-btn/);
+  assert.match(specs, /data-catalog-governance-specs-table/);
+  assert.match(specs, /specFieldFindings/);
+  assert.match(specs, /listingMatchesSpecFilters/);
+  assert.match(specs, /Most of the spec/);
+  assert.match(specs, /data-ifai-tooltip-title="Most of the spec"/);
+  assert.match(specs, /data-ifai-tooltip-desc=\{MOST_OF_THE_SPEC_DESC\}/);
+  assert.match(specs, /className="ifai-term"/);
+  assert.match(specs, /Not available\*/);
+  assert.match(specs, /No listing matches these filters\./);
   assert.doesNotMatch(panel, /(?<![\w-])title=\{|(?<![\w-])title="/);
+  assert.doesNotMatch(specs, /(?<![\w-])title=\{|(?<![\w-])title="/);
   assert.equal(RETAIL_FINDING_LABELS.unnested_bundles, "Catalog Governance");
 
   const render = panel.slice(panel.indexOf("export function CatalogGovernancePanel"));
   const leadRowAt = render.indexOf("data-catalog-governance-lead-row");
-  const findingsAt = render.indexOf("<CatalogSpecFindings");
   const tableAt = render.indexOf("data-catalog-governance-table");
-  assert.ok(leadRowAt >= 0 && findingsAt > leadRowAt, "findings band sits after the lead row");
-  assert.ok(tableAt > findingsAt, "bundle table sits after the findings band");
+  const specsAt = render.indexOf("<CatalogGovernanceSpecTable");
+  assert.ok(leadRowAt >= 0 && tableAt > leadRowAt, "bundle table sits after the lead row");
+  assert.ok(specsAt > leadRowAt, "specs table sits after the lead row");
 });
 
 test("bundle Seller, Offer, and Line cells use short brand-facing labels", () => {
