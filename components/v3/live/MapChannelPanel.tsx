@@ -98,7 +98,7 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
       data-map-lead=""
       style={{
         flex: "0 0 auto",
-        alignSelf: "stretch",
+        alignSelf: "flex-start",
         width: "fit-content",
         maxWidth: "100%",
         marginTop: 0,
@@ -127,15 +127,11 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
           <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
         ) : null}
       </div>
-      <span className="metric-card-sub" data-map-lead-explainer="">
-        {hero.explainer}
-      </span>
       <div data-map-lead-gap="">
         <span className="metric-card-label">Average price gap</span>
         <div className="metric-card-val" style={{ color: "var(--danger-red)" }} data-map-lead-gap-value="">
           {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
         </div>
-        <span className="metric-card-sub">Price gap, not revenue</span>
       </div>
     </div>
   );
