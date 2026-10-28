@@ -5,52 +5,11 @@ import {
   aiReadinessHeroes,
   type AiReadinessHeroModel,
 } from "@/lib/fender-canvas/ai-readiness-lead";
-import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 const PIE_SIZE = "citation-pie-disc citation-pie-disc-findability";
 
-export type MissingPageControl = {
-  active: boolean;
-  onToggle: () => void;
-};
-
-/** Show/Hide filter for rows with no stored fender.com page. Lives on the page-found hero. */
-function MissingPageTogglePill({
-  control,
-  foundResult,
-}: {
-  control: MissingPageControl;
-  foundResult: string;
-}) {
-  const action = control.active ? "Hide" : "Show";
-  const explanation = control.active
-    ? "Hide this filter and show every row again."
-    : "Show only the checked SKUs with no stored fender.com page.";
-  return (
-    <button
-      type="button"
-      className={`spec-found-pill${control.active ? " active" : ""}`}
-      aria-pressed={control.active}
-      aria-controls="spec-readiness-by-asin"
-      aria-label={`fender.com page found ${foundResult}. ${explanation}`}
-      data-spec-filter="missing-fender-page"
-      onClick={control.onToggle}
-    >
-      <span className="spec-found-pill-action">{action}</span>
-    </button>
-  );
-}
-
-function ReadinessHero({
-  hero,
-  missingPageControl,
-  foundResult,
-}: {
-  hero: AiReadinessHeroModel;
-  missingPageControl?: MissingPageControl;
-  foundResult: string;
-}) {
+function ReadinessHero({ hero }: { hero: AiReadinessHeroModel }) {
   return (
     <div
       className="content-box findability-lead-card"
@@ -90,40 +49,22 @@ function ReadinessHero({
           <CitationPieDisc pie={hero.pie} sizeClass={PIE_SIZE} tip={hero.tip ?? undefined} />
         ) : null}
       </div>
-      {hero.filterControl && missingPageControl ? (
-        <div className="ai-readiness-hero-filter">
-          <MissingPageTogglePill control={missingPageControl} foundResult={foundResult} />
-        </div>
-      ) : null}
     </div>
   );
 }
 
 /**
  * AI Readiness top heroes: label, percentage, ratio, and pie disc.
- * Replaces the Metric/Result summary table. Same family as Findability leads.
+ * Same height family as Findability leads. The page-found hero has no row filter.
  */
-export function AiReadinessLead({
-  bundle,
-  missingPageControl,
-}: {
-  bundle: CanvasBundle;
-  missingPageControl?: MissingPageControl;
-}) {
-  const { m } = bundle;
-  const heroes = aiReadinessHeroes(m);
-  const foundResult = `${formatPct(m.spec_fender_found_pct)} (${formatRatio(m.spec_fender_found, m.spec_checked)})`;
+export function AiReadinessLead({ bundle }: { bundle: CanvasBundle }) {
+  const heroes = aiReadinessHeroes(bundle.m);
 
   return (
     <div className="ai-readiness-lead" data-ai-readiness-lead="">
       <div className="findability-leads" data-ai-readiness-heroes="">
         {heroes.map((hero) => (
-          <ReadinessHero
-            key={hero.id}
-            hero={hero}
-            missingPageControl={missingPageControl}
-            foundResult={foundResult}
-          />
+          <ReadinessHero key={hero.id} hero={hero} />
         ))}
       </div>
       <p className="ai-readiness-lead-note">

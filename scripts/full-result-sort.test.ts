@@ -266,7 +266,7 @@ test("sticky headers and column resizing stay in place while the full population
     assert.match(source, /loadFilteredPages/);
     assert.doesNotMatch(source, /useClientTableSort/);
   }
-  assert.match(read("components/v3/live/FenderSpecPanel.tsx"), /SPEC_TABLE_MAX_HEIGHT = 260/);
+  assert.match(read("components/v3/live/FenderSpecPanel.tsx"), /SPEC_TABLE_MAX_HEIGHT = 420/);
   const resize = read("components/v3/live/ResizableTable.tsx");
   assert.match(resize, /col-resize-handle/);
   assert.match(resize, /aria-sort/);

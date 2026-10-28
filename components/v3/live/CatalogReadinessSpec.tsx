@@ -1,28 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { AiReadinessLead } from "@/components/v3/live/AiReadinessLead";
 import { FenderSpecPanel } from "@/components/v3/live/FenderSpecPanel";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
-/** AI Readiness owns the missing-page filter. Machine Readability does not use this. */
+/** AI Readiness tab: share heroes, missing-fields chart, and Spec readiness by ASIN. */
 export function CatalogReadinessSpec({ bundle }: { bundle: CanvasBundle }) {
-  const [missingPagesOnly, setMissingPagesOnly] = useState(false);
-
   return (
     <div className="readiness-surface">
-      <AiReadinessLead
-        bundle={bundle}
-        missingPageControl={{
-          active: missingPagesOnly,
-          onToggle: () => setMissingPagesOnly((value) => !value),
-        }}
-      />
-      <FenderSpecPanel
-        missing={bundle.missing}
-        catalogReadiness
-        missingPagesOnly={missingPagesOnly}
-      />
+      <AiReadinessLead bundle={bundle} />
+      <FenderSpecPanel missing={bundle.missing} catalogReadiness />
     </div>
   );
 }

@@ -143,12 +143,9 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   const spokes = read("components/v3/build-live-spokes.tsx");
   const forbidden = /\b(123|802|925)\b/;
 
-  assert.match(lead, /spec_fender_found_pct/);
-  assert.match(lead, /data-spec-filter="missing-fender-page"/);
-  // One pill, no Clear button, and the toggle word is on it before the first click.
-  assert.doesNotMatch(lead, /data-spec-filter="clear"/);
-  assert.doesNotMatch(lead, /Clear/);
-  assert.match(lead, /control\.active \? "Hide" : "Show"/);
+  assert.doesNotMatch(lead, /data-spec-filter/);
+  assert.doesNotMatch(lead, /spec-found-pill/);
+  assert.doesNotMatch(lead, /missingPageControl|Show\/Hide|Show all/);
   assert.doesNotMatch(lead, /content-box-title/);
   assert.doesNotMatch(lead, /<th>Metric<\/th>/);
   assert.doesNotMatch(lead, /<th>Result<\/th>/);
@@ -159,23 +156,24 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(narrative, /(?<![\w-])title=/);
   assert.doesNotMatch(narrative, forbidden);
 
-  assert.match(panel, /means this check did not resolve a fender.com address/);
-  assert.match(panel, /It is not proof the product is\s+absent from fender.com/);
-  assert.match(panel, />\s*missing page\s*</);
-  assert.match(panel, /data-ifai-tooltip-title="missing page"/);
-  assert.match(panel, /data-ifai-tooltip-desc=\{MISSING_PAGE_DESC\}/);
-  assert.match(panel, /className="ifai-term"/);
-  // The missing-field list opens on two rows and keeps the full list behind a control.
+  // Two-bar preview with a title chevron; no text button under the bars.
   assert.match(panel, /MISSING_FIELD_PREVIEW = 2/);
   assert.match(panel, /missing\.slice\(0, MISSING_FIELD_PREVIEW\)/);
-  assert.match(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
+  assert.match(panel, /data-spec-missing-fields-toggle/);
+  assert.match(panel, /aria-expanded=\{showAll\}/);
+  assert.match(panel, /retail-explore-chevron/);
+  assert.match(panel, /spec-missing-fields-preview/);
+  assert.doesNotMatch(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
+  assert.doesNotMatch(panel, /Show fewer fields/);
+  assert.doesNotMatch(panel, /missingPagesOnly/);
+  assert.doesNotMatch(panel, /MISSING_PAGE_DESC/);
   assert.doesNotMatch(panel, /slice\(0, 8\)/);
   assert.doesNotMatch(panel, /(?<![\w-])title=/);
   assert.doesNotMatch(panel, forbidden);
 
   assert.match(catalog, /AiReadinessLead/);
   assert.match(catalog, /catalogReadiness/);
-  assert.match(catalog, /missingPagesOnly=\{missingPagesOnly\}/);
+  assert.doesNotMatch(catalog, /missingPagesOnly/);
   assert.doesNotMatch(catalog, forbidden);
 
   assert.match(spokes, /<CatalogReadinessSpec bundle=\{bundle\} \/>/);

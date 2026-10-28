@@ -1,11 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { Canvas } from "./fixtures";
-import { FOUND_RESULT, MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
+import { MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
 
 /**
  * The AI Readiness bubble, its two satellites, and its tabs share one set
- * of names. A link copied from an earlier tab title still opens the same tab,
- * and the two controls on the first tab read as controls before they are used.
+ * of names. A link copied from an earlier tab title still opens the same tab.
  */
 
 const TAB_NAMES = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
@@ -89,26 +88,36 @@ test("a link copied from an earlier tab title still opens the same tab", async (
   }
 });
 
-test("the first tab opens on two missing fields and reveals the rest", async ({ page }) => {
+test("the first tab opens on two missing fields and the title chevron reveals the rest", async ({ page }) => {
   await mockCanvasRead(page);
   await openFirstTab(page);
 
   const fields = page.locator("#spec-missing-fields > div");
   await expect(fields).toHaveCount(2);
   await expect(fields.first()).toContainText("scale_length");
+  await expect(fields.nth(1)).toContainText("additionalProperty");
+  await expect(page.locator("#spec-missing-fields")).toHaveClass(/spec-missing-fields-preview/);
+  await expect(page.getByText(/Show all/)).toHaveCount(0);
 
   const reveal = page.locator("[data-spec-missing-fields-toggle]");
-  await expect(reveal).toHaveText(`Show all ${MISSING_FIELD_ROWS.length} fields`);
+  await expect(reveal).toHaveAttribute("aria-expanded", "false");
+  await expect(reveal).toHaveAttribute(
+    "aria-label",
+    `Show all ${MISSING_FIELD_ROWS.length} missing schema fields`,
+  );
   await reveal.click();
+  await expect(reveal).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#spec-missing-fields")).not.toHaveClass(/spec-missing-fields-preview/);
   await expect(fields).toHaveCount(MISSING_FIELD_ROWS.length);
   await expect(fields.last()).toContainText("pickup_configuration");
 
-  await expect(reveal).toHaveText("Show fewer fields");
   await reveal.click();
+  await expect(reveal).toHaveAttribute("aria-expanded", "false");
   await expect(fields).toHaveCount(2);
+  await expect(page.locator("#spec-missing-fields")).toHaveClass(/spec-missing-fields-preview/);
 });
 
-test("the page found hero shows percent, ratio, and pie, and its Show filter works", async ({ page }) => {
+test("the page found hero shows percent, ratio, and pie without a Show/Hide filter", async ({ page }) => {
   await mockCanvasRead(page);
   await openFirstTab(page);
 
@@ -116,12 +125,15 @@ test("the page found hero shows percent, ratio, and pie, and its Show filter wor
   await expect(lead).toBeVisible();
   await expect(page.locator(".spec-summary")).toHaveCount(0);
   await expect(page.getByRole("columnheader", { name: "Metric" })).toHaveCount(0);
+  await expect(page.locator("[data-spec-filter]")).toHaveCount(0);
+  await expect(page.locator(".spec-found-pill")).toHaveCount(0);
 
   const pageFound = page.locator("[data-ai-readiness-hero='page_found']");
   await expect(pageFound.locator("[data-ai-readiness-hero-percent]")).toHaveText("50.0%");
   await expect(pageFound.locator("[data-ai-readiness-hero-ratio]")).toHaveText("2 of 4");
   await expect(pageFound.locator("[data-citation-pie-disc]")).toHaveCount(1);
   await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(4);
+  await expect(pageFound).toHaveClass(/findability-lead-card/);
 
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
@@ -131,26 +143,16 @@ test("the page found hero shows percent, ratio, and pie, and its Show filter wor
   await expect(lead).toContainText("Findability tab");
   await expect(lead).toContainText("family page");
 
-  const pill = pageFound.locator(".spec-found-pill");
-  await expect(pill).toHaveCount(1);
-  await expect(pill).toContainText("Show");
-  await expect(pill).toHaveAttribute("aria-label", new RegExp(FOUND_RESULT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  await expect(page.getByRole("button", { name: "Clear", exact: true })).toHaveCount(0);
-
   const catalog = page.locator("#spec-readiness-by-asin");
-  await pill.click();
-  await expect(pill).toContainText("Hide");
-  await expect(pill).toHaveAttribute("aria-pressed", "true");
   await expect(catalog).toContainText("B00MISSING");
-  await expect(catalog).not.toContainText("B00FOUND01");
-  await expect(catalog).not.toContainText("B00NULLFLG");
-  await expect(catalog).toContainText("missing page");
-
-  await pill.click();
-  await expect(pill).toContainText("Show");
-  await expect(pill).toHaveAttribute("aria-pressed", "false");
   await expect(catalog).toContainText("B00FOUND01");
   await expect(catalog).toContainText("B00NULLFLG");
+
+  const foundHeader = catalog.getByRole("columnheader", { name: "fender.com found" });
+  await foundHeader.click();
+  await expect(foundHeader).toHaveAttribute("aria-sort", /ascending|descending/);
+  await foundHeader.click();
+  await expect(foundHeader).toHaveAttribute("aria-sort", /ascending|descending/);
 
   const yesLink = catalog.locator('a.listing-link[href="https://www.fender.com/en-US/found"]');
   await expect(yesLink).toHaveText("Yes");

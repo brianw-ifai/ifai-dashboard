@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
 import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
-import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
+import { specRowsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { specReadinessSortValue } from "@/lib/fender-canvas/spec-table-sort";
 import {
@@ -25,8 +25,8 @@ const SPEC_COLUMNS = [
   clientColumn("missing", "Missing Amazon fields", "text", 240, 160),
 ];
 
-/** First-visit viewport: short enough that heroes stay in view; page size stays 50. */
-const SPEC_TABLE_MAX_HEIGHT = 260;
+/** First-visit viewport; page size stays 50. Shorter heroes leave more room for this table. */
+const SPEC_TABLE_MAX_HEIGHT = 420;
 
 /** Yes links when found and fender_url is http(s). No and blank stay plain text. */
 function FenderFoundCell({
@@ -47,24 +47,65 @@ function FenderFoundCell({
   );
 }
 
-const MISSING_PAGE_DESC =
-  "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
-
-/** The list opens on the two heaviest fields. The control reveals the rest. */
+/** The list opens on the two heaviest fields. The title chevron reveals the rest. */
 const MISSING_FIELD_PREVIEW = 2;
+
+function FieldsChevron() {
+  return (
+    <svg
+      className="retail-explore-chevron"
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.2 4.2 6 8l3.8-3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
   const [showAll, setShowAll] = useState(false);
   const maxCount = missing.reduce((max, row) => Math.max(max, row.sku_count ?? 0), 0) || 1;
   const shown = showAll ? missing : missing.slice(0, MISSING_FIELD_PREVIEW);
   const rest = missing.length - MISSING_FIELD_PREVIEW;
+  const collapsed = rest > 0 && !showAll;
 
   return (
-    <div className="content-box" style={{ marginTop: 12 }}>
-      <div className="content-box-title">Top missing schema fields</div>
-      <div id="spec-missing-fields">
+    <div className="content-box spec-missing-fields-box" style={{ marginTop: 12 }}>
+      <div className="content-box-title spec-missing-fields-title">
+        <span>Top missing schema fields</span>
+        {rest > 0 ? (
+          <button
+            type="button"
+            className="retail-explore"
+            aria-expanded={showAll}
+            aria-controls="spec-missing-fields"
+            aria-label={
+              showAll
+                ? "Show fewer missing schema fields"
+                : `Show all ${formatInt(missing.length)} missing schema fields`
+            }
+            data-spec-missing-fields-toggle={showAll ? "all" : "preview"}
+            onClick={() => setShowAll((value) => !value)}
+          >
+            <FieldsChevron />
+          </button>
+        ) : null}
+      </div>
+      <div
+        id="spec-missing-fields"
+        className={collapsed ? "spec-missing-fields-preview" : undefined}
+      >
         {shown.map((row) => (
-          <div key={`${row.source}-${row.field}`} style={{ marginBottom: 6 }}>
+          <div key={`${row.source}-${row.field}`} className="spec-missing-field-row">
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
               <span>
                 {row.field} ({row.source ?? "n/a"})
@@ -80,18 +121,6 @@ function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
           </div>
         ))}
       </div>
-      {rest > 0 ? (
-        <button
-          type="button"
-          className="segmented-btn"
-          aria-expanded={showAll}
-          aria-controls="spec-missing-fields"
-          data-spec-missing-fields-toggle={showAll ? "all" : "preview"}
-          onClick={() => setShowAll((value) => !value)}
-        >
-          {showAll ? "Show fewer fields" : `Show all ${formatInt(missing.length)} fields`}
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -99,30 +128,19 @@ function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
 export function FenderSpecPanel({
   missing,
   catalogReadiness = false,
-  missingPagesOnly = false,
 }: {
   missing: CanvasSpecMissingRow[];
   /** AI Readiness passes this. Any other caller gets the Machine Readability gap list. */
   catalogReadiness?: boolean;
-  missingPagesOnly?: boolean;
 }) {
   if (!catalogReadiness) return <SchemaAdditionalPropertyList />;
-  return <CatalogSpecReadiness missing={missing} missingPagesOnly={missingPagesOnly} />;
+  return <CatalogSpecReadiness missing={missing} />;
 }
 
-function CatalogSpecReadiness({
-  missing,
-  missingPagesOnly,
-}: {
-  missing: CanvasSpecMissingRow[];
-  missingPagesOnly: boolean;
-}) {
-  const queryMissingPages =
-    specRowsFilter(true, missingPagesOnly)?.missingFenderPage === true;
+function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) {
   const [rows, setRows] = useState<CanvasSpecReadinessRow[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [seenFilter, setSeenFilter] = useState(queryMissingPages);
   const population = useFullPopulationSort(
     rows,
     SPEC_COLUMNS,
@@ -131,22 +149,10 @@ function CatalogSpecReadiness({
     CLIENT_TABLE_PAGE_SIZE,
   );
 
-  if (seenFilter !== queryMissingPages) {
-    setSeenFilter(queryMissingPages);
-    population.resetPage();
-    setRows([]);
-    setTotal(null);
-    setLoading(true);
-  }
-
   useEffect(() => {
     let cancelled = false;
     void loadFilteredPages(async (page, size) => {
-      const result = await specRowsQuery(
-        page,
-        size,
-        queryMissingPages ? { missingFenderPage: true } : undefined,
-      );
+      const result = await specRowsQuery(page, size);
       return {
         data: (result.data ?? []) as CanvasSpecReadinessRow[],
         error: result.error,
@@ -173,7 +179,7 @@ function CatalogSpecReadiness({
     return () => {
       cancelled = true;
     };
-  }, [queryMissingPages]);
+  }, []);
 
   return (
     <>
@@ -186,22 +192,6 @@ function CatalogSpecReadiness({
             <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
           ) : null}
         </div>
-        {queryMissingPages ? (
-          <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "8px 0" }}>
-            A{" "}
-            <span
-              className="ifai-term"
-              data-ifai-tooltip-title="missing page"
-              data-ifai-tooltip-desc={MISSING_PAGE_DESC}
-              tabIndex={0}
-              aria-label={`missing page: ${MISSING_PAGE_DESC}`}
-            >
-              missing page
-            </span>{" "}
-            means this check did not resolve a fender.com address. It is not proof the product is
-            absent from fender.com.
-          </p>
-        ) : null}
         <ResizableTable
           tableId="spec-readiness"
           columns={SPEC_COLUMNS}
@@ -220,11 +210,7 @@ function CatalogSpecReadiness({
               ) : null}
               {!loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
-                    {queryMissingPages
-                      ? "No checked SKUs in this read are missing a stored fender.com page."
-                      : "No spec rows in this read."}
-                  </td>
+                  <td colSpan={5}>No spec rows in this read.</td>
                 </tr>
               ) : null}
               {population.pageRows.map((row) => {

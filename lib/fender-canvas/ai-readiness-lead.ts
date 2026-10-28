@@ -35,8 +35,6 @@ export type AiReadinessHeroModel = {
   color: string | null;
   pie: PieDiscData | null;
   tip: string | null;
-  /** Page-found hero owns the missing-page Show/Hide control. */
-  filterControl: boolean;
 };
 
 function amazonCompletenessTone(pct: number | null): Exclude<NodeStatus, "neutral"> | null {
@@ -114,7 +112,6 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
     color: null,
     pie: ready ? shareCountPie("ai-readiness-page-found", "fender.com page found", "Page found", found!, checked!) : null,
     tip: ready ? `${formatInt(found)} of ${formatInt(checked)} checked SKUs` : null,
-    filterControl: true,
   };
 }
 
@@ -133,7 +130,6 @@ export function amazonCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroMode
     color: tone ? TONE_COLOR[tone] : null,
     pie: averagePercentPie("ai-readiness-amazon-completeness", "Amazon attribute completeness", pct),
     tip: ready ? formatPct(pct) : null,
-    filterControl: false,
   };
 }
 
@@ -151,7 +147,6 @@ export function fenderCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroMode
     color: null,
     pie: averagePercentPie("ai-readiness-fender-completeness", "fender.com completeness", pct),
     tip: ready ? formatPct(pct) : null,
-    filterControl: false,
   };
 }
 
@@ -178,7 +173,6 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
         )
       : null,
     tip: ready ? `${formatInt(missing)} of ${formatInt(found)} found pages` : null,
-    filterControl: false,
   };
 }
 

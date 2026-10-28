@@ -120,7 +120,7 @@ test("AI Readiness gives leftover width to Missing Amazon fields", () => {
   const panel = read("components/v3/live/FenderSpecPanel.tsx");
   assert.match(panel, /fillColumnId="missing"/);
   assert.match(panel, /wrapColumnIds=\{\["model"\]\}/);
-  assert.match(panel, /SPEC_TABLE_MAX_HEIGHT = 260/);
+  assert.match(panel, /SPEC_TABLE_MAX_HEIGHT = 420/);
   assert.match(panel, /spec-field-pill/);
   assert.match(panel, /presentMissingAmazonFields/);
   const css = read("lib/canvas-sdk/canvas-sdk.css");

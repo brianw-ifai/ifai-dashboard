@@ -46,10 +46,14 @@ test("Yes with an http(s) URL can link; No, blank, and Yes without a URL stay pl
   assert.match(panel, /className="listing-link"/);
   assert.match(panel, /target="_blank"/);
   assert.match(panel, /rel="noopener noreferrer"/);
-  assert.match(panel, /SPEC_TABLE_MAX_HEIGHT = 260/);
+  assert.match(panel, /SPEC_TABLE_MAX_HEIGHT = 420/);
   assert.match(panel, /fillColumnId="missing"/);
   assert.match(panel, /wrapColumnIds=\{\["model"\]\}/);
   assert.doesNotMatch(panel, /maxHeight=\{520\}/);
   // Page size stays the shared client page size, not a second population.
   assert.match(panel, /CLIENT_TABLE_PAGE_SIZE/);
+  assert.match(panel, /data-spec-missing-fields-toggle/);
+  assert.match(panel, /retail-explore-chevron/);
+  assert.doesNotMatch(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
+  assert.doesNotMatch(panel, /Show fewer fields/);
 });

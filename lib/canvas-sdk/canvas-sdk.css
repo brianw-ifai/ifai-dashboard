@@ -2558,11 +2558,11 @@
       border-radius: 3px;
     }
 
-    /* AI Readiness share heroes: same family as Findability leads. */
+    /* AI Readiness share heroes: same family and height as Findability leads. */
     .ai-readiness-lead {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .ai-readiness-lead-note {
@@ -2572,41 +2572,24 @@
       margin: 0;
     }
 
-    .ai-readiness-hero-filter {
-      margin-top: 8px;
-    }
-
-    .spec-found-pill {
-      display: inline-flex;
+    .spec-missing-fields-title {
+      display: flex;
       align-items: center;
       gap: 8px;
-      padding: 3px 11px;
-      line-height: 1.2;
-      white-space: nowrap;
-      font-family: inherit;
-      font-size: inherit;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-button);
-      cursor: pointer;
     }
 
-    .spec-found-pill:hover {
-      background: var(--bg-surface-hover);
-      color: var(--text-main);
+    .spec-missing-field-row {
+      margin-bottom: 6px;
     }
 
-    .spec-found-pill.active,
-    .spec-found-pill.active:hover {
-      background: var(--accent-purple);
-      border-color: var(--accent-purple);
-      color: #ffffff;
+    .spec-missing-field-row:last-child {
+      margin-bottom: 0;
     }
 
-    .spec-found-pill-action {
-      opacity: 0.9;
+    /* Collapsed chart: two bars, then a short rule under the last (additionalProperty) bar. */
+    .spec-missing-fields-preview {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 6px;
     }
 
     .segmented-control {

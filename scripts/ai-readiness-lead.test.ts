@@ -85,7 +85,6 @@ test("page-found hero uses the stored percent, found of checked, and that pie", 
       ["Rest of this population", 802],
     ],
   );
-  assert.equal(hero.filterControl, true);
 });
 
 test("Amazon completeness keeps the average and does not invent listings at 100%", () => {
@@ -145,12 +144,15 @@ test("SKUs checked is not its own hero pie", () => {
   assert.equal(averagePercentPie("x", "t", null), null);
 });
 
-test("the lead UI ships heroes, the filter pill, and the Findability distinction", () => {
+test("the lead UI ships heroes and the Findability distinction without a Show/Hide filter", () => {
   const lead = read("components/v3/live/AiReadinessLead.tsx");
   assert.match(lead, /data-ai-readiness-lead/);
   assert.match(lead, /data-ai-readiness-hero=/);
   assert.match(lead, /CitationPieDisc/);
-  assert.match(lead, /data-spec-filter="missing-fender-page"/);
+  assert.match(lead, /findability-lead-card/);
+  assert.doesNotMatch(lead, /data-spec-filter/);
+  assert.doesNotMatch(lead, /spec-found-pill/);
+  assert.doesNotMatch(lead, /missingPageControl|MissingPageControl|filterControl/);
   assert.match(lead, /Official-page outcomes are on the Findability tab/);
   assert.match(lead, /family page there\s+is not an exact product page/);
   assert.match(lead, /ifai-term/);
@@ -164,4 +166,5 @@ test("the lead UI ships heroes, the filter pill, and the Findability distinction
   const panel = read("components/v3/live/CatalogReadinessSpec.tsx");
   assert.match(panel, /AiReadinessLead/);
   assert.doesNotMatch(panel, /FenderSpecSummary/);
+  assert.doesNotMatch(panel, /missingPagesOnly|missingPageControl/);
 });
