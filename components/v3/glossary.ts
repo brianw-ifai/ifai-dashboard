@@ -30,6 +30,10 @@ export const fenderGlossary: Record<string, string> = {
     "Out of 100, how often AI assistants like ChatGPT and Perplexity name Fender when shoppers ask what to buy. It moves day to day as the models update, so read it as a trend rather than something you steer directly.",
   "Readiness Score":
     "How much of what AI engines and Amazon read about Fender (specs, listings, reviews) is in good shape. Unlike the scan, every fix you ship moves this number.",
+  Keepa:
+    "A service that records Amazon price, stock, and sales-rank history for each listing, day by day. Used here for which days a listing was in or out of stock.",
+  SmartScout:
+    "A service that estimates Amazon sales and revenue per listing from public signals. Its figures are estimates, not Amazon's reported sales.",
   "1P": "First-party: Fender selling directly, including through Amazon Retail.",
   "3P": "Third-party: an authorized partner or reseller selling Fender products under its own account.",
 };

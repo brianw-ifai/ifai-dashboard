@@ -14,6 +14,7 @@ import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
+import { StockLossPanel } from "@/components/v3/live/StockLossPanel";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
@@ -26,7 +27,11 @@ import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-se
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
-import { RETAIL_PANEL_TABS, type RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import {
+  RETAIL_PANEL_TABS,
+  STOCK_LOSS_TAB,
+  type RetailCanvasRead,
+} from "@/lib/fender-canvas/portfolio-retail-display";
 import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-status";
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
@@ -71,6 +76,7 @@ const TAB_OVERRIDES: Partial<
       />
     ),
     3: (_bundle, _vars, retail) => <CatalogGovernancePanel read={retail} />,
+    4: () => <StockLossPanel />,
   },
   aeo: {
     0: () => (
@@ -128,8 +134,9 @@ function wrapSpoke(
     ...(id === "ecommerce"
       ? {
           title: "Catalog Health",
-          desc: "Suppressed Buy Boxes, MAP leakage, and unnested bundles, and how those catalog and retail issues change what AI search can recommend.",
+          desc: "Suppressed Buy Boxes, MAP leakage, unnested bundles, and out-of-stock days, and how those catalog and retail issues change what AI search can recommend.",
           tabs: [...RETAIL_PANEL_TABS],
+          newTabs: [STOCK_LOSS_TAB],
         }
       : {}),
     ...(id === "aeo"

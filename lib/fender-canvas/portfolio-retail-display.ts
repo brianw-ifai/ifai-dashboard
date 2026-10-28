@@ -18,11 +18,15 @@ import {
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
 
+/** Keepa stock history and SmartScout sales. Not a ranked retail finding. */
+export const STOCK_LOSS_TAB = "Out of Stock";
+
 export const RETAIL_PANEL_TABS = [
   RETAIL_OVERVIEW_TAB,
   RETAIL_FINDING_LABELS.suppressed_listings,
   RETAIL_FINDING_LABELS.map_leakage,
   RETAIL_FINDING_LABELS.unnested_bundles,
+  STOCK_LOSS_TAB,
 ] as const;
 
 export type RetailCanvasRead =

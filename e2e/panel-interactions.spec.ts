@@ -104,6 +104,7 @@ test.describe("drill-downs", () => {
       "Suppressed Listings",
       "MAP",
       "Catalog Governance",
+      "Out of Stock",
     ]);
 
     await expect(canvas.activeTab).toHaveText("Retail Overview");
@@ -129,6 +130,46 @@ test.describe("drill-downs", () => {
     await expect(catalog).not.toContainText("Reverb");
     await expect(catalog).not.toContainText("Sweetwater");
     await expect(catalog).not.toContainText("Starter Kit");
+  });
+
+  test("out of stock shows sourced estimates that open to their inputs", async ({ canvas, page }) => {
+    await canvas.openPriority("Buy Box withheld");
+    await expect(page.locator(".drilldown-tab-btn[data-new-tab]")).toHaveText(["Out of Stock"]);
+    await canvas.openTab("Out of Stock");
+    const panel = page.locator(".stock-loss");
+    await expect(panel).toBeVisible();
+    await expect(panel.locator("[data-new-tag]")).toBeVisible();
+    await expect(panel.getByText("Loading the stock history…")).toHaveCount(0);
+    await expect(panel).toContainText("analyst estimate");
+    await expect(panel).not.toContainText("could not be loaded");
+
+    // Every number column names where it comes from.
+    const header = panel.locator("thead");
+    await expect(header.locator('[data-source="Keepa"]').first()).toBeVisible();
+    await expect(header.locator('[data-source="SmartScout"]').first()).toBeVisible();
+    await expect(header.locator('[data-source="Estimate"]').first()).toBeVisible();
+
+    // $0.00 only where the listing had no out-of-stock days. A missing estimate reads as not estimated.
+    const rows = panel.locator("tr.stock-loss-row");
+    await expect(rows.first()).toBeVisible();
+    const zeroWithStockouts = await rows.evaluateAll(
+      (trs) =>
+        trs.filter((tr) => {
+          const cells = tr.querySelectorAll("td");
+          return cells[1]?.textContent?.trim() === "$0.00" && cells[2]?.textContent?.trim() !== "0";
+        }).length,
+    );
+    expect(zeroWithStockouts).toBe(0);
+    await expect(rows.locator("td:nth-child(2)", { hasText: "Not estimated" }).first()).toBeVisible();
+
+    // The top row has an estimate, and it opens to its inputs and dated stretches.
+    await rows.first().click();
+    const drawer = panel.locator("[data-stock-loss-drawer]");
+    await expect(drawer).toContainText("How this estimate is built");
+    await expect(drawer).toContainText("Sales per in-stock day");
+    await expect(drawer.getByRole("link", { name: "Open the Keepa chart" })).toBeVisible();
+    await expect(drawer.getByText("Loading the dated stretches…")).toHaveCount(0);
+    await expect(drawer.locator("[data-episode-state]").first()).toBeVisible();
   });
 
   test("suppressed listings follow the retail reading", async ({ canvas, page }) => {

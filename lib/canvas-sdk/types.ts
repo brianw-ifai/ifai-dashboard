@@ -74,6 +74,8 @@ export type SpokeContent = {
    */
   descSlot?: ReactNode;
   tabs: string[];
+  /** Tab names that carry a "New" marker. The marker is drawn by CSS, so the tab text stays the name. */
+  newTabs?: string[];
   /** Short name for the breadcrumb and the "Next" footer. */
   navLabel?: string;
   /** Next spoke in left-to-right map order. The panel footer links here. */

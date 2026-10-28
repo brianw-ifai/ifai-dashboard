@@ -1450,6 +1450,8 @@ export function CanvasShell({ spec, children }: Props) {
                     role="tab"
                     aria-selected={idx === activeTab}
                     className={`drilldown-tab-btn${idx === activeTab ? " active" : ""}`}
+                    data-new-tab={spoke.newTabs?.includes(tabName) ? "" : undefined}
+                    title={spoke.newTabs?.includes(tabName) ? `${tabName} (new)` : undefined}
                     onClick={() => {
                       setActiveTab(idx);
                       if (spoke.tabs[idx] === "Citation Ecosystem") {
