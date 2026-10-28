@@ -1,3 +1,5 @@
+import type { SpecPageSummary } from "@/lib/fender-canvas/machine-readability";
+
 export type CanvasMetricsRow = {
   kpi?: Record<string, unknown> | null;
   catalog_skus: number | null;
@@ -171,4 +173,6 @@ export type CanvasBundle = {
   divisions: CanvasDivisionRow[];
   missing: CanvasSpecMissingRow[];
   fresh: CanvasFreshnessRow[];
+  /** fender.com pages from the spec read, one entry per page. Null when that read failed. */
+  specPages?: SpecPageSummary | null;
 };

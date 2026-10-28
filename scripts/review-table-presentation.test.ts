@@ -23,11 +23,11 @@ const SPEC_COLUMNS = [
   { id: "missing", width: 280, minWidth: 180 },
 ];
 
-const SCHEMA_COLUMNS = [
-  { id: "asin", width: 120, minWidth: 108 },
-  { id: "model", width: 420, minWidth: 220 },
-  { id: "page", width: 150, minWidth: 128 },
-  { id: "fields", width: 180, minWidth: 150 },
+const PAGE_COLUMNS = [
+  { id: "page", width: 280, minWidth: 160 },
+  { id: "listings", width: 220, minWidth: 140 },
+  { id: "missing", width: 160, minWidth: 110 },
+  { id: "checked", width: 170, minWidth: 130 },
 ];
 
 const REPRESENTATIVE_MODEL = "Fender American Professional Classic Telecaster Electric Guitar - 3-color Sunburst";
@@ -170,21 +170,16 @@ test("Product Fact Checks defaults fill the panel and leave room for one-line ce
   assert.match(css, /\.ai-probe-table \.resizable-table \.tag-badge \{[^}]*max-width:\s*100%/s);
 });
 
-test("Machine Readability gives leftover width to Model without shrinking the others", () => {
-  const widths = filledColumnWidths(SCHEMA_COLUMNS, "model", 1112);
-  assert.equal(widths.asin, 120);
-  assert.equal(widths.page, 150);
-  assert.equal(widths.fields, 180);
-  assert.ok(widths.model >= 560, `model width ${widths.model} is below a one-line title`);
-  assert.ok(widths.model >= REPRESENTATIVE_MODEL.length * 6);
+test("Machine Readability gives leftover width to the page column without shrinking the others", () => {
+  const widths = filledColumnWidths(PAGE_COLUMNS, "page", 1112);
+  assert.equal(widths.listings, 220);
+  assert.equal(widths.missing, 160);
+  assert.equal(widths.checked, 170);
+  assert.ok(widths.page >= 560, `page width ${widths.page} is below a one-line title`);
+  assert.ok(widths.page >= REPRESENTATIVE_MODEL.length * 6);
   assert.equal(Object.values(widths).reduce((sum, width) => sum + width, 0), 1112);
-  const narrow = filledColumnWidths(SCHEMA_COLUMNS, "model", 700);
-  assert.equal(narrow.asin, 120);
-  assert.equal(narrow.page, 150);
-  assert.equal(narrow.fields, 180);
-  assert.ok(narrow.model >= 420);
-  const panel = read("components/v3/live/SchemaAdditionalPropertyList.tsx");
-  assert.match(panel, /fillColumnId="model"/);
+  const panel = read("components/v3/live/MachineReadabilityPageTable.tsx");
+  assert.match(panel, /fillColumnId="page"/);
   const table = read("components/v3/live/ResizableTable.tsx");
   assert.match(table, /ResizeObserver/);
   assert.match(table, /columnWidthStorageKey/);

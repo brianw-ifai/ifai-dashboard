@@ -3,6 +3,7 @@ import { aiTourLines } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { findabilityTourLine, type FindabilityRead } from "@/lib/findability/copy";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   headlineSentence,
   headlineSurface,
@@ -18,6 +19,7 @@ export function buildLiveTourSteps(
   findability: FindabilityRead = { phase: "loading" },
 ): TourStep[] {
   const { m } = bundle;
+  const schemaPages = specPageCounts(bundle.specPages);
   const aiLines = aiTourLines(ai);
   const headline = headlineSentence(headlineSurface(retail));
 
@@ -71,9 +73,11 @@ export function buildLiveTourSteps(
       subtitle: "Can AI and Amazon read your specs correctly?",
       category: "AI READINESS",
       displays: [
-        `${formatInt(m.spec_missing_additional_property)} pages in the older spec read are missing additionalProperty`,
+        schemaPages
+          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages have no spec block`
+          : "fender.com page read not available",
         findabilityTourLine(findability),
-        `${formatInt(bundle.missing.length)} missing-field rows are on Machine Readability`,
+        `${formatInt(bundle.missing.length)} missing-field rows are on AI Readiness`,
       ],
       value: "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns.",
     },

@@ -1,5 +1,6 @@
 "use client";
 
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct, formatRatio } from "@/lib/fender-canvas/format";
 
@@ -44,6 +45,7 @@ export function FenderSpecSummary({
   missingPageControl?: MissingPageControl;
 }) {
   const { m } = bundle;
+  const schemaPages = specPageCounts(bundle.specPages);
   const foundResult = `${formatPct(m.spec_fender_found_pct)} (${formatRatio(m.spec_fender_found, m.spec_checked)})`;
   return (
     <div className="content-box spec-summary">
@@ -77,56 +79,19 @@ export function FenderSpecSummary({
             <td>{formatPct(m.spec_avg_amazon_pct)}</td>
           </tr>
           <tr>
-            <td>fender.com completeness when a page is found</td>
-            <td>{formatPct(m.spec_avg_fender_pct)}</td>
-          </tr>
-          <tr>
-            <td>Found pages missing additionalProperty</td>
-            <td>{formatInt(m.spec_missing_additional_property)}</td>
+            <td>fender.com pages with no spec block</td>
+            <td>
+              {schemaPages
+                ? formatRatio(schemaPages.missingSpecBlock, schemaPages.pages)
+                : "Not available*"}
+            </td>
           </tr>
         </tbody>
       </table>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 8 }}>
-        The rows under this summary are the missing-field and per-ASIN reads. Amazon attribute
-        completeness is the average stored on the catalog spec read. The page-found figure in this
-        table is that older spec read. Official-page outcomes are on the Findability tab. A family
-        page there is not an exact product page, and this percentage is not that result.
+        Official-page outcomes for each listing are on Findability. Page-level product data is on
+        Machine Readability.
       </p>
-    </div>
-  );
-}
-
-const ADDITIONAL_PROPERTY_DESC =
-  "The Schema.org field that can carry neck, pickup, and hardware specs. When it is missing from a found page, an assistant has no spec block to read there.";
-
-export function AdditionalPropertyTerm() {
-  return (
-    <span
-      className="ifai-term"
-      data-ifai-tooltip-title="additionalProperty"
-      data-ifai-tooltip-desc={ADDITIONAL_PROPERTY_DESC}
-      tabIndex={0}
-      aria-label={`additionalProperty: ${ADDITIONAL_PROPERTY_DESC}`}
-    >
-      additionalProperty
-    </span>
-  );
-}
-
-export function SchemaExplanation() {
-  return (
-    <div className="ceo-callout">
-      <div className="ceo-callout-header">
-        <span>What is Schema.org, and why does AI need it?</span>
-      </div>
-      <div className="ceo-callout-body">
-        When people visit fender.com, they read marketing copy. AI crawlers need a machine-readable
-        block, Schema.org JSON-LD, to take a spec as a fact. <AdditionalPropertyTerm /> is the part
-        of that block that can carry neck, pickup, and hardware specs. The list below is the found
-        pages whose stored missing-field text includes <AdditionalPropertyTerm />. This list is a
-        separate, older spec read. The Findability tab counts whether each listing resolves to an
-        official product page. JSON-LD on that official-page read was not audited.
-      </div>
     </div>
   );
 }

@@ -40,13 +40,13 @@ export const fenderStaticNodes: CanvasNode[] = [
     },
     {
       ...satelliteNode("sat-schema"),
-      status: "danger",
+      status: "neutral",
       title: "Machine Readability",
-      stats: ["0% Specs", "62 Checked"],
-      meta: "additionalProperty Missing",
+      stats: ["Loading"],
+      meta: "fender.com product data",
       spokeId: "specs",
       subTab: "Machine Readability",
-      tooltip: {"title": "Schema.org Structured Data", "desc": "Across 19 SKUs, site search found a fender.com product page only 36.8% of the time (7/19). None of those 7 pages has an additionalProperty JSON-LD field, so AI engines have no machine-readable nut width, fingerboard radius, or pickup configuration to read. The specs exist only as human-readable HTML tables."},
+      tooltip: {"title": "Machine-readable specs", "desc": "Reading the fender.com product pages."},
     },
     {
       ...satelliteNode("sat-tables"),

@@ -10,6 +10,7 @@ import {
   formatUsd,
   pendingLabel,
 } from "@/lib/fender-canvas/format";
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { findabilityWidgetCopy, type FindabilityRead } from "@/lib/findability/copy";
 
 function toneFromPct(pct: number | null, dangerBelow: number, warnBelow: number) {
@@ -135,6 +136,7 @@ export function buildLiveMetrics(
   findability: FindabilityRead = { phase: "loading" },
 ): Record<string, CanvasMetric> {
   const { m, cats } = bundle;
+  const schemaPages = specPageCounts(bundle.specPages);
   const beginner = cats.find((c) => c.category === "beginner");
 
   const strandedReviews =
@@ -259,20 +261,22 @@ export function buildLiveMetrics(
     machineReadableSpecs: {
       id: "machine-readable-specs",
       spokeId: "specs",
-      label: "Machine-Readable Spec Coverage",
-      value: formatPct(m.spec_avg_amazon_pct),
-      detail: "Amazon attribute completeness",
-      tone: toneFromPct(m.spec_avg_amazon_pct, 85, 92),
+      label: "fender.com Spec Block",
+      value: schemaPages ? formatPct(schemaPages.specBlockPct) : "Not available*",
+      detail: schemaPages
+        ? `${formatInt(schemaPages.withSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages`
+        : "The fender.com page read could not be loaded.",
+      tone: schemaPages ? toneFromPct(schemaPages.specBlockPct, 95, 98) : "warning",
       subTab: "Machine Readability",
       provenance: "live",
     },
     missingSchemaFields: {
       id: "missing-schema-fields",
       spokeId: "specs",
-      label: "Pages Missing additionalProperty",
-      value: formatInt(m.spec_missing_additional_property),
-      detail: "fender.com pages in the spec read",
-      tone: "warning",
+      label: "Pages Missing a Spec Block",
+      value: schemaPages ? formatInt(schemaPages.missingSpecBlock) : "Not available*",
+      detail: "fender.com product pages",
+      tone: schemaPages && schemaPages.missingSpecBlock === 0 ? "success" : "warning",
       subTab: "Machine Readability",
       provenance: "live",
     },

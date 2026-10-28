@@ -153,8 +153,9 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   assert.doesNotMatch(satelliteText, /\d/);
 
   assert.match(readiness.stats.join(" "), /91\.8%/);
-  assert.equal(metrics.machineReadableSpecs.value, "91.8%");
-  assert.equal(metrics.machineReadableSpecs.detail, "Amazon attribute completeness");
+  assert.equal(metrics.machineReadableSpecs.label, "fender.com Spec Block");
+  assert.equal(metrics.machineReadableSpecs.value, "Not available*");
+  assert.doesNotMatch(metrics.machineReadableSpecs.detail ?? "", /Amazon/);
 
   const item = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "aplus-tables");
   assert.ok(item);

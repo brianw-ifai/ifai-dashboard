@@ -4,7 +4,8 @@ import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { readinessFindabilityFace, type FindabilityRead } from "@/lib/findability/copy";
-import { formatInt } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   retailBubbleFaces,
   type RetailCanvasRead,
@@ -21,9 +22,10 @@ export function buildLiveNodes(
   findability: FindabilityRead = { phase: "loading" },
 ): CanvasNode[] {
   const { m } = bundle;
+  const schemaPages = specPageCounts(bundle.specPages);
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
-  const readinessFace = readinessFindabilityFace(findability, metrics.machineReadableSpecs.value);
+  const readinessFace = readinessFindabilityFace(findability, formatPct(m.spec_avg_amazon_pct));
 
   return [
     {
@@ -58,18 +60,19 @@ export function buildLiveNodes(
     },
     {
       ...satelliteNode("sat-schema"),
-      status: "danger",
+      status: !schemaPages ? "warning" : schemaPages.withSpecBlock === schemaPages.pages ? "success" : "danger",
       title: "Machine Readability",
-      stats: [
-        `${formatInt(m.spec_missing_additional_property)} missing additionalProperty`,
-        `${formatInt(m.spec_checked)} checked`,
-      ],
-      meta: "fender.com JSON-LD gap",
+      stats: schemaPages
+        ? [`${formatPct(schemaPages.specBlockPct)} spec block`, `${formatInt(schemaPages.pages)} pages checked`]
+        : ["Not available*"],
+      meta: "fender.com product data",
       spokeId: "specs",
       subTab: "Machine Readability",
       tooltip: {
-        title: "Schema.org Structured Data",
-        desc: `${formatInt(m.spec_missing_additional_property)} pages in the older spec read lack additionalProperty. That list is on this tab. It is not the Findability count of official pages.`,
+        title: "Machine-readable specs",
+        desc: schemaPages
+          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com product pages have no spec block, so AI engines cannot read those specs as product data.`
+          : "The fender.com page read could not be loaded.",
       },
     },
     {

@@ -386,12 +386,12 @@ function specAction(input: HubSlotInput, fallback: HubSlot): HubSlot {
   const fromQueue = actionSlot(item, figure, fallback);
   return {
     ...fromQueue,
-    label: input.missingSpecPages == null ? fromQueue.label : "Pages missing a machine-readable spec block",
+    label: input.missingSpecPages == null ? fromQueue.label : "fender.com pages with no spec block",
     detail:
       input.missingSpecPages == null
         ? fromQueue.detail
-        : `${formatInt(input.missingSpecPages)} pages in the older spec read lack additionalProperty.`,
-    note: "Older spec read. Separate from the official-page counts.",
+        : `${formatInt(input.missingSpecPages)} fender.com product pages carry no machine-readable specs.`,
+    note: "Opens Machine Readability.",
     chart: null,
     subTab: "Machine Readability",
     spokeId: "specs",

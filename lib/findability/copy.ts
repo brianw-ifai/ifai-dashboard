@@ -39,11 +39,8 @@ const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
   not_checked: ["unchecked listing", "unchecked listings"],
 };
 
-export const JSONLD_NOT_AUDITED =
-  "JSON-LD was not audited on this official-page read. This screen is not a schema-completeness or A+ result.";
-
-export const MACHINE_READABILITY_DISTINCTION =
-  "Machine Readability is a separate, older spec read. It lists pages whose stored missing fields include additionalProperty. It is not this official-page result.";
+export const MACHINE_READABILITY_POINTER =
+  "Schema.org product data on each fender.com page is on Machine Readability.";
 
 export const DEALER_BUNDLE_NOTE =
   "Dealer bundle status comes from the retail read. It can line up with an official-page outcome. That is a correlation, not a proven cause.";
@@ -173,15 +170,6 @@ export function readinessFindabilityFace(
     tooltipTitle: "",
     tooltipDesc: "",
   };
-}
-
-export function jsonLdNote(rows: readonly FindabilityRow[]): string {
-  const audited = rows.filter((row) => {
-    const status = row.jsonld_status?.trim();
-    return Boolean(status) && status !== "not_checked";
-  }).length;
-  if (audited === 0) return JSONLD_NOT_AUDITED;
-  return `${formatInt(audited)} listings have a stored JSON-LD note. This screen still does not score schema completeness.`;
 }
 
 export function bucketLabel(bucket: FindabilityBucket): string {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { clientColumn, ResizableTable } from "@/components/v3/live/ResizableTable";
-import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
 import { useFullPopulationSort } from "@/components/v3/live/useFullPopulationSort";
 import { specRowsFilter, specRowsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
@@ -79,11 +78,11 @@ export function FenderSpecPanel({
   missingPagesOnly = false,
 }: {
   missing: CanvasSpecMissingRow[];
-  /** AI Readiness passes this. Any other caller gets the Machine Readability gap list. */
+  /** AI Readiness passes this. Machine Readability has its own page panel. */
   catalogReadiness?: boolean;
   missingPagesOnly?: boolean;
 }) {
-  if (!catalogReadiness) return <SchemaAdditionalPropertyList />;
+  if (!catalogReadiness) return null;
   return <CatalogSpecReadiness missing={missing} missingPagesOnly={missingPagesOnly} />;
 }
 

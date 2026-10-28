@@ -18,8 +18,8 @@ import { StockLossPanel } from "@/components/v3/live/StockLossPanel";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
-import { AplusExplanation, SchemaExplanation } from "@/components/v3/live/FenderSpecNarratives";
-import { SchemaAdditionalPropertyList } from "@/components/v3/live/SchemaAdditionalPropertyList";
+import { AplusExplanation } from "@/components/v3/live/FenderSpecNarratives";
+import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadabilityPanel";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import narrative from "@/data/fender-v3-spec.json";
@@ -103,12 +103,7 @@ const TAB_OVERRIDES: Partial<
   specs: {
     0: () => <FindabilityPanel />,
     1: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
-    2: () => (
-      <div className="readiness-surface">
-        <SchemaExplanation />
-        <SchemaAdditionalPropertyList />
-      </div>
-    ),
+    2: (bundle) => <MachineReadabilityPanel summary={bundle.specPages ?? null} />,
     3: () => <AplusExplanation />,
   },
   competitors: {
