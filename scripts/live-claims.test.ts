@@ -135,7 +135,7 @@ function retailReady(): RetailCanvasRead {
   };
 }
 
-test("A+ tables do not borrow Amazon attribute completeness", () => {
+test("A+ Matrix reads listing content and never borrows Amazon attribute completeness", () => {
   const retail = retailReady();
   const metrics = buildLiveMetrics(bundle(), retail);
   const nodes = buildLiveNodes(bundle(), metrics, retail);
@@ -143,14 +143,12 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   const readiness = nodes.find((node) => node.id === "spoke-specs");
   assert.ok(satellite);
   assert.ok(readiness);
-  assert.deepEqual(satellite.stats, ["Not measured yet"]);
   assert.equal(satellite.title, "Amazon A+ Matrix");
+  assert.deepEqual(satellite.stats, ["Not available*"]);
   const satelliteText = [satellite.meta, satellite.tooltip.title, satellite.tooltip.desc, ...satellite.stats]
     .filter(Boolean)
     .join(" ");
-  assert.match(satelliteText, /Comparison tables have not been measured/);
-  assert.doesNotMatch(satelliteText, /91\.8%|%/);
-  assert.doesNotMatch(satelliteText, /\d/);
+  assert.doesNotMatch(satelliteText, /91\.8%/);
 
   assert.match(readiness.stats.join(" "), /91\.8%/);
   assert.equal(metrics.machineReadableSpecs.label, "fender.com Spec Block");
@@ -160,9 +158,8 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   const item = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "aplus-tables");
   assert.ok(item);
   const itemText = [item.title, item.why, item.impact].filter(Boolean).join(" ");
-  assert.match(itemText, /comparison tables have not been measured/i);
+  assert.match(itemText, /listing-content read could not be loaded/);
   assert.doesNotMatch(itemText, /91\.8%|%/);
-  assert.doesNotMatch(itemText, /\d/);
   assert.doesNotMatch(itemText, /Fender/);
 });
 

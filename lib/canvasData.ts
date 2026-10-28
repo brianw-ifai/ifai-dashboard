@@ -1,11 +1,13 @@
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
+import { loadListingContent } from "@/lib/fender-canvas/listing-content";
 import { loadSpecPages } from "@/lib/fender-canvas/machine-readability";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 export async function loadCanvas(): Promise<CanvasBundle> {
   const supabase = getCanvasSupabase();
   const specPages = loadSpecPages().catch(() => null);
+  const listingContent = loadListingContent().catch(() => null);
   const [metrics, cats, engines, sov, divisions, missing, fresh] = await Promise.all([
     supabase.from("canvas_metrics").select("*").single(),
     supabase.from("canvas_ai_category").select("*").order("fender_win_pct"),
@@ -37,6 +39,7 @@ export async function loadCanvas(): Promise<CanvasBundle> {
     missing: (missing.data ?? []) as CanvasBundle["missing"],
     fresh: (fresh.data ?? []) as CanvasBundle["fresh"],
     specPages: await specPages,
+    listingContent: await listingContent,
   };
 }
 

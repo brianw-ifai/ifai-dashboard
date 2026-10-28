@@ -18,7 +18,7 @@ import { StockLossPanel } from "@/components/v3/live/StockLossPanel";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
 import { FindabilityPanel } from "@/components/v3/live/findability/FindabilityPanel";
-import { AplusExplanation } from "@/components/v3/live/FenderSpecNarratives";
+import { AplusMatrixPanel } from "@/components/v3/live/AplusMatrixPanel";
 import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadabilityPanel";
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
@@ -104,7 +104,7 @@ const TAB_OVERRIDES: Partial<
     0: () => <FindabilityPanel />,
     1: (bundle) => <CatalogReadinessSpec bundle={bundle} />,
     2: (bundle) => <MachineReadabilityPanel summary={bundle.specPages ?? null} />,
-    3: () => <AplusExplanation />,
+    3: (bundle) => <AplusMatrixPanel summary={bundle.listingContent ?? null} />,
   },
   competitors: {
     0: () => <CategoryBattlecardsPanel />,

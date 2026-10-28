@@ -52,10 +52,11 @@ export const fenderStaticNodes: CanvasNode[] = [
       ...satelliteNode("sat-tables"),
       status: "neutral",
       title: "Amazon A+ Matrix",
-      stats: ["Not measured yet"],
+      stats: ["Loading"],
+      meta: "Amazon listing content",
       spokeId: "specs",
       subTab: "Amazon A+ Matrix",
-      tooltip: {"title": "A+ comparison tables", "desc": "Comparison tables have not been measured. When a comparison table is on the page, a shopping assistant can read the columns and repeat how the lineup steps up."},
+      tooltip: {"title": "Amazon listing content", "desc": "Reading the live Amazon listings."},
     },
     {
       ...aiFaces.satGap,

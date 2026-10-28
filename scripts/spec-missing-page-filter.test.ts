@@ -183,7 +183,7 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(schemaList, /Top missing schema fields/);
   assert.doesNotMatch(schemaList, /\stitle=/);
   assert.doesNotMatch(schemaList, forbidden);
-  assert.match(schemaList, /data-machine-hero=\{hero\.id\}/);
+  assert.match(schemaList, /dataAttr="data-machine-hero"/);
   assert.match(governance, /data-ifai-open="specs"/);
   assert.match(governance, /data-ifai-tab="AI Readiness"/);
   assert.match(governance, /Unnested bundles/);

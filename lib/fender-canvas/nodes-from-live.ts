@@ -5,6 +5,7 @@ import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { readinessFindabilityFace, type FindabilityRead } from "@/lib/findability/copy";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { bulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   retailBubbleFaces,
@@ -23,6 +24,7 @@ export function buildLiveNodes(
 ): CanvasNode[] {
   const { m } = bundle;
   const schemaPages = specPageCounts(bundle.specPages);
+  const bullets = bulletCounts(bundle.listingContent);
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
   const readinessFace = readinessFindabilityFace(findability, formatPct(m.spec_avg_amazon_pct));
@@ -77,14 +79,19 @@ export function buildLiveNodes(
     },
     {
       ...satelliteNode("sat-tables"),
-      status: "neutral",
+      status: !bullets ? "warning" : bullets.short === 0 ? "success" : "danger",
       title: "Amazon A+ Matrix",
-      stats: ["Not measured yet"],
+      stats: bullets
+        ? [`${formatPct(bullets.pct)} five bullets`, `${formatInt(bullets.listings)} listings`]
+        : ["Not available*"],
+      meta: "Amazon listing content",
       spokeId: "specs",
       subTab: "Amazon A+ Matrix",
       tooltip: {
-        title: "A+ comparison tables",
-        desc: "Comparison tables have not been measured. When a comparison table is on the page, a shopping assistant can read the columns and repeat how the lineup steps up.",
+        title: "Amazon listing content",
+        desc: bullets
+          ? `${formatInt(bullets.short)} of ${formatInt(bullets.listings)} live Amazon listings fill fewer than five bullets.`
+          : "The Amazon listing-content read could not be loaded.",
       },
     },
     {

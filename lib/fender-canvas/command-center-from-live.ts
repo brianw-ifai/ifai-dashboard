@@ -2,6 +2,7 @@ import type { CommandCenterSpec } from "@/lib/canvas-sdk/types";
 import { aiCommandSummary, aiPriorityItems } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { formatInt } from "@/lib/fender-canvas/format";
+import { bulletCounts } from "@/lib/fender-canvas/listing-content";
 import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   headlineSentence,
@@ -42,6 +43,7 @@ export function buildLiveCommandCenter(
 ): CommandCenterSpec {
   const { m, divisions } = bundle;
   const schemaPages = specPageCounts(bundle.specPages);
+  const bullets = bulletCounts(bundle.listingContent);
   const divisionCount = divisions.length > 0 ? divisions.length : m.division_count;
   const headline = headlineSurface(retail);
   const mapItem = mapPriority(retail);
@@ -100,8 +102,10 @@ export function buildLiveCommandCenter(
       ...aiOther,
       {
         id: "aplus-tables",
-        title: "A+ comparison tables have not been measured",
-        why: "Comparison tables have not been measured. Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
+        title: "Amazon listings are missing bullet copy",
+        why: bullets
+          ? `${formatInt(bullets.short)} of ${formatInt(bullets.listings)} live Amazon listings fill fewer than five bullets. Bullets are the first copy an AI shopping assistant quotes about a listing.`
+          : "The Amazon listing-content read could not be loaded.",
         severity: "moderate",
         spokeId: "specs",
         subTab: "A+",

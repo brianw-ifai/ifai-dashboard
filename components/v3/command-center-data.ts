@@ -43,8 +43,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "aplus-tables",
-      title: "A+ comparison tables have not been measured",
-      why: "Comparison tables have not been measured. Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
+      title: "Amazon listings are missing bullet copy",
+      why: "The Amazon A+ Matrix tab shows which live listings fill all five bullets, and where A+ content and video are confirmed.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

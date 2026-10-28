@@ -38,10 +38,10 @@ test("spec tables live on one surface each", async ({ page }) => {
 
   await canvas.openTab("Machine Readability");
   const specHero = page.locator("[data-machine-hero='spec_block']");
-  await expect(specHero.locator("[data-machine-hero-percent]")).toHaveText("50.0%");
+  await expect(specHero.locator("[data-hero-percent]")).toHaveText("50.0%");
   await expect(specHero).toContainText("1 of 2");
   await expect(
-    page.locator("[data-machine-hero='product_basics'] [data-machine-hero-percent]"),
+    page.locator("[data-machine-hero='product_basics'] [data-hero-percent]"),
   ).toHaveText("100.0%");
   const pages = page.locator("#machine-readability-pages");
   await expect(pages).toBeVisible();
