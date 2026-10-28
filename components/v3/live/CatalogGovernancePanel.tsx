@@ -6,7 +6,6 @@ import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
-import { formatInt } from "@/lib/fender-canvas/format";
 import {
   catalogBundleLineLabel,
   catalogBundleOfferLabel,
@@ -16,7 +15,7 @@ import {
   type UnnestedBundleOpportunity,
 } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
-import { catalogHero } from "@/lib/fender-canvas/retail-overview-lead";
+import { catalogHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
 const PAGE = 20;
@@ -149,28 +148,44 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
   );
 }
 
-function AmazonSpecGapCount({ reading }: { reading: RetailReading<unknown> }) {
-  const showMissing = reading.status === "incomplete" || reading.status === "unavailable";
-  const count = reading.issueCount == null ? "Not stored" : formatInt(reading.issueCount);
+/**
+ * Specs-complete share (checked listings with every Amazon field filled).
+ * Opens AI Readiness; replaces the plain missing-field count button.
+ */
+function CatalogSpecHero({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
+  const hero = specHero(snapshot);
+  const aria = hero.ratio
+    ? `${hero.percent}. ${hero.ratio}. Opens AI Readiness.`
+    : `${hero.percent}. Opens AI Readiness.`;
   return (
-    <div data-catalog-governance-spec-gap="">
-      <button
-        type="button"
-        className="retail-finding-hit"
-        data-ifai-open="specs"
-        data-ifai-tab="AI Readiness"
-        data-spec-open="ai-readiness"
-        aria-label={`${count} checked listings with a missing Amazon spec field. Opens AI Readiness.`}
-      >
-        <span className="metric-card-label">Checked listings with a missing Amazon spec field</span>
-        <span className="metric-card-val" data-amazon-spec-gap-count={reading.issueCount ?? ""}>
-          {count}
-        </span>
-      </button>
-      {showMissing && reading.missingMessage ? (
-        <p className="retail-missing">{reading.missingMessage}</p>
-      ) : null}
-    </div>
+    <button
+      type="button"
+      className="content-box findability-lead-card"
+      data-catalog-spec-hero=""
+      data-ifai-open="specs"
+      data-ifai-tab="AI Readiness"
+      data-spec-open="ai-readiness"
+      aria-label={aria}
+      style={{ flex: "0 0 auto", width: "fit-content", maxWidth: "100%" }}
+    >
+      <div>
+        <span>{hero.label}</span>
+      </div>
+      <div className="findability-lead-row">
+        <div className="findability-lead-figures">
+          <span className="ai-lead-figure" style={{ color: hero.color }}>
+            {hero.percent}
+          </span>
+          {hero.ratio ? (
+            <span className="findability-lead-ratio">{hero.ratio}</span>
+          ) : null}
+        </div>
+        {hero.pie ? (
+          <CitationPieDisc pie={hero.pie} sizeClass={RETAIL_PIE_SIZE} tip={hero.tip ?? undefined} />
+        ) : null}
+      </div>
+      <span className="metric-card-sub">{hero.explainer}</span>
+    </button>
   );
 }
 
@@ -207,8 +222,10 @@ function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot
   );
 }
 
-/** Explainer and Amazon spec-gap control share one notes column beside the hero. */
+/** Explainer column beside the hero pair. Incomplete / unavailable messages sit under the notes. */
 function CatalogGovernanceNotes({ specs }: { specs: RetailReading<unknown> }) {
+  const showMissing =
+    (specs.status === "incomplete" || specs.status === "unavailable") && Boolean(specs.missingMessage);
   return (
     <div
       className="content-box"
@@ -223,7 +240,7 @@ function CatalogGovernanceNotes({ specs }: { specs: RetailReading<unknown> }) {
           <DefinedCopy text={CATALOG_GOVERNANCE_EXPLAINER} />
         </div>
       </div>
-      <AmazonSpecGapCount reading={specs} />
+      {showMissing ? <p className="retail-missing">{specs.missingMessage}</p> : null}
     </div>
   );
 }
@@ -246,7 +263,10 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
         data-catalog-governance-lead-row=""
         style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
       >
-        <CatalogGovernanceLead snapshot={read.snapshot} />
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+          <CatalogGovernanceLead snapshot={read.snapshot} />
+          <CatalogSpecHero snapshot={read.snapshot} />
+        </div>
         <CatalogGovernanceNotes specs={specs} />
       </div>
 

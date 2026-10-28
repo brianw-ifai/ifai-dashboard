@@ -13,12 +13,14 @@ import {
   suppressedListingsFinding,
   unnestedBundleOpportunities,
   unnestedBundlesFinding,
+  type AmazonSpecGapDetail,
   type CatalogBundleRow,
   type MapLeakageRow,
   type PortfolioRetailSnapshot,
+  type RetailReading,
   type SuppressionSupportRow,
 } from "../lib/fender-canvas/portfolio-retail.ts";
-import { catalogHero } from "../lib/fender-canvas/retail-overview-lead.ts";
+import { catalogHero, specHero } from "../lib/fender-canvas/retail-overview-lead.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -63,6 +65,20 @@ function bundle(overrides: Partial<CatalogBundleRow> & Pick<CatalogBundleRow, "a
     parent_asin: null,
     product_url: "https://www.amazon.com/dp/B0D8TFXHHT",
     is_bundle: true,
+    ...overrides,
+  };
+}
+
+function amazonSpecs(
+  checked: number,
+  issueCount: number,
+  overrides: Partial<RetailReading<AmazonSpecGapDetail | null>> = {},
+): RetailReading<AmazonSpecGapDetail | null> {
+  return {
+    status: issueCount === 0 ? "available_with_zero" : "available_with_issues",
+    issueCount,
+    missingMessage: null,
+    detail: { gaps: [], checked, unchecked: 0 },
     ...overrides,
   };
 }
@@ -118,15 +134,90 @@ test("missing Catalog Governance reading shows Not available* with no zero share
   assert.doesNotMatch(hero.percent, /^0%?$/);
 });
 
+test("spec hero 100 complete of 100 is 100.0% green success", () => {
+  const hero = specHero(snapshot({ amazonSpecGaps: amazonSpecs(100, 0) }));
+  assert.equal(hero.numerator, 100);
+  assert.equal(hero.denominator, 100);
+  assert.equal(hero.percent, "100.0%");
+  assert.equal(hero.color, "var(--success-green)");
+  assert.equal(hero.tone, "success");
+  assert.equal(hero.label, "Specs complete");
+  assert.match(hero.explainer, /Every Amazon spec field is filled/);
+  assert.ok(hero.explainer.length < 48);
+});
+
+test("spec hero 98 complete of 100 is green", () => {
+  const hero = specHero(snapshot({ amazonSpecGaps: amazonSpecs(100, 2) }));
+  assert.equal(hero.numerator, 98);
+  assert.equal(hero.percent, formatPct(9800 / 100));
+  assert.equal(hero.color, "var(--success-green)");
+  assert.equal(hero.tone, "success");
+});
+
+test("spec hero 97 complete of 100 is yellow warning", () => {
+  const hero = specHero(snapshot({ amazonSpecGaps: amazonSpecs(100, 3) }));
+  assert.equal(hero.numerator, 97);
+  assert.equal(hero.color, "var(--warning-amber)");
+  assert.equal(hero.tone, "warning");
+});
+
+test("spec hero 95 complete of 100 is yellow", () => {
+  const hero = specHero(snapshot({ amazonSpecGaps: amazonSpecs(100, 5) }));
+  assert.equal(hero.numerator, 95);
+  assert.equal(hero.color, "var(--warning-amber)");
+  assert.equal(hero.tone, "warning");
+});
+
+test("spec hero 94 complete of 100 is red danger", () => {
+  const hero = specHero(snapshot({ amazonSpecGaps: amazonSpecs(100, 6) }));
+  assert.equal(hero.numerator, 94);
+  assert.equal(hero.color, "var(--danger-red)");
+  assert.equal(hero.tone, "danger");
+});
+
+test("spec hero 541 complete of 1052 matches live reading shape", () => {
+  const hero = specHero(snapshot({ amazonSpecGaps: amazonSpecs(1052, 511) }));
+  assert.equal(hero.numerator, 541);
+  assert.equal(hero.denominator, 1052);
+  assert.equal(hero.percent, formatPct(54100 / 1052));
+  assert.equal(hero.ratio, formatRatio(541, 1052));
+  assert.equal(hero.color, "var(--danger-red)");
+  assert.equal(hero.tone, "danger");
+  assert.ok(hero.pie);
+  assert.equal(hero.pie.total, 1052);
+  assert.equal(hero.pie.totalLabel, "checked listings");
+  const missing = hero.pie.slices.find((slice) => slice.key === "contradicted");
+  const filled = hero.pie.slices.find((slice) => slice.key === "matched");
+  assert.ok(missing);
+  assert.equal(missing.count, 511);
+  assert.equal(missing.label, "Missing a field");
+  assert.ok(filled);
+  assert.equal(filled.count, 541);
+  assert.equal(filled.label, "Specs filled");
+  assert.match(hero.tip ?? "", /511 of 1,052 checked listings are missing an Amazon spec field/);
+});
+
+test("unavailable spec reading shows Not available* with no pie and no 0%", () => {
+  const hero = specHero(snapshot());
+  assert.equal(hero.percent, "Not available*");
+  assert.equal(hero.ratio, null);
+  assert.equal(hero.pie, null);
+  assert.equal(hero.numerator, null);
+  assert.doesNotMatch(hero.percent, /^0/);
+  assert.doesNotMatch(hero.percent, /0%/);
+});
+
 test("Catalog Governance places notes beside the share and the table under that row", () => {
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
 
   assert.match(panel, /catalogHero/);
+  assert.match(panel, /specHero/);
   assert.match(panel, /from "@\/lib\/fender-canvas\/retail-overview-lead"/);
   assert.match(panel, /data-catalog-governance-lead/);
   assert.match(panel, /data-catalog-governance-lead-row/);
   assert.match(panel, /data-catalog-governance-notes/);
   assert.match(panel, /data-catalog-governance-table/);
+  assert.match(panel, /data-catalog-spec-hero/);
   assert.match(panel, /CitationPieDisc/);
   assert.match(panel, /citation-pie-disc citation-pie-disc-retail/);
   assert.match(panel, /hero\.label/);
@@ -136,9 +227,11 @@ test("Catalog Governance places notes beside the share and the table under that 
   assert.match(panel, /hero\.tip/);
   assert.match(panel, /width:\s*["']fit-content["']/);
   assert.match(panel, /alignItems:\s*["']flex-start["']/);
+  assert.match(panel, /alignItems:\s*["']stretch["']/);
   assert.match(panel, /What is catalog governance\?/);
-  assert.match(panel, /data-amazon-spec-gap-count/);
   assert.match(panel, /CATALOG_GOVERNANCE_EXPLAINER/);
+  assert.doesNotMatch(panel, /data-amazon-spec-gap-count/);
+  assert.doesNotMatch(panel, /AmazonSpecGapCount/);
 
   assert.doesNotMatch(panel, /Unnested bundles/);
   assert.doesNotMatch(panel, /Bundles in this retail read with no usable parent ASIN/);
@@ -152,11 +245,14 @@ test("Catalog Governance places notes beside the share and the table under that 
   const render = panel.slice(renderStart);
   const rowAt = render.indexOf("data-catalog-governance-lead-row");
   const leadAt = render.indexOf("<CatalogGovernanceLead");
+  const specAt = render.indexOf("<CatalogSpecHero");
   const notesAt = render.indexOf("<CatalogGovernanceNotes");
   const tableAt = render.indexOf("data-catalog-governance-table");
   assert.ok(rowAt >= 0 && leadAt > rowAt, "lead sits in the lead row");
+  assert.ok(specAt > rowAt && specAt < notesAt, "spec hero sits in the lead row before notes");
   assert.ok(notesAt > leadAt, "notes sit beside the lead in the same row");
   assert.ok(tableAt > notesAt, "bundle table is the next full-width block under the row");
+  assert.ok(panel.indexOf("data-catalog-spec-hero") < panel.indexOf("data-catalog-governance-notes"));
 
   const leadBlock = panel.slice(
     panel.indexOf("function CatalogGovernanceLead"),
@@ -170,8 +266,9 @@ test("Catalog Governance places notes beside the share and the table under that 
     panel.indexOf("function CatalogGovernanceNotes"),
     panel.indexOf("export function CatalogGovernancePanel"),
   );
-  assert.match(notesBlock, /AmazonSpecGapCount/);
+  assert.doesNotMatch(notesBlock, /AmazonSpecGapCount/);
   assert.match(notesBlock, /What is catalog governance\?/);
+  assert.match(notesBlock, /missingMessage/);
 
   assert.doesNotMatch(panel, /\u2014/);
   assert.doesNotMatch(panel, /retainer|service-fee/i);
