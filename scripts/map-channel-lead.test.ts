@@ -134,13 +134,15 @@ test("MAP panel places notes beside the share and listings under the row", () =>
   assert.match(panel, /hero\.percent/);
   assert.match(panel, /hero\.ratio/);
   assert.match(panel, /Average price gap/);
-  assert.match(panel, /Price gap, not revenue/);
   assert.match(panel, /data-map-lead-gap/);
   assert.match(panel, /Not stored/);
   assert.match(panel, /MAP_PRICES_NOT_STORED/);
   assert.match(panel, /width:\s*["']fit-content["']/);
-  assert.match(panel, /alignItems:\s*["']stretch["']/);
-  assert.match(panel, /alignSelf:\s*["']stretch["']/);
+  assert.match(panel, /alignSelf:\s*["']flex-start["']/);
+  assert.doesNotMatch(panel, /Price gap, not revenue/);
+  assert.doesNotMatch(panel, /hero\.explainer/);
+  assert.doesNotMatch(panel, /data-map-lead-explainer/);
+  assert.doesNotMatch(panel, /Priced below MAP/);
 
   const leadStart = panel.indexOf("function MapLeakageLead");
   const notesStart = panel.indexOf("function MapNotes");
@@ -149,7 +151,9 @@ test("MAP panel places notes beside the share and listings under the row", () =>
   const notesFn = panel.slice(notesStart, panel.indexOf("function MapTopRow"));
   assert.match(leadFn, /data-map-lead-gap/);
   assert.match(leadFn, /Average price gap/);
-  assert.match(leadFn, /Price gap, not revenue/);
+  assert.match(leadFn, /alignSelf:\s*["']flex-start["']/);
+  assert.doesNotMatch(leadFn, /Price gap, not revenue/);
+  assert.doesNotMatch(leadFn, /hero\.explainer/);
   assert.doesNotMatch(leadFn, /metric-card-sm/);
   assert.doesNotMatch(notesFn, /Average price gap/);
   assert.doesNotMatch(notesFn, /metric-card-sm/);
