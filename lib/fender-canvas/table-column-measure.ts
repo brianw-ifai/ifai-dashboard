@@ -33,16 +33,23 @@ function measureCellOneLineWidth(cell: HTMLElement, host: HTMLElement, tableClas
 
 /**
  * Minimum pixel width per column so typical cells stay on one line.
- * Skip the fill column: that column is allowed to wrap into leftover panel width.
+ * Skip the fill column and any wrap columns: those may wrap into leftover width.
  */
 export function measureColumnOneLineMins(
   table: HTMLTableElement,
   columnIds: readonly string[],
-  skipColumnId?: string,
+  skipColumnId?: string | readonly string[],
 ): Record<string, number> {
   const mins: Record<string, number> = {};
   for (const id of columnIds) mins[id] = 0;
   if (typeof document === "undefined" || columnIds.length === 0) return mins;
+  const skip = new Set(
+    typeof skipColumnId === "string"
+      ? skipColumnId
+        ? [skipColumnId]
+        : []
+      : (skipColumnId ?? []),
+  );
 
   const root = table.closest(".ifai-canvas") ?? document.body;
   const host = document.createElement("div");
@@ -62,7 +69,7 @@ export function measureColumnOneLineMins(
       const cells = Array.from(row.cells);
       for (let index = 0; index < cells.length && index < columnIds.length; index += 1) {
         const id = columnIds[index];
-        if (!id || id === skipColumnId) continue;
+        if (!id || skip.has(id)) continue;
         const cell = cells[index];
         if (!cell || cell.colSpan !== 1) continue;
         mins[id] = Math.max(mins[id], measureCellOneLineWidth(cell, host, table.className));

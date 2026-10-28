@@ -4,7 +4,7 @@ import { mockCanvasRead } from "./spec-read-mock";
 
 /**
  * Proves the three spec surfaces with a mocked canvas API.
- * AI Readiness filters fender_found false and hides a true row.
+ * AI Readiness shows the ASIN table with Yes/No found values.
  * Machine Readability shows an additionalProperty row and not the full ASIN table.
  * Catalog Governance shows the unnested-bundle table, hides the spec-field table,
  * and its count opens AI Readiness.
@@ -15,7 +15,10 @@ test("spec tables live on one surface each", async ({ page }) => {
 
   const canvas = new Canvas(page);
   await canvas.open();
-  await canvas.openSpokeFromMap("AI Readiness");
+  await expect(async () => {
+    await page.locator(".graph-node").filter({ hasText: /AI\s*Readiness/i }).click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await canvas.openTab("AI Readiness");
 
   const catalog = page.locator("#spec-readiness-by-asin");
@@ -23,18 +26,10 @@ test("spec tables live on one surface each", async ({ page }) => {
   await expect(catalog).toContainText("B00MISSING");
   await expect(catalog).toContainText("B00FOUND01");
   await expect(catalog).toContainText("B00NULLFLG");
+  await expect(catalog.getByText("No", { exact: true })).toHaveCount(1);
+  await expect(catalog.getByText("Yes", { exact: true })).toHaveCount(2);
   await expect(page.getByText("Top missing schema fields")).toBeVisible();
-
-  const pageFound = page.locator("[data-spec-filter='missing-fender-page']");
-  await pageFound.click();
-  await expect(catalog).toContainText("B00MISSING");
-  await expect(catalog).not.toContainText("B00FOUND01");
-  await expect(catalog).not.toContainText("B00NULLFLG");
-  await expect(catalog).toContainText("missing page");
-
-  await pageFound.click();
-  await expect(catalog).toContainText("B00FOUND01");
-  await expect(catalog).toContainText("B00NULLFLG");
+  await expect(page.locator("[data-spec-filter]")).toHaveCount(0);
 
   await canvas.openTab("Machine Readability");
   const schema = page.locator("#schema-additional-property");
