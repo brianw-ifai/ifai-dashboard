@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedCopy } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
+import { specFieldFindings } from "@/lib/fender-canvas/catalog-governance-findings";
+import { formatInt } from "@/lib/fender-canvas/format";
 import {
   catalogBundleLineLabel,
   catalogBundleOfferLabel,
   catalogBundleSellerLabel,
+  type AmazonSpecGapDetail,
   type PortfolioRetailSnapshot,
   type RetailReading,
   type UnnestedBundleOpportunity,
@@ -17,6 +20,9 @@ import {
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { catalogHero, specHero } from "@/lib/fender-canvas/retail-overview-lead";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
+
+const SPLINTERED_LISTINGS_LABEL = "Splintered listings";
+const MOST_OF_THE_SPEC_DESC = "Missing 11 or more of the Amazon spec fields we check.";
 
 const PAGE = 20;
 const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
@@ -191,7 +197,7 @@ function CatalogSpecHero({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
 
 /**
  * Same unnested-bundle share as Retail Overview: percentage, N of M, and disc.
- * Card width hugs the figure. Static in-tab lead (not a navigation button).
+ * Visible label is Splintered listings; tab / RETAIL_FINDING_LABELS stay Catalog Governance.
  */
 function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot }) {
   const hero = catalogHero(snapshot);
@@ -202,7 +208,7 @@ function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot
       style={{ flex: "0 0 auto", width: "fit-content", maxWidth: "100%" }}
     >
       <div>
-        <span>{hero.label}</span>
+        <span>{SPLINTERED_LISTINGS_LABEL}</span>
       </div>
       <div className="findability-lead-row">
         <div className="findability-lead-figures">
@@ -218,6 +224,72 @@ function CatalogGovernanceLead({ snapshot }: { snapshot: PortfolioRetailSnapshot
         ) : null}
       </div>
       <span className="metric-card-sub">{hero.explainer}</span>
+    </div>
+  );
+}
+
+function FindingLine({ label, count }: { label: ReactNode; count: number }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12 }}>
+      <span>{label}</span>
+      <span>{formatInt(count)}</span>
+    </div>
+  );
+}
+
+/**
+ * Full-width Fill first / How close band from amazonSpecGaps.detail.gaps.
+ * When the reading has no detail or checked is zero, both cards say Not available*.
+ */
+function CatalogSpecFindings({ specs }: { specs: RetailReading<AmazonSpecGapDetail | null> }) {
+  const detail = specs.detail;
+  const ready = detail != null && detail.checked > 0;
+  const findings = ready ? specFieldFindings(detail.gaps) : null;
+
+  return (
+    <div
+      data-catalog-governance-findings=""
+      style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch", marginTop: 12 }}
+    >
+      <div className="content-box" style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="content-box-title" style={{ marginTop: 0 }}>
+          Fill first
+        </div>
+        {findings ? (
+          findings.fillFirst.map((line) => (
+            <FindingLine key={line.field} label={line.label} count={line.count} />
+          ))
+        ) : (
+          <span>Not available*</span>
+        )}
+      </div>
+      <div className="content-box" style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="content-box-title" style={{ marginTop: 0 }}>
+          How close
+        </div>
+        {findings ? (
+          <>
+            <FindingLine label="One field" count={findings.howClose.oneField} />
+            <FindingLine label="Two fields" count={findings.howClose.twoFields} />
+            <FindingLine
+              label={
+                <span
+                  className="ifai-term"
+                  data-ifai-tooltip-title="Most of the spec"
+                  data-ifai-tooltip-desc={MOST_OF_THE_SPEC_DESC}
+                  tabIndex={0}
+                  aria-label={`Most of the spec: ${MOST_OF_THE_SPEC_DESC}`}
+                >
+                  Most of the spec
+                </span>
+              }
+              count={findings.howClose.mostOfTheSpec}
+            />
+          </>
+        ) : (
+          <span>Not available*</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -269,6 +341,8 @@ export function CatalogGovernancePanel({ read }: { read: RetailCanvasRead }) {
         </div>
         <CatalogGovernanceNotes specs={specs} />
       </div>
+
+      <CatalogSpecFindings specs={specs} />
 
       <div className="content-box" style={{ marginTop: 12 }} data-catalog-governance-table="">
         {bundles.detail ? <BundleRows rows={opportunities} /> : null}
