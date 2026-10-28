@@ -23,7 +23,11 @@ function mapNode(page: Page, title: string) {
 async function openFirstTab(page: Page) {
   const canvas = new Canvas(page);
   await canvas.open();
-  await canvas.openSpokeFromMap("AI Readiness");
+  await expect(async () => {
+    await page.locator(".graph-node").filter({ hasText: /AI\s*Readiness/i }).click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+  await expect(canvas.panel).toBeVisible();
   await canvas.openTab("AI Readiness");
   return canvas;
 }
@@ -39,7 +43,10 @@ test("the bubble, its satellites, and its tabs share one set of names", async ({
   await expect(mapNode(page, "Schema.org")).toHaveCount(0);
   await expect(mapNode(page, "A+ Tables")).toHaveCount(0);
 
-  await canvas.openSpokeFromMap("AI Readiness");
+  await expect(async () => {
+    await mapNode(page, "AI Readiness").click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await expect(page.locator(".drilldown-tabs .drilldown-tab-btn")).toHaveText(TAB_NAMES);
 });
 
@@ -101,30 +108,37 @@ test("the first tab opens on two missing fields and reveals the rest", async ({ 
   await expect(fields).toHaveCount(2);
 });
 
-test("the page found control is one pill whose row matches the other readings", async ({ page }) => {
+test("the page found hero shows percent, ratio, and pie, and its Show filter works", async ({ page }) => {
   await mockCanvasRead(page);
   await openFirstTab(page);
 
-  const summary = page.locator(".spec-summary");
-  await expect(summary.locator(".content-box-title")).toHaveCount(0);
-  await expect(summary.locator("th")).toHaveText(["Metric", "Result"]);
+  const lead = page.locator("[data-ai-readiness-lead]");
+  await expect(lead).toBeVisible();
+  await expect(page.locator(".spec-summary")).toHaveCount(0);
+  await expect(page.getByRole("columnheader", { name: "Metric" })).toHaveCount(0);
 
-  const pill = summary.locator(".spec-found-pill");
+  const pageFound = page.locator("[data-ai-readiness-hero='page_found']");
+  await expect(pageFound.locator("[data-ai-readiness-hero-percent]")).toHaveText("50.0%");
+  await expect(pageFound.locator("[data-ai-readiness-hero-ratio]")).toHaveText("2 of 4");
+  await expect(pageFound.locator("[data-citation-pie-disc]")).toHaveCount(1);
+  await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(4);
+
+  const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
+  await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
+  await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
+
+  await expect(lead).toContainText("older spec read");
+  await expect(lead).toContainText("Findability tab");
+  await expect(lead).toContainText("family page");
+
+  const pill = pageFound.locator(".spec-found-pill");
   await expect(pill).toHaveCount(1);
-  await expect(pill).toContainText(FOUND_RESULT);
   await expect(pill).toContainText("Show");
+  await expect(pill).toHaveAttribute("aria-label", new RegExp(FOUND_RESULT.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   await expect(page.getByRole("button", { name: "Clear", exact: true })).toHaveCount(0);
-
-  // The pill row is no taller than the plain readings around it.
-  const heights = await summary
-    .locator("tbody tr")
-    .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().height)));
-  expect(heights.length).toBe(5);
-  expect(new Set(heights).size).toBe(1);
 
   const catalog = page.locator("#spec-readiness-by-asin");
   await pill.click();
-  await expect(pill).toContainText(FOUND_RESULT);
   await expect(pill).toContainText("Hide");
   await expect(pill).toHaveAttribute("aria-pressed", "true");
   await expect(catalog).toContainText("B00MISSING");
@@ -137,4 +151,10 @@ test("the page found control is one pill whose row matches the other readings", 
   await expect(pill).toHaveAttribute("aria-pressed", "false");
   await expect(catalog).toContainText("B00FOUND01");
   await expect(catalog).toContainText("B00NULLFLG");
+
+  const yesLink = catalog.locator('a.listing-link[href="https://www.fender.com/en-US/found"]');
+  await expect(yesLink).toHaveText("Yes");
+  await expect(yesLink).toHaveAttribute("target", "_blank");
+  await expect(catalog.getByText("No", { exact: true })).toHaveCount(1);
+  await expect(catalog.locator("a.listing-link", { hasText: "No" })).toHaveCount(0);
 });

@@ -136,22 +136,27 @@ test("the filter counts every missing page, not the current page of 50", async (
 test("the catalog control copy stays on the live rollup and the custom tooltip", () => {
   const root = new URL("..", import.meta.url);
   const read = (path: string) => readFileSync(new URL(path, root), "utf8");
+  const lead = read("components/v3/live/AiReadinessLead.tsx");
   const narrative = read("components/v3/live/FenderSpecNarratives.tsx");
   const panel = read("components/v3/live/FenderSpecPanel.tsx");
   const catalog = read("components/v3/live/CatalogReadinessSpec.tsx");
   const spokes = read("components/v3/build-live-spokes.tsx");
   const forbidden = /\b(123|802|925)\b/;
 
-  assert.match(narrative, /spec_fender_found_pct/);
-  assert.match(narrative, /data-spec-filter="missing-fender-page"/);
+  assert.match(lead, /spec_fender_found_pct/);
+  assert.match(lead, /data-spec-filter="missing-fender-page"/);
   // One pill, no Clear button, and the toggle word is on it before the first click.
-  assert.doesNotMatch(narrative, /data-spec-filter="clear"/);
-  assert.doesNotMatch(narrative, /Clear/);
-  assert.match(narrative, /control\.active \? "Hide" : "Show"/);
-  assert.doesNotMatch(narrative, /content-box-title/);
-  assert.match(narrative, /<th>Metric<\/th>/);
-  assert.match(narrative, /<th>Result<\/th>/);
-  assert.doesNotMatch(narrative, /\stitle=/);
+  assert.doesNotMatch(lead, /data-spec-filter="clear"/);
+  assert.doesNotMatch(lead, /Clear/);
+  assert.match(lead, /control\.active \? "Hide" : "Show"/);
+  assert.doesNotMatch(lead, /content-box-title/);
+  assert.doesNotMatch(lead, /<th>Metric<\/th>/);
+  assert.doesNotMatch(lead, /<th>Result<\/th>/);
+  assert.match(lead, /Official-page outcomes are on the Findability tab/);
+  assert.doesNotMatch(lead, /(?<![\w-])title=/);
+  assert.doesNotMatch(lead, forbidden);
+  assert.doesNotMatch(narrative, /data-spec-filter/);
+  assert.doesNotMatch(narrative, /(?<![\w-])title=/);
   assert.doesNotMatch(narrative, forbidden);
 
   assert.match(panel, /means this check did not resolve a fender.com address/);
@@ -165,9 +170,10 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.match(panel, /missing\.slice\(0, MISSING_FIELD_PREVIEW\)/);
   assert.match(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
   assert.doesNotMatch(panel, /slice\(0, 8\)/);
-  assert.doesNotMatch(panel, /\stitle=/);
+  assert.doesNotMatch(panel, /(?<![\w-])title=/);
   assert.doesNotMatch(panel, forbidden);
 
+  assert.match(catalog, /AiReadinessLead/);
   assert.match(catalog, /catalogReadiness/);
   assert.match(catalog, /missingPagesOnly=\{missingPagesOnly\}/);
   assert.doesNotMatch(catalog, forbidden);
@@ -187,9 +193,9 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.match(schemaList, /data-schema-gap-count=\{total\}/);
   assert.match(governance, /data-ifai-open="specs"/);
   assert.match(governance, /data-ifai-tab="AI Readiness"/);
-  assert.match(governance, /Unnested bundles/);
+  assert.match(governance, /Splintered listings/);
   assert.doesNotMatch(governance, /catalog-specs/);
   assert.doesNotMatch(governance, /Missing Amazon spec fields/);
   assert.doesNotMatch(governance, /\b435\b/);
-  assert.doesNotMatch(governance, /\stitle=/);
+  assert.doesNotMatch(governance, /(?<![\w-])title=/);
 });

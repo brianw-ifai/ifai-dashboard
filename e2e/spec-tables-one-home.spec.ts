@@ -15,7 +15,10 @@ test("spec tables live on one surface each", async ({ page }) => {
 
   const canvas = new Canvas(page);
   await canvas.open();
-  await canvas.openSpokeFromMap("AI Readiness");
+  await expect(async () => {
+    await page.locator(".graph-node").filter({ hasText: /AI\s*Readiness/i }).click({ force: true });
+    await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await canvas.openTab("AI Readiness");
 
   const catalog = page.locator("#spec-readiness-by-asin");

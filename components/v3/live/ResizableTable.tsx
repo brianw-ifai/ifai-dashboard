@@ -163,6 +163,7 @@ export function ResizableTable({
   tableId,
   columns,
   fillColumnId,
+  wrapColumnIds,
   freezeHeader = true,
   maxHeight = 520,
   sort = null,
@@ -173,6 +174,8 @@ export function ResizableTable({
   columns: readonly RetailColumn[];
   /** Column that grows so the table fills the panel until someone resizes. */
   fillColumnId?: string;
+  /** Extra columns allowed to wrap; skipped when measuring one-line floors. */
+  wrapColumnIds?: readonly string[];
   freezeHeader?: boolean;
   maxHeight?: number;
   sort?: TableSort | null;
@@ -186,6 +189,8 @@ export function ResizableTable({
   const [contentMins, setContentMins] = useState<Record<string, number>>({});
   const [manual, setManual] = useState(false);
   const fillId = pickFillColumnId(columns, fillColumnId);
+  const wrapIds = wrapColumnIds ?? [];
+  const wrapSignature = wrapIds.join("|");
 
   useEffect(() => {
     setManual(readStoredRaw(tableId) != null);
@@ -206,8 +211,9 @@ export function ResizableTable({
     const table = tableRef.current;
     if (!table) return;
     const columnIds = signature.split("|").map((part) => part.split(":")[0]).filter(Boolean);
+    const skipIds = [fillId, ...wrapIds.filter(Boolean)];
     const run = () => {
-      const next = measureColumnOneLineMins(table, columnIds, fillId);
+      const next = measureColumnOneLineMins(table, columnIds, skipIds);
       setContentMins((current) => {
         const same = columnIds.every((id) => (current[id] ?? 0) === (next[id] ?? 0));
         return same ? current : next;
@@ -219,7 +225,7 @@ export function ResizableTable({
     const observer = new MutationObserver(run);
     observer.observe(body, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
-  }, [manual, fillId, signature, containerWidth]);
+  }, [manual, fillId, signature, wrapSignature, containerWidth]);
 
   const displayWidths = manual
     ? widths

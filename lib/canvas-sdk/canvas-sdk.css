@@ -2558,12 +2558,22 @@
       border-radius: 3px;
     }
 
-    /* One row height for every reading in the spec summary, so the toggle pill
-       in the result cell does not stand taller than the rows around it. */
-    .spec-summary .table-sm td {
-      height: 36px;
-      padding-top: 4px;
-      padding-bottom: 4px;
+    /* AI Readiness share heroes: same family as Findability leads. */
+    .ai-readiness-lead {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-readiness-lead-note {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .ai-readiness-hero-filter {
+      margin-top: 8px;
     }
 
     .spec-found-pill {
@@ -2596,9 +2606,7 @@
     }
 
     .spec-found-pill-action {
-      padding-left: 8px;
-      border-left: 1px solid currentcolor;
-      opacity: 0.75;
+      opacity: 0.9;
     }
 
     .segmented-control {

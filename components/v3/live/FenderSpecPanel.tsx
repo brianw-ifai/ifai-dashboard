@@ -15,14 +15,37 @@ import {
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { presentMissingAmazonFields } from "@/lib/fender-canvas/spec-missing-fields";
+import { schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 
 const SPEC_COLUMNS = [
-  clientColumn("asin", "ASIN", "text", 130, 108, "asin-col"),
-  clientColumn("model", "Model", "text", 220, 140),
-  clientColumn("amazon", "Amazon completeness", "number", 170, 130),
-  clientColumn("found", "fender.com found", "text", 150, 120),
-  clientColumn("missing", "Missing Amazon fields", "text", 280, 180),
+  clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
+  clientColumn("model", "Model", "text", 200, 120),
+  clientColumn("amazon", "Amazon completeness", "number", 140, 110),
+  clientColumn("found", "fender.com found", "text", 120, 100),
+  clientColumn("missing", "Missing Amazon fields", "text", 240, 160),
 ];
+
+/** First-visit viewport: short enough that heroes stay in view; page size stays 50. */
+const SPEC_TABLE_MAX_HEIGHT = 260;
+
+/** Yes links when found and fender_url is http(s). No and blank stay plain text. */
+function FenderFoundCell({
+  found,
+  url,
+}: {
+  found: boolean | null | undefined;
+  url: string | null | undefined;
+}) {
+  const label = specFenderFoundLabel(found);
+  if (label !== "Yes") return <>{label}</>;
+  const href = schemaPageHref(url ?? null);
+  if (!href) return <>Yes</>;
+  return (
+    <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer">
+      Yes
+    </a>
+  );
+}
 
 const MISSING_PAGE_DESC =
   "This check did not resolve a fender.com address. It is not proof the product is absent from fender.com.";
@@ -183,8 +206,9 @@ function CatalogSpecReadiness({
           tableId="spec-readiness"
           columns={SPEC_COLUMNS}
           freezeHeader
-          maxHeight={520}
+          maxHeight={SPEC_TABLE_MAX_HEIGHT}
           fillColumnId="missing"
+          wrapColumnIds={["model"]}
           sort={population.sort}
           onSort={population.onSort}
         >
@@ -215,7 +239,9 @@ function CatalogSpecReadiness({
                     </td>
                     <td>{specModelTitle(row.title)}</td>
                     <td>{formatPct(row.amazon_completeness_pct)}</td>
-                    <td>{specFenderFoundLabel(row.fender_found)}</td>
+                    <td>
+                      <FenderFoundCell found={row.fender_found} url={row.fender_url} />
+                    </td>
                     <td>
                       {missing.kind === "fields"
                         ? missing.fields.map((field) => (
