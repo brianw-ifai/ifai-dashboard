@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
@@ -55,6 +55,7 @@ const HERO_CARD_STYLE = {
   alignSelf: "flex-start" as const,
 };
 
+/** Notes column fills the rest of the row; one ceo-callout, not a nested content-box. */
 const NOTES_BOX_STYLE = {
   flex: "1 1 280px",
   minWidth: 0,
@@ -65,11 +66,8 @@ const TABLE_BLOCK_STYLE = {
   marginTop: 12,
 };
 
-const TABLE_HINT_STYLE = {
-  fontSize: 11.5,
-  color: "var(--text-muted)",
-  margin: "0 0 8px",
-};
+const OBSERVED_OFFER_NOTE =
+  "The observed offer and the Competitive External Price come from the same Amazon listing read, so the gap compares one moment. A blank gap means this reading has no comparable pair yet, not a gap of zero.";
 
 function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
@@ -104,21 +102,25 @@ async function loadWithheldListings(): Promise<
   return { available: false };
 }
 
-function explanation() {
-  return (
-    <div className="ceo-callout">
-      <div className="ceo-callout-header">
-        <span>Why can a listing lose the Buy Box?</span>
-      </div>
-      <div className="ceo-callout-body">
-        Amazon withholds the <DefinedTerm term="Buy Box" /> when the offer it observed,
-        including shipping, is above the Competitive External Price: the lowest price it
-        recently found outside Amazon. Amazon does not name that retailer, and a listing can
-        be withheld for other reasons too, so a withheld listing with no published benchmark
-        is not a confirmed price problem.
-      </div>
-    </div>
-  );
+/** Reading passages for the notes callout body (one paragraph, space-separated). */
+function readingNotesText(
+  read: RetailCanvasRead,
+  freshness?: CanvasFreshnessRow[] | null,
+): string {
+  if (read.phase === "loading") return "Loading the Buy Box reading…";
+  if (read.phase === "error") return "The retail read could not be loaded.";
+  const counts = read.snapshot.suppressedListings.detail?.counts;
+  if (!counts) {
+    return (
+      read.snapshot.suppressedListings.missingMessage ??
+      "The Buy Box reading has not been stored."
+    );
+  }
+  return [
+    confirmedSuppressionSentence(counts),
+    benchmarkCoverageSentence(counts),
+    featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness)),
+  ].join(" ");
 }
 
 /**
@@ -196,7 +198,10 @@ function SuppressedListingsLead({ read }: { read: RetailCanvasRead }) {
   );
 }
 
-/** Callout plus reading passages that sit beside the share hero. */
+/**
+ * One Hide-able callout beside the share: why explanation plus reading sentences
+ * in a single paragraph inside `.ceo-callout-body`.
+ */
 function SuppressedListingsNotes({
   read,
   freshness,
@@ -204,46 +209,24 @@ function SuppressedListingsNotes({
   read: RetailCanvasRead;
   freshness?: CanvasFreshnessRow[] | null;
 }) {
-  let readingPassages: ReactNode;
-  if (read.phase === "loading") {
-    readingPassages = <p className="retail-missing">Loading the Buy Box reading…</p>;
-  } else if (read.phase === "error") {
-    readingPassages = <p className="retail-missing">The retail read could not be loaded.</p>;
-  } else {
-    const counts = read.snapshot.suppressedListings.detail?.counts;
-    if (!counts) {
-      readingPassages = (
-        <p className="retail-missing">
-          {read.snapshot.suppressedListings.missingMessage ??
-            "The Buy Box reading has not been stored."}
-        </p>
-      );
-    } else {
-      readingPassages = (
-        <>
-          <p className="retail-missing">{confirmedSuppressionSentence(counts)}</p>
-          <p className="retail-missing">{benchmarkCoverageSentence(counts)}</p>
-          <p className="retail-missing">
-            {featuredOfferFreshnessSentence(counts, featuredOfferJob(freshness))}
-          </p>
-        </>
-      );
-    }
-  }
+  const reading = readingNotesText(read, freshness);
 
   return (
     <div
-      className="content-box"
+      className="ceo-callout"
       data-suppressed-listings-notes=""
       style={NOTES_BOX_STYLE}
     >
-      {explanation()}
-      {readingPassages}
-      <p style={TABLE_HINT_STYLE}>
-        The observed offer and the Competitive External Price come from the same Amazon
-        listing read, so the gap compares one moment. A blank gap means this reading has
-        no comparable pair yet, not a gap of zero.
-      </p>
+      <div className="ceo-callout-header">
+        <span>Why can a listing lose the Buy Box?</span>
+      </div>
+      <div className="ceo-callout-body">
+        Amazon withholds the <DefinedTerm term="Buy Box" /> when the offer it observed,
+        including shipping, is above the Competitive External Price: the lowest price it
+        recently found outside Amazon. Amazon does not name that retailer, and a listing can
+        be withheld for other reasons too, so a withheld listing with no published benchmark
+        is not a confirmed price problem. {reading} {OBSERVED_OFFER_NOTE}
+      </div>
     </div>
   );
 }
