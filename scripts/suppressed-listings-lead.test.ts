@@ -138,7 +138,7 @@ test("missing Buy Box reading shows Not available* without a zero share", () => 
   assert.doesNotMatch(hero.percent, /^0/);
 });
 
-test("Suppressed Listings places notes beside the share and drops the second title", () => {
+test("Suppressed Listings places one callout body beside the share", () => {
   const panel = read("components/v3/live/SuppressedListingsPanel.tsx");
 
   assert.match(panel, /buyBoxHero/);
@@ -170,6 +170,19 @@ test("Suppressed Listings places notes beside the share and drops the second tit
   assert.ok(topAt >= 0 && leadAt > topAt && notesAt > leadAt, "notes sit with the lead in one row");
   assert.ok(tableAt > notesAt, "listings table stays under the share-and-notes row");
 
+  assert.match(panel, /className="ceo-callout"/);
+  assert.match(panel, /className="ceo-callout-body"/);
+  assert.equal(
+    (panel.match(/className="ceo-callout-body"/g) ?? []).length,
+    1,
+    "one callout body holds the why text and reading sentences",
+  );
+  assert.match(panel, /\.join\(" "\)/);
+  assert.doesNotMatch(
+    panel,
+    /retail-missing">\{confirmedSuppressionSentence|retail-missing">\{benchmarkCoverageSentence|retail-missing">\s*\{featuredOfferFreshnessSentence/,
+  );
+  assert.doesNotMatch(panel, /data-suppressed-listings-notes=""[\s\S]*className="content-box"/);
   assert.doesNotMatch(panel, /content-box-title/);
   assert.doesNotMatch(panel, /suppressed-count/);
   assert.doesNotMatch(panel, /<span>Buy Box withheld<\/span>/);
