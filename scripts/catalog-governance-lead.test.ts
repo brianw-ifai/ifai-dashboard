@@ -5,9 +5,13 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import {
+  catalogBundleLineLabel,
+  catalogBundleOfferLabel,
+  catalogBundleSellerLabel,
   mapLeakageFinding,
   selectRetailHeadline,
   suppressedListingsFinding,
+  unnestedBundleOpportunities,
   unnestedBundlesFinding,
   type CatalogBundleRow,
   type MapLeakageRow,
@@ -174,4 +178,53 @@ test("Catalog Governance places notes beside the share and the table under that 
 
   const lines = panel.split("\n").length;
   assert.ok(lines <= 400, `CatalogGovernancePanel.tsx is ${lines} lines`);
+});
+
+test("bundle Seller, Offer, and Line cells use short brand-facing labels", () => {
+  const [row] = unnestedBundleOpportunities([
+    bundle({
+      asin: "B0000000K1",
+      parent_asin: null,
+      buybox_seller_name: "Liberty Music Inc",
+      buybox_status: "3P Confirmed",
+      category: "Electric Guitar Kits",
+    }),
+  ]);
+  assert.ok(row);
+  assert.equal(catalogBundleSellerLabel(row.buyboxSellerName), "Liberty Music Inc");
+  assert.equal(catalogBundleOfferLabel(row.buyboxStatus), "Partner");
+  assert.equal(catalogBundleLineLabel(row.category), "Kits");
+
+  assert.equal(catalogBundleOfferLabel("3P Confirmed"), "Partner");
+  assert.equal(catalogBundleOfferLabel("Amazon 1P"), "Amazon");
+  assert.equal(catalogBundleOfferLabel("No Active Offer"), "No offer");
+  assert.equal(catalogBundleOfferLabel(""), "Unknown");
+  assert.equal(catalogBundleOfferLabel(null), "Unknown");
+
+  assert.equal(catalogBundleLineLabel("Hollow & Semi-Hollow Body"), "Hollow");
+  assert.equal(catalogBundleLineLabel("Solid Body"), "Solid Body");
+  assert.equal(catalogBundleSellerLabel("   "), "Unknown");
+  assert.equal(catalogBundleSellerLabel(null), "Unknown");
+  assert.equal(catalogBundleSellerLabel(""), "Unknown");
+
+  for (const label of [
+    catalogBundleSellerLabel("Liberty Music Inc"),
+    catalogBundleOfferLabel("3P Confirmed"),
+    catalogBundleOfferLabel("Amazon 1P"),
+    catalogBundleOfferLabel("No Active Offer"),
+    catalogBundleLineLabel("Electric Guitar Kits"),
+    catalogBundleLineLabel("Hollow & Semi-Hollow Body"),
+    catalogBundleLineLabel("A very long category name that exceeds"),
+  ]) {
+    assert.ok(label.length <= 24, `"${label}" exceeds 24 characters`);
+  }
+});
+
+test("Catalog Governance table drops Parent ASIN and Why it is here", () => {
+  const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
+  assert.doesNotMatch(panel, /Parent ASIN/);
+  assert.doesNotMatch(panel, /Why it is here/);
+  assert.match(panel, /label:\s*"Seller"/);
+  assert.match(panel, /label:\s*"Offer"/);
+  assert.match(panel, /label:\s*"Line"/);
 });

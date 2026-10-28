@@ -7,10 +7,13 @@ import { ResizableTable, type RetailColumn } from "@/components/v3/live/Resizabl
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { CATALOG_GOVERNANCE_EXPLAINER } from "@/lib/fender-canvas/catalog-governance-copy";
 import { formatInt } from "@/lib/fender-canvas/format";
-import type {
-  PortfolioRetailSnapshot,
-  RetailReading,
-  UnnestedBundleOpportunity,
+import {
+  catalogBundleLineLabel,
+  catalogBundleOfferLabel,
+  catalogBundleSellerLabel,
+  type PortfolioRetailSnapshot,
+  type RetailReading,
+  type UnnestedBundleOpportunity,
 } from "@/lib/fender-canvas/portfolio-retail";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import { catalogHero } from "@/lib/fender-canvas/retail-overview-lead";
@@ -22,15 +25,17 @@ const RETAIL_PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
 const BUNDLE_COLUMNS: RetailColumn[] = [
   { id: "listing", name: "Listing", label: "Listing", width: 220, minWidth: 120, sort: "text" },
   { id: "asin", name: "ASIN", label: "ASIN", width: 118, minWidth: 108, className: "asin-col", sort: "text" },
-  { id: "parent", name: "Parent ASIN", label: "Parent ASIN", width: 128, minWidth: 108, className: "asin-col", sort: "text" },
-  { id: "why", name: "Why it is here", label: "Why it is here", width: 280, minWidth: 140, sort: "text" },
+  { id: "seller", name: "Seller", label: "Seller", width: 160, minWidth: 100, sort: "text" },
+  { id: "offer", name: "Offer", label: "Offer", width: 100, minWidth: 80, sort: "text" },
+  { id: "line", name: "Line", label: "Line", width: 120, minWidth: 88, sort: "text" },
 ];
 
 function bundleSortValue(row: UnnestedBundleOpportunity, columnId: string): SortInput {
   if (columnId === "listing") return row.modelOrTitle?.trim() || row.bundleName?.trim() || null;
   if (columnId === "asin") return row.asin;
-  if (columnId === "parent") return row.parentAsin?.trim() || null;
-  if (columnId === "why") return reasonCopy(row);
+  if (columnId === "seller") return catalogBundleSellerLabel(row.buyboxSellerName);
+  if (columnId === "offer") return catalogBundleOfferLabel(row.buyboxStatus);
+  if (columnId === "line") return catalogBundleLineLabel(row.category);
   return null;
 }
 
@@ -47,13 +52,6 @@ function httpUrl(value: string | null): string | null {
   } catch {
     return null;
   }
-}
-
-function reasonCopy(row: UnnestedBundleOpportunity): string {
-  if (row.justification.reason === "missing_parent_asin") {
-    return "is_bundle is true and no parent ASIN is stored.";
-  }
-  return `is_bundle is true and parent ASIN ${row.parentAsin ?? "stored"} cannot nest this bundle.`;
 }
 
 function Pager({
@@ -121,7 +119,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
           <tbody>
             {slice.length === 0 ? (
               <tr>
-                <td colSpan={4}>No unnested bundle is confirmed in this retail read.</td>
+                <td colSpan={5}>No unnested bundle is confirmed in this retail read.</td>
               </tr>
             ) : (
               slice.map((row) => (
@@ -138,8 +136,9 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
                   <td className="asin-col">
                     <AsinLink asin={row.asin} href={httpUrl(row.productUrl) ?? amazonHref(row.asin)} />
                   </td>
-                  <td className="asin-col">{row.parentAsin ?? "None stored"}</td>
-                  <td>{reasonCopy(row)}</td>
+                  <td>{catalogBundleSellerLabel(row.buyboxSellerName)}</td>
+                  <td>{catalogBundleOfferLabel(row.buyboxStatus)}</td>
+                  <td>{catalogBundleLineLabel(row.category)}</td>
                 </tr>
               ))
             )}
