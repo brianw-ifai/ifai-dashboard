@@ -135,13 +135,32 @@ test("MAP panel places notes beside the share and listings under the row", () =>
   assert.match(panel, /hero\.ratio/);
   assert.match(panel, /Average price gap/);
   assert.match(panel, /Price gap, not revenue/);
+  assert.match(panel, /data-map-lead-gap/);
+  assert.match(panel, /Not stored/);
   assert.match(panel, /MAP_PRICES_NOT_STORED/);
   assert.match(panel, /width:\s*["']fit-content["']/);
-  assert.match(panel, /alignItems:\s*["']flex-start["']/);
+  assert.match(panel, /alignItems:\s*["']stretch["']/);
+  assert.match(panel, /alignSelf:\s*["']stretch["']/);
+
+  const leadStart = panel.indexOf("function MapLeakageLead");
+  const notesStart = panel.indexOf("function MapNotes");
+  assert.ok(leadStart > 0 && notesStart > leadStart);
+  const leadFn = panel.slice(leadStart, notesStart);
+  const notesFn = panel.slice(notesStart, panel.indexOf("function MapTopRow"));
+  assert.match(leadFn, /data-map-lead-gap/);
+  assert.match(leadFn, /Average price gap/);
+  assert.match(leadFn, /Price gap, not revenue/);
+  assert.doesNotMatch(leadFn, /metric-card-sm/);
+  assert.doesNotMatch(notesFn, /Average price gap/);
+  assert.doesNotMatch(notesFn, /metric-card-sm/);
+  assert.doesNotMatch(notesFn, /data-map-notes-gap/);
+  assert.match(notesFn, /data-map-notes-channels/);
+  assert.match(notesFn, /data-map-notes-not-stored/);
 
   assert.doesNotMatch(panel, /content-box-title">Summary/);
   assert.doesNotMatch(panel, /Listings below MAP/);
   assert.doesNotMatch(panel, /Stored channel leakage below MAP/);
+  assert.doesNotMatch(panel, /metric-card-sm/);
   assert.doesNotMatch(panel, /data-ifai-open/);
   assert.doesNotMatch(panel, /data-ifai-tab/);
   assert.doesNotMatch(panel, /\u2014/);

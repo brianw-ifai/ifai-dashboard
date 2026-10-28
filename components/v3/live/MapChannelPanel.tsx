@@ -84,17 +84,25 @@ function mapPricesNotStored(read: RetailCanvasRead): boolean {
 }
 
 /**
- * Compact MAP share: label, percent, N of M, disc. Width fits the figure only.
+ * MAP share plus the average price gap under the pie.
+ * The gap is copy inside this box, not a second card. Width fits the figure.
  * Static block; Retail Overview remains the click path into this tab.
  */
 function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
   if (read.phase !== "ready") return null;
   const hero = mapHero(read.snapshot);
+  const gap = read.snapshot.mapLeakage.detail?.averageLeakage ?? null;
   return (
     <div
       className="content-box findability-lead-card"
       data-map-lead=""
-      style={{ flex: "0 0 auto", width: "fit-content", maxWidth: "100%", marginTop: 0 }}
+      style={{
+        flex: "0 0 auto",
+        alignSelf: "stretch",
+        width: "fit-content",
+        maxWidth: "100%",
+        marginTop: 0,
+      }}
     >
       <div data-map-lead-label="">{hero.label}</div>
       <div className="findability-lead-row" data-map-lead-row="">
@@ -122,13 +130,19 @@ function MapLeakageLead({ read }: { read: RetailCanvasRead }) {
       <span className="metric-card-sub" data-map-lead-explainer="">
         {hero.explainer}
       </span>
+      <div data-map-lead-gap="">
+        <span className="metric-card-label">Average price gap</span>
+        <div className="metric-card-val" style={{ color: "var(--danger-red)" }} data-map-lead-gap-value="">
+          {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
+        </div>
+        <span className="metric-card-sub">Price gap, not revenue</span>
+      </div>
     </div>
   );
 }
 
 /**
- * Notes beside the share: average price gap, not-stored sentence, channel lines.
- * No Summary heading and no duplicative below-MAP count.
+ * Right bubble: channel lines, or the not-stored sentence. The price gap stays in the hero.
  */
 function MapNotes({
   read,
@@ -155,37 +169,26 @@ function MapNotes({
     );
   }
 
-  const gap = read.snapshot.mapLeakage.detail?.averageLeakage ?? null;
+  if (!channels.length) return null;
 
   return (
-    <>
-      <div className="metric-card-sm" data-map-notes-gap="">
-        <span className="metric-card-label">Average price gap</span>
-        <div className="metric-card-val" style={{ color: "var(--danger-red)" }}>
-          {gap == null ? "Not stored" : formatUsd(gap, { signed: true })}
-        </div>
-        <span className="metric-card-sub">Price gap, not revenue</span>
-      </div>
-      {channels.length ? (
-        <ul className="tour-card-list" style={{ margin: "12px 0 0" }} data-map-notes-channels="">
-          {channels.map((channel) => (
-            <li key={channel.key}>
-              <strong>{channel.name}</strong>
-              {" · "}
-              <DefinedCopy
-                text={channelSummaryText(
-                  channel.count,
-                  channelReadingNote(channel.name, {
-                    walmartMissing,
-                    musiciansFriendLastRunAt,
-                  }),
-                )}
-              />
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </>
+    <ul className="tour-card-list" style={{ margin: 0 }} data-map-notes-channels="">
+      {channels.map((channel) => (
+        <li key={channel.key}>
+          <strong>{channel.name}</strong>
+          {" · "}
+          <DefinedCopy
+            text={channelSummaryText(
+              channel.count,
+              channelReadingNote(channel.name, {
+                walmartMissing,
+                musiciansFriendLastRunAt,
+              }),
+            )}
+          />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -207,7 +210,7 @@ function MapTopRow({
         display: "flex",
         flexWrap: "wrap",
         gap: 12,
-        alignItems: "flex-start",
+        alignItems: "stretch",
         marginTop: 12,
       }}
     >
@@ -215,7 +218,7 @@ function MapTopRow({
       <div
         className="content-box"
         data-map-notes=""
-        style={{ flex: "1 1 220px", minWidth: 180, marginTop: 0 }}
+        style={{ flex: "1 1 220px", alignSelf: "stretch", minWidth: 180, marginTop: 0 }}
       >
         <MapNotes
           read={read}
