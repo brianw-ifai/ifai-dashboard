@@ -139,9 +139,24 @@ test("the page found hero shows percent, ratio, and pie without a Show/Hide filt
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
 
-  await expect(lead).toContainText("older spec read");
-  await expect(lead).toContainText("Findability tab");
-  await expect(lead).toContainText("family page");
+  await expect(lead).not.toContainText("older spec read");
+  await expect(lead).not.toContainText("Official-page outcomes are on the Findability tab");
+  await expect(page.locator(".ai-readiness-lead-note")).toHaveCount(0);
+  // Mock page-found share is 50% and fender completeness is 40%: both under their red bands.
+  expect(
+    await pageFound.locator("[data-ai-readiness-hero-percent]").evaluate((el) => (el as HTMLElement).style.color),
+  ).toBe("var(--danger-red)");
+  expect(
+    await page
+      .locator("[data-ai-readiness-hero='fender_completeness'] [data-ai-readiness-hero-percent]")
+      .evaluate((el) => (el as HTMLElement).style.color),
+  ).toBe("var(--danger-red)");
+  // Missing additionalProperty keeps no band color.
+  expect(
+    await page
+      .locator("[data-ai-readiness-hero='missing_additional_property'] [data-ai-readiness-hero-percent]")
+      .evaluate((el) => (el as HTMLElement).style.color),
+  ).toBe("");
 
   const catalog = page.locator("#spec-readiness-by-asin");
   await expect(catalog).toContainText("B00MISSING");

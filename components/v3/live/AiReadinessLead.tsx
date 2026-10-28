@@ -67,12 +67,6 @@ export function AiReadinessLead({ bundle }: { bundle: CanvasBundle }) {
           <ReadinessHero key={hero.id} hero={hero} />
         ))}
       </div>
-      <p className="ai-readiness-lead-note">
-        The rows under these figures are the missing-field and per-ASIN reads. Amazon attribute
-        completeness is the average stored on the catalog spec read. The page-found figure above is
-        that older spec read. Official-page outcomes are on the Findability tab. A family page there
-        is not an exact product page, and this percentage is not that result.
-      </p>
     </div>
   );
 }

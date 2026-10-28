@@ -12,6 +12,18 @@ import type { CanvasMetricsRow } from "@/lib/fender-canvas/types";
 /** Same bands as metrics-from-live toneFromPct(spec_avg_amazon_pct, 85, 92). */
 export const AMAZON_COMPLETENESS_BANDS = { dangerBelow: 85, warnBelow: 92 } as const;
 
+/**
+ * fender.com page found share. Under 85 red; 85 through 95 yellow; above 95 green.
+ * The named bounds 85 and 95 are yellow.
+ */
+export const PAGE_FOUND_BANDS = { redBelow: 85, greenAbove: 95 } as const;
+
+/**
+ * fender.com completeness when a page is found. Under 95 red; 95 through 98 yellow;
+ * above 98 green. The named bounds 95 and 98 are yellow.
+ */
+export const FENDER_COMPLETENESS_BANDS = { redBelow: 95, greenAbove: 98 } as const;
+
 const TONE_COLOR: Record<Exclude<NodeStatus, "neutral">, string> = {
   danger: "var(--danger-red)",
   warning: "var(--warning-amber)",
@@ -42,6 +54,29 @@ function amazonCompletenessTone(pct: number | null): Exclude<NodeStatus, "neutra
   if (pct < AMAZON_COMPLETENESS_BANDS.dangerBelow) return "danger";
   if (pct < AMAZON_COMPLETENESS_BANDS.warnBelow) return "warning";
   return "success";
+}
+
+/** Inclusive yellow band between redBelow and greenAbove. */
+function shareTone(
+  pct: number | null,
+  bands: { redBelow: number; greenAbove: number },
+): Exclude<NodeStatus, "neutral"> | null {
+  if (pct == null || Number.isNaN(pct)) return null;
+  if (pct < bands.redBelow) return "danger";
+  if (pct <= bands.greenAbove) return "warning";
+  return "success";
+}
+
+export function pageFoundTone(pct: number | null): Exclude<NodeStatus, "neutral"> | null {
+  return shareTone(pct, PAGE_FOUND_BANDS);
+}
+
+export function fenderCompletenessTone(pct: number | null): Exclude<NodeStatus, "neutral"> | null {
+  return shareTone(pct, FENDER_COMPLETENESS_BANDS);
+}
+
+export function toneColor(tone: Exclude<NodeStatus, "neutral"> | null): string | null {
+  return tone ? TONE_COLOR[tone] : null;
 }
 
 /** Disc of a 0-100 average percent (filled versus remainder to full). */
@@ -109,7 +144,7 @@ export function pageFoundHero(m: CanvasMetricsRow): AiReadinessHeroModel {
       "Share of checked SKUs in this older spec read where site search stored a fender.com page. Official-page outcomes are on the Findability tab.",
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: ready ? formatRatio(found, checked) : null,
-    color: null,
+    color: toneColor(pageFoundTone(pct)),
     pie: ready ? shareCountPie("ai-readiness-page-found", "fender.com page found", "Page found", found!, checked!) : null,
     tip: ready ? `${formatInt(found)} of ${formatInt(checked)} checked SKUs` : null,
   };
@@ -144,7 +179,7 @@ export function fenderCompletenessHero(m: CanvasMetricsRow): AiReadinessHeroMode
       "Average fender.com completeness on the checked SKUs where a page was found in this older spec read.",
     percent: ready ? formatPct(pct) : pendingLabel(),
     ratio: averageAcrossRatio(found != null && found > 0 ? found : null, "found pages"),
-    color: null,
+    color: toneColor(fenderCompletenessTone(pct)),
     pie: averagePercentPie("ai-readiness-fender-completeness", "fender.com completeness", pct),
     tip: ready ? formatPct(pct) : null,
   };

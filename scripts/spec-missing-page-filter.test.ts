@@ -149,7 +149,9 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(lead, /content-box-title/);
   assert.doesNotMatch(lead, /<th>Metric<\/th>/);
   assert.doesNotMatch(lead, /<th>Result<\/th>/);
-  assert.match(lead, /Official-page outcomes are on the Findability tab/);
+  assert.doesNotMatch(lead, /ai-readiness-lead-note/);
+  assert.doesNotMatch(lead, /older spec read/);
+  assert.doesNotMatch(lead, /Official-page outcomes are on the Findability tab/);
   assert.doesNotMatch(lead, /(?<![\w-])title=/);
   assert.doesNotMatch(lead, forbidden);
   assert.doesNotMatch(narrative, /data-spec-filter/);

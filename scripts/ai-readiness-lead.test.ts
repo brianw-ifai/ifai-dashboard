@@ -5,12 +5,17 @@ import { join } from "node:path";
 import { test } from "node:test";
 import {
   AMAZON_COMPLETENESS_BANDS,
+  FENDER_COMPLETENESS_BANDS,
+  PAGE_FOUND_BANDS,
   aiReadinessHeroes,
   averageAcrossRatio,
   averagePercentPie,
+  fenderCompletenessTone,
   missingAdditionalPropertyHero,
   pageFoundHero,
+  pageFoundTone,
   shareCountPie,
+  toneColor,
 } from "../lib/fender-canvas/ai-readiness-lead.ts";
 import { formatPct, formatRatio } from "../lib/fender-canvas/format.ts";
 import type { CanvasMetricsRow } from "../lib/fender-canvas/types.ts";
@@ -76,6 +81,7 @@ test("page-found hero uses the stored percent, found of checked, and that pie", 
   const hero = pageFoundHero(metrics({}));
   assert.equal(hero.percent, formatPct(13.3));
   assert.equal(hero.ratio, formatRatio(123, 925));
+  assert.equal(hero.color, "var(--danger-red)");
   assert.ok(hero.pie);
   assert.equal(hero.pie.total, 925);
   assert.deepEqual(
@@ -85,6 +91,32 @@ test("page-found hero uses the stored percent, found of checked, and that pie", 
       ["Rest of this population", 802],
     ],
   );
+});
+
+test("page-found bands: under 85 red, 85 and 95 yellow, above 95 green", () => {
+  assert.equal(PAGE_FOUND_BANDS.redBelow, 85);
+  assert.equal(PAGE_FOUND_BANDS.greenAbove, 95);
+  assert.equal(pageFoundTone(84.9), "danger");
+  assert.equal(pageFoundTone(85), "warning");
+  assert.equal(pageFoundTone(95), "warning");
+  assert.equal(pageFoundTone(95.1), "success");
+  assert.equal(toneColor(pageFoundTone(84.9)), "var(--danger-red)");
+  assert.equal(toneColor(pageFoundTone(85)), "var(--warning-amber)");
+  assert.equal(toneColor(pageFoundTone(95)), "var(--warning-amber)");
+  assert.equal(toneColor(pageFoundTone(95.1)), "var(--success-green)");
+});
+
+test("fender completeness bands: under 95 red, 95 and 98 yellow, above 98 green", () => {
+  assert.equal(FENDER_COMPLETENESS_BANDS.redBelow, 95);
+  assert.equal(FENDER_COMPLETENESS_BANDS.greenAbove, 98);
+  assert.equal(fenderCompletenessTone(94.9), "danger");
+  assert.equal(fenderCompletenessTone(95), "warning");
+  assert.equal(fenderCompletenessTone(98), "warning");
+  assert.equal(fenderCompletenessTone(98.1), "success");
+  assert.equal(toneColor(fenderCompletenessTone(94.9)), "var(--danger-red)");
+  assert.equal(toneColor(fenderCompletenessTone(95)), "var(--warning-amber)");
+  assert.equal(toneColor(fenderCompletenessTone(98)), "var(--warning-amber)");
+  assert.equal(toneColor(fenderCompletenessTone(98.1)), "var(--success-green)");
 });
 
 test("Amazon completeness keeps the average and does not invent listings at 100%", () => {
@@ -110,6 +142,7 @@ test("fender completeness averages over found pages and does not hard-code 7 of 
   assert.ok(fender);
   assert.equal(fender.percent, formatPct(55.5));
   assert.equal(fender.ratio, "Across 11 found pages");
+  assert.equal(fender.color, "var(--danger-red)");
   assert.notEqual(fender.ratio, "7 of 8");
   assert.ok(fender.pie);
   assert.equal(fender.pie.slices.find((slice) => slice.key === "matched")?.count, 55.5);
@@ -121,6 +154,7 @@ test("missing additionalProperty is missing of found, with that percent and pie"
   );
   assert.equal(hero.percent, formatPct((100 * 5) / 8));
   assert.equal(hero.ratio, formatRatio(5, 8));
+  assert.equal(hero.color, null);
   assert.ok(hero.pie);
   assert.equal(hero.pie.total, 8);
   assert.deepEqual(
@@ -144,7 +178,7 @@ test("SKUs checked is not its own hero pie", () => {
   assert.equal(averagePercentPie("x", "t", null), null);
 });
 
-test("the lead UI ships heroes and the Findability distinction without a Show/Hide filter", () => {
+test("the lead UI ships heroes without the older-spec-read paragraph or Show/Hide", () => {
   const lead = read("components/v3/live/AiReadinessLead.tsx");
   assert.match(lead, /data-ai-readiness-lead/);
   assert.match(lead, /data-ai-readiness-hero=/);
@@ -153,8 +187,10 @@ test("the lead UI ships heroes and the Findability distinction without a Show/Hi
   assert.doesNotMatch(lead, /data-spec-filter/);
   assert.doesNotMatch(lead, /spec-found-pill/);
   assert.doesNotMatch(lead, /missingPageControl|MissingPageControl|filterControl/);
-  assert.match(lead, /Official-page outcomes are on the Findability tab/);
-  assert.match(lead, /family page there\s+is not an exact product page/);
+  assert.doesNotMatch(lead, /ai-readiness-lead-note/);
+  assert.doesNotMatch(lead, /older spec read/);
+  assert.doesNotMatch(lead, /Official-page outcomes are on the Findability tab/);
+  assert.doesNotMatch(lead, /family page there/);
   assert.match(lead, /ifai-term/);
   assert.match(lead, /data-ifai-tooltip-title/);
   assert.match(lead, /data-ifai-tooltip-desc/);
