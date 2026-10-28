@@ -34,7 +34,7 @@ function bundleSortValue(row: UnnestedBundleOpportunity, columnId: string): Sort
   if (columnId === "listing") return row.modelOrTitle?.trim() || row.bundleName?.trim() || null;
   if (columnId === "asin") return row.asin;
   if (columnId === "seller") return catalogBundleSellerLabel(row.buyboxSellerName);
-  if (columnId === "offer") return catalogBundleOfferLabel(row.buyboxStatus);
+  if (columnId === "offer") return catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId);
   if (columnId === "line") return catalogBundleLineLabel(row.category);
   return null;
 }
@@ -137,7 +137,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
                     <AsinLink asin={row.asin} href={httpUrl(row.productUrl) ?? amazonHref(row.asin)} />
                   </td>
                   <td>{catalogBundleSellerLabel(row.buyboxSellerName)}</td>
-                  <td>{catalogBundleOfferLabel(row.buyboxStatus)}</td>
+                  <td>{catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId)}</td>
                   <td>{catalogBundleLineLabel(row.category)}</td>
                 </tr>
               ))

@@ -186,16 +186,20 @@ test("bundle Seller, Offer, and Line cells use short brand-facing labels", () =>
       asin: "B0000000K1",
       parent_asin: null,
       buybox_seller_name: "Liberty Music Inc",
+      buybox_seller_id: "A1B2C3D4E5F6G",
       buybox_status: "3P Confirmed",
       category: "Electric Guitar Kits",
     }),
   ]);
   assert.ok(row);
   assert.equal(catalogBundleSellerLabel(row.buyboxSellerName), "Liberty Music Inc");
-  assert.equal(catalogBundleOfferLabel(row.buyboxStatus), "Partner");
+  assert.equal(catalogBundleOfferLabel(row.buyboxStatus, row.buyboxSellerId), "A1B2C3D4E5F6G");
   assert.equal(catalogBundleLineLabel(row.category), "Kits");
 
-  assert.equal(catalogBundleOfferLabel("3P Confirmed"), "Partner");
+  assert.equal(catalogBundleOfferLabel("3P Confirmed", "A1B2C3D4E5F6G"), "A1B2C3D4E5F6G");
+  assert.equal(catalogBundleOfferLabel("3P Confirmed", "  "), "Unknown");
+  assert.equal(catalogBundleOfferLabel("3P Confirmed", null), "Unknown");
+  assert.equal(catalogBundleOfferLabel("3P Confirmed", ""), "Unknown");
   assert.equal(catalogBundleOfferLabel("Amazon 1P"), "Amazon");
   assert.equal(catalogBundleOfferLabel("No Active Offer"), "No offer");
   assert.equal(catalogBundleOfferLabel(""), "Unknown");
@@ -209,7 +213,8 @@ test("bundle Seller, Offer, and Line cells use short brand-facing labels", () =>
 
   for (const label of [
     catalogBundleSellerLabel("Liberty Music Inc"),
-    catalogBundleOfferLabel("3P Confirmed"),
+    catalogBundleOfferLabel("3P Confirmed", "A1B2C3D4E5F6G"),
+    catalogBundleOfferLabel("3P Confirmed", "ATVPDKIKX0DERTOOLONGTOFITCELL"),
     catalogBundleOfferLabel("Amazon 1P"),
     catalogBundleOfferLabel("No Active Offer"),
     catalogBundleLineLabel("Electric Guitar Kits"),
@@ -224,6 +229,7 @@ test("Catalog Governance table drops Parent ASIN and Why it is here", () => {
   const panel = read("components/v3/live/CatalogGovernancePanel.tsx");
   assert.doesNotMatch(panel, /Parent ASIN/);
   assert.doesNotMatch(panel, /Why it is here/);
+  assert.doesNotMatch(panel, /Partner/);
   assert.match(panel, /label:\s*"Seller"/);
   assert.match(panel, /label:\s*"Offer"/);
   assert.match(panel, /label:\s*"Line"/);
