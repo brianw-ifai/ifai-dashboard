@@ -1,276 +1,268 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
+import { ConsensusComponentBars } from "@/components/v3/live/ConsensusComponentBars";
+import {
+  ACTUATION_OMITTED_REASON,
+  CONSENSUS_EXPLAINER_BODY,
+  CONSENSUS_EXPLAINER_TITLE,
+  scoreAgainst100Pie,
+  scoreToneColor,
+} from "@/lib/fender-canvas/consensus-score-display";
 import { formatPct, formatRatio } from "@/lib/fender-canvas/format";
-import type {
-  DroppedComponent,
-  PillarScore,
-  ScoredComponent,
-} from "@/lib/fender-canvas/consensus-scores";
+import type { ConsensusScore, PillarScore } from "@/lib/fender-canvas/consensus-scores";
 
-function PlaceholderMark({
-  title,
-  tooltip,
-}: {
-  title: string;
-  tooltip: string;
-}) {
+const PIE_SIZE = "citation-pie-disc citation-pie-disc-retail";
+const COMPONENTS_ID = "consensus-component-detail";
+
+function ExploreChevron() {
   return (
-    <span
-      className="ifai-term"
-      data-ifai-tooltip-title={title}
-      data-ifai-tooltip-desc={tooltip}
-      tabIndex={0}
-      aria-label={`${title}: ${tooltip}`}
+    <svg
+      className="retail-explore-chevron"
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
     >
-      *
-    </span>
+      <path
+        d="M2.2 4.2 6 8l3.8-3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
-function ComponentRow({
-  row,
-}: {
-  row: ScoredComponent | DroppedComponent;
-}) {
-  const name = (
-    <>
-      {row.name}
-      {row.placeholder && row.placeholderTooltip ? (
-        <>
-          {" "}
-          <PlaceholderMark
-            title={row.placeholderTitle ?? row.name}
-            tooltip={row.placeholderTooltip}
-          />
-        </>
-      ) : null}
-    </>
-  );
-
-  if (!row.included) {
-    return (
-      <tr data-consensus-component={row.id} data-consensus-included="false">
-        <td>{name}</td>
-        <td colSpan={3} className="metric-card-sub">
-          Not included
-        </td>
-      </tr>
-    );
-  }
-
-  return (
-    <tr data-consensus-component={row.id} data-consensus-included="true">
-      <td>{name}</td>
-      <td data-consensus-component-score="">{formatPct(row.score)}</td>
-      <td data-consensus-component-weight="">{formatPct(row.weight)}</td>
-      <td data-consensus-component-coverage="">
-        {formatRatio(row.coverage.numerator, row.coverage.denominator)}
-      </td>
-    </tr>
-  );
-}
-
-export function ComponentTable({
-  pillar,
-}: {
-  pillar: PillarScore;
-}) {
-  if (!pillar.included) return null;
-  return (
-    <table className="table-sm table-no-row-hover" data-consensus-components={pillar.id}>
-      <thead>
-        <tr>
-          <th>Component</th>
-          <th>Score</th>
-          <th>Weight</th>
-          <th>Coverage</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pillar.components.map((row) => (
-          <ComponentRow key={row.id} row={row} />
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-export function PillarCard({
-  pillar,
+/** Fit-content score hero: label, colored figure, N of M, pie disc, optional chevron. */
+export function ScoreHeroCard({
+  id,
+  label,
+  score,
+  coverage,
   open,
   onToggle,
-  compact,
+  controls,
+  dominant,
+  dataAttr,
 }: {
-  pillar: PillarScore;
+  id: string;
+  label: string;
+  score: number | null;
+  coverage: { numerator: number; denominator: number } | null;
   open?: boolean;
   onToggle?: () => void;
-  compact?: boolean;
+  controls?: string;
+  dominant?: boolean;
+  dataAttr?: string;
 }) {
-  const canOpen = pillar.included && onToggle != null;
-  const scoreLabel = !pillar.included
-    ? (pillar.omittedLabel ?? "Not included")
-    : pillar.score == null
-      ? "Not available"
-      : formatPct(pillar.score, 0);
+  const color = scoreToneColor(score);
+  const pie = scoreAgainst100Pie(`score-${id}`, label, score);
+  const percent = score == null ? "Not available" : formatPct(score, 0);
+  const tip =
+    score != null && coverage
+      ? `${label}: ${formatPct(score)} · ${formatRatio(coverage.numerator, coverage.denominator)} of inputs in.`
+      : undefined;
 
-  const body = (
-    <>
+  return (
+    <div
+      className="content-box findability-lead-card"
+      data-consensus-pillar={id}
+      data-consensus-hero={dominant ? "" : undefined}
+      {...(dataAttr ? { [dataAttr]: id } : {})}
+      style={{
+        flex: "0 0 auto",
+        width: "fit-content",
+        maxWidth: "100%",
+        margin: 0,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+    >
+      <div className="metric-card-label" data-consensus-pillar-name="">
+        {label}
+      </div>
+      <div className="findability-lead-row">
+        <div className="findability-lead-figures">
+          <span
+            className="ai-lead-figure"
+            data-consensus-pillar-score=""
+            data-consensus-score={dominant ? "" : undefined}
+            data-consensus-pillar-included="true"
+            style={{
+              color,
+              fontSize: dominant ? "clamp(34px, 4vw, 48px)" : undefined,
+              lineHeight: 1.05,
+            }}
+          >
+            {percent}
+          </span>
+          {coverage ? (
+            <span
+              className="findability-lead-ratio"
+              data-consensus-pillar-coverage=""
+              data-consensus-coverage={dominant ? "" : undefined}
+            >
+              {formatRatio(coverage.numerator, coverage.denominator)}
+            </span>
+          ) : null}
+        </div>
+        {pie ? <CitationPieDisc pie={pie} sizeClass={PIE_SIZE} tip={tip} /> : null}
+      </div>
+      {onToggle ? (
+        <button
+          type="button"
+          className="retail-explore"
+          aria-label={label}
+          aria-expanded={open}
+          aria-controls={controls}
+          onClick={onToggle}
+          style={{ marginTop: "auto", alignSelf: "center" }}
+        >
+          <ExploreChevron />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Compact Actuation card: not a wide empty box. */
+export function ActuationHeroCard({ pillar }: { pillar: PillarScore }) {
+  return (
+    <div
+      className="content-box findability-lead-card"
+      data-consensus-pillar="actuation"
+      style={{
+        flex: "0 0 auto",
+        width: "fit-content",
+        maxWidth: 220,
+        margin: 0,
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+      }}
+    >
       <div className="metric-card-label" data-consensus-pillar-name="">
         {pillar.name}
       </div>
       <div
         className="metric-card-val"
         data-consensus-pillar-score=""
-        data-consensus-pillar-included={pillar.included ? "true" : "false"}
-        style={
-          pillar.included
-            ? undefined
-            : { fontSize: compact ? 14 : 16, color: "var(--text-muted)" }
-        }
+        data-consensus-pillar-included="false"
+        style={{ fontSize: 16, color: "var(--text-muted)" }}
       >
-        {scoreLabel}
+        {pillar.omittedLabel ?? "Not included"}
       </div>
-      {pillar.included && pillar.coverage ? (
-        <div className="metric-card-sub" data-consensus-pillar-coverage="">
-          {formatRatio(pillar.coverage.numerator, pillar.coverage.denominator)}
-        </div>
-      ) : null}
-    </>
+      <span className="metric-card-sub" data-consensus-actuation-reason="">
+        {ACTUATION_OMITTED_REASON}
+      </span>
+    </div>
   );
+}
 
+function ConsensusExplainer() {
   return (
     <div
       className="content-box"
-      data-consensus-pillar={pillar.id}
-      style={{ flex: "1 1 0", minWidth: 140, margin: 0 }}
+      data-consensus-explainer=""
+      style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
     >
-      {canOpen ? (
-        <button
-          type="button"
-          className="retail-finding-hit"
-          aria-expanded={open}
-          onClick={onToggle}
-          style={{ textAlign: "left", width: "100%" }}
-        >
-          {body}
-        </button>
-      ) : (
-        body
-      )}
-      {canOpen && open ? (
-        <div style={{ marginTop: 10 }}>
-          <ComponentTable pillar={pillar} />
+      <div className="ceo-callout" style={{ margin: 0 }}>
+        <div className="ceo-callout-header">
+          <span>{CONSENSUS_EXPLAINER_TITLE}</span>
         </div>
-      ) : null}
-    </div>
-  );
-}
-
-export function ConsensusHero({
-  score,
-  coverage,
-}: {
-  score: number | null;
-  coverage: { numerator: number; denominator: number };
-}) {
-  return (
-    <div className="content-box" data-consensus-hero="" style={{ marginBottom: 12 }}>
-      <div className="content-box-title">
-        <span>AI Consensus</span>
-      </div>
-      <div
-        className="ai-lead-figure"
-        data-consensus-score=""
-        style={{ fontSize: 42, lineHeight: 1.1 }}
-      >
-        {score == null ? "Not available" : formatPct(score, 0)}
-      </div>
-      <div className="metric-card-sub" data-consensus-coverage="">
-        {formatRatio(coverage.numerator, coverage.denominator)}
+        <div className="ceo-callout-body">{CONSENSUS_EXPLAINER_BODY}</div>
       </div>
     </div>
   );
 }
 
-export function ConsensusPillars({
-  foundation,
-  commerce,
-  actuation,
-  defaultOpen,
-}: {
-  foundation: PillarScore;
-  commerce: PillarScore;
-  actuation: PillarScore;
-  defaultOpen?: "foundation" | "commerce" | null;
-}) {
-  const [open, setOpen] = useState<"foundation" | "commerce" | null>(defaultOpen ?? null);
+/**
+ * Summary → Performance top band: Consensus lead, pillar heroes, Actuation compact card,
+ * and explainer. Component bars open full-width below the band.
+ */
+export function ConsensusLeadBand({ consensus }: { consensus: ConsensusScore }) {
+  const [open, setOpen] = useState<"foundation" | "commerce" | null>(null);
 
   function toggle(id: "foundation" | "commerce") {
     setOpen((current) => (current === id ? null : id));
   }
 
+  const openPillar =
+    open === "foundation"
+      ? consensus.foundation
+      : open === "commerce"
+        ? consensus.commerce
+        : null;
+
   return (
-    <div
-      data-consensus-pillars=""
-      style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}
-    >
-      <PillarCard
-        pillar={foundation}
-        open={open === "foundation"}
-        onToggle={() => toggle("foundation")}
-      />
-      <PillarCard
-        pillar={commerce}
-        open={open === "commerce"}
-        onToggle={() => toggle("commerce")}
-      />
-      <PillarCard pillar={actuation} />
+    <div data-consensus-scores="" style={{ marginBottom: 16 }}>
+      <div
+        data-consensus-lead=""
+        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+          <ScoreHeroCard
+            id="consensus"
+            label="AI Consensus"
+            score={consensus.score}
+            coverage={consensus.coverage}
+            dominant
+          />
+          <ScoreHeroCard
+            id="foundation"
+            label={consensus.foundation.name}
+            score={consensus.foundation.score}
+            coverage={consensus.foundation.coverage}
+            open={open === "foundation"}
+            onToggle={() => toggle("foundation")}
+            controls={COMPONENTS_ID}
+          />
+          <ScoreHeroCard
+            id="commerce"
+            label={consensus.commerce.name}
+            score={consensus.commerce.score}
+            coverage={consensus.commerce.coverage}
+            open={open === "commerce"}
+            onToggle={() => toggle("commerce")}
+            controls={COMPONENTS_ID}
+          />
+          <ActuationHeroCard pillar={consensus.actuation} />
+        </div>
+        <ConsensusExplainer />
+      </div>
+
+      {openPillar ? <ConsensusComponentBars pillar={openPillar} id={COMPONENTS_ID} /> : null}
     </div>
   );
 }
 
-/** Commerce-only block for Catalog Health Retail Overview. */
-export function CommerceScoreBlock({
+/** Catalog Health AI Commerce hero: fit-content card with chevron into full-width bars. */
+export function CommerceHeroCard({
   commerce,
-  children,
+  open,
+  onToggle,
 }: {
   commerce: PillarScore;
-  children?: ReactNode;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className="content-box" data-consensus-commerce-block="" style={{ marginBottom: 12 }}>
-      <div className="content-box-title">
-        <span>AI Commerce</span>
-      </div>
-      <button
-        type="button"
-        className="retail-finding-hit"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        style={{ textAlign: "left", width: "100%" }}
-      >
-        <div
-          className="ai-lead-figure"
-          data-consensus-pillar-score=""
-          data-consensus-pillar="commerce"
-        >
-          {commerce.score == null ? "Not available" : formatPct(commerce.score, 0)}
-        </div>
-        {commerce.coverage ? (
-          <div className="metric-card-sub" data-consensus-pillar-coverage="">
-            {formatRatio(commerce.coverage.numerator, commerce.coverage.denominator)}
-          </div>
-        ) : null}
-      </button>
-      {open ? (
-        <div style={{ marginTop: 10 }}>
-          <ComponentTable pillar={commerce} />
-          {children}
-        </div>
-      ) : null}
-    </div>
+    <ScoreHeroCard
+      id="commerce"
+      label={commerce.name}
+      score={commerce.score}
+      coverage={commerce.coverage}
+      open={open}
+      onToggle={onToggle}
+      controls={COMPONENTS_ID}
+      dataAttr="data-consensus-commerce-hero"
+    />
   );
 }
+
+export { ConsensusComponentBars, COMPONENTS_ID };

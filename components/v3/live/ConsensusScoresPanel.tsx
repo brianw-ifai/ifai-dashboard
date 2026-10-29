@@ -1,18 +1,15 @@
 "use client";
 
 import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
-import {
-  ConsensusHero,
-  ConsensusPillars,
-} from "@/components/v3/live/ConsensusScoreView";
+import { ConsensusLeadBand } from "@/components/v3/live/ConsensusScoreView";
 import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
 import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 /**
- * Summary → Performance: AI Consensus first, then Foundation / Commerce / Actuation,
- * then the division table stays below (rendered by the spoke).
+ * Summary → Performance: AI Consensus hero band first.
+ * The division table stays below (rendered by the spoke).
  */
 export function ConsensusScoresPanel({
   bundle,
@@ -43,14 +40,5 @@ export function ConsensusScoresPanel({
     );
   }
 
-  return (
-    <div data-consensus-scores="" style={{ marginBottom: 16 }}>
-      <ConsensusHero score={consensus.score} coverage={consensus.coverage} />
-      <ConsensusPillars
-        foundation={consensus.foundation}
-        commerce={consensus.commerce}
-        actuation={consensus.actuation}
-      />
-    </div>
-  );
+  return <ConsensusLeadBand consensus={consensus} />;
 }

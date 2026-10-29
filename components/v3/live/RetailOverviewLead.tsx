@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import {
   retailOverviewHeroes,
@@ -56,10 +57,16 @@ function RetailHeroCard({ hero }: { hero: RetailOverviewHeroModel }) {
 }
 
 /**
- * First content on Retail Overview: three share heroes in one row.
- * Matches the Findability percentage / ratio / pie idea in a short vertical budget.
+ * Retail Overview share heroes in one row. Optional leading slot (AI Commerce)
+ * sits in the same band as Buy Box withheld, MAP leakage, and Catalog Governance.
  */
-export function RetailOverviewLead({ read }: { read: RetailCanvasRead }) {
+export function RetailOverviewLead({
+  read,
+  leading = null,
+}: {
+  read: RetailCanvasRead;
+  leading?: ReactNode;
+}) {
   if (read.phase === "loading") {
     return <p className="retail-missing">Loading the retail reading…</p>;
   }
@@ -71,6 +78,7 @@ export function RetailOverviewLead({ read }: { read: RetailCanvasRead }) {
 
   return (
     <div className="retail-overview-heroes" data-retail-overview-lead="">
+      {leading}
       {heroes.map((hero) => (
         <RetailHeroCard key={hero.id} hero={hero} />
       ))}
