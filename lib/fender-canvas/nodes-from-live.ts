@@ -5,7 +5,7 @@ import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
-import { formatInt } from "@/lib/fender-canvas/format";
+import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import {
   retailBubbleFaces,
   type RetailCanvasRead,
@@ -13,6 +13,34 @@ import {
 import { primarySpoke, satelliteNode } from "@/lib/fender-canvas/primary-spoke-layout";
 
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
+
+const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
+
+/** Share of found fender.com pages missing additionalProperty — same figure the tab leads with. */
+function machineReadabilitySatellite(m: CanvasBundle["m"]): Pick<
+  CanvasNode,
+  "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
+> {
+  const found = m.spec_fender_found;
+  const missing = m.spec_missing_additional_property;
+  const ready = found != null && found > 0 && missing != null && missing >= 0 && missing <= found;
+  const rate = ready ? (100 * missing!) / found! : null;
+  const status: NodeStatus =
+    rate == null ? "neutral" : rate > 0 ? "danger" : "success";
+  const value = ready ? formatPct(rate) : "Not available";
+  return {
+    status,
+    title: "Machine Readability",
+    stats: [
+      `${formatInt(m.spec_missing_additional_property)} missing additionalProperty`,
+      `${formatInt(m.spec_checked)} checked`,
+    ],
+    meta: "fender.com JSON-LD gap",
+    heroValue: { value, label: "missing additionalProperty" },
+    subTab: "Machine Readability",
+    tooltip: { ...EMPTY_TOOLTIP },
+  };
+}
 
 export function buildLiveNodes(
   bundle: CanvasBundle,
@@ -70,31 +98,18 @@ export function buildLiveNodes(
     },
     {
       ...satelliteNode("sat-schema"),
-      status: "danger",
-      title: "Machine Readability",
-      stats: [
-        `${formatInt(m.spec_missing_additional_property)} missing additionalProperty`,
-        `${formatInt(m.spec_checked)} checked`,
-      ],
-      meta: "fender.com JSON-LD gap",
       spokeId: "specs",
-      subTab: "Machine Readability",
-      tooltip: {
-        title: "Schema.org Structured Data",
-        desc: `${formatInt(m.spec_missing_additional_property)} pages in the older spec read lack additionalProperty. That list is on this tab. It is not the Findability count of official pages.`,
-      },
+      ...machineReadabilitySatellite(m),
     },
     {
       ...satelliteNode("sat-tables"),
       status: "neutral",
       title: "Amazon A+ Matrix",
-      stats: ["Not measured yet"],
+      stats: ["Not measured"],
+      heroValue: { value: "Not measured", label: "Comparison tables" },
       spokeId: "specs",
       subTab: "Amazon A+ Matrix",
-      tooltip: {
-        title: "A+ comparison tables",
-        desc: "Comparison tables have not been measured. When a comparison table is on the page, a shopping assistant can read the columns and repeat how the lineup steps up.",
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     {
       ...satelliteNode("sat-taylor"),

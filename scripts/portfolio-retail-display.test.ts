@@ -120,9 +120,9 @@ function visible(face: {
     face.meta ?? "",
     face.tooltip.title,
     face.tooltip.desc,
-    ...face.stats,
     face.heroValue?.value ?? "",
     face.heroValue?.label ?? "",
+    ...face.stats,
   ].join(" ");
 }
 
@@ -157,6 +157,9 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.doesNotMatch(visible(face), FORBIDDEN);
 
   const satellite = suppressedBubble(source.suppressedListings);
+  assert.equal(satellite.heroValue?.label, "Buy Box withheld");
+  assert.match(satellite.heroValue?.value ?? "", /%/);
+  assert.equal(satellite.tooltip.desc, "");
   assert.equal(satellite.stats[0], "1 listing");
   assert.ok((satellite.stats.length ?? 0) > 1);
   assert.notEqual(satellite.stats.join(" "), face.stats.join(" "));
@@ -197,11 +200,17 @@ test("a stored zero stays zero and an unavailable reading names what is missing"
   const zero = suppressedListingsFinding([present()]);
   assert.equal(zero.issueCount, 0);
   const zeroFace = suppressedBubble(zero);
+  assert.equal(zeroFace.heroValue?.value, "0.0%");
+  assert.equal(zeroFace.heroValue?.label, "Buy Box withheld");
+  assert.equal(zeroFace.tooltip.desc, "");
   assert.deepEqual(zeroFace.stats, ["0 listings"]);
 
   const missing = suppressedListingsFinding(null);
   const missingFace = suppressedBubble(missing);
   assert.equal(missing.issueCount, null);
+  assert.doesNotMatch(missingFace.heroValue?.value ?? "", /\b0(\.0)?%/);
+  assert.match(missingFace.heroValue?.value ?? "", /not stored a reading/i);
+  assert.equal(missingFace.tooltip.desc, "");
   assert.doesNotMatch(missingFace.stats.join(" "), /\b0\b/);
   assert.match(missingFace.stats.join(" "), /not stored a reading/i);
   assert.equal(missingFace.stats.join(" "), shortCoverageLine(missing.missingMessage));
@@ -212,16 +221,17 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
   const map = mapBubble(source.mapLeakage);
   assert.match(map.stats[0] ?? "", /1 below MAP/);
   assert.match(map.stats.join(" "), /-\$12\.50 gap/);
-  assert.match(map.tooltip.desc, /price gap, not a revenue estimate/i);
+  assert.equal(map.heroValue?.label, "MAP leakage");
+  assert.match(map.heroValue?.value ?? "", /%/);
+  assert.equal(map.tooltip.desc, "");
   assert.equal(map.subTab, "MAP");
 
   const catalog = catalogBubble(source.unnestedBundles);
   assert.match(catalog.stats[0] ?? "", /1 bundle/);
+  assert.equal(catalog.heroValue?.label, "Splintered listings");
+  assert.match(catalog.heroValue?.value ?? "", /%/);
+  assert.equal(catalog.tooltip.desc, "");
   assert.doesNotMatch(visible(catalog), /12\.50|below MAP|listing below/);
-  assert.equal(
-    catalog.tooltip.desc,
-    "Bundle listings that are not nested under a parent ASIN. Nesting keeps their reviews on the parent listing.",
-  );
   assert.equal(catalog.subTab, "Catalog Governance");
 });
 
@@ -234,6 +244,8 @@ test("MAP satellite names missing prices and does not count or average a gap", (
   const text = visible(map);
   assert.equal(reading.missingMessage, MAP_PRICES_NOT_STORED);
   assert.match(text, /Fender MAP prices have not been stored/);
+  assert.equal(map.heroValue?.value, shortCoverageLine(MAP_PRICES_NOT_STORED));
+  assert.equal(map.tooltip.desc, "");
   assert.equal(map.subTab, "MAP");
   assert.doesNotMatch(text, /below MAP|gap|\$|\d/);
 });

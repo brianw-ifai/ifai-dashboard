@@ -143,13 +143,22 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   const readiness = nodes.find((node) => node.id === "spoke-specs");
   assert.ok(satellite);
   assert.ok(readiness);
-  assert.deepEqual(satellite.stats, ["Not measured yet"]);
+  assert.deepEqual(satellite.stats, ["Not measured"]);
   assert.equal(satellite.title, "Amazon A+ Matrix");
-  const satelliteText = [satellite.meta, satellite.tooltip.title, satellite.tooltip.desc, ...satellite.stats]
+  assert.deepEqual(satellite.heroValue, { value: "Not measured", label: "Comparison tables" });
+  assert.equal(satellite.tooltip.desc, "");
+  const satelliteText = [
+    satellite.meta,
+    satellite.tooltip.title,
+    satellite.tooltip.desc,
+    satellite.heroValue?.value,
+    satellite.heroValue?.label,
+    ...satellite.stats,
+  ]
     .filter(Boolean)
     .join(" ");
-  assert.match(satelliteText, /Comparison tables have not been measured/);
-  assert.doesNotMatch(satelliteText, /91\.8%|%/);
+  assert.match(satelliteText, /Not measured/);
+  assert.doesNotMatch(satelliteText, /91\.8%/);
   assert.doesNotMatch(satelliteText, /\d/);
 
   assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "fender.com page found" });
@@ -262,10 +271,19 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
   const satellite = buildLiveNodes(bundle(), buildLiveMetrics(bundle(), retail), retail).find(
     (node) => node.id === "sat-map",
   );
-  const satelliteText = [satellite?.title, satellite?.meta, satellite?.tooltip.desc, ...(satellite?.stats ?? [])]
+  const satelliteText = [
+    satellite?.title,
+    satellite?.meta,
+    satellite?.tooltip.desc,
+    satellite?.heroValue?.value,
+    satellite?.heroValue?.label,
+    ...(satellite?.stats ?? []),
+  ]
     .filter(Boolean)
     .join(" ");
   assert.match(satelliteText, /Fender MAP prices have not been stored/);
+  assert.equal(satellite?.tooltip.desc, "");
+  assert.equal(satellite?.heroValue?.label, "MAP leakage");
   assert.doesNotMatch(satelliteText, /below MAP|gap|\$|\d/);
 
   const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;

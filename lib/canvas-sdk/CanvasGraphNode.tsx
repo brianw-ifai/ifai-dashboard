@@ -2,6 +2,7 @@
 
 import type { MouseEvent } from "react";
 import { GraphBubble, GraphHub } from "@/lib/canvas-sdk/GraphPrimitives";
+import { MAIN_BUBBLES } from "@/lib/canvas-sdk/satellite-clusters";
 import type { CanvasNode } from "@/lib/canvas-sdk/types";
 
 export function CanvasGraphNode({
@@ -40,6 +41,8 @@ export function CanvasGraphNode({
   const Node = node.variant === "hub" ? GraphHub : GraphBubble;
   const titleSize =
     contentRadius != null && node.railTitleSize != null ? node.railTitleSize : node.titleSize;
+  // Satellites lead with one hero figure; hover never adds a second explanation.
+  const showHoverTooltip = MAIN_BUBBLES.has(node.id) && Boolean(node.tooltip.desc.trim());
   return (
     <Node
       id={node.id}
@@ -73,7 +76,7 @@ export function CanvasGraphNode({
         onInspect?.();
         onGroupEnter?.();
         // A bubble with no stored explainer (title is self-sufficient) shows no hover box at all.
-        if (!node.tooltip.desc.trim()) {
+        if (!showHoverTooltip) {
           onHideTooltip();
           return;
         }
@@ -85,7 +88,7 @@ export function CanvasGraphNode({
         );
       }}
       onMouseMove={(evt) => {
-        if (!node.tooltip.desc.trim()) return;
+        if (!showHoverTooltip) return;
         onShowTooltip(
           evt,
           node.tooltip.title,

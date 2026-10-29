@@ -272,7 +272,12 @@ test("AI freshness is the run's completion time, and partial runs say so", () =>
   const faces = aiNodeFaces(ready);
   assert.match(faces.satPrompts.meta ?? "", /Completed Oct 12, 2026, 5:02 PM UTC/);
   assert.match(faces.spokeAeo.meta ?? "", /Partial run · 7 of 9 answered/);
-  assert.doesNotMatch(faces.satPrompts.tooltip.desc, /latest battery/i);
+  assert.equal(faces.satPrompts.tooltip.desc, "");
+  assert.ok(faces.satPrompts.heroValue?.value);
+  assert.equal(faces.satCitations.tooltip.desc, "");
+  assert.equal(faces.satDrift.tooltip.desc, "");
+  assert.equal(faces.satGap.tooltip.desc, "");
+  assert.equal(faces.satLead.tooltip.desc, "");
   assert.match(aiSpokeFullDesc(ready), /provider errors/);
   assert.ok(aiSpokeHeaderChips(ready).some((chip) => /provider errors/i.test(chip.value)));
 });

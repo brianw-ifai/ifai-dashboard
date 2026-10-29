@@ -5,15 +5,17 @@
 
 import type { NodeStatus } from "../canvas-sdk/types";
 import { CONFIRMED_HIGH_PRICE_LABEL, WITHHELD_LABEL } from "./featured-offer-copy";
-import { formatInt, formatUsd } from "./format";
+import { formatInt, formatPct, formatUsd } from "./format";
 import {
   RETAIL_FINDING_LABELS,
+  type SuppressionDetail,
   selectRetailHeadline,
   type MapLeakageDetail,
   type PortfolioRetailFindings,
   type PortfolioRetailSnapshot,
   type RetailHeadline,
   type RetailReading,
+  type UnnestedBundleDetail,
 } from "./portfolio-retail";
 import { buyBoxHero } from "./retail-overview-lead";
 
@@ -42,12 +44,11 @@ export type RetailBubbleFace = {
   status: NodeStatus;
   subTab?: string;
   tooltip: { title: string; desc: string };
-  /** Main Catalog Health spoke: one share figure. Satellites keep pills in `stats`. */
+  /** Main Catalog Health spoke and satellites: one big value plus a short label. */
   heroValue?: { value: string; label: string };
 };
 
-const CATALOG_TOOLTIP =
-  "Bundle listings that are not nested under a parent ASIN. Nesting keeps their reviews on the parent listing.";
+const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
 export function shortCoverageLine(message: string | null): string | null {
   if (!message) return null;
@@ -89,20 +90,39 @@ function coveragePill(reading: RetailReading<unknown>): string | null {
   return shortCoverageLine(reading.missingMessage);
 }
 
-function face(
+/**
+ * Satellite share figure: issue count over that finding's own population.
+ * Missing denominator stays worded — never a fake 0%.
+ */
+function shareHeroValue(
+  reading: RetailReading<unknown>,
+  numerator: number | null,
+  denominator: number | null,
+): string {
+  if (numerator != null && denominator != null && denominator > 0) {
+    return formatPct((100 * numerator) / denominator);
+  }
+  if (reading.status === "available_with_zero" && numerator === 0) {
+    return formatPct(0);
+  }
+  return shortCoverageLine(reading.missingMessage) ?? "Not available";
+}
+
+function satelliteFace(
   title: string,
   reading: RetailReading<unknown>,
+  heroValue: { value: string; label: string },
   stats: string[],
-  tooltip: string,
   subTab: string,
 ): RetailBubbleFace {
   const pills = stats.filter((entry) => entry.trim().length > 0);
   return {
     title,
-    stats: pills.length ? pills : ["Not stored"],
+    stats: pills.length ? pills : [heroValue.value],
     status: tone(reading),
     subTab,
-    tooltip: { title, desc: tooltip },
+    heroValue,
+    tooltip: { ...EMPTY_TOOLTIP },
   };
 }
 
@@ -226,60 +246,79 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
   };
 }
 
-export function suppressedBubble(reading: RetailReading<unknown>): RetailBubbleFace {
+/** Buy Box withheld / current Buy Box readings. Monitored catalog is not the denominator. */
+export function suppressedBubble(
+  reading: RetailReading<SuppressionDetail | null>,
+): RetailBubbleFace {
+  const counts = reading.detail?.counts ?? null;
+  const numerator = counts?.withheld ?? null;
+  const denominator = counts != null && counts.current > 0 ? counts.current : null;
   const count = countPhrase(reading, reading.headlineNoun ?? "listing");
   const coverage = coveragePill(reading);
-  const label = readingLabel(reading, "Suppressed Listings");
-  return face(
-    label,
+  return satelliteFace(
+    "Suppressed Listings",
     reading,
+    { value: shareHeroValue(reading, numerator, denominator), label: "Buy Box withheld" },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
-    reading.missingMessage ??
-      "Amazon withholds the Buy Box when the offer it observed is above the lowest price it recently found outside Amazon. Amazon does not name that retailer.",
     "Suppressed Listings",
   );
 }
 
+/** Below-MAP listings / listings with a stored MAP comparison (`decided`). */
 export function mapBubble(reading: RetailReading<MapLeakageDetail | null>): RetailBubbleFace {
+  const detail = reading.detail;
+  const numerator = reading.issueCount;
+  const denominator = detail != null && detail.decided > 0 ? detail.decided : null;
   const count = countPhrase(reading, "below MAP", "below MAP");
   const gap =
-    reading.detail?.averageLeakage != null
-      ? `${formatUsd(reading.detail.averageLeakage, { signed: true })} gap`
+    detail?.averageLeakage != null
+      ? `${formatUsd(detail.averageLeakage, { signed: true })} gap`
       : null;
   const coverage = coveragePill(reading);
-  const gapNote =
-    reading.detail?.averageLeakage != null
-      ? `Average worst stored price gap ${formatUsd(reading.detail.averageLeakage, { signed: true })}. This is a price gap, not a revenue estimate.`
-      : null;
-  const tooltip = [gapNote, reading.missingMessage].filter(Boolean).join(" ");
-  return face(
+  return satelliteFace(
     "MAP Leakage",
     reading,
+    { value: shareHeroValue(reading, numerator, denominator), label: "MAP leakage" },
     [...(count ? [count] : []), ...(gap ? [gap] : []), ...(coverage ? [coverage] : [])],
-    tooltip || "MAP leakage uses stored channel prices only.",
     "MAP",
   );
 }
 
-export function catalogBubble(reading: RetailReading<unknown>): RetailBubbleFace {
+/** Unnested bundles / bundles in this retail read. */
+export function catalogBubble(
+  reading: RetailReading<UnnestedBundleDetail | null>,
+): RetailBubbleFace {
+  const detail = reading.detail;
+  const numerator = reading.issueCount;
+  const denominator = detail != null && detail.bundlesInRead > 0 ? detail.bundlesInRead : null;
   const count = countPhrase(reading, "bundle");
   const coverage = coveragePill(reading);
-  return face(
+  return satelliteFace(
     "Catalog Governance",
     reading,
+    {
+      value: shareHeroValue(reading, numerator, denominator),
+      label: "Splintered listings",
+    },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
-    CATALOG_TOOLTIP,
     "Catalog Governance",
   );
 }
 
-function waitingFace(title: string, subTab: string | undefined, stats: string[], desc: string): RetailBubbleFace {
+function waitingFace(
+  title: string,
+  subTab: string | undefined,
+  stats: string[],
+  desc: string,
+  heroLabel?: string,
+): RetailBubbleFace {
   return {
     title,
     stats,
     status: "warning",
     subTab,
-    tooltip: { title, desc },
+    // Satellite waiting faces carry a worded hero; main Catalog Health leaves hero unset.
+    ...(heroLabel ? { heroValue: { value: stats[0] ?? "Loading", label: heroLabel }, tooltip: { ...EMPTY_TOOLTIP } } : { tooltip: { title, desc } }),
   };
 }
 
@@ -334,9 +373,9 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     const desc = "The retail reading is still loading.";
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
-      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
+      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "Buy Box withheld"),
+      map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc, "MAP leakage"),
+      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered listings"),
     };
   }
 
@@ -344,9 +383,9 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     const desc = "The retail read could not be loaded.";
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
-      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
-      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),
+      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc, "Buy Box withheld"),
+      map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc, "MAP leakage"),
+      catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc, "Splintered listings"),
     };
   }
 
