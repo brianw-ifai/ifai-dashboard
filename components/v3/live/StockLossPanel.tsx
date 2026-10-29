@@ -4,6 +4,7 @@ import { Fragment, useEffect, useState } from "react";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable, type RetailColumn } from "@/components/v3/live/ResizableTable";
 import { NewTag, SourceTag, type DataSource } from "@/components/v3/live/SourceTag";
+import { StockLossHero } from "@/components/v3/live/StockLossHero";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import { formatInt, formatUsd } from "@/lib/fender-canvas/format";
 import {
@@ -254,10 +255,16 @@ export function StockLossPanel() {
 
   const rows = typeof state === "object" ? state.rows : null;
   const sorted = useClientTableSort(rows ?? [], STOCK_LOSS_COLUMNS, sortValue);
-  const estimated = rows ? rows.filter((row) => lostSales(row) != null).length : 0;
 
   return (
     <div className="stock-loss retail-surface">
+      {state === "loading" ? <p className="retail-missing">Loading the stock history…</p> : null}
+      {state === "unavailable" ? (
+        <p className="retail-missing">The stock history could not be loaded.</p>
+      ) : null}
+      {rows && typeof state === "object" ? (
+        <StockLossHero rows={rows} liveCount={state.liveCount} />
+      ) : null}
       <Explanation />
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">
@@ -267,19 +274,8 @@ export function StockLossPanel() {
           </span>
           {rows ? <span className="tag-badge tag-neutral">{formatInt(rows.length)} listings</span> : null}
         </div>
-        {state === "loading" ? <p className="retail-missing">Loading the stock history…</p> : null}
-        {state === "unavailable" ? (
-          <p className="retail-missing">The stock history could not be loaded.</p>
-        ) : null}
         {rows && typeof state === "object" ? (
           <>
-            <p className="retail-missing">
-              {formatInt(rows.length)}
-              {state.liveCount != null ? ` of ${formatInt(state.liveCount)}` : ""} live listings were out
-              of stock or without a Buy Box at least one day in the last 12 months.{" "}
-              {formatInt(estimated)} have enough SmartScout sales data for a dollar estimate. The rest
-              show &ldquo;Not estimated&rdquo;, never $0.
-            </p>
             <p style={{ fontSize: 11.5, color: "var(--text-muted)", margin: "8px 0" }}>
               Select a listing to see the inputs behind its estimate and the dates it was out of stock.
             </p>

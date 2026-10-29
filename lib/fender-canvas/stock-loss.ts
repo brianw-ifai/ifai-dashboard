@@ -6,6 +6,7 @@
  * estimates built from both, and a missing estimate is never shown as zero.
  */
 
+import type { PieDiscData } from "@/lib/ai-search/citation-pies";
 import { getCanvasSupabase } from "../supabase/canvas-client";
 
 export type StockLossRow = {
@@ -95,6 +96,58 @@ export function lostSales(row: StockLossRow): number | null {
 
 export function noBuyBoxAtRisk(row: StockLossRow): number | null {
   return row.baseline_method ? num(row.est_lost_revenue_suppressed_365_max) : null;
+}
+
+/**
+ * Hero total for Out of Stock: sum of per-listing lostSales() only.
+ * Nulls drop out (Not estimated). The no-Buy-Box upper bound is never added.
+ * An empty set, or a set with only nulls, has no dollar (null), never $0.
+ */
+export type LostSalesSum = {
+  /** Sum of listing estimates, or null when none can be defended. */
+  total: number | null;
+  /** Listings included in the sum. */
+  estimatedCount: number;
+  /** Listings with no rate (excluded from the sum). */
+  notEstimatedCount: number;
+  /** Live listings that were out of stock or without a Buy Box (the row set). */
+  affectedCount: number;
+};
+
+export function sumLostSales(rows: readonly StockLossRow[]): LostSalesSum {
+  let total = 0;
+  let estimatedCount = 0;
+  let notEstimatedCount = 0;
+  for (const row of rows) {
+    const lost = lostSales(row);
+    if (lost == null) {
+      notEstimatedCount += 1;
+      continue;
+    }
+    estimatedCount += 1;
+    total += lost;
+  }
+  return {
+    total: estimatedCount > 0 ? total : null,
+    estimatedCount,
+    notEstimatedCount,
+    affectedCount: rows.length,
+  };
+}
+
+/** Pie of estimated vs Not estimated among the affected Out of Stock population. */
+export function lostSalesPopulationPie(sum: LostSalesSum): PieDiscData | null {
+  if (sum.affectedCount <= 0) return null;
+  return {
+    id: "stock-loss-population",
+    title: "Out of stock and no-Buy-Box listings",
+    total: sum.affectedCount,
+    totalLabel: "live listings out of stock or without a Buy Box",
+    slices: [
+      { key: "matched", label: "Estimated", count: sum.estimatedCount },
+      { key: "contradicted", label: "Not estimated", count: sum.notEstimatedCount },
+    ].filter((slice) => slice.count > 0),
+  };
 }
 
 /** Larger estimated loss first. Listings with no estimate follow, most out-of-stock days first. */
