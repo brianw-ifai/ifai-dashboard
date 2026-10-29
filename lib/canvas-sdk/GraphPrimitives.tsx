@@ -235,7 +235,8 @@ export function CenteredStack({
   flowStartY?: number;
 }) {
   const pillMax = maxWidth ?? Math.max(radius * 2 - 14, fontSize * 4);
-  const metaSize = fontSize * 0.82;
+  // Meta used to shrink to 82% of the pill; at the 10px floor that reads under 10px.
+  const metaSize = fontSize;
   const metaMax = pillMax;
   const gap = radius < 62 ? 4 : 5;
 
@@ -741,7 +742,7 @@ function RingMotes({ radius }: { radius: number }) {
 }
 
 function QuestFlame({ label, radius }: { label: string; radius: number }) {
-  const width = Math.max(72, label.length * 6.4 + 16);
+  const width = Math.max(76, label.length * 7.1 + 18);
   return (
     <g className="quest-beacon" transform={`translate(0, ${-radius - 36})`} pointerEvents="none">
       <g className="quest-flame">
@@ -749,8 +750,8 @@ function QuestFlame({ label, radius }: { label: string; radius: number }) {
         <circle className="flame-ember" cx="-4" cy="2" r="1.5" />
         <circle className="flame-ember flame-ember-b" cx="4" cy="1" r="1.3" />
       </g>
-      <rect className="quest-pill" x={-width / 2} y={8} width={width} height={16} rx={8} />
-      <text className="quest-pill-text" y={19} textAnchor="middle">
+      <rect className="quest-pill" x={-width / 2} y={7} width={width} height={18} rx={9} />
+      <text className="quest-pill-text" y={19.5} textAnchor="middle">
         {label}
       </text>
     </g>

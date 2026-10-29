@@ -1102,7 +1102,7 @@ export function CanvasShell({ spec, children }: Props) {
                 <div className="brand-name">
                   {spec.brand.name}
                   {spec.brand.badge ? (
-                    <span className="tag-badge tag-danger" style={{ fontSize: "9.5px" }}>
+                    <span className="tag-badge tag-danger" style={{ fontSize: "10px" }}>
                       {spec.brand.badge}
                     </span>
                   ) : null}
