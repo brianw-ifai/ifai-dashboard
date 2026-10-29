@@ -1,6 +1,7 @@
 "use client";
 
 import type { KeyboardEvent, MouseEvent, ReactElement } from "react";
+import { fitMainHero } from "@/lib/canvas-sdk/hero-fit";
 import { SatelliteHeroFace } from "@/lib/canvas-sdk/SatelliteHeroFace";
 import type { CanvasEdge, NodeStatus } from "@/lib/canvas-sdk/types";
 
@@ -87,9 +88,7 @@ function pillMetrics(label: string, fontSize: number, maxWidth?: number) {
 
 /**
  * One big status-colored number with a short label, in place of the stacked stat pills.
- * The value's font size shrinks to the circle's width, and the whole value-plus-label
- * stack shrinks together if the label still wraps to more lines than the circle has
- * room for below `startY`, so neither line ever crosses the ring.
+ * Sizing lives in `fitMainHero` so the value and label both clear the ring at this radius.
  */
 function HeroValue({
   value,
@@ -104,48 +103,23 @@ function HeroValue({
   radius: number;
   startY: number;
 }) {
-  const maxWidth = Math.max(40, radius * 2 - 16);
-  const bottomLimit = radius - 7;
-  const fitToWidth = (text: string, size: number) => {
-    const width = textWidth(text, size);
-    return width > maxWidth ? size * (maxWidth / width) : size;
-  };
-
-  let valueSize = fitToWidth(value, Math.max(14, radius * 0.46));
-  let labelSize = Math.max(7, valueSize * 0.33);
-  let labelLines = wrapText(label, maxWidth, labelSize);
-  let labelLineH = labelSize + 2;
-
-  // However many lines the label wraps to, shrink the value and the label together
-  // until the stack clears the circle's bottom edge (a few passes converge quickly).
-  for (let pass = 0; pass < 4; pass += 1) {
-    const gap = Math.max(3, valueSize * 0.18);
-    const stackBottom = startY + valueSize * 0.78 + gap + labelLines.length * labelLineH;
-    if (stackBottom <= bottomLimit || valueSize <= 9) break;
-    const scale = Math.max(0.7, (bottomLimit - startY) / (stackBottom - startY));
-    valueSize *= scale;
-    labelSize = Math.max(6, labelSize * scale);
-    labelLines = wrapText(label, maxWidth, labelSize);
-    labelLineH = labelSize + 2;
-  }
-
-  const gap = Math.max(3, valueSize * 0.18);
-  const valueY = startY + valueSize * 0.78;
-  const labelY = valueY + gap + labelSize * 0.82;
+  const fit = fitMainHero(value, label, radius, startY);
   const statusClass = status !== "neutral" ? ` status-${status}` : "";
 
   return (
     <g className="node-hero">
-      <text className={`node-hero-value${statusClass}`} y={valueY} textAnchor="middle" fontSize={valueSize}>
+      <text className={`node-hero-value${statusClass}`} y={fit.valueY} textAnchor="middle" fontSize={fit.valueSize}>
         {value}
       </text>
-      <text className="node-hero-label" y={labelY} textAnchor="middle" fontSize={labelSize}>
-        {labelLines.map((line, index) => (
-          <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : labelLineH}>
-            {line}
-          </tspan>
-        ))}
-      </text>
+      {fit.labelLines.length ? (
+        <text className="node-hero-label" y={fit.labelY} textAnchor="middle" fontSize={fit.labelSize}>
+          {fit.labelLines.map((line, index) => (
+            <tspan key={`${line}-${index}`} x={0} dy={index === 0 ? 0 : fit.labelLineH}>
+              {line}
+            </tspan>
+          ))}
+        </text>
+      ) : null}
     </g>
   );
 }
@@ -426,20 +400,23 @@ function CenteredFace({
 
   if (hub) {
     const lines = titleLines(title);
-    const titleY = logoSrc ? 6 : -16;
-    const titleStep = logoSrc ? 26 : 28;
-    const titleSize = logoSrc ? 20 : 22;
-    const stackStartY = titleY + lines.length * titleStep + (meta || stats.length ? 8 : 0);
+    // With a hero figure under the logo, keep the title compact so the value stays readable.
+    const compact = Boolean(heroValue && logoSrc);
+    const titleY = logoSrc ? (compact ? 0 : 6) : -16;
+    const titleStep = logoSrc ? (compact ? 18 : 26) : 28;
+    const titleSize = logoSrc ? (compact ? 15 : 20) : 22;
+    const stackStartY =
+      titleY + lines.length * titleStep + (meta || stats.length || heroValue ? (compact ? 4 : 8) : 0);
     return (
       <g className="node-face">
         {logoSrc ? (
           <image
             className="hub-logo"
             href={logoSrc}
-            x={-60}
-            y={-72}
-            width={120}
-            height={45}
+            x={-56}
+            y={compact ? -78 : -72}
+            width={112}
+            height={compact ? 40 : 45}
             preserveAspectRatio="xMidYMid meet"
           />
         ) : null}
@@ -454,7 +431,15 @@ function CenteredFace({
             {line}
           </text>
         ))}
-        {stats.length || meta ? (
+        {heroValue ? (
+          <HeroValue
+            value={heroValue.value}
+            label={heroValue.label}
+            status={status}
+            radius={radius}
+            startY={stackStartY}
+          />
+        ) : stats.length || meta ? (
           <CenteredStack
             radius={radius}
             stats={stats}
@@ -654,6 +639,7 @@ export function GraphHub({
   titleSize,
   stats,
   meta,
+  heroValue,
   centered = false,
   logoSrc,
   emphasis = false,
@@ -683,11 +669,16 @@ export function GraphHub({
       hub
       logoSrc={logoSrc}
       statPillSize={statPillFont}
+      heroValue={heroValue}
     />
   ) : (
     <>
       <CurvedHeader id={id} radius={faceR} title={title} fontSize={headerSize} className="node-title hub-title" />
-      <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
+      {heroValue ? (
+        <HeroValue value={heroValue.value} label={heroValue.label} status={status} radius={faceR} startY={12} />
+      ) : (
+        <CenteredStack radius={faceR} stats={stats} meta={meta} pillSize={statPillFont} status={status} />
+      )}
     </>
   );
 
