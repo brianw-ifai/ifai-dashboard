@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   buildSpecPages,
+  namedMissingMachineSpecs,
   pageNameFromUrl,
+  plainSpecFieldName,
   machineReadabilityHeroes,
   sharedGapSentence,
   specPageCounts,
@@ -43,12 +45,18 @@ test("heroes share pages, not listings, and an unread page set invents no percen
     row("B2", STRAT, true, "additionalProperty", "2026-10-20T00:00:00Z"),
     row("B3", TELE, true, "gtin12", "2026-10-20T00:00:00Z"),
   ]);
-  const [spec, basics] = machineReadabilityHeroes(summary);
-  assert.equal(spec.percent, "50.0%");
-  assert.equal(spec.ratio, "1 of 2");
+  const [missing, basics] = machineReadabilityHeroes(summary);
+  assert.equal(missing.id, "missing_specs");
+  assert.equal(missing.percent, "50.0%");
+  assert.equal(missing.ratio, "1 of 2");
+  assert.doesNotMatch(missing.label, /additionalProperty/);
+  assert.match(missing.explainer, /spec block/);
   assert.equal(basics.percent, "50.0%");
   assert.equal(basics.denominator, 2);
   assert.equal(sharedGapSentence(summary), null);
+  assert.deepEqual(namedMissingMachineSpecs(summary), ["spec block"]);
+  assert.equal(plainSpecFieldName("scale_length"), "scale length");
+  assert.equal(plainSpecFieldName("additionalProperty"), "spec block");
 
   const empty = machineReadabilityHeroes(null);
   assert.equal(empty[0].percent, "Not available*");

@@ -210,7 +210,7 @@ export function specHero(snapshot: PortfolioRetailSnapshot): RetailOverviewHeroM
 
   return {
     id: "amazon_spec_gaps",
-    tab: "AI Readiness",
+    tab: "Amazon Specs",
     label: "Specs complete",
     percent: ready ? formatPct(completePct) : "Not available*",
     ratio: ready ? formatRatio(complete, checked) : null,

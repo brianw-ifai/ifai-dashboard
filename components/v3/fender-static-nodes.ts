@@ -51,11 +51,11 @@ export const fenderStaticNodes: CanvasNode[] = [
     {
       ...satelliteNode("sat-schema"),
       status: "neutral",
-      title: "Machine Readability",
+      title: "Brand-Site Specs",
       stats: ["Loading"],
-      heroValue: { value: "Loading", label: "Spec block present" },
+      heroValue: { value: "Loading", label: "missing machine-readable specs" },
       spokeId: "specs",
-      subTab: "Machine Readability",
+      subTab: "Brand-Site Specs",
       tooltip: { title: "", desc: "" },
     },
     {
@@ -95,7 +95,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       stats: [],
       heroValue: { value: "Pending data", label: "fender.com page found" },
       spokeId: "specs",
-      subTab: "AI Readiness",
+      subTab: "Brand-Site Specs",
       tooltip: { title: "", desc: "" },
     },
     {

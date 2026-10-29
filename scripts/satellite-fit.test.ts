@@ -20,7 +20,7 @@ const HEROES: Record<SatelliteId, { title: string; value: string; label: string 
   "sat-asin": { title: "Catalog Governance", value: "38.0%", label: "Splintered listings" },
   "sat-map": { title: "MAP Leakage", value: "22.5%", label: "MAP leakage" },
   "sat-findability": { title: "Findability", value: "12.4%", label: "exact official product page" },
-  "sat-schema": { title: "Machine Readability", value: "100.0%", label: "missing additionalProperty" },
+  "sat-schema": { title: "Brand-Site Specs", value: "100.0%", label: "missing machine-readable specs" },
   "sat-tables": { title: "Amazon A+ Matrix", value: "Not measured", label: "Comparison tables" },
   "sat-taylor": { title: "Competitor Wins", value: "38 of 84", label: "competitors led" },
   "sat-amps": { title: "Engine Comparison", value: "42.1%", label: "ChatGPT unbranded" },

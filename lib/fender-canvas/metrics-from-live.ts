@@ -257,7 +257,7 @@ export function buildLiveMetrics(
         ? `${formatInt(schemaPages.withSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages`
         : "The fender.com page read could not be loaded.",
       tone: schemaPages ? toneFromPct(schemaPages.specBlockPct, 95, 98) : "warning",
-      subTab: "Machine Readability",
+      subTab: "Brand-Site Specs",
       provenance: "live",
     },
     missingSchemaFields: {
@@ -267,7 +267,7 @@ export function buildLiveMetrics(
       value: schemaPages ? formatInt(schemaPages.missingSpecBlock) : "Not available*",
       detail: "fender.com product pages",
       tone: schemaPages && schemaPages.missingSpecBlock === 0 ? "success" : "warning",
-      subTab: "Machine Readability",
+      subTab: "Brand-Site Specs",
       provenance: "live",
     },
     beginnerSovGap: {

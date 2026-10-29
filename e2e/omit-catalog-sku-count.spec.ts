@@ -42,8 +42,8 @@ test.describe("omit catalog SKU count", () => {
     }
   });
 
-  test("AI Readiness still shows checked-SKU sample size", async ({ canvas, page }) => {
-    await page.goto("/dashboard?spoke=specs&tab=ai-readiness");
+  test("Amazon Specs still shows checked-SKU sample size", async ({ canvas, page }) => {
+    await page.goto("/dashboard?spoke=specs&tab=amazon-specs");
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
     await expect(canvas.panel).toBeVisible();
     await expect(canvas.panel).toContainText(/checked SKUs/i);

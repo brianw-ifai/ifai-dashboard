@@ -25,10 +25,10 @@ export const fenderCommandCenter: CommandCenterSpec = {
     {
       id: "schema-coverage",
       title: "fender.com pages are missing machine-readable specs",
-      why: "Machine Readability shows which fender.com product pages carry a spec block that AI engines can read as product data.",
+      why: "Brand-Site Specs shows which fender.com product pages carry a spec block that AI engines can read as product data.",
       severity: "high",
       spokeId: "specs",
-      subTab: "Machine Readability",
+      subTab: "Brand-Site Specs",
       defaultOwner: "intofocus",
     },
     {

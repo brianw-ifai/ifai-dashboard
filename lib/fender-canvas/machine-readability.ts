@@ -175,7 +175,7 @@ export async function loadSpecPages(client?: SpecPageClient): Promise<SpecPageSu
   return buildSpecPages(rows);
 }
 
-export type MachineHeroId = "spec_block" | "product_basics";
+export type MachineHeroId = "missing_specs" | "product_basics";
 
 export type MachineHeroModel = {
   id: MachineHeroId;
@@ -191,11 +191,45 @@ export type MachineHeroModel = {
   denominator: number | null;
 };
 
-/** Same bands as Specs complete on Catalog Governance. */
+/** Same bands as Specs complete on Catalog Governance (higher share is better). */
 function shareColor(pct: number): string {
   if (pct >= 98) return "var(--success-green)";
   if (pct >= 95) return "var(--warning-amber)";
   return "var(--danger-red)";
+}
+
+/** Missing-share bands: a higher missing share is worse. */
+function missingShareColor(pct: number): string {
+  if (pct <= 2) return "var(--success-green)";
+  if (pct <= 5) return "var(--warning-amber)";
+  return "var(--danger-red)";
+}
+
+/** Plain operator name for a stored missing field. Never invents a field. */
+export function plainSpecFieldName(field: string): string {
+  if (field === SPEC_BLOCK_FIELD) return "spec block";
+  const known = FIELD_LABEL[field];
+  if (known) return known.toLowerCase();
+  return field
+    .split("_")
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+/**
+ * Plain names of fields missing on pages that lack machine-readable specs.
+ * Only fields present in the stored read are named.
+ */
+export function namedMissingMachineSpecs(summary: SpecPageSummary): string[] {
+  const names = new Set<string>();
+  for (const page of summary.pages) {
+    if (page.hasSpecBlock) continue;
+    for (const field of page.missingFields) {
+      names.add(plainSpecFieldName(field));
+    }
+  }
+  return [...names].sort((a, b) => a.localeCompare(b));
 }
 
 function sharePie(
@@ -248,21 +282,53 @@ function hero(
 export const SPEC_BLOCK_DEFINITION =
   "Schema.org additionalProperty on the page's product data. It carries specs such as nut width, fingerboard radius, and pickups as facts an AI engine can read.";
 
+export const MISSING_MACHINE_SPECS_DEFINITION =
+  "Share of found fender.com pages whose Schema.org product data is missing the spec block (additionalProperty) AI engines read as product facts.";
+
 export const PRODUCT_BASICS_DEFINITION =
   "Name, SKU, brand, UPC, description, image, and price in the page's Schema.org product data.";
 
+function missingSpecsHero(summary: SpecPageSummary | null): MachineHeroModel {
+  const total = summary ? summary.pages.length : null;
+  const missing = summary ? summary.pages.length - summary.withSpecBlock : null;
+  const ready = missing != null && total != null && total > 0;
+  const pct = ready ? (100 * missing!) / total! : null;
+  const named = summary ? namedMissingMachineSpecs(summary) : [];
+  const namedLine =
+    named.length > 0
+      ? `Missing on these pages: ${named.join(", ")}.`
+      : ready
+        ? "Every checked page has machine-readable specs."
+        : "The fender.com page read could not be loaded.";
+  return {
+    id: "missing_specs",
+    label: "Found pages missing machine-readable specs",
+    definition: MISSING_MACHINE_SPECS_DEFINITION,
+    percent: pct != null ? formatPct(pct) : "Not available*",
+    ratio: ready ? formatRatio(missing, total) : null,
+    color: pct != null ? missingShareColor(pct) : "var(--warning-amber)",
+    pie: ready
+      ? sharePie(
+          "machine-missing_specs",
+          "Found pages missing machine-readable specs",
+          "Missing machine-readable specs",
+          "Specs present",
+          missing!,
+          total!,
+        )
+      : null,
+    tip: ready ? `${formatInt(missing)} of ${formatInt(total)} found fender.com pages.` : null,
+    explainer: namedLine,
+    numerator: ready ? missing : null,
+    denominator: ready ? total : null,
+  };
+}
+
+/** Brand-Site Specs heroes. Missing machine-readable specs leads; product basics follow. */
 export function machineReadabilityHeroes(summary: SpecPageSummary | null): MachineHeroModel[] {
   const total = summary ? summary.pages.length : null;
   return [
-    hero(
-      "spec_block",
-      "Spec block present",
-      SPEC_BLOCK_DEFINITION,
-      summary ? summary.withSpecBlock : null,
-      total,
-      ["Spec block present", "No spec block"],
-      "Specs are readable as product data.",
-    ),
+    missingSpecsHero(summary),
     hero(
       "product_basics",
       "Product basics present",

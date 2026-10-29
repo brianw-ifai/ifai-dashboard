@@ -88,24 +88,25 @@ type SatelliteFace = Pick<
   "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
 >;
 
-/** Spec-block share of checked fender.com pages. Same figure as the Machine Readability hero. */
+/** Missing machine-readable specs on found fender.com pages. Opens Brand-Site Specs. */
 function machineReadabilityFace(counts: SpecPageCounts | null): SatelliteFace {
   if (!counts) {
     return {
       status: "warning",
-      title: "Machine Readability",
+      title: "Brand-Site Specs",
       stats: ["Not available*"],
-      heroValue: { value: "Not available*", label: "Spec block present" },
-      subTab: "Machine Readability",
+      heroValue: { value: "Not available*", label: "missing machine-readable specs" },
+      subTab: "Brand-Site Specs",
       tooltip: { ...EMPTY_TOOLTIP },
     };
   }
+  const missingPct = (100 * counts.missingSpecBlock) / counts.pages;
   return {
-    status: counts.withSpecBlock === counts.pages ? "success" : "danger",
-    title: "Machine Readability",
-    stats: [`${formatInt(counts.withSpecBlock)} of ${formatInt(counts.pages)} pages`],
-    heroValue: { value: formatPct(counts.specBlockPct), label: "Spec block present" },
-    subTab: "Machine Readability",
+    status: counts.missingSpecBlock === 0 ? "success" : "danger",
+    title: "Brand-Site Specs",
+    stats: [`${formatInt(counts.missingSpecBlock)} of ${formatInt(counts.pages)} pages`],
+    heroValue: { value: formatPct(missingPct), label: "missing machine-readable specs" },
+    subTab: "Brand-Site Specs",
     tooltip: { ...EMPTY_TOOLTIP },
   };
 }
@@ -144,7 +145,7 @@ export function buildLiveNodes(
   const bullets = bulletCounts(bundle.listingContent);
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
-  // Main AI Readiness spoke opens the AI Readiness tab and leads with its page-found hero.
+  // Main AI Readiness bubble keeps its title and page-found figure; it opens Brand-Site Specs.
   const pageHero = pageFoundHero(m);
   const pageTone = pageFoundTone(m.spec_fender_found_pct);
   const readinessStatus: NodeStatus = pageTone ?? "neutral";
@@ -226,7 +227,7 @@ export function buildLiveNodes(
       stats: [],
       heroValue: readinessHero,
       spokeId: "specs",
-      subTab: "AI Readiness",
+      subTab: "Brand-Site Specs",
       tooltip: { title: "", desc: "" },
     },
     {

@@ -76,7 +76,7 @@ test.describe("command center", () => {
   /* Each priority must land on the tab that actually holds its evidence. */
   const routes = [
     ["Buy Box withheld", "Retail Overview"],
-    ["machine-readable spec", "Machine Readability"],
+    ["machine-readable spec", "Brand-Site Specs"],
     ["Fender MAP prices have not been stored", "MAP"],
     ["out-mention Fender/Squier", "Competitor Wins"],
     ["A+ comparison tables", "A+"],

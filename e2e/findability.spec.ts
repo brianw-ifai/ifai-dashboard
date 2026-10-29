@@ -212,10 +212,10 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(page.getByText("No Defensible Page", { exact: true }).first()).toBeVisible();
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
   await expect(page.locator(".findability-note").filter({ hasText: "Each listing is one outcome" })).toBeVisible();
-  await expect(page.locator(".findability-note").filter({ hasText: "on Machine Readability" })).toBeVisible();
+  await expect(page.locator(".findability-note").filter({ hasText: "on Brand-Site Specs" })).toBeVisible();
   await expect(
     page.locator(".findability-note").filter({
-      hasText: "Schema.org product data on each fender.com page is on Machine Readability.",
+      hasText: "Schema.org product data on each fender.com page is on Brand-Site Specs.",
     }),
   ).toBeVisible();
 

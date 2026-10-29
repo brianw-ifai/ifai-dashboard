@@ -211,12 +211,16 @@ export function missingAdditionalPropertyHero(m: CanvasMetricsRow): AiReadinessH
   };
 }
 
-/** The four AI Readiness share heroes. SKUs checked stays a denominator only. */
+/**
+ * Amazon Specs tab heroes. Amazon attribute completeness only.
+ * Page-found stays on the AI Readiness bubble and Findability.
+ * Brand-site completeness and missing-spec counts live on Brand-Site Specs.
+ */
+export function amazonSpecsHeroes(m: CanvasMetricsRow): AiReadinessHeroModel[] {
+  return [amazonCompletenessHero(m)];
+}
+
+/** @deprecated Prefer amazonSpecsHeroes for the Amazon Specs tab. */
 export function aiReadinessHeroes(m: CanvasMetricsRow): AiReadinessHeroModel[] {
-  return [
-    pageFoundHero(m),
-    amazonCompletenessHero(m),
-    fenderCompletenessHero(m),
-    missingAdditionalPropertyHero(m),
-  ];
+  return amazonSpecsHeroes(m);
 }

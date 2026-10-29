@@ -4,10 +4,10 @@ import { mockCanvasRead } from "./spec-read-mock";
 
 /**
  * Proves the three spec surfaces with a mocked canvas API.
- * AI Readiness shows the ASIN table with Yes/No found values.
- * Machine Readability counts fender.com pages, lists the page with no spec block, and not the full ASIN table.
+ * Amazon Specs shows the ASIN table without a fender.com found column.
+ * Brand-Site Specs counts fender.com pages, lists the page with no spec block, and not the full ASIN table.
  * Catalog Governance shows the unnested-bundle table, hides the spec-field table,
- * and its count opens AI Readiness.
+ * and its Specs complete count opens Amazon Specs.
  */
 
 test("spec tables live on one surface each", async ({ page }) => {
@@ -19,22 +19,25 @@ test("spec tables live on one surface each", async ({ page }) => {
     await page.locator(".graph-node").filter({ hasText: /AI\s*Readiness/i }).click({ force: true });
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
   }).toPass({ timeout: 20_000 });
-  await canvas.openTab("AI Readiness");
+  await expect(canvas.activeTab).toContainText("Brand-Site Specs");
+  await canvas.openTab("Amazon Specs");
 
   const catalog = page.locator("#spec-readiness-by-asin");
   await expect(catalog).toBeVisible();
   await expect(catalog).toContainText("B00MISSING");
   await expect(catalog).toContainText("B00FOUND01");
   await expect(catalog).toContainText("B00NULLFLG");
-  await expect(catalog.getByText("No", { exact: true })).toHaveCount(1);
-  await expect(catalog.getByText("Yes", { exact: true })).toHaveCount(2);
-  await expect(page.getByText("Top missing schema fields")).toBeVisible();
+  await expect(catalog.getByRole("columnheader", { name: "fender.com found" })).toHaveCount(0);
+  await expect(catalog.getByText("No", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Top missing Amazon fields")).toBeVisible();
   await expect(page.locator("[data-spec-filter]")).toHaveCount(0);
+  await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
+  await expect(page.locator("[data-ai-readiness-hero='amazon_completeness']")).toBeVisible();
 
-  await canvas.openTab("Machine Readability");
-  const specHero = page.locator("[data-machine-hero='spec_block']");
-  await expect(specHero.locator("[data-hero-percent]")).toHaveText("50.0%");
-  await expect(specHero).toContainText("1 of 2");
+  await canvas.openTab("Brand-Site Specs");
+  const missingHero = page.locator("[data-machine-hero='missing_specs']");
+  await expect(missingHero.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(missingHero).toContainText("1 of 2");
   await expect(
     page.locator("[data-machine-hero='product_basics'] [data-hero-percent]"),
   ).toHaveText("100.0%");
@@ -47,8 +50,9 @@ test("spec tables live on one surface each", async ({ page }) => {
   await expect(pages).not.toContainText("fender.com/en-US/clear");
   await expect(pages).not.toContainText("B00MISSING");
   await expect(page.locator("#spec-readiness-by-asin")).toHaveCount(0);
+  await expect(page.getByText("Top missing Amazon fields")).toHaveCount(0);
   await expect(page.getByText("Top missing schema fields")).toHaveCount(0);
-  await expect(page.getByText("Spec readiness by ASIN")).toHaveCount(0);
+  await expect(page.locator("[data-ai-readiness-hero='amazon_completeness']")).toHaveCount(0);
 
   await canvas.openSpokeFromMap("Catalog Health");
   await canvas.openTab("Catalog Governance");
@@ -58,15 +62,13 @@ test("spec tables live on one surface each", async ({ page }) => {
   await expect(page.getByText("Missing Amazon spec fields")).toHaveCount(0);
   await expect(page.locator("#catalog-specs")).toHaveCount(0);
 
-  const gapCount = page.locator("[data-spec-open='ai-readiness']");
-  await expect(gapCount.locator("[data-amazon-spec-gap-count]")).toHaveAttribute(
-    "data-amazon-spec-gap-count",
-    "1",
-  );
-  await gapCount.click();
-  await expect(canvas.activeTab).toContainText("AI Readiness");
+  const specsComplete = page.locator("[data-spec-open='amazon-specs']");
+  await expect(specsComplete).toBeVisible();
+  await expect(specsComplete).toContainText("Specs complete");
+  await specsComplete.click();
+  await expect(canvas.activeTab).toContainText("Amazon Specs");
   await expect(page.locator("#spec-readiness-by-asin")).toBeVisible();
   await expect(page.locator("#spec-readiness-by-asin")).toContainText("B00MISSING");
 
-  expect(seen.some((entry) => entry.includes("fender_missing_fields=like."))).toBe(true);
+  expect(seen.some((entry) => entry.includes("canvas_spec_readiness"))).toBe(true);
 });

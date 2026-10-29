@@ -14,12 +14,13 @@ const PAGES_TABLE_ID = "machine-readability-pages";
 
 type OpenTable = MachineHeroId | "closed";
 
-function MachineReadabilityNotes({ summary }: { summary: SpecPageSummary | null }) {
+function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
   const shared = sharedGapSentence(summary);
   return (
     <div
       className="content-box"
       data-machine-readability-notes=""
+      data-brand-site-specs-notes=""
       style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
     >
       <div className="ceo-callout" style={{ margin: 0 }}>
@@ -36,33 +37,52 @@ function MachineReadabilityNotes({ summary }: { summary: SpecPageSummary | null 
   );
 }
 
+/**
+ * Brand-Site Specs: found fender.com pages only.
+ * Leads with pages missing machine-readable specs, then the explainer.
+ */
 export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary | null }) {
-  const [openTable, setOpenTable] = useState<OpenTable>("spec_block");
+  const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
   const heroes = machineReadabilityHeroes(summary);
+  const missingHero = heroes[0];
+  const otherHeroes = heroes.slice(1);
 
   function toggle(which: MachineHeroId) {
     setOpenTable((prev) => (prev === which ? "closed" : which));
   }
 
   return (
-    <div className="readiness-surface" data-machine-readability="">
+    <div className="readiness-surface" data-machine-readability="" data-brand-site-specs="">
       <div
         data-machine-readability-lead=""
-        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
+        data-brand-site-specs-lead=""
+        style={{ display: "flex", flexDirection: "column", gap: 12 }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-          {heroes.map((hero) => (
-            <ShareHeroCard
-              key={hero.id}
-              hero={hero}
-              dataAttr="data-machine-hero"
-              open={openTable === hero.id}
-              onToggle={() => toggle(hero.id)}
-              controls={PAGES_TABLE_ID}
-            />
-          ))}
+          <ShareHeroCard
+            key={missingHero.id}
+            hero={missingHero}
+            dataAttr="data-machine-hero"
+            open={openTable === missingHero.id}
+            onToggle={() => toggle(missingHero.id)}
+            controls={PAGES_TABLE_ID}
+          />
         </div>
-        <MachineReadabilityNotes summary={summary} />
+        <BrandSiteSpecsNotes summary={summary} />
+        {otherHeroes.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
+            {otherHeroes.map((hero) => (
+              <ShareHeroCard
+                key={hero.id}
+                hero={hero}
+                dataAttr="data-machine-hero"
+                open={openTable === hero.id}
+                onToggle={() => toggle(hero.id)}
+                controls={PAGES_TABLE_ID}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {summary && openTable !== "closed" ? (

@@ -179,7 +179,7 @@ function BundleRows({ rows }: { rows: UnnestedBundleOpportunity[] }) {
 
 /**
  * Specs-complete share (checked listings with every Amazon field filled).
- * Percentage / ratio / disc open AI Readiness; chevron toggles the specs table.
+ * Percentage / ratio / disc open Amazon Specs; chevron toggles the specs table.
  */
 function CatalogSpecHero({
   snapshot,
@@ -192,8 +192,8 @@ function CatalogSpecHero({
 }) {
   const hero = specHero(snapshot);
   const aria = hero.ratio
-    ? `${hero.percent}. ${hero.ratio}. Opens AI Readiness.`
-    : `${hero.percent}. Opens AI Readiness.`;
+    ? `${hero.percent}. ${hero.ratio}. Opens Amazon Specs.`
+    : `${hero.percent}. Opens Amazon Specs.`;
   return (
     <div
       className="content-box findability-lead-card"
@@ -203,8 +203,8 @@ function CatalogSpecHero({
       <button
         type="button"
         data-ifai-open="specs"
-        data-ifai-tab="AI Readiness"
-        data-spec-open="ai-readiness"
+        data-ifai-tab="Amazon Specs"
+        data-spec-open="amazon-specs"
         aria-label={aria}
         style={{
           appearance: "none",

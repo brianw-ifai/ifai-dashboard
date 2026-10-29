@@ -25,17 +25,17 @@ const COLUMNS: RetailColumn[] = [
 ];
 
 const FILTER_TITLE: Record<MachineHeroId, string> = {
-  spec_block: "Pages with no spec block",
+  missing_specs: "Pages missing machine-readable specs",
   product_basics: "Pages missing a product basic",
 };
 
 const FILTER_EMPTY: Record<MachineHeroId, string> = {
-  spec_block: "Every checked page has a spec block.",
+  missing_specs: "Every checked page has machine-readable specs.",
   product_basics: "Every checked page has all seven basics.",
 };
 
 function matches(page: SpecPage, filter: MachineHeroId): boolean {
-  return filter === "spec_block" ? !page.hasSpecBlock : page.missingBasics.length > 0;
+  return filter === "missing_specs" ? !page.hasSpecBlock : page.missingBasics.length > 0;
 }
 
 function sortValue(page: SpecPage, columnId: string): SortInput {
