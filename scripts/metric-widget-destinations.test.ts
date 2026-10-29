@@ -40,12 +40,22 @@ const EXPECTED_SUBTAB: Record<string, string> = {
   "beginner-sov-gap": "Category Battlecards",
   "strongest-category-sov": "Category Battlecards",
   "prioritized-fixes": "Urgent Interventions",
-  "phase-one-lift": "Interactive ROI Model",
-  "enterprise-potential": "Interactive ROI Model",
+  "phase-one-lift": "Revenue Estimates",
+  "enterprise-potential": "Revenue Estimates",
   "day-90-buy-box-target": "30-60-90 Day Milestones",
 };
 
-const RETIRED = ["Dual-Index", "Hallucination", "Priority Matrix", "Brand Divisions", "Battlecards", "Catalog", "ROI", "30-60-90"];
+const RETIRED = [
+  "Dual-Index",
+  "Hallucination",
+  "Priority Matrix",
+  "Brand Divisions",
+  "Battlecards",
+  "Catalog",
+  "ROI",
+  "Interactive ROI Model",
+  "30-60-90",
+];
 
 function tabsFor(spokeId: string): string[] {
   if (spokeId === "ecommerce") return [...RETAIL_PANEL_TABS];

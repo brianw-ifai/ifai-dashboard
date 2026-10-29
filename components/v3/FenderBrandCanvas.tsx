@@ -20,7 +20,6 @@ import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-disp
 
 declare global {
   interface Window {
-    toggleRoiMode?: (mode: "pilot" | "enterprise") => void;
     toggleResourcingMode?: (mode: "managed" | "copilot") => void;
   }
 }
@@ -136,13 +135,6 @@ export function FenderBrandCanvas({
   const findability = useFindabilityRead();
 
   useEffect(() => {
-    window.toggleRoiMode = (mode) => {
-      if (mode === "enterprise") {
-        togglePair("btn-roi-enterprise", "btn-roi-pilot", "roi-content-enterprise", "roi-content-pilot");
-      } else {
-        togglePair("btn-roi-pilot", "btn-roi-enterprise", "roi-content-pilot", "roi-content-enterprise");
-      }
-    };
     window.toggleResourcingMode = (mode) => {
       if (mode === "copilot") {
         togglePair(
@@ -162,7 +154,6 @@ export function FenderBrandCanvas({
     };
 
     return () => {
-      delete window.toggleRoiMode;
       delete window.toggleResourcingMode;
     };
   }, []);

@@ -441,7 +441,7 @@ function estimateOpportunity(input: HubSlotInput): HubSlot {
     tone: "success",
     chart: null,
     spokeId: "suggestions",
-    subTab: "Interactive ROI Model",
+    subTab: "Revenue Estimates",
   });
 }
 

@@ -105,7 +105,7 @@ export function buildFenderCanvasSpec(
         tone: "success",
         icon: "trending",
         spokeId: "suggestions",
-        subTab: "roi",
+        subTab: "Revenue Estimates",
         label: (
           <>
             Lift: <strong>{metrics.phaseOneLift.value} Phase 1</strong> (
