@@ -184,7 +184,8 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   const headline = headlineSentence(headlineSurface(retail));
   const map = spec.items.find((item) => item.id === "map-leakage");
 
-  assert.match(text, /3,598/);
+  assert.doesNotMatch(text, /3,598/);
+  assert.doesNotMatch(text, /electric SKUs|monitored electric SKUs/i);
   assert.ok(text.includes(headline));
   assert.match(text, /13 divisions/);
   // AI Search lines come from the published run only, never the pooled canvas_metrics sim_* fields.

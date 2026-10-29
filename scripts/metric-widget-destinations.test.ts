@@ -23,7 +23,6 @@ function openedTab(tabs: string[], subTab: string | undefined): string | null {
 }
 
 const EXPECTED_SUBTAB: Record<string, string> = {
-  "catalog-skus": "Performance",
   "active-offer-coverage": "Briefing",
   "buy-box-retention": "Retail Overview",
   "seller-data-coverage": "Retail Overview",

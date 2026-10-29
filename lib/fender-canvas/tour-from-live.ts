@@ -31,7 +31,6 @@ export function buildLiveTourSteps(
       subtitle: "Fender's health across catalog divisions",
       category: "BRAND CORE",
       displays: [
-        `${formatInt(m.catalog_skus)} monitored SKUs`,
         headline,
         aiLines.hub,
       ],

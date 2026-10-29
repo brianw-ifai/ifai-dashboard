@@ -14,7 +14,6 @@ export function FenderDivisionsTable({ divisions }: { divisions: CanvasDivisionR
         <thead>
           <tr>
             <th>Catalog Division</th>
-            <th>Monitored SKUs</th>
             <th>Buy Box (Active Offers)</th>
             <th>Splinter Bundles</th>
             <th>Schema Sync</th>
@@ -27,7 +26,6 @@ export function FenderDivisionsTable({ divisions }: { divisions: CanvasDivisionR
               <td>
                 <strong>{row.division}</strong>
               </td>
-              <td>{formatInt(row.monitored_skus)}</td>
               <td>{formatPct(row.buybox_pct)}</td>
               <td>{formatInt(row.splinter_bundles)}</td>
               <td>
