@@ -80,6 +80,7 @@ export function MapListingsTable({
       maxHeight={520}
       sort={sorted.sort}
       onSort={sorted.onSort}
+      tableClassName="table-no-row-hover"
     >
       <tbody>
         {rows.length === 0 ? (

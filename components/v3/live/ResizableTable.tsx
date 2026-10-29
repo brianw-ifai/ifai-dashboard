@@ -168,6 +168,7 @@ export function ResizableTable({
   maxHeight = 520,
   sort = null,
   onSort,
+  tableClassName,
   children,
 }: {
   tableId: string;
@@ -180,6 +181,8 @@ export function ResizableTable({
   maxHeight?: number;
   sort?: TableSort | null;
   onSort?: (columnId: string) => void;
+  /** Extra classes on the table (e.g. table-no-row-hover). */
+  tableClassName?: string;
   children: ReactNode;
 }) {
   const { widths, setWidth, signature } = useColumnWidths(tableId, columns);
@@ -271,7 +274,11 @@ export function ResizableTable({
       data-freeze-header={freezeHeader ? "true" : "false"}
       data-fill-column={fillId}
     >
-      <table ref={tableRef} className="table-sm resizable-table" style={{ width: total }}>
+      <table
+        ref={tableRef}
+        className={`table-sm resizable-table${tableClassName ? ` ${tableClassName}` : ""}`}
+        style={{ width: total }}
+      >
         <colgroup>
           {columns.map((column) => (
             <col

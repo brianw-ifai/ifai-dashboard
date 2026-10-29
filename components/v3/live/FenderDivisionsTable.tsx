@@ -10,7 +10,7 @@ export function FenderDivisionsTable({ divisions }: { divisions: CanvasDivisionR
         <span>FMIC Catalog Division Performance Matrix</span>
         <span className="tag-badge tag-neutral">{formatInt(divisions.length)} divisions</span>
       </div>
-      <table className="table-sm">
+      <table className="table-sm table-no-row-hover">
         <thead>
           <tr>
             <th>Catalog Division</th>
