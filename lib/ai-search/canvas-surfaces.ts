@@ -519,7 +519,6 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
   }
 
   const s = summarizeRun(read.snapshot);
-  const c = s.commercial;
   const beginner = s.categories.find((row) => row.key === "beginner");
   const beginnerBattle = categoryBattles(read.snapshot.calls).find((b) => b.category === "beginner");
   const rival = beginnerBattle?.leaders[0];
