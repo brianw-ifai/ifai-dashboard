@@ -7,8 +7,6 @@ import {
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
 import {
-  FACT_CHECK_SCOPE,
-  factCheckCoverageNote,
   factCheckHeadline,
   factCheckShortLine,
   factsCheckedLine,
@@ -41,9 +39,11 @@ export const RADAR_TABS = {
   engines: "Engine Comparison",
 } as const;
 
+const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
+
 /**
  * A main-spoke bubble's status word is self-sufficient (e.g. "Loading run"). It carries no
- * hover explainer. A satellite keeps its explainer, since it is reached by a deliberate click.
+ * hover explainer. Satellites also stay hoverless: the hero figure is the whole map read.
  */
 function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless = false): NodeFace | null {
   if (read.phase === "ready") return null;
@@ -58,7 +58,22 @@ function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless 
     stats: [copy[0]],
     meta: "AI Search Visibility",
     subTab,
-    tooltip: hoverless ? { title: "", desc: "" } : { title, desc: copy[1].trim() },
+    tooltip: hoverless ? { ...EMPTY_TOOLTIP } : { title, desc: copy[1].trim() },
+  };
+}
+
+/** Satellite pending face: worded hero, no hover tooltip. */
+function satelliteStateFace(
+  read: AiSearchRead,
+  title: string,
+  subTab: string,
+  label: string,
+): NodeFace {
+  const pending = stateFace(read, title, subTab) as NodeFace;
+  return {
+    ...pending,
+    heroValue: { value: pending.stats[0] ?? "Loading run", label },
+    tooltip: { ...EMPTY_TOOLTIP },
   };
 }
 
@@ -99,19 +114,18 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   if (read.phase !== "ready") {
     return {
       spokeAeo: pending("AI Search Visibility", AI_TABS.summary, true),
-      satPrompts: pending("Run Details", AI_TABS.simulations),
-      satCitations: pending("Citations", AI_TABS.citations),
-      satDrift: pending("Fact Checks", AI_TABS.drift),
+      satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, "Brand Consideration"),
+      satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, "Fender-Owned Links"),
+      satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
-      satGap: pending("Category Gap", RADAR_TABS.wins),
-      satLead: pending("Category Lead", RADAR_TABS.battlecards),
+      satGap: satelliteStateFace(read, "Category Gap", RADAR_TABS.wins, "Rival wins"),
+      satLead: satelliteStateFace(read, "Category Lead", RADAR_TABS.battlecards, "Rival wins"),
     };
   }
 
   const s = summarizeRun(read.snapshot);
-  const { commercial: c, completeness: run, drift, citations } = s;
+  const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const small = s.smallSampleEngines.map(engineLabel);
   const lead = strongestCategory(categoryBattles(read.snapshot.calls));
   const gap = s.largestGap;
 
@@ -171,10 +185,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue: brandedHero.heroValue,
       meta: `Completed ${s.completedAt}`,
       subTab: AI_TABS.simulations,
-      tooltip: {
-        title: "Branded consideration",
-        desc: `${headlineLine(s)} Branded consideration is how often Fender/Squier is still named most once the brand is already named in the prompt. ${c.calls} shopping prompt-engine calls are in this ${state.toLowerCase()} run. ${s.probesAnswered} answered product fact checks are excluded.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Run Details to see every call.`,
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satCitations: {
       status: citationsHero.status,
@@ -186,10 +197,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue: citationsHero.heroValue,
       meta: `${citations.rows} cited links · ${citations.domains} domains`,
       subTab: AI_TABS.citations,
-      tooltip: {
-        title: "AI Citation Ecosystem",
-        desc: `Fender-owned links make up ${pct(citations.fenderOwnedRows, citations.rows)} of the ${citations.rows} cited links in this run, across ${citations.domains} domains. ${citations.answersWithCitation} of ${citations.answered} answered shopping prompts cited web sources. Answers and links are separate counts. A cited link is not proof that the source caused the recommendation. Run completed ${s.completedAt}.`,
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satDrift: {
       status: factAccuracyHero.status,
@@ -198,10 +206,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue: factAccuracyHero.heroValue,
       meta: `Across ${joinBrands(drift.coverage.checkedEngines)}`,
       subTab: AI_TABS.drift,
-      tooltip: {
-        title: "Product fact checks",
-        desc: `${factCheckHeadline(drift.coverage)} ${FACT_CHECK_SCOPE}${factCheckCoverageNote(drift.coverage) ? ` ${factCheckCoverageNote(drift.coverage)}` : ""}`,
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     spokeCompetitors: {
       status: s.competitorWins > 0 ? "warning" : "success",
@@ -218,47 +223,58 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       tooltip: { title: "", desc: "" },
     },
     satGap: gap
-      ? {
-          status: "warning",
-          title: `${categoryLabel(gap.category)} Gap`,
-          stats: [`${gap.leaders[0]?.brand ?? "Rival"} ${gap.leaders[0]?.wins ?? 0} wins`, `of ${gap.resolved} resolved`],
-          meta: `${gap.competitorWins} competitor wins`,
-          subTab: RADAR_TABS.wins,
-          tooltip: { title: `${categoryLabel(gap.category)} category`, desc: `${battleSentence(gap)}.` },
-        }
+      ? (() => {
+          const rival = gap.leaders[0];
+          const hasRival = rival != null && gap.resolved > 0;
+          return {
+            status: "warning" as const,
+            title: `${categoryLabel(gap.category)} Gap`,
+            stats: hasRival
+              ? [`${rival.brand} ${rival.wins} wins`, `of ${gap.resolved} resolved`]
+              : ["No rival wins"],
+            heroValue: hasRival
+              ? { value: pct(rival.wins, gap.resolved), label: `${rival.brand} wins` }
+              : { value: "No rival wins", label: "Unbranded discovery" },
+            meta: `${gap.competitorWins} competitor wins`,
+            subTab: RADAR_TABS.wins,
+            tooltip: { ...EMPTY_TOOLTIP },
+          };
+        })()
       : {
           status: "success",
           title: "Category Gap",
           stats: ["No competitor wins"],
+          heroValue: { value: "No competitor wins", label: "Unbranded discovery" },
           meta: "Unbranded discovery",
           subTab: RADAR_TABS.wins,
-          tooltip: {
-            title: "Category gap",
-            desc: "No competitor was named most in a resolved unbranded discovery answer.",
-          },
+          tooltip: { ...EMPTY_TOOLTIP },
         },
     satLead: lead
-      ? {
-          status: "success",
-          title: `${categoryLabel(lead.category)} Lead`,
-          stats: [`${pct(lead.fenderWins, lead.resolved)} Fender`, `${lead.fenderWins} of ${lead.resolved} resolved`],
-          meta: "Unbranded discovery",
-          subTab: RADAR_TABS.battlecards,
-          tooltip: {
-            title: `${categoryLabel(lead.category)} category`,
-            desc: `Fender/Squier was named most in ${lead.fenderWins} of ${lead.resolved} resolved unbranded discovery ${lead.category} answers in the published run.`,
-          },
-        }
+      ? (() => {
+          const rival = lead.leaders[0];
+          const hasRival = rival != null && lead.resolved > 0;
+          return {
+            status: (hasRival ? "warning" : "success") as NodeStatus,
+            title: `${categoryLabel(lead.category)} Lead`,
+            stats: hasRival
+              ? [`${rival.brand} ${rival.wins} wins`, `of ${lead.resolved} resolved`]
+              : [`${pct(lead.fenderWins, lead.resolved)} Fender`, `${lead.fenderWins} of ${lead.resolved} resolved`],
+            heroValue: hasRival
+              ? { value: pct(rival.wins, lead.resolved), label: `${rival.brand} wins` }
+              : { value: "No rival wins", label: "Unbranded discovery" },
+            meta: "Unbranded discovery",
+            subTab: RADAR_TABS.battlecards,
+            tooltip: { ...EMPTY_TOOLTIP },
+          };
+        })()
       : {
           status: "neutral",
           title: "Category Lead",
           stats: ["No resolved answers"],
+          heroValue: { value: "No resolved answers", label: "Unbranded discovery" },
           meta: "Unbranded discovery",
           subTab: RADAR_TABS.battlecards,
-          tooltip: {
-            title: "Category lead",
-            desc: "No unbranded discovery category has resolved answers yet.",
-          },
+          tooltip: { ...EMPTY_TOOLTIP },
         },
   };
 }
