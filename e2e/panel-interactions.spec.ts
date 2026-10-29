@@ -232,21 +232,30 @@ test.describe("drill-downs", () => {
     await expect(readings).not.toContainText("MAP");
   });
 
-  test("roadmap phases open the work behind them", async ({ canvas, page }) => {
-    await canvas.openSpokeFromMap("Strategy Roadmap");
-    const hints = page.locator(".ifai-open-hint");
-    await expect(hints).toHaveCount(3);
-    await expect(page.locator(".drilldown-desc")).not.toContainText("88%");
-    await expect(page.locator(".drilldown-desc")).not.toContainText("95%");
-    await expect(page.locator(".drilldown-body")).not.toContainText("Sweetwater");
-    await expect(page.locator(".drilldown-body")).not.toContainText("Guitar Center");
-
-    await hints.nth(0).click();
-    await expect(canvas.activeTab).toHaveText("MAP");
-
-    await canvas.openSpokeFromMap("Strategy Roadmap");
-    await page.locator(".ifai-open-hint").nth(1).click();
-    await expect(canvas.activeTab).toHaveText("Catalog Governance");
+  test("roadmap first tab shows current findings, not example phases", async ({ page }) => {
+    await page.context().addCookies([
+      { name: "ifai_guest_fender", value: "1", domain: "localhost", path: "/" },
+    ]);
+    await page.goto("/dashboard?spoke=roadmap");
+    const body = page.locator(".drilldown-body");
+    await expect(page.locator("[data-roadmap-findings-panel]")).toBeVisible();
+    await expect(page.locator(".drilldown-tab-btn.active")).toContainText("30-60-90 Day Milestones");
+    await expect(body).toContainText("Current findings");
+    for (const label of [
+      "Buy Box withheld",
+      "MAP leakage",
+      "Splintered bundles",
+      "Exact official product pages",
+      "Unbranded discovery",
+    ]) {
+      await expect(body).toContainText(label);
+    }
+    // Each finding shows its current N of M share.
+    await expect(body.locator("[data-briefing-finding-ratio]")).toHaveCount(5);
+    await expect(body.locator(".ifai-open-hint")).toHaveCount(0);
+    await expect(body).not.toContainText("Phase 1");
+    await expect(body).not.toContainText("Days 1 to 30");
+    await expect(body).not.toContainText("since last time");
   });
 
   test("the spec sample states the live schema result", async ({ canvas, page }) => {

@@ -15,6 +15,7 @@ import { CurrentFindingsPanel } from "@/components/v3/live/CurrentFindingsPanel"
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
+import { RoadmapFindingsPanel } from "@/components/v3/live/RoadmapFindingsPanel";
 import { StockLossPanel } from "@/components/v3/live/StockLossPanel";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
@@ -24,7 +25,7 @@ import { MachineReadabilityPanel } from "@/components/v3/live/MachineReadability
 import type { SpokeDefinition, SpokeId } from "@/components/v3/spoke-data-types";
 import { spokeData } from "@/components/v3/spoke-data";
 import narrative from "@/data/fender-v3-spec.json";
-import { aiActionCardHtml, aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
+import { aiSpokeDesc, competitorsSpokeDesc } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -37,6 +38,7 @@ import { MUSICIANS_FRIEND_FRESHNESS_JOB } from "@/lib/fender-canvas/map-reading-
 import { retailTemplateVars } from "@/lib/fender-canvas/retail-copy";
 import { bindNarrativeSpoke } from "@/lib/fender-canvas/spoke-narrative";
 import { bindCopy, buildTemplateVars } from "@/lib/fender-canvas/template-vars";
+import { urgentInterventionsHtml } from "@/lib/fender-canvas/urgent-interventions-html";
 
 function htmlBlock(html: string) {
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
@@ -115,6 +117,9 @@ const TAB_OVERRIDES: Partial<
   suggestions: {
     2: (_bundle, _vars, retail) => <CurrentFindingsPanel read={retail} />,
   },
+  roadmap: {
+    0: (_bundle, _vars, retail) => <RoadmapFindingsPanel read={retail} />,
+  },
 };
 
 function wrapSpoke(
@@ -172,7 +177,7 @@ export function buildLiveSpokes(
   const vars = {
     ...buildTemplateVars(bundle),
     ...retailTemplateVars(bundle, retail),
-    ai_action_card: aiActionCardHtml(ai),
+    urgent_interventions: urgentInterventionsHtml(retail, findability, ai),
   };
   const ids = Object.keys(spokeData) as SpokeId[];
   const out = {} as Record<SpokeId, SpokeDefinition>;

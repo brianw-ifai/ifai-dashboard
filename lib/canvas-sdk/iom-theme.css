@@ -991,7 +991,7 @@
 
 .ifai-canvas.theme-iom .quest-pill-text {
   fill: #fff;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -1218,6 +1218,12 @@
 .ifai-canvas.theme-iom.light-theme .retail-surface .table-sm tr:hover td {
   background: #e7f1fa;
   color: #0b1f33;
+}
+
+/* Plain rows with no whole-row action (FDD X-28). Keep the retail hover above. */
+.ifai-canvas.theme-iom.light-theme .retail-surface .table-sm.table-no-row-hover > tbody > tr:hover > td {
+  background: transparent;
+  color: #3d5670;
 }
 
 .ifai-canvas.theme-iom.light-theme .retail-surface .table-freeze-head .resizable-th {
