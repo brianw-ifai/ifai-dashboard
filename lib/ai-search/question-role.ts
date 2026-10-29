@@ -2,6 +2,7 @@ import {
   callOutcome,
   isCommercial,
   isError,
+  isFailedResultEngine,
   modelLabel,
   tallyCommercial,
   type OutcomeTally,
@@ -128,6 +129,26 @@ export function engineRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
       b.roles.branded_consideration.resolved -
       (a.roles.unbranded_discovery.resolved + a.roles.branded_consideration.resolved) ||
       a.key.localeCompare(b.key),
+  );
+}
+
+/** Answered commercial calls for one engine across every question role. */
+export function roleGroupAnswered(group: RoleGroupTally): number {
+  return QUESTION_ROLES.reduce((sum, role) => sum + group.roles[role].answered, 0);
+}
+
+/** Commercial calls for one engine across every question role. */
+export function roleGroupCalls(group: RoleGroupTally): number {
+  return QUESTION_ROLES.reduce((sum, role) => sum + group.roles[role].calls, 0);
+}
+
+/**
+ * Engines that returned at least one commercial answer.
+ * An engine whose calls are all errors or all empty is not a client result.
+ */
+export function engineResultRoleTallies(rows: AiCallRow[]): RoleGroupTally[] {
+  return engineRoleTallies(rows).filter(
+    (engine) => !isFailedResultEngine({ calls: roleGroupCalls(engine), answered: roleGroupAnswered(engine) }),
   );
 }
 

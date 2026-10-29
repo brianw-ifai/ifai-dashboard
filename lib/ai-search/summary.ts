@@ -5,7 +5,7 @@ import { roleTally, type RoleTally } from "@/lib/ai-search/question-role";
 import {
   categoryTallies,
   engineLabel,
-  engineTallies,
+  engineResultTallies,
   enginesAndModels,
   errorsByEngine,
   formatRunTime,
@@ -61,7 +61,8 @@ export type AiRunSummary = {
 
 export function summarizeRun(snapshot: AiSearchSnapshot): AiRunSummary {
   const { run, calls, probes, citations } = snapshot;
-  const engines = engineTallies(calls);
+  // Failed engines (all errors / all empty) stay off result lists; errorEngines keeps the count.
+  const engines = engineResultTallies(calls);
   const largest = Math.max(0, ...engines.map((engine) => engine.resolved));
   const cited = citationEvidence(calls, citations, "commercial");
   const competitors = competitorTallies(calls);

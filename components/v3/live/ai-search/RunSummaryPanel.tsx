@@ -9,7 +9,7 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { RunCompletenessCard } from "@/components/v3/live/ai-search/RunCompletenessCard";
 import { KeptOutNote, RoleCount, RoleSumLine, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
-import { categoryRoleTallies, engineRoleTallies, headlineAside, ROLE_LABELS, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
+import { categoryRoleTallies, engineResultRoleTallies, headlineAside, ROLE_LABELS, type RoleGroupTally, type RoleTally } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel } from "@/lib/ai-search/run-metrics";
 import { pct, resolvedPhrase, summarizeRun } from "@/lib/ai-search/summary";
 import type { AiSearchSnapshot } from "@/lib/ai-search/types";
@@ -148,7 +148,7 @@ function WinCard({ snapshot, unit, mixed }: { snapshot: AiSearchSnapshot; unit: 
 }
 
 function EngineTable({ snapshot, showSmallSample }: { snapshot: AiSearchSnapshot; showSmallSample: boolean }) {
-  const engines = engineRoleTallies(snapshot.calls);
+  const engines = engineResultRoleTallies(snapshot.calls);
   const largest = {
     unbranded: largestResolved(engines, "unbranded_discovery"),
     branded: largestResolved(engines, "branded_consideration"),

@@ -11,7 +11,7 @@ import { EvidenceLink } from "@/components/v3/live/ai-search/EvidenceLink";
 import { KeptOutNote, RoleCount, RolePair, largestResolved, roleColumn, roleRateSort } from "@/components/v3/live/ai-search/RoleRateTable";
 import { AI_TABS } from "@/lib/ai-search/canvas-surfaces";
 import {
-  engineRoleTallies,
+  engineResultRoleTallies,
   headlineAside,
   headlineCompetitorWins,
   roleTally,
@@ -62,7 +62,7 @@ function Comparison({ snapshot }: { snapshot: AiSearchSnapshot }) {
   const history = useAiHistoryOptional();
   const showSmallSample = !isWindowHistoryKind(history?.mode.kind);
   const mixed = hasMixedScoringMethods(snapshot);
-  const engines = engineRoleTallies(snapshot.calls);
+  const engines = engineResultRoleTallies(snapshot.calls);
   const largest = {
     unbranded: largestResolved(engines, "unbranded_discovery"),
     branded: largestResolved(engines, "branded_consideration"),
