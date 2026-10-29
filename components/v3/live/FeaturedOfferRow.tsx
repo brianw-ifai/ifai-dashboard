@@ -53,6 +53,17 @@ export const FEATURED_OFFER_TABLE_COLUMNS: RetailColumn[] = [
 
 export const FEATURED_OFFER_TABLE_COLUMN_COUNT = FEATURED_OFFER_TABLE_COLUMNS.length;
 
+/**
+ * Suppressed Listings only shows withheld offers, so Buy Box never varies.
+ * Source is also constant: withheld state only comes from an Amazon listing read.
+ */
+export const SUPPRESSED_LISTINGS_TABLE_COLUMNS: RetailColumn[] =
+  FEATURED_OFFER_TABLE_COLUMNS.filter(
+    (column) => column.id !== "state" && column.id !== "source",
+  );
+
+export const SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT = SUPPRESSED_LISTINGS_TABLE_COLUMNS.length;
+
 function amazonHref(asin: string | null | undefined): string | null {
   if (typeof asin !== "string") return null;
   return /^[A-Z0-9]{10}$/.test(asin) ? `https://www.amazon.com/dp/${asin}` : null;
@@ -66,7 +77,17 @@ function benchmarkNote(row: Row): string {
   return "Not checked";
 }
 
-export function FeaturedOfferTableRow({ row }: { row: Row }) {
+export function FeaturedOfferTableRow({
+  row,
+  showBuyBox = true,
+  showSource = true,
+}: {
+  row: Row;
+  /** False on Suppressed Listings, where every row is Buy Box withheld. */
+  showBuyBox?: boolean;
+  /** False when every row of that table uses the same Source label. */
+  showSource?: boolean;
+}) {
   const state = featuredOfferState(row);
   const asin = typeof row.asin === "string" ? row.asin : null;
   const href = amazonHref(asin);
@@ -97,18 +118,20 @@ export function FeaturedOfferTableRow({ row }: { row: Row }) {
           )}
         </span>
       </td>
-      <td>
-        {FEATURED_OFFER_STATE_LABELS[state]}
-        {failed ? (
-          <>
-            <br />
-            <span className="fo-failed-note">
-              Last check failed{attemptedAt ? ` ${attemptedAt}` : ""}
-              {lastError(row) ? `: ${lastError(row)}` : ""}
-            </span>
-          </>
-        ) : null}
-      </td>
+      {showBuyBox ? (
+        <td>
+          {FEATURED_OFFER_STATE_LABELS[state]}
+          {failed ? (
+            <>
+              <br />
+              <span className="fo-failed-note">
+                Last check failed{attemptedAt ? ` ${attemptedAt}` : ""}
+                {lastError(row) ? `: ${lastError(row)}` : ""}
+              </span>
+            </>
+          ) : null}
+        </td>
+      ) : null}
       <td className="money">
         {offer != null ? formatUsd(offer) : <span className="fo-note">Not observed</span>}
       </td>
@@ -122,7 +145,9 @@ export function FeaturedOfferTableRow({ row }: { row: Row }) {
           <span className="fo-note">No comparable pair</span>
         )}
       </td>
-      <td>{readFromKeepa(row) ? "Amazon listing read" : "Catalog"}</td>
+      {showSource ? (
+        <td>{readFromKeepa(row) ? "Amazon listing read" : "Catalog"}</td>
+      ) : null}
       <td>{checkedAt ?? <span className="fo-note">Never</span>}</td>
     </tr>
   );

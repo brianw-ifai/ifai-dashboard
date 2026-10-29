@@ -6,8 +6,8 @@ import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { ResizableTable } from "@/components/v3/live/ResizableTable";
 import { useClientTableSort } from "@/components/v3/live/useClientTableSort";
 import {
-  FEATURED_OFFER_TABLE_COLUMNS,
-  FEATURED_OFFER_TABLE_COLUMN_COUNT,
+  SUPPRESSED_LISTINGS_TABLE_COLUMNS,
+  SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT,
   FeaturedOfferTableRow,
 } from "@/components/v3/live/FeaturedOfferRow";
 import {
@@ -18,11 +18,8 @@ import {
 import {
   aboveBenchmarkDollars,
   benchmarkDollars,
-  FEATURED_OFFER_STATE_LABELS,
-  featuredOfferState,
   listingLabel,
   observedOfferDollars,
-  readFromKeepa,
   withheldListings,
   type FeaturedOfferRow,
 } from "@/lib/fender-canvas/featured-offer";
@@ -71,11 +68,9 @@ const OBSERVED_OFFER_NOTE =
 
 function suppressedSortValue(row: FeaturedOfferRow, columnId: string): SortInput {
   if (columnId === "listing") return listingLabel(row).trim() || null;
-  if (columnId === "state") return FEATURED_OFFER_STATE_LABELS[featuredOfferState(row)];
   if (columnId === "offer") return observedOfferDollars(row);
   if (columnId === "benchmark") return benchmarkDollars(row);
   if (columnId === "gap") return aboveBenchmarkDollars(row);
-  if (columnId === "source") return readFromKeepa(row) ? "Amazon listing read" : "Catalog";
   return row.featured_offer_checked_at ?? null;
 }
 
@@ -258,7 +253,11 @@ export function SuppressedListingsPanel({
   }, []);
 
   const rows = typeof state === "object" ? state.rows : null;
-  const sorted = useClientTableSort(rows ?? [], FEATURED_OFFER_TABLE_COLUMNS, suppressedSortValue);
+  const sorted = useClientTableSort(
+    rows ?? [],
+    SUPPRESSED_LISTINGS_TABLE_COLUMNS,
+    suppressedSortValue,
+  );
 
   return (
     <div className="suppressed-listings retail-surface">
@@ -276,7 +275,7 @@ export function SuppressedListingsPanel({
         {rows ? (
           <ResizableTable
             tableId="suppressed-listings"
-            columns={FEATURED_OFFER_TABLE_COLUMNS}
+            columns={SUPPRESSED_LISTINGS_TABLE_COLUMNS}
             freezeHeader
             maxHeight={520}
             sort={sorted.sort}
@@ -285,13 +284,18 @@ export function SuppressedListingsPanel({
             <tbody>
               {sorted.rows.length === 0 ? (
                 <tr>
-                  <td colSpan={FEATURED_OFFER_TABLE_COLUMN_COUNT}>
+                  <td colSpan={SUPPRESSED_LISTINGS_TABLE_COLUMN_COUNT}>
                     No monitored listing has a withheld Buy Box in the current reading.
                   </td>
                 </tr>
               ) : (
                 sorted.rows.map((row) => (
-                  <FeaturedOfferTableRow key={String(row.asin ?? "")} row={row} />
+                  <FeaturedOfferTableRow
+                    key={String(row.asin ?? "")}
+                    row={row}
+                    showBuyBox={false}
+                    showSource={false}
+                  />
                 ))
               )}
             </tbody>
