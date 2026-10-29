@@ -62,18 +62,18 @@
       --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-      /* Shared metric typography (sidebar widgets + drilldown cards) */
-      --metric-overline-size: 8px;
+      /* Shared metric typography (sidebar widgets + drilldown cards). Floor: 10px. */
+      --metric-overline-size: 10px;
       --metric-overline-weight: 800;
       --metric-overline-tracking: 0.12em;
-      --metric-label-size: 9.5px;
+      --metric-label-size: 10px;
       --metric-label-weight: 700;
       --metric-value-size: 23px;
       --metric-value-weight: 800;
       --metric-value-tracking: -0.045em;
-      --metric-detail-size: 8.5px;
+      --metric-detail-size: 10px;
       --metric-detail-weight: 600;
-      --metric-provenance-size: 7px;
+      --metric-provenance-size: 10px;
       --metric-provenance-weight: 800;
       --metric-provenance-tracking: 0.09em;
     }
@@ -307,7 +307,7 @@
 
     .brand-name .tag-badge {
       padding: 3px 8px;
-      font-size: 9.5px;
+      font-size: 10px;
     }
 
     .brand-sub {
@@ -1116,6 +1116,7 @@
       line-height: 1.35;
       text-transform: uppercase;
       vertical-align: middle;
+      white-space: nowrap;
     }
 
     .metric-card-val .metric-card-provenance {
@@ -1140,7 +1141,7 @@
     }
 
     .metric-widget-empty span {
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1206,7 +1207,7 @@
     .metric-widget-picker-header small,
     .metric-widget-option small {
       color: var(--text-subtle);
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 600;
     }
 
@@ -1224,7 +1225,7 @@
       padding: 9px 8px 4px;
       background: var(--bg-surface);
       color: var(--accent-cyan);
-      font-size: 8.5px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.1em;
       text-transform: uppercase;
@@ -2656,7 +2657,7 @@
     }
 
     .channel-tag {
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 700;
       padding: 1px 5px;
       border-radius: 3px;
@@ -2735,12 +2736,12 @@
 
       .canvas-metric-widget {
         width: 190px;
-        min-height: 82px;
+        min-height: 90px;
       }
 
       .metric-widget-body,
       .metric-widget-empty {
-        min-height: 82px;
+        min-height: 90px;
       }
 
       .metric-widget-body {
@@ -2755,7 +2756,7 @@
 
       .metric-widget-label {
         max-width: 142px;
-        font-size: 8.5px;
+        font-size: 10px;
       }
 
       .metric-widget-value,
@@ -2764,7 +2765,7 @@
       }
 
       .metric-widget-detail {
-        font-size: 7.5px;
+        font-size: 10px;
       }
 
       .metric-widget-provenance {
@@ -2940,8 +2941,9 @@
       border-radius: 999px;
       background: var(--danger-red);
       color: #fff;
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 800;
+      line-height: 1;
     }
 
     .hdr-btn:hover .hdr-btn-count,
@@ -3134,7 +3136,7 @@
     .cc-sev-badge {
       padding: 1px 7px;
       border-radius: var(--radius-button);
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.07em;
       text-transform: uppercase;
@@ -3166,7 +3168,7 @@
 
     .cc-why-label {
       display: block;
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -3318,7 +3320,7 @@
       background: transparent;
       color: inherit;
       font-family: inherit;
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -5114,7 +5116,7 @@
       display: inline-block;
       padding: 1px 6px;
       border-radius: 999px;
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -5140,7 +5142,7 @@
       margin-left: 6px;
       padding: 0 5px;
       border-radius: 999px;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
