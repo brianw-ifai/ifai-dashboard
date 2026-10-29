@@ -39,6 +39,16 @@ export const fenderStaticNodes: CanvasNode[] = [
       ...satelliteNode("sat-map"),
     },
     {
+      ...satelliteNode("sat-findability"),
+      status: "neutral",
+      title: "Findability",
+      stats: ["Loading"],
+      heroValue: { value: "Loading", label: "exact official product page" },
+      spokeId: "specs",
+      subTab: "Findability",
+      tooltip: { title: "", desc: "" },
+    },
+    {
       ...satelliteNode("sat-schema"),
       status: "danger",
       title: "Machine Readability",
@@ -86,6 +96,7 @@ export const fenderStaticNodes: CanvasNode[] = [
       stats: [],
       heroValue: { value: "Pending data", label: "fender.com page found" },
       spokeId: "specs",
+      subTab: "AI Readiness",
       tooltip: { title: "", desc: "" },
     },
     {

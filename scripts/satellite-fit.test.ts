@@ -16,18 +16,19 @@ const HEROES: Record<SatelliteId, { title: string; value: string; label: string 
   "sat-prompts": { title: "Run Details", value: "95.7%", label: "Brand Consideration" },
   "sat-citations": { title: "Citations", value: "19.1%", label: "Fender-Owned Links" },
   "sat-drift": { title: "Fact Checks", value: "100.0%", label: "Accuracy" },
-  "sat-buybox": { title: "Suppressed Listings", value: "12.4%", label: "Buy Box withheld" },
+  "sat-buybox": { title: "Suppressed Listings", value: "12.4%", label: "confirmed high-price" },
   "sat-asin": { title: "Catalog Governance", value: "38.0%", label: "Splintered listings" },
   "sat-map": { title: "MAP Leakage", value: "22.5%", label: "MAP leakage" },
+  "sat-findability": { title: "Findability", value: "12.4%", label: "exact official product page" },
   "sat-schema": { title: "Machine Readability", value: "100.0%", label: "missing additionalProperty" },
   "sat-tables": { title: "Amazon A+ Matrix", value: "Not measured", label: "Comparison tables" },
-  "sat-taylor": { title: "Acoustics Gap", value: "71.0%", label: "Yamaha wins" },
-  "sat-amps": { title: "Amps Lead", value: "16.9%", label: "Yamaha wins" },
+  "sat-taylor": { title: "Competitor Wins", value: "38 of 84", label: "competitors led" },
+  "sat-amps": { title: "Engine Comparison", value: "42.1%", label: "ChatGPT unbranded" },
 };
 
 const SATELLITES: SatelliteId[] = [
   "sat-prompts", "sat-citations", "sat-drift", "sat-buybox", "sat-asin", "sat-map",
-  "sat-schema", "sat-tables", "sat-taylor", "sat-amps",
+  "sat-findability", "sat-schema", "sat-tables", "sat-taylor", "sat-amps",
 ];
 
 function node(id: string, x: number, y: number, r: number, extra: Partial<CanvasNode> = {}): CanvasNode {

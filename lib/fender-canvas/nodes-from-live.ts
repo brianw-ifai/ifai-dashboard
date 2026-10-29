@@ -4,6 +4,12 @@ import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
+import {
+  EXACT_PAGE_SHARE_BANDS,
+  outcomeShareFigure,
+  outcomeSharePct,
+} from "@/lib/findability/lead";
+import { countFindability } from "@/lib/findability/outcomes";
 import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import {
@@ -16,7 +22,70 @@ type MetricsMap = ReturnType<typeof buildLiveMetrics>;
 
 const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
 
-/** Share of found fender.com pages missing additionalProperty — same figure the tab leads with. */
+/** Exact official product page share — same figure the Findability tab leads with. */
+function findabilitySatellite(findability: FindabilityRead): Pick<
+  CanvasNode,
+  "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
+> {
+  if (findability.phase === "loading") {
+    return {
+      status: "neutral",
+      title: "Findability",
+      stats: ["Loading"],
+      heroValue: { value: "Loading", label: "exact official product page" },
+      subTab: "Findability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  if (findability.phase === "error") {
+    return {
+      status: "danger",
+      title: "Findability",
+      stats: ["Read failed"],
+      heroValue: { value: "Read failed", label: "exact official product page" },
+      subTab: "Findability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  const counts = countFindability(findability.rows);
+  if (counts.total <= 0) {
+    return {
+      status: "neutral",
+      title: "Findability",
+      stats: ["No listings"],
+      heroValue: { value: "No listings", label: "exact official product page" },
+      subTab: "Findability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  const pct = outcomeSharePct(counts, "exact_official_product");
+  const value = outcomeShareFigure(counts, "exact_official_product") ?? "Not available";
+  const status: NodeStatus =
+    pct == null
+      ? "neutral"
+      : pct < EXACT_PAGE_SHARE_BANDS.redBelow
+        ? "danger"
+        : pct > EXACT_PAGE_SHARE_BANDS.greenAbove
+          ? "success"
+          : "warning";
+  return {
+    status,
+    title: "Findability",
+    stats: [
+      `${formatInt(counts.exact_official_product)} of ${formatInt(counts.total)} exact`,
+    ],
+    meta: "Official-page outcomes",
+    heroValue: { value, label: "exact official product page" },
+    subTab: "Findability",
+    tooltip: { ...EMPTY_TOOLTIP },
+  };
+}
+
+/**
+ * Share of found fender.com pages missing additionalProperty — same rate the Machine
+ * Readability list and the AI Readiness tab's fourth hero use (missing / found).
+ * When every found page is on that list the share is 100%; that is accurate, not a placeholder.
+ */
 function machineReadabilitySatellite(m: CanvasBundle["m"]): Pick<
   CanvasNode,
   "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
@@ -47,14 +116,12 @@ export function buildLiveNodes(
   metrics: MetricsMap,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
-  // Official-page outcomes feed the Findability tab; the main spoke uses page-found metrics.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- retained for buildLiveNodes callers
   findability: FindabilityRead = { phase: "loading" },
 ): CanvasNode[] {
   const { m } = bundle;
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
-  // Main AI Readiness spoke leads with the same fender.com page-found share as the tab hero.
+  // Main AI Readiness spoke opens the AI Readiness tab and leads with its page-found hero.
   const pageHero = pageFoundHero(m);
   const pageTone = pageFoundTone(m.spec_fender_found_pct);
   const readinessStatus: NodeStatus = pageTone ?? "neutral";
@@ -95,6 +162,11 @@ export function buildLiveNodes(
       ...satelliteNode("sat-map"),
       spokeId: "ecommerce",
       ...retailFaces.map,
+    },
+    {
+      ...satelliteNode("sat-findability"),
+      spokeId: "specs",
+      ...findabilitySatellite(findability),
     },
     {
       ...satelliteNode("sat-schema"),
@@ -138,6 +210,7 @@ export function buildLiveNodes(
       stats: [],
       heroValue: readinessHero,
       spokeId: "specs",
+      subTab: "AI Readiness",
       tooltip: { title: "", desc: "" },
     },
     {
