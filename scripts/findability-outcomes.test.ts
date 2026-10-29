@@ -7,6 +7,7 @@ import {
   findabilityHeadline,
   findabilitySortValue,
   findabilityWidgetCopy,
+  OUTCOME_DEFINITION,
   OUTCOME_LABEL,
   presentExplanation,
   readinessFindabilityFace,
@@ -103,6 +104,30 @@ test("the five outcomes stay distinct and sum to the stored row count", () => {
   assert.match(headline, /548 official family pages/);
   assert.match(headline, /342 No Defensible Pages/);
   assert.equal(OUTCOME_LABEL.completed_not_found, "No Defensible Page");
+  assert.equal(OUTCOME_LABEL.exact_official_product, "Exact official product page");
+  assert.equal(OUTCOME_LABEL.official_family_page, "Official family page");
+  assert.equal(OUTCOME_LABEL.ambiguous_candidate, "Ambiguous match");
+  assert.equal(OUTCOME_LABEL.not_checked, "Unchecked");
+  assert.equal(
+    OUTCOME_DEFINITION.exact_official_product,
+    "We found the fender.com page for this one product. An assistant can use that page's specs for this Amazon listing.",
+  );
+  assert.equal(
+    OUTCOME_DEFINITION.official_family_page,
+    "We found a fender.com page for the whole line. Specs on it can belong to a different color or model.",
+  );
+  assert.equal(
+    OUTCOME_DEFINITION.completed_not_found,
+    "We finished looking and did not accept a page. This does not prove the product is missing from fender.com.",
+  );
+  assert.equal(
+    OUTCOME_DEFINITION.ambiguous_candidate,
+    "More than one fender.com page could fit, so we did not pick one.",
+  );
+  assert.equal(
+    OUTCOME_DEFINITION.not_checked,
+    "We have not looked at this listing yet. A blank result is not a missing page.",
+  );
   assert.doesNotMatch(headline, /finished search(?:es)? with no defensible page/i);
   assert.doesNotMatch(headline, /Finished search, no defensible page/);
   assert.match(headline, /8 ambiguous matches/);
