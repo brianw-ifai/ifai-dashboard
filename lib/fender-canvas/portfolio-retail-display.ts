@@ -246,19 +246,26 @@ export function headlineBubble(findings: PortfolioRetailFindings): RetailBubbleF
   };
 }
 
-/** Buy Box withheld / current Buy Box readings. Monitored catalog is not the denominator. */
+/**
+ * Suppressed Listings satellite. Catalog Health already leads with Buy Box withheld
+ * (withheld / current), so this face uses the next-best tab figure: confirmed
+ * high-price share of current readings. Missing data stays worded — never a fake 0%.
+ */
 export function suppressedBubble(
   reading: RetailReading<SuppressionDetail | null>,
 ): RetailBubbleFace {
   const counts = reading.detail?.counts ?? null;
-  const numerator = counts?.withheld ?? null;
+  const numerator = counts?.confirmedHighPrice ?? null;
   const denominator = counts != null && counts.current > 0 ? counts.current : null;
   const count = countPhrase(reading, reading.headlineNoun ?? "listing");
   const coverage = coveragePill(reading);
   return satelliteFace(
     "Suppressed Listings",
     reading,
-    { value: shareHeroValue(reading, numerator, denominator), label: "Buy Box withheld" },
+    {
+      value: shareHeroValue(reading, numerator, denominator),
+      label: "confirmed high-price",
+    },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
     "Suppressed Listings",
   );
@@ -373,7 +380,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     const desc = "The retail reading is still loading.";
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "Buy Box withheld"),
+      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc, "confirmed high-price"),
       map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc, "MAP leakage"),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc, "Splintered listings"),
     };
@@ -383,7 +390,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
     const desc = "The retail read could not be loaded.";
     return {
       main: catalogHealthMainFace(read),
-      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc, "Buy Box withheld"),
+      suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc, "confirmed high-price"),
       map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc, "MAP leakage"),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc, "Splintered listings"),
     };

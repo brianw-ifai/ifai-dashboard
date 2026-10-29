@@ -157,8 +157,10 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.doesNotMatch(visible(face), FORBIDDEN);
 
   const satellite = suppressedBubble(source.suppressedListings);
-  assert.equal(satellite.heroValue?.label, "Buy Box withheld");
+  // Next-best hero: confirmed high-price share (Catalog Health already leads with Buy Box withheld).
+  assert.equal(satellite.heroValue?.label, "confirmed high-price");
   assert.match(satellite.heroValue?.value ?? "", /%/);
+  assert.notEqual(satellite.heroValue?.label, face.heroValue?.label ?? "Buy Box withheld");
   assert.equal(satellite.tooltip.desc, "");
   assert.equal(satellite.stats[0], "1 listing");
   assert.ok((satellite.stats.length ?? 0) > 1);
@@ -201,7 +203,7 @@ test("a stored zero stays zero and an unavailable reading names what is missing"
   assert.equal(zero.issueCount, 0);
   const zeroFace = suppressedBubble(zero);
   assert.equal(zeroFace.heroValue?.value, "0.0%");
-  assert.equal(zeroFace.heroValue?.label, "Buy Box withheld");
+  assert.equal(zeroFace.heroValue?.label, "confirmed high-price");
   assert.equal(zeroFace.tooltip.desc, "");
   assert.deepEqual(zeroFace.stats, ["0 listings"]);
 
