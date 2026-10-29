@@ -31,6 +31,22 @@ const FINDING_IDS = [
   "unbranded_discovery",
 ] as const;
 
+const STORED_ACTIONS = [
+  "These listings have no one-click offer. Correct each offer so a shopper can add the product to the cart.",
+  "These offers are advertised below the lowest price a partner agreed to show. Raise those prices back to that floor.",
+  "These bundles are their own listings, so their reviews stay split. Nest each bundle under the official parent listing so the reviews sit on one page.",
+  "Publish one fender.com page for each exact product that does not have one. A page for the whole line covers more than one model, so an assistant can attach the wrong specs.",
+  "When someone asks what to buy without naming Fender, assistants name Fender this often. Fix the withheld offers, the prices under the floor, the split bundles, and the missing exact pages, which are what an assistant can repeat.",
+] as const;
+
+const MISSING_ACTIONS = [
+  "The Buy Box reading is not stored.",
+  "The MAP reading is not stored.",
+  "The catalog reading is not stored.",
+  "The official-page reading is not stored.",
+  "The AI Search reading is not stored.",
+] as const;
+
 test("Urgent Interventions template drops spoke-template example cards", () => {
   const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
     spokes: { suggestions: { tabs: string[]; tabTemplates: string[] } };
@@ -52,7 +68,7 @@ test("Urgent Interventions template drops spoke-template example cards", () => {
   assert.doesNotMatch(bound, /Austin Bazaar|\{urgent_interventions\}/);
 });
 
-test("urgentInterventionsHtml renders the five briefingFindingsLead rows with N of M", () => {
+test("urgentInterventionsHtml renders five findings with N of M and not-stored actions when unread", () => {
   const html = urgentInterventionsHtml(
     { phase: "loading" },
     { phase: "loading" },
@@ -77,11 +93,40 @@ test("urgentInterventionsHtml renders the five briefingFindingsLead rows with N 
     assert.match(html, new RegExp(`data-ifai-open="${finding.spokeId}"`));
     assert.match(html, new RegExp(`data-ifai-tab="${finding.tab}"`));
     assert.match(html, new RegExp(BRIEFING_COUNT_MISSING));
+    assert.match(html, new RegExp(MISSING_ACTIONS[i]!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 
+  assert.equal((html.match(/data-urgent-finding-action=/g) ?? []).length, 5);
+  assert.equal((html.match(/action-details/g) ?? []).length, 5);
+  assert.equal((html.match(/Open details/g) ?? []).length, 5);
   assert.doesNotMatch(html, /\$|lost.?revenue|since last time|what changed|fee|retainer|Austin Bazaar/i);
   assert.doesNotMatch(html, /\u2014/);
+  assert.doesNotMatch(html, /\bAEO\b|JSON-LD|Schema\.org|\bSOV\b|\bASIN\b/);
+  assert.doesNotMatch(html, /class="ifai-term"|data-ifai-tooltip-/);
   assert.equal((html.match(/data-urgent-finding=/g) ?? []).length, 5);
+
+  for (const label of FINDING_LABELS) {
+    const cardStart = html.indexOf(`>${label}<`);
+    assert.ok(cardStart >= 0, label);
+    const afterLabel = html.slice(cardStart);
+    const actionIdx = afterLabel.indexOf("data-urgent-finding-action");
+    const openIdx = afterLabel.indexOf("Open details");
+    assert.ok(actionIdx >= 0 && openIdx > actionIdx, `${label}: action before Open details`);
+  }
+});
+
+test("urgentInterventionsHtml keeps the five operator action lines for stored readings", () => {
+  const helper = read("lib/fender-canvas/urgent-interventions-html.ts");
+  for (const line of STORED_ACTIONS) {
+    assert.match(helper, new RegExp(line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  for (const line of MISSING_ACTIONS) {
+    assert.match(helper, new RegExp(line.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.doesNotMatch(helper, /\bAEO\b|JSON-LD|Schema\.org|\bSOV\b|\bASIN\b/);
+  assert.doesNotMatch(helper, /\u2014/);
+  assert.doesNotMatch(helper, /className=["']ifai-term|dataset\.ifaiTooltip|data-ifai-tooltip-/);
+  assert.match(helper, /annotateGlossary/);
 });
 
 test("build-live-spokes wires urgent_interventions and leaves CurrentFindingsPanel on tab 2", () => {
