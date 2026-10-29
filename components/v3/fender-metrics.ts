@@ -183,7 +183,7 @@ export const FENDER_METRICS = {
     value: "+$680K",
     detail: "Phase 1 annual · 14 pilot ASINs",
     tone: "success",
-    subTab: "Interactive ROI Model",
+    subTab: "Revenue Estimates",
     provenance: "estimate",
   },
   enterprisePotential: {
@@ -193,7 +193,7 @@ export const FENDER_METRICS = {
     value: "+$38M to $62M",
     detail: "Annual · full portfolio",
     tone: "success",
-    subTab: "Interactive ROI Model",
+    subTab: "Revenue Estimates",
     provenance: "estimate",
   },
   dayNinetyBuyBoxTarget: {

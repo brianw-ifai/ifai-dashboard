@@ -11,6 +11,7 @@ import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryCont
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
 import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
+import { CurrentFindingsPanel } from "@/components/v3/live/CurrentFindingsPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
@@ -110,6 +111,9 @@ const TAB_OVERRIDES: Partial<
     0: () => <CategoryBattlecardsPanel />,
     1: () => <CompetitorWinsPanel />,
     2: () => <EngineComparisonPanel />,
+  },
+  suggestions: {
+    2: (_bundle, _vars, retail) => <CurrentFindingsPanel read={retail} />,
   },
 };
 

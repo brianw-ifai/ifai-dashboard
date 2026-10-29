@@ -342,12 +342,14 @@ test("hub Briefing override leads with the five-finding hero before the essay", 
     /0:\s*\([^)]*\)\s*=>\s*\(\s*<>\s*<BriefingRetailHero[\s\S]*?htmlBlock\(bindCopy\(HUB_BRIEFING_HTML/,
     "essay HTML stays under the hero",
   );
+  const card = read("components/v3/live/BriefingFindingCard.tsx");
   assert.match(hero, /briefingFindingsLead/);
   assert.match(hero, /data-briefing-findings/);
   assert.match(hero, /data-briefing-revenue-placeholder/);
-  assert.match(hero, /citation-pie-disc-retail/);
-  assert.match(hero, /data-ifai-open=\{finding\.spokeId\}/);
-  assert.match(hero, /data-ifai-tab=\{finding\.tab\}/);
+  assert.match(hero, /BriefingFindingCard/);
+  assert.match(card, /citation-pie-disc-retail/);
+  assert.match(card, /data-ifai-open=\{finding\.spokeId\}/);
+  assert.match(card, /data-ifai-tab=\{finding\.tab\}/);
   assert.match(lead, /buyBoxHero|mapHero|catalogHero/);
   assert.match(lead, /BRIEFING_LOST_REVENUE/);
   assert.match(lead, /Not available\*/);
@@ -358,6 +360,7 @@ test("hub Briefing override leads with the five-finding hero before the essay", 
   assert.doesNotMatch(hero, /\u2014/);
   assert.doesNotMatch(lead, /\u2014/);
   assert.doesNotMatch(hero, /\stitle=/);
+  assert.doesNotMatch(card, /\stitle=/);
   assert.doesNotMatch(spokes, /DIY|Done-with-You|Done-for-You|retainer|service-fee/i);
   assert.doesNotMatch(lead, /AI Foundation|AI Commerce|AI Actuation|AI Consensus/);
 });

@@ -309,7 +309,7 @@ export function buildLiveMetrics(
       value: "+$680K",
       detail: "Phase 1 annual estimate",
       tone: "success",
-      subTab: "Interactive ROI Model",
+      subTab: "Revenue Estimates",
       provenance: "estimate",
     },
     enterprisePotential: {
@@ -319,7 +319,7 @@ export function buildLiveMetrics(
       value: "+$38M to $62M",
       detail: "Annual estimate · full portfolio",
       tone: "success",
-      subTab: "Interactive ROI Model",
+      subTab: "Revenue Estimates",
       provenance: "estimate",
     },
     dayNinetyBuyBoxTarget: {
