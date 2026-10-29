@@ -44,6 +44,7 @@ export const RADAR_TABS = {
 /**
  * A main-spoke bubble's status word is self-sufficient (e.g. "Loading run"). It carries no
  * hover explainer. A satellite keeps its explainer, since it is reached by a deliberate click.
+ * Main bubbles lead with heroValue; satellites keep the worded state in stats until Worker 16.2.
  */
 function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless = false): NodeFace | null {
   if (read.phase === "ready") return null;
@@ -56,6 +57,8 @@ function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless 
     status: read.phase === "error" ? "danger" : "neutral",
     title,
     stats: [copy[0]],
+    // Main spokes render heroValue; a worded value stays at label size (never a fake 0%).
+    heroValue: hoverless ? { value: copy[0], label: "" } : undefined,
     meta: "AI Search Visibility",
     subTab,
     tooltip: hoverless ? { title: "", desc: "" } : { title, desc: copy[1].trim() },
@@ -151,11 +154,11 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
     spokeAeo: {
       status: unbrandedHero.status,
       title: "AI Search Visibility",
-      stats: [
-        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} (${pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved)})`,
-        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved} (${pct(s.roles.branded.fenderWins, s.roles.branded.resolved)})`,
-      ],
-      heroValue: unbrandedHero.heroValue,
+      stats: [],
+      heroValue:
+        s.roles.unbranded.resolved > 0
+          ? unbrandedHero.heroValue
+          : { value: "No resolved answers", label: "Unbranded SOV" },
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
@@ -206,15 +209,16 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
     spokeCompetitors: {
       status: s.competitorWins > 0 ? "warning" : "success",
       title: "Competitive Radar",
-      stats: s.topCompetitor
-        ? [
-            `${s.topCompetitor.brand} ${s.topCompetitor.wins} wins (${pct(s.topCompetitor.wins, s.topCompetitor.resolved)})`,
-            `of ${s.topCompetitor.resolved} resolved`,
-          ]
-        : ["No competitor wins", `${s.roles.unbranded.resolved} resolved`],
+      stats: [],
+      heroValue: s.topCompetitor
+        ? {
+            value: pct(s.topCompetitor.wins, s.topCompetitor.resolved),
+            label: `${s.topCompetitor.brand} wins`,
+          }
+        : { value: "No competitor wins", label: "Unbranded discovery" },
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      // The wins-and-share stat above is the whole explanation. Open Competitive Radar for the gap detail.
+      // The hero value above is the whole explanation. Open Competitive Radar for the gap detail.
       tooltip: { title: "", desc: "" },
     },
     satGap: gap

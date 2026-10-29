@@ -15,6 +15,7 @@ import {
   type RetailHeadline,
   type RetailReading,
 } from "./portfolio-retail";
+import { buyBoxHero } from "./retail-overview-lead";
 
 export const RETAIL_OVERVIEW_TAB = "Retail Overview";
 
@@ -41,6 +42,8 @@ export type RetailBubbleFace = {
   status: NodeStatus;
   subTab?: string;
   tooltip: { title: string; desc: string };
+  /** Main Catalog Health spoke: one share figure. Satellites keep pills in `stats`. */
+  heroValue?: { value: string; label: string };
 };
 
 const CATALOG_TOOLTIP =
@@ -280,6 +283,47 @@ function waitingFace(title: string, subTab: string | undefined, stats: string[],
   };
 }
 
+/**
+ * Catalog Health main spoke: Buy Box withheld share of current readings (same figure as the
+ * Retail Overview lead pie). Status follows that share's tone bands. Never invents a 0%.
+ */
+export function catalogHealthMainFace(read: RetailCanvasRead): RetailBubbleFace {
+  if (read.phase === "loading") {
+    return {
+      title: "Catalog Health",
+      stats: [],
+      heroValue: { value: "Loading", label: "Buy Box withheld" },
+      status: "neutral",
+      subTab: RETAIL_OVERVIEW_TAB,
+      tooltip: { title: "", desc: "" },
+    };
+  }
+  if (read.phase === "error") {
+    return {
+      title: "Catalog Health",
+      stats: [],
+      heroValue: { value: "Read failed", label: "Buy Box withheld" },
+      status: "danger",
+      subTab: RETAIL_OVERVIEW_TAB,
+      tooltip: { title: "", desc: "" },
+    };
+  }
+
+  const hero = buyBoxHero(read.snapshot);
+  const ready = hero.numerator != null && hero.denominator != null;
+  return {
+    title: "Catalog Health",
+    stats: [],
+    heroValue: {
+      value: ready ? hero.percent : "Not available",
+      label: "Buy Box withheld",
+    },
+    status: hero.tone,
+    subTab: RETAIL_OVERVIEW_TAB,
+    tooltip: { title: "", desc: "" },
+  };
+}
+
 export function retailBubbleFaces(read: RetailCanvasRead): {
   main: RetailBubbleFace;
   suppressed: RetailBubbleFace;
@@ -289,8 +333,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "loading") {
     const desc = "The retail reading is still loading.";
     return {
-      // The main spoke's "Loading" stat is self-sufficient; no hover explainer.
-      main: { ...waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Loading"], desc), tooltip: { title: "", desc: "" } },
+      main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Loading"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Loading"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Loading"], desc),
@@ -300,7 +343,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
   if (read.phase === "error") {
     const desc = "The retail read could not be loaded.";
     return {
-      main: { ...waitingFace("Catalog Health", RETAIL_OVERVIEW_TAB, ["Read failed"], desc), tooltip: { title: "", desc: "" } },
+      main: catalogHealthMainFace(read),
       suppressed: waitingFace("Suppressed Listings", "Suppressed Listings", ["Read failed"], desc),
       map: waitingFace("MAP Leakage", "MAP", ["Read failed"], desc),
       catalog: waitingFace("Catalog Governance", "Catalog Governance", ["Read failed"], desc),
@@ -309,7 +352,7 @@ export function retailBubbleFaces(read: RetailCanvasRead): {
 
   const snapshot = read.snapshot;
   return {
-    main: headlineBubble(snapshot),
+    main: catalogHealthMainFace(read),
     suppressed: suppressedBubble(snapshot.suppressedListings),
     map: mapBubble(snapshot.mapLeakage),
     catalog: catalogBubble(snapshot.unnestedBundles),

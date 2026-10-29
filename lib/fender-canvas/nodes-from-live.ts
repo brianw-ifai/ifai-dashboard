@@ -1,9 +1,10 @@
-import type { CanvasNode } from "@/lib/canvas-sdk/types";
+import type { CanvasNode, NodeStatus } from "@/lib/canvas-sdk/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { readinessFindabilityFace, type FindabilityRead } from "@/lib/findability/copy";
+import type { FindabilityRead } from "@/lib/findability/copy";
+import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
   retailBubbleFaces,
@@ -18,12 +19,23 @@ export function buildLiveNodes(
   metrics: MetricsMap,
   retail: RetailCanvasRead = { phase: "loading" },
   ai: AiSearchRead = { phase: "loading" },
+  // Official-page outcomes feed the Findability tab; the main spoke uses page-found metrics.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- retained for buildLiveNodes callers
   findability: FindabilityRead = { phase: "loading" },
 ): CanvasNode[] {
   const { m } = bundle;
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
-  const readinessFace = readinessFindabilityFace(findability, metrics.machineReadableSpecs.value);
+  // Main AI Readiness spoke leads with the same fender.com page-found share as the tab hero.
+  const pageHero = pageFoundHero(m);
+  const pageTone = pageFoundTone(m.spec_fender_found_pct);
+  const readinessStatus: NodeStatus = pageTone ?? "neutral";
+  const readinessHero =
+    pageHero.ratio != null
+      ? { value: pageHero.percent, label: "fender.com page found" }
+      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: "fender.com page found" };
+  const divisionCount = formatInt(bundle.divisions.length || m.division_count);
+  const skuCount = formatInt(m.catalog_skus);
 
   return [
     {
@@ -106,12 +118,12 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-specs"),
-      status: "warning",
+      status: readinessStatus,
       title: "AI Readiness",
-      stats: readinessFace.stats,
-      meta: readinessFace.meta,
+      stats: [],
+      heroValue: readinessHero,
       spokeId: "specs",
-      tooltip: { title: readinessFace.tooltipTitle, desc: readinessFace.tooltipDesc },
+      tooltip: { title: "", desc: "" },
     },
     {
       ...aiFaces.spokeCompetitors,
@@ -122,8 +134,9 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-fixes"),
       status: "success",
       title: "Action Items",
-      stats: [`${metrics.phaseOneLift.value} est.`, metrics.enterprisePotential.value],
-      meta: metrics.enterprisePotential.value + " Enterprise",
+      stats: [],
+      // Phase 1 dollar figure stays an analyst estimate — never a fee or ROI multiple.
+      heroValue: { value: metrics.phaseOneLift.value, label: "est. Phase 1 lift" },
       spokeId: "suggestions",
       tooltip: { title: "", desc: "" },
     },
@@ -131,7 +144,8 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-roadmap"),
       status: "success",
       title: "Strategy Roadmap",
-      stats: ["90 Days", "3 Phases"],
+      stats: [],
+      heroValue: { value: "90 Days", label: "3 phases" },
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },
     },
@@ -143,16 +157,16 @@ export function buildLiveNodes(
       status: "danger",
       variant: "hub",
       title: "Summary",
-      stats: [
-        `${formatInt(m.catalog_skus)} SKUs`,
-        `${formatInt(bundle.divisions.length || m.division_count)} Divisions`,
-      ],
+      stats: [],
+      heroValue: {
+        value: skuCount === "Pending data" ? "Pending data" : skuCount,
+        label: `SKUs · ${divisionCount} divisions`,
+      },
       logoSrc: "/image.png",
-      meta: "Click for Master View",
       spokeId: "hub",
       tooltip: {
         title: "Summary",
-        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for Briefing and Performance.`,
+        desc: `${skuCount} monitored SKUs across ${divisionCount} divisions. Open for Briefing and Performance.`,
       },
     },
   ];
