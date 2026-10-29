@@ -15,6 +15,7 @@ import { CurrentFindingsPanel } from "@/components/v3/live/CurrentFindingsPanel"
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
 import { RetailOverview } from "@/components/v3/live/RetailOverview";
+import { RoadmapFindingsPanel } from "@/components/v3/live/RoadmapFindingsPanel";
 import { StockLossPanel } from "@/components/v3/live/StockLossPanel";
 import { SuppressedListingsPanel } from "@/components/v3/live/SuppressedListingsPanel";
 import { CatalogReadinessSpec } from "@/components/v3/live/CatalogReadinessSpec";
@@ -114,6 +115,9 @@ const TAB_OVERRIDES: Partial<
   },
   suggestions: {
     2: (_bundle, _vars, retail) => <CurrentFindingsPanel read={retail} />,
+  },
+  roadmap: {
+    0: (_bundle, _vars, retail) => <RoadmapFindingsPanel read={retail} />,
   },
 };
 

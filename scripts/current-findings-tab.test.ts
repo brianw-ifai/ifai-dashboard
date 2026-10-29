@@ -12,7 +12,6 @@ function read(rel: string): string {
 const spec = JSON.parse(read("data/fender-v3-spec.json")) as {
   spokes: {
     suggestions: { tabs: string[]; tabTemplates: string[] };
-    roadmap: { tabTemplates: string[] };
   };
 };
 
@@ -61,7 +60,6 @@ test("links that opened Interactive ROI now open Revenue Estimates", () => {
   const slots = read("lib/fender-canvas/hub-slots.ts");
   const canvas = read("lib/fender-canvas/build-canvas-spec.tsx");
   const destinations = read("scripts/metric-widget-destinations.test.ts");
-  const roadmap = spec.spokes.roadmap.tabTemplates[0] ?? "";
 
   for (const source of [metrics, live, slots]) {
     assert.doesNotMatch(source, /Interactive ROI Model/);
@@ -69,9 +67,6 @@ test("links that opened Interactive ROI now open Revenue Estimates", () => {
   }
   assert.match(canvas, /subTab:\s*"Revenue Estimates"/);
   assert.doesNotMatch(canvas, /subTab:\s*"roi"/);
-  assert.match(roadmap, /data-ifai-tab="Revenue Estimates"/);
-  assert.doesNotMatch(roadmap, /data-ifai-tab="ROI"/);
-  assert.match(roadmap, /Revenue Estimates tab states the pilot and enterprise figures/);
   assert.match(destinations, /"phase-one-lift": "Revenue Estimates"/);
   assert.match(destinations, /"enterprise-potential": "Revenue Estimates"/);
   assert.doesNotMatch(destinations, /"phase-one-lift": "Interactive ROI Model"/);
