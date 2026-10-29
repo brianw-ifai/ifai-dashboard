@@ -129,8 +129,6 @@ export function buildLiveNodes(
     pageHero.ratio != null
       ? { value: pageHero.percent, label: "fender.com page found" }
       : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: "fender.com page found" };
-  const divisionCount = formatInt(bundle.divisions.length || m.division_count);
-  const skuCount = formatInt(m.catalog_skus);
 
   return [
     {
@@ -246,16 +244,9 @@ export function buildLiveNodes(
       variant: "hub",
       title: "Summary",
       stats: [],
-      heroValue: {
-        value: skuCount === "Pending data" ? "Pending data" : skuCount,
-        label: `SKUs · ${divisionCount} divisions`,
-      },
       logoSrc: "/image.png",
       spokeId: "hub",
-      tooltip: {
-        title: "Summary",
-        desc: `${skuCount} monitored SKUs across ${divisionCount} divisions. Open for Briefing and Performance.`,
-      },
+      tooltip: { title: "", desc: "" },
     },
   ];
 }

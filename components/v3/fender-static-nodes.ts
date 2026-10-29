@@ -131,9 +131,8 @@ export const fenderStaticNodes: CanvasNode[] = [
       variant: "hub",
       title: "Summary",
       stats: [],
-      heroValue: { value: "3,701", label: "SKUs · 6 divisions" },
       logoSrc: "/image.png",
       spokeId: "hub",
-      tooltip: {"title": "Summary", "desc": "Click to open the Summary: 5 brand divisions, the Briefing, and Opportunity."},
+      tooltip: { title: "", desc: "" },
     },
 ];
