@@ -164,6 +164,48 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(page.locator("[data-findability-lead-outcome='ambiguous_candidate']")).toBeVisible();
   await expect(page.locator("[data-findability-lead-outcome='not_checked']")).toBeVisible();
 
+  const outcomeTips: Array<{ outcome: string; title: string; desc: string }> = [
+    {
+      outcome: "exact_official_product",
+      title: "Exact official product page",
+      desc: "We found the fender.com page for this one product. An assistant can use that page's specs for this Amazon listing.",
+    },
+    {
+      outcome: "official_family_page",
+      title: "Official family page",
+      desc: "We found a fender.com page for the whole line. Specs on it can belong to a different color or model.",
+    },
+    {
+      outcome: "completed_not_found",
+      title: "No Defensible Page",
+      desc: "We finished looking and did not accept a page. This does not prove the product is missing from fender.com.",
+    },
+    {
+      outcome: "ambiguous_candidate",
+      title: "Ambiguous match",
+      desc: "More than one fender.com page could fit, so we did not pick one.",
+    },
+    {
+      outcome: "not_checked",
+      title: "Unchecked",
+      desc: "We have not looked at this listing yet. A blank result is not a missing page.",
+    },
+  ];
+  for (const { outcome, title, desc } of outcomeTips) {
+    const leadTerm = page.locator(
+      `[data-findability-lead-outcome='${outcome}'] .ifai-term[data-ifai-tooltip-title='${title}']`,
+    );
+    await expect(leadTerm).toHaveAttribute("data-ifai-tooltip-desc", desc);
+    await expect(leadTerm).toHaveAttribute("tabindex", "0");
+    await expect(leadTerm).not.toHaveAttribute("title");
+
+    const countTerm = page.locator(
+      `[data-findability-outcome='${outcome}'] .ifai-term[data-ifai-tooltip-title='${title}']`,
+    );
+    await expect(countTerm).toHaveAttribute("data-ifai-tooltip-desc", desc);
+    await expect(countTerm).not.toHaveAttribute("title");
+  }
+
   await expect(page.locator(".drilldown-desc")).toHaveCount(0);
   await expect(page.locator(".drilldown-title-main")).not.toContainText("finished search");
   await expect(page.locator(".drilldown-title-main")).not.toContainText("Machine Readability is a separate");
@@ -171,6 +213,11 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
   await expect(page.locator(".findability-note").filter({ hasText: "Each listing is one outcome" })).toBeVisible();
   await expect(page.locator(".findability-note").filter({ hasText: "on Machine Readability" })).toBeVisible();
+  await expect(
+    page.locator(".findability-note").filter({
+      hasText: "Schema.org product data on each fender.com page is on Machine Readability.",
+    }),
+  ).toBeVisible();
 
   const exact = page.locator("[data-findability-outcome='exact_official_product']");
   await expect(exact.locator("[data-findability-count]")).toHaveAttribute("data-findability-count", "2");

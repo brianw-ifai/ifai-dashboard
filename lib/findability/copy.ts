@@ -20,15 +20,15 @@ export const OUTCOME_LABEL: Record<FindabilityOutcome, string> = {
 
 export const OUTCOME_DEFINITION: Record<FindabilityOutcome, string> = {
   exact_official_product:
-    "This listing resolves to one official product page for this variant. A family page is not counted here.",
+    "We found the fender.com page for this one product. An assistant can use that page's specs for this Amazon listing.",
   official_family_page:
-    "This listing resolves to an official page for the product line. That page covers more than one variant, so it is not an exact product page.",
+    "We found a fender.com page for the whole line. Specs on it can belong to a different color or model.",
   completed_not_found:
-    "The search finished and did not accept an official page. That does not prove the product is absent from the brand site.",
+    "We finished looking and did not accept a page. This does not prove the product is missing from fender.com.",
   ambiguous_candidate:
-    "More than one page could fit, or the stored identifiers disagree, so no official page was accepted.",
+    "More than one fender.com page could fit, so we did not pick one.",
   not_checked:
-    "This listing has not been checked. A missing address is not a finished search.",
+    "We have not looked at this listing yet. A blank result is not a missing page.",
 };
 
 const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
