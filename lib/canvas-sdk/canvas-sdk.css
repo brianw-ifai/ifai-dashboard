@@ -5249,3 +5249,72 @@
     .stock-episodes {
       max-width: 520px;
     }
+
+    /* AI Consensus / AI Commerce component bars under the hero band. */
+    .consensus-component-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .consensus-component-head {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text-muted);
+    }
+
+    .consensus-component-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.4fr) minmax(160px, 1.6fr) minmax(140px, 1fr);
+      gap: 12px 16px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .consensus-component-name {
+      font-size: 13px;
+      line-height: 1.35;
+      min-width: 0;
+    }
+
+    .consensus-component-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .consensus-component-bar-wrap .readiness-progress-bar {
+      flex: 1 1 auto;
+      margin-top: 0;
+      min-width: 64px;
+    }
+
+    .consensus-component-score {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    .consensus-component-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 720px) {
+      .consensus-component-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .consensus-component-meta {
+        justify-content: flex-start;
+      }
+    }

@@ -11,6 +11,7 @@ import { RunHistoryControl } from "@/components/v3/live/ai-search/RunHistoryCont
 import { RunSummaryPanel } from "@/components/v3/live/ai-search/RunSummaryPanel";
 import { SimulationsExplorer } from "@/components/v3/live/ai-search/SimulationsExplorer";
 import { BriefingRetailHero } from "@/components/v3/live/BriefingRetailHero";
+import { ConsensusScoresPanel } from "@/components/v3/live/ConsensusScoresPanel";
 import { CurrentFindingsPanel } from "@/components/v3/live/CurrentFindingsPanel";
 import { FenderDivisionsTable } from "@/components/v3/live/FenderDivisionsTable";
 import { MapChannelPanel } from "@/components/v3/live/MapChannelPanel";
@@ -63,7 +64,12 @@ const TAB_OVERRIDES: Partial<
         {htmlBlock(bindCopy(HUB_BRIEFING_HTML, vars))}
       </>
     ),
-    1: (bundle) => <FenderDivisionsTable divisions={bundle.divisions} />,
+    1: (bundle, _vars, retail) => (
+      <>
+        <ConsensusScoresPanel bundle={bundle} retail={retail} />
+        <FenderDivisionsTable divisions={bundle.divisions} />
+      </>
+    ),
   },
   ecommerce: {
     0: (bundle, _vars, retail) => <RetailOverview read={retail} freshness={bundle.fresh} />,

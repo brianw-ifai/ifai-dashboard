@@ -214,20 +214,25 @@ test("a missing count shows Not available* and invents no zero", () => {
 test("Retail Overview places three heroes before the essay and drops the stacked cards", () => {
   const overview = read("components/v3/live/RetailOverview.tsx");
   const lead = read("components/v3/live/RetailOverviewLead.tsx");
+  const commerce = read("components/v3/live/CommerceConsensusPanel.tsx");
   const model = read("lib/fender-canvas/retail-overview-lead.ts");
   const readings = read("components/v3/live/FeaturedOfferReadings.tsx");
 
-  assert.match(overview, /RetailOverviewLead/);
+  assert.match(overview, /CommerceConsensusPanel/);
   assert.match(overview, /Seller type: Partner-led/);
   assert.match(overview, /How do these retail findings change AI search\?/);
   assert.match(overview, /FeaturedOfferReadings/);
   assert.doesNotMatch(overview, /RetailFindingVisual/);
   assert.doesNotMatch(overview, /retail-finding-grid/);
 
-  const heroAt = overview.indexOf("<RetailOverviewLead");
+  const heroAt = overview.indexOf("<CommerceConsensusPanel");
   const essayAt = overview.indexOf("How do these retail findings change AI search?");
   assert.ok(heroAt >= 0 && essayAt > heroAt, "essay stays under the heroes");
 
+  // AI Commerce sits in the same band as the three share pies.
+  assert.match(commerce, /RetailOverviewLead/);
+  assert.match(commerce, /CommerceHeroCard/);
+  assert.match(lead, /leading/);
   assert.match(lead, /retailOverviewHeroes/);
   assert.match(lead, /ai-lead-figure/);
   assert.match(lead, /CitationPieDisc/);

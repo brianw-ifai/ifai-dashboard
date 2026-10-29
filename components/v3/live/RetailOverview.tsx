@@ -1,9 +1,9 @@
 "use client";
 
+import { CommerceConsensusPanel } from "@/components/v3/live/CommerceConsensusPanel";
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
-import { RetailOverviewLead } from "@/components/v3/live/RetailOverviewLead";
 import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
 import type { CanvasFreshnessRow } from "@/lib/fender-canvas/types";
 
@@ -26,7 +26,7 @@ export function RetailOverview({
         Seller type: Partner-led
       </p>
 
-      <RetailOverviewLead read={read} />
+      <CommerceConsensusPanel read={read} />
 
       <div className="ceo-callout" style={{ marginTop: 12 }}>
         <div className="ceo-callout-header">
