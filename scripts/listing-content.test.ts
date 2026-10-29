@@ -9,7 +9,7 @@ import {
   type ListingContentRow,
 } from "../lib/fender-canvas/listing-content.ts";
 
-function row(asin: string, bullets: number | null, aplus: string, video = "none_reported"): ListingContentRow {
+function row(asin: string, bullets: number | null, aplus: string, video = "none_reported", source: string | null = "keepa"): ListingContentRow {
   return {
     asin,
     title: asin,
@@ -20,6 +20,8 @@ function row(asin: string, bullets: number | null, aplus: string, video = "none_
     video_state: video,
     video_count: video === "present" ? 1 : 0,
     checked_at: "2026-10-28T00:00:00Z",
+    aplus_source: source,
+    video_source: source,
   };
 }
 
@@ -42,11 +44,18 @@ test("an unconfirmed A+ or video state is never counted as absent", () => {
   assert.deepEqual(contentGapRows(summary, "aplus"), []);
 });
 
-test("a confirmed absence turns the A+ share on", () => {
-  const summary = summarizeListingContent([row("A", 5, "present"), row("B", 5, "absent"), row("C", 5, "none_reported")]);
-  const [, aplus] = listingContentHeroes(summary);
-  assert.equal(aplus.percent, "50.0%");
-  assert.equal(aplus.ratio, "1 of 2");
-  assert.deepEqual(contentGapRows(summary, "aplus").map((r) => r.asin), ["B"]);
+test("the A+ share counts live-page reads only, never Keepa's present", () => {
+  const rows = [
+    ...Array.from({ length: 30 }, (_, i) => row(`K${i}`, 5, "present")),
+    row("L1", 5, "present", "present", "live_page"),
+    row("L2", 5, "absent", "absent", "live_page"),
+    row("L3", 5, "absent", "absent", "live_page"),
+  ];
+  const summary = summarizeListingContent(rows);
+  const [, aplus, video] = listingContentHeroes(summary);
+  assert.equal(aplus.ratio, "1 of 3");
+  assert.equal(aplus.percent, "33.3%");
+  assert.equal(video.ratio, "1 of 3");
+  assert.deepEqual(contentGapRows(summary, "aplus").map((r) => r.asin), ["L2", "L3"]);
   assert.equal(listingContentHeroes(null)[0].percent, "Not available*");
 });

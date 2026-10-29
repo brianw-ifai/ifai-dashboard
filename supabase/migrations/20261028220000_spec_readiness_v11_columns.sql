@@ -1,6 +1,6 @@
--- NOT APPLIED. Apply with fender_spec_readiness_audit v11, before setting v11 active (2026-10-28).
--- v11 inserts these columns. Apply the ALTER on prod and on every dual-write target (sandbox,
--- mirror, claude) first, or v11 inserts fail on prod and land in fmic_dual_write_errors elsewhere.
+-- Columns for fender_spec_readiness_audit v11 (2026-10-28). Applied to prod 2026-10-29 as
+-- spec_readiness_v11_columns. The ALTER was also applied to the sandbox, mirror and claude copies,
+-- the job's dual-write targets, so v11 inserts land on all four.
 -- Every new column is nullable. Null means the read did not produce that value, never false or zero.
 
 ALTER TABLE command.fmic_spec_readiness

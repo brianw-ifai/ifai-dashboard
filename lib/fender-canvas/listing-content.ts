@@ -2,7 +2,8 @@
  * Amazon A+ Matrix: listing content on live Amazon listings (public.canvas_listing_content).
  * Bullets come from Keepa product objects and match the live page.
  * A+ and video: 'present' is confirmed. 'none_reported' is unknown, so it is never counted as absent.
- * Only a confirmed 'absent' state (a live-page read) puts a listing in an A+ or video denominator.
+ * A+ and video shares count only live-page reads (spec_readiness v11), which confirm present or absent.
+ * Keepa's 'present' is listed as confirmed but never enters the share, since Keepa cannot confirm absence.
  */
 
 import type { PieDiscData } from "@/lib/ai-search/citation-pies";
@@ -14,7 +15,7 @@ import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 export const FULL_BULLETS = 5;
 
 export const LISTING_CONTENT_COLUMNS =
-  "asin,title,bullet_count,image_count,aplus_state,aplus_module_count,video_state,video_count,checked_at";
+  "asin,title,bullet_count,image_count,aplus_state,aplus_module_count,video_state,video_count,checked_at,aplus_source,video_source";
 
 export type ListingContentRow = {
   asin: string;
@@ -26,6 +27,9 @@ export type ListingContentRow = {
   video_state: string | null;
   video_count: number | null;
   checked_at: string | null;
+  /** live_page (spec_readiness v11, present or absent) or keepa. Null when not read. */
+  aplus_source?: string | null;
+  video_source?: string | null;
 };
 
 export type ContentHeroId = "bullets" | "aplus" | "video";
@@ -34,10 +38,14 @@ export type ListingContentSummary = {
   rows: ListingContentRow[];
   bulletsRead: number;
   fullBullets: number;
+  /** Confirmed present from any source. */
   aplusPresent: number;
-  aplusAbsent: number;
+  /** Live-page reads only: the A+ share's numerator and denominator. */
+  aplusLivePresent: number;
+  aplusLiveRead: number;
   videoPresent: number;
-  videoAbsent: number;
+  videoLivePresent: number;
+  videoLiveRead: number;
 };
 
 export function hasFullBullets(row: ListingContentRow): boolean {
@@ -51,9 +59,11 @@ export function summarizeListingContent(rows: readonly ListingContentRow[]): Lis
     bulletsRead: count((row) => row.bullet_count != null),
     fullBullets: count((row) => row.bullet_count != null && hasFullBullets(row)),
     aplusPresent: count((row) => row.aplus_state === "present"),
-    aplusAbsent: count((row) => row.aplus_state === "absent"),
+    aplusLivePresent: count((row) => row.aplus_source === "live_page" && row.aplus_state === "present"),
+    aplusLiveRead: count((row) => row.aplus_source === "live_page" && (row.aplus_state === "present" || row.aplus_state === "absent")),
     videoPresent: count((row) => row.video_state === "present"),
-    videoAbsent: count((row) => row.video_state === "absent"),
+    videoLivePresent: count((row) => row.video_source === "live_page" && row.video_state === "present"),
+    videoLiveRead: count((row) => row.video_source === "live_page" && (row.video_state === "present" || row.video_state === "absent")),
   };
 }
 
@@ -131,7 +141,7 @@ function shareHero(
     ratio: ready ? formatRatio(has, total) : null,
     color: pct != null ? shareColor(pct) : "var(--warning-amber)",
     pie: ready ? sharePie(`content-${id}`, label, labels, has, total) : null,
-    tip: ready ? `${formatInt(has)} of ${formatInt(total)} live Amazon listings checked.` : null,
+    tip: ready ? `${formatInt(has)} of ${formatInt(total)} ${id === "bullets" ? "live Amazon listings checked" : "live Amazon pages read"}.` : null,
     explainer: ready ? explainer : unavailable,
     numerator: ready ? has : null,
     denominator: ready ? total : null,
@@ -146,7 +156,7 @@ export const VIDEO_DEFINITION = "A product video on the Amazon listing.";
 
 function pendingNote(present: number, noun: string): string {
   return present > 0
-    ? `Confirmed on ${formatInt(present)} live listings. Absence is not read yet.`
+    ? `Confirmed on ${formatInt(present)} live listings. No live-page read yet.`
     : `No ${noun} read yet.`;
 }
 
@@ -160,8 +170,6 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       empty("video", "Product video", VIDEO_DEFINITION),
     ];
   }
-  const aplusKnown = summary.aplusAbsent > 0 ? summary.aplusPresent + summary.aplusAbsent : 0;
-  const videoKnown = summary.videoAbsent > 0 ? summary.videoPresent + summary.videoAbsent : 0;
   return [
     shareHero(
       "bullets",
@@ -177,8 +185,8 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       "aplus",
       "A+ content",
       APLUS_DEFINITION,
-      summary.aplusPresent,
-      aplusKnown,
+      summary.aplusLivePresent,
+      summary.aplusLiveRead,
       ["A+ present", "No A+"],
       "A+ modules are on the listing.",
       pendingNote(summary.aplusPresent, "A+"),
@@ -187,8 +195,8 @@ export function listingContentHeroes(summary: ListingContentSummary | null): Sha
       "video",
       "Product video",
       VIDEO_DEFINITION,
-      summary.videoPresent,
-      videoKnown,
+      summary.videoLivePresent,
+      summary.videoLiveRead,
       ["Video present", "No video"],
       "A video is on the listing.",
       pendingNote(summary.videoPresent, "video"),
