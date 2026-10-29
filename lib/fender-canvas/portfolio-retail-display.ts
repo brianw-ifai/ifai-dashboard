@@ -254,9 +254,8 @@ export function suppressedBubble(
   const denominator = counts != null && counts.current > 0 ? counts.current : null;
   const count = countPhrase(reading, reading.headlineNoun ?? "listing");
   const coverage = coveragePill(reading);
-  const label = readingLabel(reading, "Suppressed Listings");
   return satelliteFace(
-    label,
+    "Suppressed Listings",
     reading,
     { value: shareHeroValue(reading, numerator, denominator), label: "Buy Box withheld" },
     [...(count ? [count] : []), ...(coverage ? [coverage] : [])],
