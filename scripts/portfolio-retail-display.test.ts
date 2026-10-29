@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 import {
   catalogBubble,
+  catalogHealthMainFace,
   headlineBubble,
   headlineSentence,
   headlineSurface,
@@ -13,6 +14,7 @@ import {
   shortCoverageLine,
   suppressedBubble,
 } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import { formatPct } from "../lib/fender-canvas/format.ts";
 import {
   MAP_PRICES_NOT_STORED,
   mapLeakageFinding,
@@ -106,8 +108,22 @@ function findings(partial: Partial<PortfolioRetailFindings> = {}): PortfolioReta
   };
 }
 
-function visible(face: { title: string; stats: string[]; meta?: string; tooltip: { title: string; desc: string } }) {
-  return [face.title, face.meta ?? "", face.tooltip.title, face.tooltip.desc, ...face.stats].join(" ");
+function visible(face: {
+  title: string;
+  stats: string[];
+  meta?: string;
+  tooltip: { title: string; desc: string };
+  heroValue?: { value: string; label: string };
+}) {
+  return [
+    face.title,
+    face.meta ?? "",
+    face.tooltip.title,
+    face.tooltip.desc,
+    ...face.stats,
+    face.heroValue?.value ?? "",
+    face.heroValue?.label ?? "",
+  ].join(" ");
 }
 
 test("panel tab labels keep the reading slugs", () => {
@@ -116,6 +132,7 @@ test("panel tab labels keep the reading slugs", () => {
     "Suppressed Listings",
     "MAP",
     "Catalog Governance",
+    "Out of Stock",
   ]);
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.suppressed_listings), "suppressed-listings");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map");
@@ -265,6 +282,33 @@ test("the shared headline keeps the count, the missing message, and the command-
   assert.equal(mapHeadline.tab, "MAP");
 });
 
+test("Catalog Health main spoke leads with Buy Box withheld share", () => {
+  const reading = suppressedListingsFinding([
+    {
+      ...suppressed(),
+      competitive_external_price_state: "unavailable",
+      competitive_price_threshold_cents: null,
+    },
+    present(),
+    present(),
+  ]);
+  const face = catalogHealthMainFace({
+    phase: "ready",
+    snapshot: { ...findings({ suppressedListings: reading }), headline: null },
+  });
+  assert.equal(reading.detail?.counts.withheld, 1);
+  assert.equal(reading.detail?.counts.current, 3);
+  assert.deepEqual(face.heroValue, {
+    value: formatPct(100 / 3),
+    label: "Buy Box withheld",
+  });
+  assert.deepEqual(face.stats, []);
+  assert.equal(face.status, "danger");
+  assert.equal(face.subTab, "Retail Overview");
+  const snap = { ...findings({ suppressedListings: reading }), headline: null };
+  assert.equal(retailBubbleFaces({ phase: "ready", snapshot: snap }).main.heroValue?.label, "Buy Box withheld");
+});
+
 test("loading and error faces do not invent a count", () => {
   for (const phase of ["loading", "error"] as const) {
     const faces = retailBubbleFaces({ phase });
@@ -272,6 +316,14 @@ test("loading and error faces do not invent a count", () => {
     assert.doesNotMatch(text, /\d/);
     assert.doesNotMatch(text, FORBIDDEN);
   }
+  assert.deepEqual(retailBubbleFaces({ phase: "loading" }).main.heroValue, {
+    value: "Loading",
+    label: "Buy Box withheld",
+  });
+  assert.deepEqual(retailBubbleFaces({ phase: "error" }).main.heroValue, {
+    value: "Read failed",
+    label: "Buy Box withheld",
+  });
 });
 
 test("channel price cells use a stored Musician's Friend URL or Not available*", async () => {

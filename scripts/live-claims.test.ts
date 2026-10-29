@@ -152,7 +152,8 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   assert.doesNotMatch(satelliteText, /91\.8%|%/);
   assert.doesNotMatch(satelliteText, /\d/);
 
-  assert.match(readiness.stats.join(" "), /91\.8%/);
+  assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "fender.com page found" });
+  assert.equal(readiness.status, "danger");
   assert.equal(metrics.machineReadableSpecs.value, "91.8%");
   assert.equal(metrics.machineReadableSpecs.detail, "Amazon attribute completeness");
 

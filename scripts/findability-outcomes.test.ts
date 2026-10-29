@@ -424,7 +424,9 @@ test("the readiness face uses outcome counts instead of the older found percenta
   const root = new URL("..", import.meta.url);
   const nodes = readFileSync(new URL("lib/fender-canvas/nodes-from-live.ts", root), "utf8");
   const tour = readFileSync(new URL("lib/fender-canvas/tour-from-live.ts", root), "utf8");
-  assert.doesNotMatch(nodes, /spec_fender_found/);
+  // Main AI Readiness spoke leads with pageFoundHero (spec_fender_found_pct); tour stays clear of it.
+  assert.match(nodes, /pageFoundHero/);
+  assert.match(nodes, /spec_fender_found_pct/);
   assert.doesNotMatch(tour, /spec_fender_found/);
 });
 

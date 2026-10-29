@@ -1,7 +1,12 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/satellite-fit.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { SATELLITE_HERO_TEXT, satelliteHeroLayout } from "../lib/canvas-sdk/hero-fit.ts";
+import {
+  SATELLITE_HERO_TEXT,
+  fitMainHero,
+  isCompactHeroValue,
+  satelliteHeroLayout,
+} from "../lib/canvas-sdk/hero-fit.ts";
 import { hoverSlide } from "../lib/canvas-sdk/hover-frame.ts";
 import { fittedSatelliteClusters, groupBounds } from "../lib/canvas-sdk/satellite-fit.ts";
 import type { CanvasNode, CanvasSpec } from "../lib/canvas-sdk/types.ts";
@@ -49,6 +54,25 @@ test("a worded empty value reads at label size, not as a giant number", () => {
   const layout = satelliteHeroLayout("Run Details", "No resolved answers", "Brand Consideration");
   assert.ok(layout.rows.every((row) => row.kind !== "value"));
   assert.ok(layout.radius < 90);
+});
+
+test("main-bubble heroes fit inside a fixed ring with readable size", () => {
+  assert.equal(isCompactHeroValue("61.2%"), true);
+  assert.equal(isCompactHeroValue("90 Days"), true);
+  assert.equal(isCompactHeroValue("Loading run"), false);
+
+  const aeo = primarySpokeLayouts().find((spoke) => spoke.id === "spoke-aeo")!;
+  // Icon + two-line title leave the hero stack starting near the center.
+  const startY = 4 + 2 * 23 + 5;
+  const fit = fitMainHero("61.2%", "Unbranded SOV", aeo.r, startY);
+  assert.ok(fit.valueSize >= 16, `value shrunk to a crumb (${fit.valueSize})`);
+  assert.ok(fit.valueSize <= aeo.r * 0.4, `value still too large for the ring (${fit.valueSize})`);
+  assert.ok(fit.labelY + fit.labelLineH <= aeo.r - 8, "label spills past the ring");
+  assert.deepEqual(fit.labelLines, ["Unbranded SOV"]);
+
+  const worded = fitMainHero("Loading run", "", aeo.r, startY);
+  assert.equal(worded.worded, true);
+  assert.ok(worded.valueSize <= 16);
 });
 
 test("grown satellites clear their parent, each other, and every other bubble", () => {
