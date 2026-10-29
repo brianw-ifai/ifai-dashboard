@@ -11,7 +11,7 @@ import {
   factCheckShortLine,
   factsCheckedLine,
 } from "@/lib/ai-search/fact-check-copy";
-import { questionRole } from "@/lib/ai-search/question-role";
+import { engineRoleTallies, questionRole, type RoleGroupTally } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 import {
   errorLine,
@@ -20,9 +20,22 @@ import {
   resolvedPhrase,
   runStateLabel,
   summarizeRun,
+  UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+
+/** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
+function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
+  return engines
+    .filter((engine) => engine.roles.unbranded_discovery.resolved > 0)
+    .slice()
+    .sort((a, b) => {
+      const aRate = a.roles.unbranded_discovery.fenderWins / a.roles.unbranded_discovery.resolved;
+      const bRate = b.roles.unbranded_discovery.fenderWins / b.roles.unbranded_discovery.resolved;
+      return aRate - bRate || a.key.localeCompare(b.key);
+    });
+}
 
 export type NodeFace = Pick<CanvasNode, "status" | "title" | "stats" | "meta" | "tooltip" | "subTab" | "heroValue">;
 
@@ -121,16 +134,16 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, "Fender-Owned Links"),
       satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
-      satGap: satelliteStateFace(read, "Category Gap", RADAR_TABS.wins, "Rival wins"),
-      satLead: satelliteStateFace(read, "Category Lead", RADAR_TABS.battlecards, "Rival wins"),
+      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, "competitors led"),
+      satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded discovery"),
     };
   }
 
   const s = summarizeRun(read.snapshot);
   const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const lead = strongestCategory(categoryBattles(read.snapshot.calls));
   const gap = s.largestGap;
+  const weakestEngine = unbrandedEnginesWeakestFirst(engineRoleTallies(read.snapshot.calls))[0] ?? null;
 
   // The main bubble and its three satellites each lead with one scored headline value.
   // Bands are a first draft per metric; a later pass may let intelligence choose the
@@ -212,74 +225,92 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       tooltip: { ...EMPTY_TOOLTIP },
     },
     spokeCompetitors: {
+      // Category Battlecards: lead with the largest category gap when rivals lead there,
+      // else the top competitor share across unbranded discovery.
       status: s.competitorWins > 0 ? "warning" : "success",
       title: "Competitive Radar",
       stats: [],
-      heroValue: s.topCompetitor
-        ? {
+      heroValue: (() => {
+        const rival = gap?.leaders[0];
+        if (gap && rival != null && gap.resolved > 0) {
+          return {
+            value: pct(rival.wins, gap.resolved),
+            label: `${categoryLabel(gap.category)} · ${rival.brand}`,
+          };
+        }
+        if (s.topCompetitor) {
+          return {
             value: pct(s.topCompetitor.wins, s.topCompetitor.resolved),
             label: `${s.topCompetitor.brand} wins`,
-          }
-        : { value: "No competitor wins", label: "Unbranded discovery" },
+          };
+        }
+        return { value: "No competitor wins", label: "Unbranded discovery" };
+      })(),
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      // The hero value above is the whole explanation. Open Competitive Radar for the gap detail.
       tooltip: { title: "", desc: "" },
     },
-    satGap: gap
-      ? (() => {
-          const rival = gap.leaders[0];
-          const hasRival = rival != null && gap.resolved > 0;
-          return {
-            status: "warning" as const,
-            title: `${categoryLabel(gap.category)} Gap`,
-            stats: hasRival
-              ? [`${rival.brand} ${rival.wins} wins`, `of ${gap.resolved} resolved`]
-              : ["No rival wins"],
-            heroValue: hasRival
-              ? { value: pct(rival.wins, gap.resolved), label: `${rival.brand} wins` }
-              : { value: "No rival wins", label: "Unbranded discovery" },
-            meta: `${gap.competitorWins} competitor wins`,
-            subTab: RADAR_TABS.wins,
-            tooltip: { ...EMPTY_TOOLTIP },
-          };
-        })()
-      : {
-          status: "success",
-          title: "Category Gap",
-          stats: ["No competitor wins"],
-          heroValue: { value: "No competitor wins", label: "Unbranded discovery" },
-          meta: "Unbranded discovery",
-          subTab: RADAR_TABS.wins,
+    satGap: {
+      status: s.competitorWins > 0 ? "warning" : "success",
+      title: "Competitor Wins",
+      stats:
+        s.roles.unbranded.resolved > 0
+          ? [`${s.competitorWins} of ${s.roles.unbranded.resolved} resolved`]
+          : ["No resolved answers"],
+      heroValue:
+        s.roles.unbranded.resolved > 0
+          ? {
+              value: `${s.competitorWins} of ${s.roles.unbranded.resolved}`,
+              label: "competitors led",
+            }
+          : { value: "No resolved answers", label: "competitors led" },
+      meta: "Unbranded discovery",
+      subTab: RADAR_TABS.wins,
+      tooltip: { ...EMPTY_TOOLTIP },
+    },
+    satLead: (() => {
+      if (weakestEngine) {
+        const tally = weakestEngine.roles.unbranded_discovery;
+        const engineHero = heroPctFace(
+          ratePct(tally.fenderWins, tally.resolved),
+          pct(tally.fenderWins, tally.resolved),
+          `${engineLabel(weakestEngine.key)} unbranded`,
+          UNBRANDED_RATE_BANDS.redBelow,
+          UNBRANDED_RATE_BANDS.greenAbove,
+        );
+        return {
+          status: engineHero.status,
+          title: "Engine Comparison",
+          stats: [`${tally.fenderWins} of ${tally.resolved} Fender leads`],
+          heroValue: engineHero.heroValue,
+          meta: "Weakest Fender lead first",
+          subTab: RADAR_TABS.engines,
           tooltip: { ...EMPTY_TOOLTIP },
-        },
-    satLead: lead
-      ? (() => {
-          const rival = lead.leaders[0];
-          const hasRival = rival != null && lead.resolved > 0;
-          return {
-            status: (hasRival ? "warning" : "success") as NodeStatus,
-            title: `${categoryLabel(lead.category)} Lead`,
-            stats: hasRival
-              ? [`${rival.brand} ${rival.wins} wins`, `of ${lead.resolved} resolved`]
-              : [`${pct(lead.fenderWins, lead.resolved)} Fender`, `${lead.fenderWins} of ${lead.resolved} resolved`],
-            heroValue: hasRival
-              ? { value: pct(rival.wins, lead.resolved), label: `${rival.brand} wins` }
-              : { value: "No rival wins", label: "Unbranded discovery" },
-            meta: "Unbranded discovery",
-            subTab: RADAR_TABS.battlecards,
-            tooltip: { ...EMPTY_TOOLTIP },
-          };
-        })()
-      : {
-          status: "neutral",
-          title: "Category Lead",
-          stats: ["No resolved answers"],
-          heroValue: { value: "No resolved answers", label: "Unbranded discovery" },
-          meta: "Unbranded discovery",
-          subTab: RADAR_TABS.battlecards,
-          tooltip: { ...EMPTY_TOOLTIP },
-        },
+        };
+      }
+      const overall = heroPctFace(
+        ratePct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
+        pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
+        "Unbranded discovery",
+        UNBRANDED_RATE_BANDS.redBelow,
+        UNBRANDED_RATE_BANDS.greenAbove,
+      );
+      return {
+        status: overall.status,
+        title: "Engine Comparison",
+        stats:
+          s.roles.unbranded.resolved > 0
+            ? [`${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} resolved`]
+            : ["No resolved answers"],
+        heroValue:
+          s.roles.unbranded.resolved > 0
+            ? overall.heroValue
+            : { value: "No resolved answers", label: "Unbranded discovery" },
+        meta: "Unbranded discovery",
+        subTab: RADAR_TABS.engines,
+        tooltip: { ...EMPTY_TOOLTIP },
+      };
+    })(),
   };
 }
 
