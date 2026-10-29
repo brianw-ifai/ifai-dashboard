@@ -49,7 +49,7 @@ export function buildLiveCommandCenter(
 
   const summaryParts = [
     headlineSentence(headline),
-    `The catalog read has ${formatInt(m.catalog_skus)} electric SKUs across ${formatInt(divisionCount)} divisions.`,
+    `The catalog read covers ${formatInt(divisionCount)} divisions.`,
   ];
   const aiLine = aiCommandSummary(ai);
   if (aiLine) summaryParts.push(aiLine);
@@ -57,7 +57,7 @@ export function buildLiveCommandCenter(
   return {
     badge: "COMMAND CENTER · TODAY",
     title: "What do I need to worry about?",
-    desc: `The highest-value moves across the ${formatInt(m.catalog_skus)} monitored electric SKUs, ranked by what they cost you while they sit open.`,
+    desc: "The highest-value moves across the monitored electric catalog, ranked by what they cost you while they sit open.",
     summary: summaryParts.join(" "),
     openByDefault: true,
     storageKey: "ifai:fender:command-center",

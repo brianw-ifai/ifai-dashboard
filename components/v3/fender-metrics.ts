@@ -6,16 +6,6 @@ import type { CanvasMetric } from "@/lib/canvas-sdk";
  * them from `spokeData`, so renaming a hub/spoke updates the picker too.
  */
 export const FENDER_METRICS = {
-  catalogSkus: {
-    id: "catalog-skus",
-    spokeId: "hub",
-    label: "Monitored Electric SKUs",
-    value: "See read",
-    detail: "Division count loads with the division table",
-    tone: "neutral",
-    subTab: "Performance",
-    provenance: "live",
-  },
   activeOfferCoverage: {
     id: "active-offer-coverage",
     spokeId: "hub",
