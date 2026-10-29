@@ -159,6 +159,20 @@ export function engineTallies(rows: AiCallRow[]): GroupTally[] {
   );
 }
 
+/**
+ * True when every call for this engine failed or came back empty.
+ * That engine is not a client result: no win rate, bar, or result tile.
+ * Provider-error counts stay on `errorLine` / `errorsByEngine`.
+ */
+export function isFailedResultEngine(tally: Pick<OutcomeTally, "calls" | "answered">): boolean {
+  return tally.calls > 0 && tally.answered <= 0;
+}
+
+/** Commercial engine tallies that returned at least one answer. Failed engines are omitted. */
+export function engineResultTallies(rows: AiCallRow[]): GroupTally[] {
+  return engineTallies(rows).filter((engine) => !isFailedResultEngine(engine));
+}
+
 export function categoryTallies(rows: AiCallRow[]): GroupTally[] {
   return groupBy(rows.filter(isCommercial), (row) => row.category ?? "").sort(
     (a, b) => (a.winPct ?? 101) - (b.winPct ?? 101) || a.key.localeCompare(b.key),

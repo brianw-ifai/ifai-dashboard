@@ -11,7 +11,7 @@ import {
   factCheckShortLine,
   factsCheckedLine,
 } from "@/lib/ai-search/fact-check-copy";
-import { engineRoleTallies, questionRole, type RoleGroupTally } from "@/lib/ai-search/question-role";
+import { engineResultRoleTallies, questionRole, type RoleGroupTally } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 import {
   errorLine,
@@ -143,7 +143,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
   const gap = s.largestGap;
-  const weakestEngine = unbrandedEnginesWeakestFirst(engineRoleTallies(read.snapshot.calls))[0] ?? null;
+  const weakestEngine = unbrandedEnginesWeakestFirst(engineResultRoleTallies(read.snapshot.calls))[0] ?? null;
 
   // The main bubble and its three satellites each lead with one scored headline value.
   // Bands are a first draft per metric; a later pass may let intelligence choose the
