@@ -167,8 +167,8 @@ test("Brand-Site Specs leads with missing machine-readable specs and no Amazon p
 }) => {
   await mockCanvasRead(page);
   const canvas = new Canvas(page);
-  await canvas.open();
-  await page.goto("/dashboard?spoke=specs&tab=brand-site-specs");
+  // Wide desktop panel: same top-band lead as Amazon A+ Matrix.
+  await page.goto("/dashboard?spoke=specs&tab=brand-site-specs&layout=wide");
   await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
   await expect(canvas.activeTab).toHaveText("Brand-Site Specs");
 
@@ -182,12 +182,29 @@ test("Brand-Site Specs leads with missing machine-readable specs and no Amazon p
 
   const lead = page.locator("[data-brand-site-specs-lead]");
   const missingBox = lead.locator("[data-machine-hero='missing_specs']");
+  const basicsBox = lead.locator("[data-machine-hero='product_basics']");
   const notes = lead.locator("[data-brand-site-specs-notes]");
   await expect(missingBox).toBeVisible();
+  await expect(basicsBox).toBeVisible();
   await expect(notes).toBeVisible();
-  const missingTop = await missingBox.evaluate((el) => el.getBoundingClientRect().top);
-  const notesTop = await notes.evaluate((el) => el.getBoundingClientRect().top);
-  expect(missingTop).toBeLessThan(notesTop);
+  const band = await Promise.all([
+    missingBox.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { top: box.top, right: box.right, left: box.left };
+    }),
+    basicsBox.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { top: box.top, right: box.right, left: box.left };
+    }),
+    notes.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { top: box.top, left: box.left };
+    }),
+  ]);
+  expect(Math.abs(band[0].top - band[1].top)).toBeLessThan(8);
+  expect(Math.abs(band[0].top - band[2].top)).toBeLessThan(8);
+  expect(band[0].right).toBeLessThanOrEqual(band[1].left + 1);
+  expect(band[1].right).toBeLessThanOrEqual(band[2].left + 1);
 
   await expect(page.locator("[data-ai-readiness-hero='amazon_completeness']")).toHaveCount(0);
   await expect(lead).not.toContainText("Amazon attribute completeness");

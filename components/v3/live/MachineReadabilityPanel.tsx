@@ -39,13 +39,11 @@ function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
 
 /**
  * Brand-Site Specs: found fender.com pages only.
- * Leads with pages missing machine-readable specs, then the explainer.
+ * Lead matches Amazon A+ Matrix: hero cards in one row, explainer to the right.
  */
 export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary | null }) {
   const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
   const heroes = machineReadabilityHeroes(summary);
-  const missingHero = heroes[0];
-  const otherHeroes = heroes.slice(1);
 
   function toggle(which: MachineHeroId) {
     setOpenTable((prev) => (prev === which ? "closed" : which));
@@ -56,33 +54,21 @@ export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary 
       <div
         data-machine-readability-lead=""
         data-brand-site-specs-lead=""
-        style={{ display: "flex", flexDirection: "column", gap: 12 }}
+        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-          <ShareHeroCard
-            key={missingHero.id}
-            hero={missingHero}
-            dataAttr="data-machine-hero"
-            open={openTable === missingHero.id}
-            onToggle={() => toggle(missingHero.id)}
-            controls={PAGES_TABLE_ID}
-          />
+          {heroes.map((hero) => (
+            <ShareHeroCard
+              key={hero.id}
+              hero={hero}
+              dataAttr="data-machine-hero"
+              open={openTable === hero.id}
+              onToggle={() => toggle(hero.id)}
+              controls={PAGES_TABLE_ID}
+            />
+          ))}
         </div>
         <BrandSiteSpecsNotes summary={summary} />
-        {otherHeroes.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
-            {otherHeroes.map((hero) => (
-              <ShareHeroCard
-                key={hero.id}
-                hero={hero}
-                dataAttr="data-machine-hero"
-                open={openTable === hero.id}
-                onToggle={() => toggle(hero.id)}
-                controls={PAGES_TABLE_ID}
-              />
-            ))}
-          </div>
-        ) : null}
       </div>
 
       {summary && openTable !== "closed" ? (
