@@ -1,0 +1,56 @@
+"use client";
+
+import { useAiSearch } from "@/components/v3/live/ai-search/AiSearchContext";
+import {
+  ConsensusHero,
+  ConsensusPillars,
+} from "@/components/v3/live/ConsensusScoreView";
+import { useFindability } from "@/components/v3/live/findability/FindabilityContext";
+import { consensusFromLive } from "@/lib/fender-canvas/consensus-scores-from-live";
+import type { RetailCanvasRead } from "@/lib/fender-canvas/portfolio-retail-display";
+import type { CanvasBundle } from "@/lib/fender-canvas/types";
+
+/**
+ * Summary → Performance: AI Consensus first, then Foundation / Commerce / Actuation,
+ * then the division table stays below (rendered by the spoke).
+ */
+export function ConsensusScoresPanel({
+  bundle,
+  retail,
+}: {
+  bundle: CanvasBundle;
+  retail: RetailCanvasRead;
+}) {
+  const findability = useFindability();
+  const ai = useAiSearch();
+
+  if (retail.phase === "loading" || findability.phase === "loading" || ai.phase === "loading") {
+    return <p className="retail-missing">Loading AI Consensus scores…</p>;
+  }
+
+  const consensus = consensusFromLive({
+    findability,
+    specPages: bundle.specPages,
+    retail,
+    ai,
+  });
+
+  if (!consensus) {
+    return (
+      <p className="retail-missing" data-consensus-unavailable="">
+        AI Consensus scores are not available until the retail reading loads.
+      </p>
+    );
+  }
+
+  return (
+    <div data-consensus-scores="" style={{ marginBottom: 16 }}>
+      <ConsensusHero score={consensus.score} coverage={consensus.coverage} />
+      <ConsensusPillars
+        foundation={consensus.foundation}
+        commerce={consensus.commerce}
+        actuation={consensus.actuation}
+      />
+    </div>
+  );
+}

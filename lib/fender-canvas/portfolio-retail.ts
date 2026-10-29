@@ -6,6 +6,10 @@
 
 import { tabSlug } from "../canvas-sdk/canvas-url-state";
 import {
+  controlledBuyBoxFinding,
+  type ControlledBuyBoxDetail,
+} from "./consensus-scores";
+import {
   countFeaturedOffer,
   FEATURED_OFFER_COLUMNS,
   type FeaturedOfferCounts,
@@ -574,6 +578,12 @@ export type PortfolioRetailFindings = {
   mapLeakage: RetailReading<MapLeakageDetail | null>;
   unnestedBundles: RetailReading<UnnestedBundleDetail | null>;
   amazonSpecGaps: RetailReading<AmazonSpecGapDetail | null>;
+  /**
+   * Controlled Buy Box among known sellers (Amazon Retail + Austin Bazaar + GearTree).
+   * Null when the catalog governance read did not load. Unknown sellers are omitted.
+   * Optional on older test fixtures; the live loader always sets it.
+   */
+  controlledBuyBox?: ControlledBuyBoxDetail | null;
 };
 
 /**
@@ -674,6 +684,7 @@ export async function loadPortfolioRetailSnapshot(
     amazonSpecGaps: amazonSpecGapsFinding(spec.ok ? spec.rows : null, {
       truncated: spec.ok ? spec.truncated : false,
     }),
+    controlledBuyBox: controlledBuyBoxFinding(catalog.ok ? catalog.rows : null),
   };
 
   return {

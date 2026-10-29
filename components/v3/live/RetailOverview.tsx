@@ -1,5 +1,6 @@
 "use client";
 
+import { CommerceConsensusPanel } from "@/components/v3/live/CommerceConsensusPanel";
 import { ExploreListings } from "@/components/v3/live/ExploreListings";
 import { DefinedTerm } from "@/components/v3/live/DefinedTerm";
 import { FeaturedOfferReadings } from "@/components/v3/live/FeaturedOfferReadings";
@@ -25,6 +26,8 @@ export function RetailOverview({
       >
         Seller type: Partner-led
       </p>
+
+      <CommerceConsensusPanel read={read} />
 
       <RetailOverviewLead read={read} />
 
