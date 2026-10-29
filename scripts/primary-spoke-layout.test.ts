@@ -114,7 +114,8 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.ok(staticRoadmap);
   assert.equal(Object.hasOwn(staticRoadmap, "meta"), false);
   assert.equal(staticRoadmap.meta, undefined);
-  assert.deepEqual(staticRoadmap.stats, ["90 Days", "3 Phases"]);
+  assert.deepEqual(staticRoadmap.stats, []);
+  assert.deepEqual(staticRoadmap.heroValue, { value: "90 Days", label: "3 phases" });
   assert.equal(staticRoadmap.title, "Strategy Roadmap");
   assert.equal(staticRoadmap.tooltip?.desc, "");
 
@@ -123,13 +124,14 @@ test("Strategy Roadmap has no retail metadata line", () => {
   assert.ok(liveRoadmap);
   assert.equal(Object.hasOwn(liveRoadmap, "meta"), false);
   assert.equal(liveRoadmap.meta, undefined);
-  assert.deepEqual(liveRoadmap.stats, ["90 Days", "3 Phases"]);
+  assert.deepEqual(liveRoadmap.stats, []);
+  assert.deepEqual(liveRoadmap.heroValue, { value: "90 Days", label: "3 phases" });
   assert.equal(liveRoadmap.spokeId, "roadmap");
   assert.equal(liveRoadmap.tooltip?.desc, "");
 
   const specs = fenderStaticNodes.find((node) => node.id === "spoke-specs");
-  assert.equal(specs?.meta, "Exact, family, no page, ambiguous, unchecked");
-  assert.deepEqual(specs?.stats, ["Official pages", "Five outcomes"]);
+  assert.deepEqual(specs?.stats, []);
+  assert.deepEqual(specs?.heroValue, { value: "Pending data", label: "fender.com page found" });
 });
 
 test("connectors and camera targets land on the new spoke centers", () => {

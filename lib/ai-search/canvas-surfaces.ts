@@ -7,13 +7,11 @@ import {
   type CategoryBattle,
 } from "@/lib/ai-search/competitors";
 import {
-  FACT_CHECK_SCOPE,
-  factCheckCoverageNote,
   factCheckHeadline,
   factCheckShortLine,
   factsCheckedLine,
 } from "@/lib/ai-search/fact-check-copy";
-import { questionRole } from "@/lib/ai-search/question-role";
+import { engineRoleTallies, questionRole, type RoleGroupTally } from "@/lib/ai-search/question-role";
 import { categoryLabel, engineLabel, MIN_COMPARABLE_RESOLVED } from "@/lib/ai-search/run-metrics";
 import {
   errorLine,
@@ -22,9 +20,22 @@ import {
   resolvedPhrase,
   runStateLabel,
   summarizeRun,
+  UNBRANDED_RATE_BANDS,
 } from "@/lib/ai-search/summary";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import { isWindowHistoryKind } from "@/lib/ai-search/window-display";
+
+/** Engines with resolved unbranded answers, weakest Fender-lead share first (same order as Engine Comparison). */
+function unbrandedEnginesWeakestFirst(engines: readonly RoleGroupTally[]): RoleGroupTally[] {
+  return engines
+    .filter((engine) => engine.roles.unbranded_discovery.resolved > 0)
+    .slice()
+    .sort((a, b) => {
+      const aRate = a.roles.unbranded_discovery.fenderWins / a.roles.unbranded_discovery.resolved;
+      const bRate = b.roles.unbranded_discovery.fenderWins / b.roles.unbranded_discovery.resolved;
+      return aRate - bRate || a.key.localeCompare(b.key);
+    });
+}
 
 export type NodeFace = Pick<CanvasNode, "status" | "title" | "stats" | "meta" | "tooltip" | "subTab" | "heroValue">;
 
@@ -41,9 +52,12 @@ export const RADAR_TABS = {
   engines: "Engine Comparison",
 } as const;
 
+const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
+
 /**
  * A main-spoke bubble's status word is self-sufficient (e.g. "Loading run"). It carries no
- * hover explainer. A satellite keeps its explainer, since it is reached by a deliberate click.
+ * hover explainer. Satellites also stay hoverless: the hero figure is the whole map read.
+ * Main bubbles lead with heroValue; satellites use a worded or scored heroValue of their own.
  */
 function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless = false): NodeFace | null {
   if (read.phase === "ready") return null;
@@ -56,9 +70,26 @@ function stateFace(read: AiSearchRead, title: string, subTab: string, hoverless 
     status: read.phase === "error" ? "danger" : "neutral",
     title,
     stats: [copy[0]],
+    // Main spokes render heroValue; a worded value stays at label size (never a fake 0%).
+    heroValue: hoverless ? { value: copy[0], label: "" } : undefined,
     meta: "AI Search Visibility",
     subTab,
-    tooltip: hoverless ? { title: "", desc: "" } : { title, desc: copy[1].trim() },
+    tooltip: hoverless ? { ...EMPTY_TOOLTIP } : { title, desc: copy[1].trim() },
+  };
+}
+
+/** Satellite pending face: worded hero, no hover tooltip. */
+function satelliteStateFace(
+  read: AiSearchRead,
+  title: string,
+  subTab: string,
+  label: string,
+): NodeFace {
+  const pending = stateFace(read, title, subTab) as NodeFace;
+  return {
+    ...pending,
+    heroValue: { value: pending.stats[0] ?? "Loading run", label },
+    tooltip: { ...EMPTY_TOOLTIP },
   };
 }
 
@@ -99,21 +130,20 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
   if (read.phase !== "ready") {
     return {
       spokeAeo: pending("AI Search Visibility", AI_TABS.summary, true),
-      satPrompts: pending("Run Details", AI_TABS.simulations),
-      satCitations: pending("Citations", AI_TABS.citations),
-      satDrift: pending("Fact Checks", AI_TABS.drift),
+      satPrompts: satelliteStateFace(read, "Run Details", AI_TABS.simulations, "Brand Consideration"),
+      satCitations: satelliteStateFace(read, "Citations", AI_TABS.citations, "Fender-Owned Links"),
+      satDrift: satelliteStateFace(read, "Fact Checks", AI_TABS.drift, "Accuracy"),
       spokeCompetitors: pending("Competitive Radar", RADAR_TABS.battlecards, true),
-      satGap: pending("Category Gap", RADAR_TABS.wins),
-      satLead: pending("Category Lead", RADAR_TABS.battlecards),
+      satGap: satelliteStateFace(read, "Competitor Wins", RADAR_TABS.wins, "competitors led"),
+      satLead: satelliteStateFace(read, "Engine Comparison", RADAR_TABS.engines, "Unbranded discovery"),
     };
   }
 
   const s = summarizeRun(read.snapshot);
-  const { commercial: c, completeness: run, drift, citations } = s;
+  const { completeness: run, drift, citations } = s;
   const state = runStateLabel(run.state);
-  const small = s.smallSampleEngines.map(engineLabel);
-  const lead = strongestCategory(categoryBattles(read.snapshot.calls));
   const gap = s.largestGap;
+  const weakestEngine = unbrandedEnginesWeakestFirst(engineRoleTallies(read.snapshot.calls))[0] ?? null;
 
   // The main bubble and its three satellites each lead with one scored headline value.
   // Bands are a first draft per metric; a later pass may let intelligence choose the
@@ -151,11 +181,11 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
     spokeAeo: {
       status: unbrandedHero.status,
       title: "AI Search Visibility",
-      stats: [
-        `Unbranded ${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} (${pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved)})`,
-        `Branded ${s.roles.branded.fenderWins} of ${s.roles.branded.resolved} (${pct(s.roles.branded.fenderWins, s.roles.branded.resolved)})`,
-      ],
-      heroValue: unbrandedHero.heroValue,
+      stats: [],
+      heroValue:
+        s.roles.unbranded.resolved > 0
+          ? unbrandedHero.heroValue
+          : { value: "No resolved answers", label: "Unbranded SOV" },
       meta: `${state} run · ${run.answered ?? "?"} of ${run.expected ?? "?"} answered`,
       subTab: AI_TABS.summary,
       // The hero value above is the whole explanation. Open Run Summary for the engine and run detail.
@@ -171,10 +201,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue: brandedHero.heroValue,
       meta: `Completed ${s.completedAt}`,
       subTab: AI_TABS.simulations,
-      tooltip: {
-        title: "Branded consideration",
-        desc: `${headlineLine(s)} Branded consideration is how often Fender/Squier is still named most once the brand is already named in the prompt. ${c.calls} shopping prompt-engine calls are in this ${state.toLowerCase()} run. ${s.probesAnswered} answered product fact checks are excluded.${small.length ? ` ${small.join(", ")} has too few resolved answers to compare.` : ""} Open Run Details to see every call.`,
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satCitations: {
       status: citationsHero.status,
@@ -186,10 +213,7 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue: citationsHero.heroValue,
       meta: `${citations.rows} cited links · ${citations.domains} domains`,
       subTab: AI_TABS.citations,
-      tooltip: {
-        title: "AI Citation Ecosystem",
-        desc: `Fender-owned links make up ${pct(citations.fenderOwnedRows, citations.rows)} of the ${citations.rows} cited links in this run, across ${citations.domains} domains. ${citations.answersWithCitation} of ${citations.answered} answered shopping prompts cited web sources. Answers and links are separate counts. A cited link is not proof that the source caused the recommendation. Run completed ${s.completedAt}.`,
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     satDrift: {
       status: factAccuracyHero.status,
@@ -198,68 +222,95 @@ export function aiNodeFaces(read: AiSearchRead): AiNodeFaces {
       heroValue: factAccuracyHero.heroValue,
       meta: `Across ${joinBrands(drift.coverage.checkedEngines)}`,
       subTab: AI_TABS.drift,
-      tooltip: {
-        title: "Product fact checks",
-        desc: `${factCheckHeadline(drift.coverage)} ${FACT_CHECK_SCOPE}${factCheckCoverageNote(drift.coverage) ? ` ${factCheckCoverageNote(drift.coverage)}` : ""}`,
-      },
+      tooltip: { ...EMPTY_TOOLTIP },
     },
     spokeCompetitors: {
+      // Category Battlecards: lead with the largest category gap when rivals lead there,
+      // else the top competitor share across unbranded discovery.
       status: s.competitorWins > 0 ? "warning" : "success",
       title: "Competitive Radar",
-      stats: s.topCompetitor
-        ? [
-            `${s.topCompetitor.brand} ${s.topCompetitor.wins} wins (${pct(s.topCompetitor.wins, s.topCompetitor.resolved)})`,
-            `of ${s.topCompetitor.resolved} resolved`,
-          ]
-        : ["No competitor wins", `${s.roles.unbranded.resolved} resolved`],
+      stats: [],
+      heroValue: (() => {
+        const rival = gap?.leaders[0];
+        if (gap && rival != null && gap.resolved > 0) {
+          return {
+            value: pct(rival.wins, gap.resolved),
+            label: `${categoryLabel(gap.category)} · ${rival.brand}`,
+          };
+        }
+        if (s.topCompetitor) {
+          return {
+            value: pct(s.topCompetitor.wins, s.topCompetitor.resolved),
+            label: `${s.topCompetitor.brand} wins`,
+          };
+        }
+        return { value: "No competitor wins", label: "Unbranded discovery" };
+      })(),
       meta: `${s.competitorWins} competitor wins · unbranded discovery`,
       subTab: RADAR_TABS.battlecards,
-      // The wins-and-share stat above is the whole explanation. Open Competitive Radar for the gap detail.
       tooltip: { title: "", desc: "" },
     },
-    satGap: gap
-      ? {
-          status: "warning",
-          title: `${categoryLabel(gap.category)} Gap`,
-          stats: [`${gap.leaders[0]?.brand ?? "Rival"} ${gap.leaders[0]?.wins ?? 0} wins`, `of ${gap.resolved} resolved`],
-          meta: `${gap.competitorWins} competitor wins`,
-          subTab: RADAR_TABS.wins,
-          tooltip: { title: `${categoryLabel(gap.category)} category`, desc: `${battleSentence(gap)}.` },
-        }
-      : {
-          status: "success",
-          title: "Category Gap",
-          stats: ["No competitor wins"],
-          meta: "Unbranded discovery",
-          subTab: RADAR_TABS.wins,
-          tooltip: {
-            title: "Category gap",
-            desc: "No competitor was named most in a resolved unbranded discovery answer.",
-          },
-        },
-    satLead: lead
-      ? {
-          status: "success",
-          title: `${categoryLabel(lead.category)} Lead`,
-          stats: [`${pct(lead.fenderWins, lead.resolved)} Fender`, `${lead.fenderWins} of ${lead.resolved} resolved`],
-          meta: "Unbranded discovery",
-          subTab: RADAR_TABS.battlecards,
-          tooltip: {
-            title: `${categoryLabel(lead.category)} category`,
-            desc: `Fender/Squier was named most in ${lead.fenderWins} of ${lead.resolved} resolved unbranded discovery ${lead.category} answers in the published run.`,
-          },
-        }
-      : {
-          status: "neutral",
-          title: "Category Lead",
-          stats: ["No resolved answers"],
-          meta: "Unbranded discovery",
-          subTab: RADAR_TABS.battlecards,
-          tooltip: {
-            title: "Category lead",
-            desc: "No unbranded discovery category has resolved answers yet.",
-          },
-        },
+    satGap: {
+      status: s.competitorWins > 0 ? "warning" : "success",
+      title: "Competitor Wins",
+      stats:
+        s.roles.unbranded.resolved > 0
+          ? [`${s.competitorWins} of ${s.roles.unbranded.resolved} resolved`]
+          : ["No resolved answers"],
+      heroValue:
+        s.roles.unbranded.resolved > 0
+          ? {
+              value: `${s.competitorWins} of ${s.roles.unbranded.resolved}`,
+              label: "competitors led",
+            }
+          : { value: "No resolved answers", label: "competitors led" },
+      meta: "Unbranded discovery",
+      subTab: RADAR_TABS.wins,
+      tooltip: { ...EMPTY_TOOLTIP },
+    },
+    satLead: (() => {
+      if (weakestEngine) {
+        const tally = weakestEngine.roles.unbranded_discovery;
+        const engineHero = heroPctFace(
+          ratePct(tally.fenderWins, tally.resolved),
+          pct(tally.fenderWins, tally.resolved),
+          `${engineLabel(weakestEngine.key)} unbranded`,
+          UNBRANDED_RATE_BANDS.redBelow,
+          UNBRANDED_RATE_BANDS.greenAbove,
+        );
+        return {
+          status: engineHero.status,
+          title: "Engine Comparison",
+          stats: [`${tally.fenderWins} of ${tally.resolved} Fender leads`],
+          heroValue: engineHero.heroValue,
+          meta: "Weakest Fender lead first",
+          subTab: RADAR_TABS.engines,
+          tooltip: { ...EMPTY_TOOLTIP },
+        };
+      }
+      const overall = heroPctFace(
+        ratePct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
+        pct(s.roles.unbranded.fenderWins, s.roles.unbranded.resolved),
+        "Unbranded discovery",
+        UNBRANDED_RATE_BANDS.redBelow,
+        UNBRANDED_RATE_BANDS.greenAbove,
+      );
+      return {
+        status: overall.status,
+        title: "Engine Comparison",
+        stats:
+          s.roles.unbranded.resolved > 0
+            ? [`${s.roles.unbranded.fenderWins} of ${s.roles.unbranded.resolved} resolved`]
+            : ["No resolved answers"],
+        heroValue:
+          s.roles.unbranded.resolved > 0
+            ? overall.heroValue
+            : { value: "No resolved answers", label: "Unbranded discovery" },
+        meta: "Unbranded discovery",
+        subTab: RADAR_TABS.engines,
+        tooltip: { ...EMPTY_TOOLTIP },
+      };
+    })(),
   };
 }
 
@@ -468,7 +519,6 @@ export function aiMetrics(read: AiSearchRead): Record<AiMetricKey, CanvasMetric>
   }
 
   const s = summarizeRun(read.snapshot);
-  const c = s.commercial;
   const beginner = s.categories.find((row) => row.key === "beginner");
   const beginnerBattle = categoryBattles(read.snapshot.calls).find((b) => b.category === "beginner");
   const rival = beginnerBattle?.leaders[0];

@@ -132,11 +132,14 @@ export type ReadinessFace = {
   meta: string;
   tooltipTitle: string;
   tooltipDesc: string;
+  /** Kept for call sites that still want counts; the map main spoke uses page-found heroValue instead. */
+  heroValue?: { value: string; label: string };
 };
 
 /**
- * Map bubble face. The findability lines are counts, not the older found percentage.
- * The stat and meta lines carry the full count; the bubble keeps no hover explainer.
+ * Official-page outcome counts for AI Readiness surfaces that still need them.
+ * The map's main AI Readiness bubble leads with fender.com page found (see nodes-from-live /
+ * pageFoundHero) — not these count pills — so ecommerce operators see one share figure.
  */
 export function readinessFindabilityFace(
   read: FindabilityRead,
@@ -147,6 +150,10 @@ export function readinessFindabilityFace(
     return {
       stats: ["Official pages", amazonStat],
       meta: read.phase === "error" ? "Official-page read unavailable" : "Five outcomes loading",
+      heroValue: {
+        value: read.phase === "error" ? "Read unavailable" : "Loading",
+        label: "Official-page outcomes",
+      },
       tooltipTitle: "",
       tooltipDesc: "",
     };
@@ -156,6 +163,7 @@ export function readinessFindabilityFace(
     return {
       stats: ["0 listings", amazonStat],
       meta: "No rows in this read",
+      heroValue: { value: "No listings", label: "Official-page outcomes" },
       tooltipTitle: "",
       tooltipDesc: "",
     };

@@ -198,6 +198,7 @@ test("spec readiness and schema gaps sort the filtered population across pages",
     amazon_completeness_pct: 50,
     fender_completeness_pct: null,
     fender_found: false,
+    fender_url: null,
     amazon_missing_fields: "SCALE_LENGTH",
   }));
   specs[0] = { ...specs[0], asin: "S-MISSING", amazon_completeness_pct: null, amazon_missing_fields: "  ", fender_found: null };
@@ -238,17 +239,18 @@ test("spec readiness and schema gaps sort the filtered population across pages",
 });
 
 test("sticky headers and column resizing stay in place while the full population sorts", () => {
-  for (const [path, tableId] of [
-    ["components/v3/live/FenderListingsTable.tsx", "explore-listings"],
-    ["components/v3/live/FenderSpecPanel.tsx", "spec-readiness"],
+  for (const [path, tableId, height] of [
+    ["components/v3/live/FenderListingsTable.tsx", "explore-listings", /maxHeight=\{520\}/],
+    ["components/v3/live/FenderSpecPanel.tsx", "spec-readiness", /maxHeight=\{SPEC_TABLE_MAX_HEIGHT\}/],
   ] as const) {
     const source = read(path);
     assert.match(source, new RegExp(`tableId="${tableId}"`));
     assert.match(source, /freezeHeader/);
-    assert.match(source, /maxHeight=\{520\}/);
+    assert.match(source, height);
     assert.match(source, /loadFilteredPages/);
     assert.doesNotMatch(source, /useClientTableSort/);
   }
+  assert.match(read("components/v3/live/FenderSpecPanel.tsx"), /SPEC_TABLE_MAX_HEIGHT = 420/);
   // Machine Readability loads every page first, so its client sort already covers the full population.
   const pages = read("components/v3/live/MachineReadabilityPageTable.tsx");
   assert.match(pages, /tableId="machine-readability-pages"/);

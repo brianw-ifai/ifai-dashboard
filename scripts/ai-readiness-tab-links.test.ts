@@ -28,19 +28,22 @@ test("the spoke carries Findability plus the renamed tabs and no earlier title",
   }
 });
 
-test("the bubble and its two satellites are named for their tabs", () => {
+test("the bubble and its satellites are named for their tabs", () => {
   const byId = new Map(fenderStaticNodes.map((node) => [node.id, node]));
   assert.equal(byId.get("spoke-specs")?.title, "AI Readiness");
+  assert.equal(byId.get("spoke-specs")?.subTab, "AI Readiness");
+  assert.equal(byId.get("sat-findability")?.title, "Findability");
   assert.equal(byId.get("sat-schema")?.title, "Machine Readability");
   assert.equal(byId.get("sat-tables")?.title, "Amazon A+ Matrix");
 
-  for (const id of ["sat-schema", "sat-tables"]) {
+  for (const id of ["sat-findability", "sat-schema", "sat-tables"]) {
     const node = byId.get(id);
     assert.ok(node?.subTab, `${id} needs a subTab`);
     const index = resolveSubTab(SPEC_TABS, node.subTab);
     assert.notEqual(index, -1, `${id} subTab "${node.subTab}" matches no tab`);
     assert.equal(SPEC_TABS[index], node.title, `${id} should open the tab with its name`);
   }
+  assert.equal(resolveSubTab(SPEC_TABS, byId.get("spoke-specs")!.subTab!), 1);
 });
 
 test("every satellite subTab has a camera target", () => {

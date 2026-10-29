@@ -16,11 +16,11 @@ const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 
 const SPEC_COLUMNS = [
-  { id: "asin", width: 130, minWidth: 108 },
-  { id: "model", width: 220, minWidth: 140 },
-  { id: "amazon", width: 170, minWidth: 130 },
-  { id: "found", width: 150, minWidth: 120 },
-  { id: "missing", width: 280, minWidth: 180 },
+  { id: "asin", width: 118, minWidth: 100 },
+  { id: "model", width: 200, minWidth: 120 },
+  { id: "amazon", width: 140, minWidth: 110 },
+  { id: "found", width: 120, minWidth: 100 },
+  { id: "missing", width: 240, minWidth: 160 },
 ];
 
 const PAGE_COLUMNS = [
@@ -105,25 +105,29 @@ test("the explore disclosure chevron stays on the keyboard control", () => {
 
 test("AI Readiness gives leftover width to Missing Amazon fields", () => {
   const widths = filledColumnWidths(SPEC_COLUMNS, "missing", 1112);
-  assert.equal(widths.asin, 130);
-  assert.equal(widths.model, 220);
-  assert.equal(widths.amazon, 170);
-  assert.equal(widths.found, 150);
+  assert.equal(widths.asin, 118);
+  assert.equal(widths.model, 200);
+  assert.equal(widths.amazon, 140);
+  assert.equal(widths.found, 120);
   assert.ok(widths.missing > widths.model);
   assert.ok(widths.missing > widths.amazon);
   assert.equal(Object.values(widths).reduce((sum, width) => sum + width, 0), 1112);
-  const stored = filledColumnWidths(SPEC_COLUMNS, "missing", 1112, { missing: 200, asin: 160 });
+  const stored = filledColumnWidths(SPEC_COLUMNS, "missing", 1112, { missing: 200, asin: 130 });
   assert.equal(stored.missing, 200);
-  assert.equal(stored.asin, 160);
-  assert.equal(stored.model, 220);
+  assert.equal(stored.asin, 130);
+  assert.equal(stored.model, 200);
 
   const panel = read("components/v3/live/FenderSpecPanel.tsx");
   assert.match(panel, /fillColumnId="missing"/);
+  assert.match(panel, /wrapColumnIds=\{\["model"\]\}/);
+  assert.match(panel, /SPEC_TABLE_MAX_HEIGHT = 420/);
   assert.match(panel, /spec-field-pill/);
   assert.match(panel, /presentMissingAmazonFields/);
   const css = read("lib/canvas-sdk/canvas-sdk.css");
   assert.match(css, /\.table-sm \{[^}]*font-size:\s*12px/s);
   assert.match(css, /\.resizable-table \.spec-field-pill \{[^}]*font-size:\s*12px/s);
+  const resize = read("components/v3/live/ResizableTable.tsx");
+  assert.match(resize, /wrapColumnIds/);
 });
 
 const FACT_CHECK_COLUMNS = [

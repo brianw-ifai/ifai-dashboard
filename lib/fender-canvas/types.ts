@@ -151,6 +151,7 @@ export type CanvasSpecReadinessRow = {
   amazon_completeness_pct: number | null;
   fender_completeness_pct: number | null;
   fender_found: boolean | null;
+  fender_url: string | null;
   amazon_missing_fields: string | null;
 };
 

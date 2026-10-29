@@ -1,12 +1,19 @@
-import type { CanvasNode } from "@/lib/canvas-sdk/types";
+import type { CanvasNode, NodeStatus } from "@/lib/canvas-sdk/types";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 import type { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
 import { aiNodeFaces } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
-import { readinessFindabilityFace, type FindabilityRead } from "@/lib/findability/copy";
+import type { FindabilityRead } from "@/lib/findability/copy";
+import {
+  EXACT_PAGE_SHARE_BANDS,
+  outcomeShareFigure,
+  outcomeSharePct,
+} from "@/lib/findability/lead";
+import { countFindability } from "@/lib/findability/outcomes";
+import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
-import { bulletCounts } from "@/lib/fender-canvas/listing-content";
-import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
+import { bulletCounts, type BulletCounts } from "@/lib/fender-canvas/listing-content";
+import { specPageCounts, type SpecPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   retailBubbleFaces,
   type RetailCanvasRead,
@@ -14,6 +21,116 @@ import {
 import { primarySpoke, satelliteNode } from "@/lib/fender-canvas/primary-spoke-layout";
 
 type MetricsMap = ReturnType<typeof buildLiveMetrics>;
+
+const EMPTY_TOOLTIP = { title: "", desc: "" } as const;
+
+/** Exact official product page share — same figure the Findability tab leads with. */
+function findabilitySatellite(findability: FindabilityRead): Pick<
+  CanvasNode,
+  "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
+> {
+  if (findability.phase === "loading") {
+    return {
+      status: "neutral",
+      title: "Findability",
+      stats: ["Loading"],
+      heroValue: { value: "Loading", label: "exact official product page" },
+      subTab: "Findability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  if (findability.phase === "error") {
+    return {
+      status: "danger",
+      title: "Findability",
+      stats: ["Read failed"],
+      heroValue: { value: "Read failed", label: "exact official product page" },
+      subTab: "Findability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  const counts = countFindability(findability.rows);
+  if (counts.total <= 0) {
+    return {
+      status: "neutral",
+      title: "Findability",
+      stats: ["No listings"],
+      heroValue: { value: "No listings", label: "exact official product page" },
+      subTab: "Findability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  const pct = outcomeSharePct(counts, "exact_official_product");
+  const value = outcomeShareFigure(counts, "exact_official_product") ?? "Not available";
+  const status: NodeStatus =
+    pct == null
+      ? "neutral"
+      : pct < EXACT_PAGE_SHARE_BANDS.redBelow
+        ? "danger"
+        : pct > EXACT_PAGE_SHARE_BANDS.greenAbove
+          ? "success"
+          : "warning";
+  return {
+    status,
+    title: "Findability",
+    stats: [
+      `${formatInt(counts.exact_official_product)} of ${formatInt(counts.total)} exact`,
+    ],
+    meta: "Official-page outcomes",
+    heroValue: { value, label: "exact official product page" },
+    subTab: "Findability",
+    tooltip: { ...EMPTY_TOOLTIP },
+  };
+}
+
+type SatelliteFace = Pick<
+  CanvasNode,
+  "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
+>;
+
+/** Spec-block share of checked fender.com pages. Same figure as the Machine Readability hero. */
+function machineReadabilityFace(counts: SpecPageCounts | null): SatelliteFace {
+  if (!counts) {
+    return {
+      status: "warning",
+      title: "Machine Readability",
+      stats: ["Not available*"],
+      heroValue: { value: "Not available*", label: "Spec block present" },
+      subTab: "Machine Readability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  return {
+    status: counts.withSpecBlock === counts.pages ? "success" : "danger",
+    title: "Machine Readability",
+    stats: [`${formatInt(counts.withSpecBlock)} of ${formatInt(counts.pages)} pages`],
+    heroValue: { value: formatPct(counts.specBlockPct), label: "Spec block present" },
+    subTab: "Machine Readability",
+    tooltip: { ...EMPTY_TOOLTIP },
+  };
+}
+
+/** Five-bullet share of live Amazon listings. Same figure as the A+ Matrix hero. */
+function aplusFace(counts: BulletCounts | null): SatelliteFace {
+  if (!counts) {
+    return {
+      status: "warning",
+      title: "Amazon A+ Matrix",
+      stats: ["Not available*"],
+      heroValue: { value: "Not available*", label: "Five bullets filled" },
+      subTab: "Amazon A+ Matrix",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  return {
+    status: counts.short === 0 ? "success" : "danger",
+    title: "Amazon A+ Matrix",
+    stats: [`${formatInt(counts.fullBullets)} of ${formatInt(counts.listings)} listings`],
+    heroValue: { value: formatPct(counts.pct), label: "Five bullets filled" },
+    subTab: "Amazon A+ Matrix",
+    tooltip: { ...EMPTY_TOOLTIP },
+  };
+}
 
 export function buildLiveNodes(
   bundle: CanvasBundle,
@@ -27,7 +144,14 @@ export function buildLiveNodes(
   const bullets = bulletCounts(bundle.listingContent);
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
-  const readinessFace = readinessFindabilityFace(findability, formatPct(m.spec_avg_amazon_pct));
+  // Main AI Readiness spoke opens the AI Readiness tab and leads with its page-found hero.
+  const pageHero = pageFoundHero(m);
+  const pageTone = pageFoundTone(m.spec_fender_found_pct);
+  const readinessStatus: NodeStatus = pageTone ?? "neutral";
+  const readinessHero =
+    pageHero.ratio != null
+      ? { value: pageHero.percent, label: "fender.com page found" }
+      : { value: pageHero.percent === "Pending data" ? "Pending data" : "Not available", label: "fender.com page found" };
 
   return [
     {
@@ -61,38 +185,19 @@ export function buildLiveNodes(
       ...retailFaces.map,
     },
     {
-      ...satelliteNode("sat-schema"),
-      status: !schemaPages ? "warning" : schemaPages.withSpecBlock === schemaPages.pages ? "success" : "danger",
-      title: "Machine Readability",
-      stats: schemaPages
-        ? [`${formatPct(schemaPages.specBlockPct)} spec block`, `${formatInt(schemaPages.pages)} pages checked`]
-        : ["Not available*"],
-      meta: "fender.com product data",
+      ...satelliteNode("sat-findability"),
       spokeId: "specs",
-      subTab: "Machine Readability",
-      tooltip: {
-        title: "Machine-readable specs",
-        desc: schemaPages
-          ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com product pages have no spec block, so AI engines cannot read those specs as product data.`
-          : "The fender.com page read could not be loaded.",
-      },
+      ...findabilitySatellite(findability),
+    },
+    {
+      ...satelliteNode("sat-schema"),
+      spokeId: "specs",
+      ...machineReadabilityFace(schemaPages),
     },
     {
       ...satelliteNode("sat-tables"),
-      status: !bullets ? "warning" : bullets.short === 0 ? "success" : "danger",
-      title: "Amazon A+ Matrix",
-      stats: bullets
-        ? [`${formatPct(bullets.pct)} five bullets`, `${formatInt(bullets.listings)} listings`]
-        : ["Not available*"],
-      meta: "Amazon listing content",
       spokeId: "specs",
-      subTab: "Amazon A+ Matrix",
-      tooltip: {
-        title: "Amazon listing content",
-        desc: bullets
-          ? `${formatInt(bullets.short)} of ${formatInt(bullets.listings)} live Amazon listings fill fewer than five bullets.`
-          : "The Amazon listing-content read could not be loaded.",
-      },
+      ...aplusFace(bullets),
     },
     {
       ...satelliteNode("sat-taylor"),
@@ -116,12 +221,13 @@ export function buildLiveNodes(
     },
     {
       ...primarySpoke("spoke-specs"),
-      status: "warning",
+      status: readinessStatus,
       title: "AI Readiness",
-      stats: readinessFace.stats,
-      meta: readinessFace.meta,
+      stats: [],
+      heroValue: readinessHero,
       spokeId: "specs",
-      tooltip: { title: readinessFace.tooltipTitle, desc: readinessFace.tooltipDesc },
+      subTab: "AI Readiness",
+      tooltip: { title: "", desc: "" },
     },
     {
       ...aiFaces.spokeCompetitors,
@@ -132,8 +238,9 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-fixes"),
       status: "success",
       title: "Action Items",
-      stats: [`${metrics.phaseOneLift.value} est.`, metrics.enterprisePotential.value],
-      meta: metrics.enterprisePotential.value + " Enterprise",
+      stats: [],
+      // Phase 1 dollar figure stays an analyst estimate — never a fee or ROI multiple.
+      heroValue: { value: metrics.phaseOneLift.value, label: "est. Phase 1 lift" },
       spokeId: "suggestions",
       tooltip: { title: "", desc: "" },
     },
@@ -141,7 +248,8 @@ export function buildLiveNodes(
       ...primarySpoke("spoke-roadmap"),
       status: "success",
       title: "Strategy Roadmap",
-      stats: ["90 Days", "3 Phases"],
+      stats: [],
+      heroValue: { value: "90 Days", label: "3 phases" },
       spokeId: "roadmap",
       tooltip: { title: "", desc: "" },
     },
@@ -153,17 +261,10 @@ export function buildLiveNodes(
       status: "danger",
       variant: "hub",
       title: "Summary",
-      stats: [
-        `${formatInt(m.catalog_skus)} SKUs`,
-        `${formatInt(bundle.divisions.length || m.division_count)} Divisions`,
-      ],
+      stats: [],
       logoSrc: "/image.png",
-      meta: "Click for Master View",
       spokeId: "hub",
-      tooltip: {
-        title: "Summary",
-        desc: `${formatInt(m.catalog_skus)} monitored SKUs across ${formatInt(bundle.divisions.length || m.division_count)} divisions. Open for Briefing and Performance.`,
-      },
+      tooltip: { title: "", desc: "" },
     },
   ];
 }

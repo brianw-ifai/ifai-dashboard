@@ -144,13 +144,23 @@ test("A+ Matrix reads listing content and never borrows Amazon attribute complet
   assert.ok(satellite);
   assert.ok(readiness);
   assert.equal(satellite.title, "Amazon A+ Matrix");
-  assert.deepEqual(satellite.stats, ["Not available*"]);
-  const satelliteText = [satellite.meta, satellite.tooltip.title, satellite.tooltip.desc, ...satellite.stats]
+  assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets filled" });
+  assert.equal(satellite.tooltip.desc, "");
+  const satelliteText = [
+    satellite.meta,
+    satellite.tooltip.title,
+    satellite.tooltip.desc,
+    satellite.heroValue?.value,
+    satellite.heroValue?.label,
+    ...satellite.stats,
+  ]
     .filter(Boolean)
     .join(" ");
+  assert.match(satelliteText, /Not available/);
   assert.doesNotMatch(satelliteText, /91\.8%/);
 
-  assert.match(readiness.stats.join(" "), /91\.8%/);
+  assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "fender.com page found" });
+  assert.equal(readiness.status, "danger");
   assert.equal(metrics.machineReadableSpecs.label, "fender.com Spec Block");
   assert.equal(metrics.machineReadableSpecs.value, "Not available*");
   assert.doesNotMatch(metrics.machineReadableSpecs.detail ?? "", /Amazon/);
@@ -172,7 +182,8 @@ test("command center uses the retail headline and drops unsourced claims", () =>
   const headline = headlineSentence(headlineSurface(retail));
   const map = spec.items.find((item) => item.id === "map-leakage");
 
-  assert.match(text, /3,598/);
+  assert.doesNotMatch(text, /3,598/);
+  assert.doesNotMatch(text, /electric SKUs|monitored electric SKUs/i);
   assert.ok(text.includes(headline));
   assert.match(text, /13 divisions/);
   // AI Search lines come from the published run only, never the pooled canvas_metrics sim_* fields.
@@ -259,10 +270,19 @@ test("missing MAP prices do not become a below-MAP count or an average gap", () 
   const satellite = buildLiveNodes(bundle(), buildLiveMetrics(bundle(), retail), retail).find(
     (node) => node.id === "sat-map",
   );
-  const satelliteText = [satellite?.title, satellite?.meta, satellite?.tooltip.desc, ...(satellite?.stats ?? [])]
+  const satelliteText = [
+    satellite?.title,
+    satellite?.meta,
+    satellite?.tooltip.desc,
+    satellite?.heroValue?.value,
+    satellite?.heroValue?.label,
+    ...(satellite?.stats ?? []),
+  ]
     .filter(Boolean)
     .join(" ");
   assert.match(satelliteText, /Fender MAP prices have not been stored/);
+  assert.equal(satellite?.tooltip.desc, "");
+  assert.equal(satellite?.heroValue?.label, "MAP leakage");
   assert.doesNotMatch(satelliteText, /below MAP|gap|\$|\d/);
 
   const drift = buildLiveMetrics(bundle(), retail).amazonMapDrift;
