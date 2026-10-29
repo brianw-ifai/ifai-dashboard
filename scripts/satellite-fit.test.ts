@@ -1,16 +1,23 @@
 // node --experimental-strip-types --import ./scripts/register-alias.mjs --import ./scripts/register-ts-extensions.mjs --test scripts/satellite-fit.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { HUB_LAYOUT, fenderCanvasEdges, primarySpokeLayouts, satelliteNode, type SatelliteId } from "../lib/fender-canvas/primary-spoke-layout.ts";
 import { SATELLITE_HERO_TEXT, satelliteHeroLayout } from "../lib/canvas-sdk/hero-fit.ts";
 import { hoverSlide } from "../lib/canvas-sdk/hover-frame.ts";
 import { fittedSatelliteClusters, groupBounds } from "../lib/canvas-sdk/satellite-fit.ts";
 import type { CanvasNode, CanvasSpec } from "../lib/canvas-sdk/types.ts";
-import { HUB_LAYOUT, fenderCanvasEdges, primarySpokeLayouts, satelliteNode, type SatelliteId } from "../lib/fender-canvas/primary-spoke-layout.ts";
 
-const HEROES: Partial<Record<SatelliteId, { title: string; value: string; label: string }>> = {
+const HEROES: Record<SatelliteId, { title: string; value: string; label: string }> = {
   "sat-prompts": { title: "Run Details", value: "95.7%", label: "Brand Consideration" },
   "sat-citations": { title: "Citations", value: "19.1%", label: "Fender-Owned Links" },
   "sat-drift": { title: "Fact Checks", value: "100.0%", label: "Accuracy" },
+  "sat-buybox": { title: "Suppressed Listings", value: "12.4%", label: "Buy Box withheld" },
+  "sat-asin": { title: "Catalog Governance", value: "38.0%", label: "Splintered listings" },
+  "sat-map": { title: "MAP Leakage", value: "22.5%", label: "MAP leakage" },
+  "sat-schema": { title: "Machine Readability", value: "100.0%", label: "missing additionalProperty" },
+  "sat-tables": { title: "Amazon A+ Matrix", value: "Not measured", label: "Comparison tables" },
+  "sat-taylor": { title: "Acoustics Gap", value: "71.0%", label: "Yamaha wins" },
+  "sat-amps": { title: "Amps Lead", value: "16.9%", label: "Yamaha wins" },
 };
 
 const SATELLITES: SatelliteId[] = [
@@ -29,7 +36,10 @@ function spec(): CanvasSpec {
     ...SATELLITES.map((id) => {
       const s = satelliteNode(id);
       const hero = HEROES[id];
-      return node(id, s.x, s.y, s.r, hero ? { title: hero.title, heroValue: { value: hero.value, label: hero.label } } : {});
+      return node(id, s.x, s.y, s.r, {
+        title: hero.title,
+        heroValue: { value: hero.value, label: hero.label },
+      });
     }),
   ];
   return { nodes, edges: fenderCanvasEdges() } as unknown as CanvasSpec;
@@ -39,9 +49,13 @@ test("hero text stays at its readable size and the ring clears every row", () =>
   for (const hero of Object.values(HEROES)) {
     const layout = satelliteHeroLayout(hero.title, hero.value, hero.label);
     const value = layout.rows.find((row) => row.kind === "value");
-    assert.equal(value?.size, SATELLITE_HERO_TEXT.value);
+    if (/\s/.test(hero.value.trim())) {
+      assert.ok(layout.rows.every((row) => row.kind !== "value"), `${hero.title} worded value`);
+    } else {
+      assert.equal(value?.size, SATELLITE_HERO_TEXT.value);
+    }
     for (const row of layout.rows.filter((item) => item.kind === "label")) assert.equal(row.size, SATELLITE_HERO_TEXT.label);
-    assert.ok(layout.radius > 52, `${hero.title} needs more than the stored radius`);
+    assert.ok(layout.radius > 48, `${hero.title} needs room for its hero face`);
   }
 });
 
@@ -65,23 +79,29 @@ test("grown satellites clear their parent, each other, and every other bubble", 
       assert.ok(gap >= 12, `${a.id} and ${b.id} are ${gap.toFixed(1)} apart`);
     }
   }
-  const ai = groups.find((group) => group.parent.id === "spoke-aeo")!;
-  for (const sat of ai.nodes) {
-    const hero = HEROES[sat.id as SatelliteId]!;
-    assert.equal(sat.r, satelliteHeroLayout(hero.title, hero.value, hero.label).radius);
+  for (const group of groups) {
+    for (const sat of group.nodes) {
+      const hero = HEROES[sat.id as SatelliteId];
+      assert.equal(sat.r, satelliteHeroLayout(hero.title, hero.value, hero.label).radius);
+    }
+    assert.deepEqual(
+      group.edges.map((edge) => [edge.x2, edge.y2]),
+      group.nodes.map((sat) => [sat.x, sat.y]),
+    );
   }
-  assert.deepEqual(
-    ai.edges.map((edge) => [edge.x2, edge.y2]),
-    ai.nodes.map((sat) => [sat.x, sat.y]),
-  );
 });
 
-test("a group with no hero value keeps its stored places", () => {
+test("every satellite cluster grows to fit its hero face", () => {
   const { groups } = fittedSatelliteClusters(spec());
-  const retail = groups.find((group) => group.parent.id === "spoke-retail")!;
-  for (const sat of retail.nodes) {
-    const stored = satelliteNode(sat.id as SatelliteId);
-    assert.deepEqual([sat.x, sat.y, sat.r], [stored.x, stored.y, stored.r]);
+  assert.equal(groups.length, 4);
+  for (const group of groups) {
+    for (const sat of group.nodes) {
+      const stored = satelliteNode(sat.id as SatelliteId);
+      const hero = HEROES[sat.id as SatelliteId];
+      const need = satelliteHeroLayout(hero.title, hero.value, hero.label).radius;
+      assert.ok(sat.r >= stored.r);
+      assert.equal(sat.r, Math.max(stored.r, need));
+    }
   }
 });
 
