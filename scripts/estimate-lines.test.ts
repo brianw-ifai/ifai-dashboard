@@ -88,9 +88,12 @@ test("client copy does not discuss IntoFocus fees or retainers", () => {
   assert.equal(raw.includes("Service Fee"), false);
 });
 
-test("the first Action Item says Buy Box", () => {
-  const actions = bound(spec.spokes.suggestions.tabTemplates[0] as string);
-  const first = actions.split("action-card")[1]?.split("action-card")[0] ?? "";
-  assert.match(first, /Buy Box/);
-  assert.equal(/buy button/i.test(first), false);
+test("Urgent Interventions lists findings via urgent_interventions, not example action cards", () => {
+  const template = spec.spokes.suggestions.tabTemplates[0] as string;
+  assert.match(template, /\{urgent_interventions\}/);
+  assert.equal(/Austin Bazaar|Bundle MAP|comparison matrix|buy button/i.test(template), false);
+  const helper = readFileSync(new URL("lib/fender-canvas/urgent-interventions-html.ts", root), "utf8");
+  assert.match(helper, /briefingFindingsLead/);
+  assert.match(helper, /data-ifai-open/);
+  assert.match(readFileSync(new URL("lib/fender-canvas/briefing-retail-lead.ts", root), "utf8"), /Buy Box withheld/);
 });
