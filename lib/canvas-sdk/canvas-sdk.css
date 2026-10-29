@@ -1889,6 +1889,12 @@
       color: var(--text-main);
     }
 
+    /* Plain rows with no whole-row action (FDD X-28). Keep the global hover above. */
+    .table-sm.table-no-row-hover > tbody > tr:hover > td {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
     /* AI Search role tables only. Retail tables, the hub, and metric widgets stay on .table-sm. */
     .ai-search-panel .ai-role-rates .table-sm,
     .ai-search-panel .ai-role-rates .table-sm td {
