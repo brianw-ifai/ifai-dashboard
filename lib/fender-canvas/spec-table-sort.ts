@@ -1,4 +1,3 @@
-import type { SchemaGapRow } from "@/lib/canvasData";
 import { specFenderFoundLabel, specModelTitle, type CanvasSpecReadinessRow } from "@/lib/fender-canvas/types";
 import type { SortInput } from "@/lib/fender-canvas/table-sort";
 
@@ -21,11 +20,4 @@ export function schemaPageHref(value: string | null): string | null {
   } catch {
     return null;
   }
-}
-
-export function schemaGapSortValue(row: SchemaGapRow, columnId: string): SortInput {
-  if (columnId === "asin") return row.asin.trim() || null;
-  if (columnId === "model") return specModelTitle(row.title) || null;
-  if (columnId === "page") return schemaPageHref(row.fender_url) ? "fender.com page" : null;
-  return row.fender_missing_fields?.trim() || null;
 }

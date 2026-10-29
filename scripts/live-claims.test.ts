@@ -135,7 +135,7 @@ function retailReady(): RetailCanvasRead {
   };
 }
 
-test("A+ tables do not borrow Amazon attribute completeness", () => {
+test("A+ Matrix reads listing content and never borrows Amazon attribute completeness", () => {
   const retail = retailReady();
   const metrics = buildLiveMetrics(bundle(), retail);
   const nodes = buildLiveNodes(bundle(), metrics, retail);
@@ -143,9 +143,8 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   const readiness = nodes.find((node) => node.id === "spoke-specs");
   assert.ok(satellite);
   assert.ok(readiness);
-  assert.deepEqual(satellite.stats, ["Not measured"]);
   assert.equal(satellite.title, "Amazon A+ Matrix");
-  assert.deepEqual(satellite.heroValue, { value: "Not measured", label: "Comparison tables" });
+  assert.deepEqual(satellite.heroValue, { value: "Not available*", label: "Five bullets filled" });
   assert.equal(satellite.tooltip.desc, "");
   const satelliteText = [
     satellite.meta,
@@ -157,21 +156,20 @@ test("A+ tables do not borrow Amazon attribute completeness", () => {
   ]
     .filter(Boolean)
     .join(" ");
-  assert.match(satelliteText, /Not measured/);
+  assert.match(satelliteText, /Not available/);
   assert.doesNotMatch(satelliteText, /91\.8%/);
-  assert.doesNotMatch(satelliteText, /\d/);
 
   assert.deepEqual(readiness.heroValue, { value: "10.8%", label: "fender.com page found" });
   assert.equal(readiness.status, "danger");
-  assert.equal(metrics.machineReadableSpecs.value, "91.8%");
-  assert.equal(metrics.machineReadableSpecs.detail, "Amazon attribute completeness");
+  assert.equal(metrics.machineReadableSpecs.label, "fender.com Spec Block");
+  assert.equal(metrics.machineReadableSpecs.value, "Not available*");
+  assert.doesNotMatch(metrics.machineReadableSpecs.detail ?? "", /Amazon/);
 
   const item = buildLiveCommandCenter(bundle(), retail).items.find((row) => row.id === "aplus-tables");
   assert.ok(item);
   const itemText = [item.title, item.why, item.impact].filter(Boolean).join(" ");
-  assert.match(itemText, /comparison tables have not been measured/i);
+  assert.match(itemText, /listing-content read could not be loaded/);
   assert.doesNotMatch(itemText, /91\.8%|%/);
-  assert.doesNotMatch(itemText, /\d/);
   assert.doesNotMatch(itemText, /Fender/);
 });
 

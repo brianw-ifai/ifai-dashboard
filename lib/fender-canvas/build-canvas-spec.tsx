@@ -15,6 +15,7 @@ import { aiMetrics } from "@/lib/ai-search/canvas-surfaces";
 import type { AiSearchRead } from "@/lib/ai-search/types";
 import type { FindabilityRead } from "@/lib/findability/copy";
 import { buildLiveCommandCenter } from "@/lib/fender-canvas/command-center-from-live";
+import { specPageCounts } from "@/lib/fender-canvas/machine-readability";
 import { buildHubSlots } from "@/lib/fender-canvas/hub-slots";
 import { headlineSentence, headlineSurface } from "@/lib/fender-canvas/portfolio-retail-display";
 import { buildLiveMetrics } from "@/lib/fender-canvas/metrics-from-live";
@@ -67,7 +68,7 @@ export function buildFenderCanvasSpec(
       suppressed: retail.phase === "ready" ? retail.snapshot.suppressedListings : retail.phase,
       ai: aiSearch,
       findability,
-      missingSpecPages: bundle ? bundle.m.spec_missing_additional_property : null,
+      missingSpecPages: specPageCounts(bundle?.specPages)?.missingSpecBlock ?? null,
       phaseOneValue: metrics.phaseOneLift.value,
       phaseOneDetail: metrics.phaseOneLift.detail,
       commandItems: commandCenter.items,

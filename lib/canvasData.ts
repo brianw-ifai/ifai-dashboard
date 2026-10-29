@@ -1,9 +1,13 @@
 import { getCanvasSupabase } from "@/lib/supabase/canvas-client";
 import { FEATURED_OFFER_COLUMNS } from "@/lib/fender-canvas/featured-offer";
+import { loadListingContent } from "@/lib/fender-canvas/listing-content";
+import { loadSpecPages } from "@/lib/fender-canvas/machine-readability";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
 
 export async function loadCanvas(): Promise<CanvasBundle> {
   const supabase = getCanvasSupabase();
+  const specPages = loadSpecPages().catch(() => null);
+  const listingContent = loadListingContent().catch(() => null);
   const [metrics, cats, engines, sov, divisions, missing, fresh] = await Promise.all([
     supabase.from("canvas_metrics").select("*").single(),
     supabase.from("canvas_ai_category").select("*").order("fender_win_pct"),
@@ -34,6 +38,8 @@ export async function loadCanvas(): Promise<CanvasBundle> {
     divisions: (divisions.data ?? []) as CanvasBundle["divisions"],
     missing: (missing.data ?? []) as CanvasBundle["missing"],
     fresh: (fresh.data ?? []) as CanvasBundle["fresh"],
+    specPages: await specPages,
+    listingContent: await listingContent,
   };
 }
 
@@ -175,7 +181,7 @@ export type SpecRowsFilter = {
 
 /**
  * Catalog Readiness is the only tab that may ask for this filter.
- * A null fender_found stays out. Schema.org uses schemaGapRowsQuery.
+ * A null fender_found stays out.
  */
 export function specRowsFilter(
   catalogReadiness: boolean,
@@ -225,67 +231,3 @@ export function specRowsQuery(
   return query.range(page * size, page * size + size - 1);
 }
 
-/** Confirmed column on public.canvas_spec_readiness. */
-export const FENDER_MISSING_FIELDS_COLUMN = "fender_missing_fields";
-
-export const ADDITIONAL_PROPERTY_GAP = "additionalProperty";
-
-export const SCHEMA_GAP_COLUMNS =
-  "asin,title,fender_url,fender_found,fender_missing_fields";
-
-export type SchemaGapRow = {
-  asin: string;
-  title: string | null;
-  fender_url: string | null;
-  fender_found: boolean | null;
-  fender_missing_fields: string | null;
-};
-
-/** Found page whose stored missing-field text includes additionalProperty. */
-export function isFoundAdditionalPropertyGap(row: {
-  fender_found?: boolean | null;
-  fender_missing_fields?: string | null;
-}): boolean {
-  return (
-    row.fender_found === true &&
-    (row.fender_missing_fields ?? "").includes(ADDITIONAL_PROPERTY_GAP)
-  );
-}
-
-type SchemaGapResult = PromiseLike<{
-  data: unknown;
-  count: number | null;
-  error: { message: string } | null;
-}>;
-
-type SchemaGapOrdered = SchemaGapResult & {
-  eq: (column: "fender_found", value: true) => SchemaGapOrdered;
-  like: (column: typeof FENDER_MISSING_FIELDS_COLUMN, pattern: string) => SchemaGapOrdered;
-  range: (from: number, to: number) => SchemaGapOrdered;
-};
-
-type SchemaGapClient = {
-  from: (table: string) => {
-    select: (
-      columns: string,
-      options: { count: "exact" },
-    ) => {
-      order: (column: string, options: { ascending: boolean }) => SchemaGapOrdered;
-    };
-  };
-};
-
-/**
- * Schema.org list. Found pages only, and only when fender_missing_fields
- * includes additionalProperty. The returned count is the full match, not one page.
- */
-export function schemaGapRowsQuery(page = 0, size = 50, client?: SchemaGapClient) {
-  const supabase = client ?? (getCanvasSupabase() as unknown as SchemaGapClient);
-  return supabase
-    .from("canvas_spec_readiness")
-    .select(SCHEMA_GAP_COLUMNS, { count: "exact" })
-    .order("asin", { ascending: true })
-    .eq("fender_found", true)
-    .like(FENDER_MISSING_FIELDS_COLUMN, `%${ADDITIONAL_PROPERTY_GAP}%`)
-    .range(page * size, page * size + size - 1);
-}

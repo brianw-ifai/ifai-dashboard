@@ -11,9 +11,8 @@ import {
   orderFullResult,
   pageSlice,
 } from "../lib/fender-canvas/full-result-sort.ts";
-import { schemaGapSortValue, specReadinessSortValue } from "../lib/fender-canvas/spec-table-sort.ts";
+import { specReadinessSortValue } from "../lib/fender-canvas/spec-table-sort.ts";
 import type { CanvasRetailListingRow, CanvasSpecReadinessRow } from "../lib/fender-canvas/types.ts";
-import type { SchemaGapRow } from "../lib/canvasData.ts";
 
 const root = new URL("..", import.meta.url).pathname;
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -233,21 +232,7 @@ test("spec readiness and schema gaps sort the filtered population across pages",
   const found = orderFullResult(specs, "text", "desc", (row) => specReadinessSortValue(row, "found"), (row) => row.asin);
   assert.equal(found.at(-1)?.asin, "S-MISSING");
 
-  const gaps: SchemaGapRow[] = Array.from({ length: 55 }, (_, index) => ({
-    asin: `G${String(index).padStart(3, "0")}`,
-    title: `Zed ${String(index).padStart(3, "0")}`,
-    fender_url: "https://www.fender.com/en-US/gap",
-    fender_found: true,
-    fender_missing_fields: "additionalProperty",
-  }));
-  gaps[54] = { ...gaps[54], asin: "G-FIRST", title: "Alpha page", fender_url: "https://www.fender.com/en-US/alpha" };
-  gaps[3] = { ...gaps[3], asin: "G-BARE", title: "   ", fender_url: "not a url", fender_missing_fields: "   " };
-  const models = orderFullResult(gaps, "text", "asc", (row) => schemaGapSortValue(row, "model"), (row) => row.asin);
-  assert.equal(models[0]?.asin, "G-FIRST");
-  assert.equal(models.at(-1)?.asin, "G-BARE");
-  const pages = orderFullResult(gaps, "text", "desc", (row) => schemaGapSortValue(row, "page"), (row) => row.asin);
-  assert.equal(pages.at(-1)?.asin, "G-BARE");
-  assert.equal(pageSlice(models, 1, PAGE)[0]?.asin, models[PAGE]?.asin);
+  assert.equal(pageSlice(byModel, 1, PAGE)[0]?.asin, byModel[PAGE]?.asin);
   const reset = applyColumnSort({ columnId: "asin", direction: "asc" }, "model");
   assert.equal(reset.page, 0);
   assert.equal(reset.sort.direction, "asc");
@@ -257,7 +242,6 @@ test("sticky headers and column resizing stay in place while the full population
   for (const [path, tableId, height] of [
     ["components/v3/live/FenderListingsTable.tsx", "explore-listings", /maxHeight=\{520\}/],
     ["components/v3/live/FenderSpecPanel.tsx", "spec-readiness", /maxHeight=\{SPEC_TABLE_MAX_HEIGHT\}/],
-    ["components/v3/live/SchemaAdditionalPropertyList.tsx", "schema-additional-property", /maxHeight=\{520\}/],
   ] as const) {
     const source = read(path);
     assert.match(source, new RegExp(`tableId="${tableId}"`));
@@ -267,6 +251,11 @@ test("sticky headers and column resizing stay in place while the full population
     assert.doesNotMatch(source, /useClientTableSort/);
   }
   assert.match(read("components/v3/live/FenderSpecPanel.tsx"), /SPEC_TABLE_MAX_HEIGHT = 420/);
+  // Machine Readability loads every page first, so its client sort already covers the full population.
+  const pages = read("components/v3/live/MachineReadabilityPageTable.tsx");
+  assert.match(pages, /tableId="machine-readability-pages"/);
+  assert.match(pages, /freezeHeader/);
+  assert.match(pages, /sorted\.rows\.slice\(page \* PAGE/);
   const resize = read("components/v3/live/ResizableTable.tsx");
   assert.match(resize, /col-resize-handle/);
   assert.match(resize, /aria-sort/);
@@ -275,7 +264,7 @@ test("sticky headers and column resizing stay in place while the full population
   assert.match(queries, /export function listingsQuery\(\s*page = 0,\s*size = 50,/);
   assert.match(queries, /\.order\("worst_leakage", \{ ascending: true, nullsFirst: false \}\)/);
   assert.match(queries, /\.order\("amazon_completeness_pct", \{ ascending: true \}\)/);
-  assert.match(queries, /\.order\("asin", \{ ascending: true \}\)/);
+  assert.match(read("lib/fender-canvas/machine-readability.ts"), /\.order\("asin", \{ ascending: true \}\)/);
   const css = read("lib/canvas-sdk/canvas-sdk.css");
   assert.match(css, /\.table-freeze-head \.resizable-th \{[^}]*position:\s*sticky[^}]*top:\s*0/s);
 });

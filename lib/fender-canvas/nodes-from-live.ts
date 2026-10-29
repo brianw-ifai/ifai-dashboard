@@ -12,6 +12,8 @@ import {
 import { countFindability } from "@/lib/findability/outcomes";
 import { pageFoundHero, pageFoundTone } from "@/lib/fender-canvas/ai-readiness-lead";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
+import { bulletCounts, type BulletCounts } from "@/lib/fender-canvas/listing-content";
+import { specPageCounts, type SpecPageCounts } from "@/lib/fender-canvas/machine-readability";
 import {
   retailBubbleFaces,
   type RetailCanvasRead,
@@ -81,32 +83,51 @@ function findabilitySatellite(findability: FindabilityRead): Pick<
   };
 }
 
-/**
- * Share of found fender.com pages missing additionalProperty — same rate the Machine
- * Readability list and the AI Readiness tab's fourth hero use (missing / found).
- * When every found page is on that list the share is 100%; that is accurate, not a placeholder.
- */
-function machineReadabilitySatellite(m: CanvasBundle["m"]): Pick<
+type SatelliteFace = Pick<
   CanvasNode,
   "status" | "title" | "stats" | "meta" | "heroValue" | "subTab" | "tooltip"
-> {
-  const found = m.spec_fender_found;
-  const missing = m.spec_missing_additional_property;
-  const ready = found != null && found > 0 && missing != null && missing >= 0 && missing <= found;
-  const rate = ready ? (100 * missing!) / found! : null;
-  const status: NodeStatus =
-    rate == null ? "neutral" : rate > 0 ? "danger" : "success";
-  const value = ready ? formatPct(rate) : "Not available";
+>;
+
+/** Spec-block share of checked fender.com pages. Same figure as the Machine Readability hero. */
+function machineReadabilityFace(counts: SpecPageCounts | null): SatelliteFace {
+  if (!counts) {
+    return {
+      status: "warning",
+      title: "Machine Readability",
+      stats: ["Not available*"],
+      heroValue: { value: "Not available*", label: "Spec block present" },
+      subTab: "Machine Readability",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
   return {
-    status,
+    status: counts.withSpecBlock === counts.pages ? "success" : "danger",
     title: "Machine Readability",
-    stats: [
-      `${formatInt(m.spec_missing_additional_property)} missing additionalProperty`,
-      `${formatInt(m.spec_checked)} checked`,
-    ],
-    meta: "fender.com JSON-LD gap",
-    heroValue: { value, label: "missing additionalProperty" },
+    stats: [`${formatInt(counts.withSpecBlock)} of ${formatInt(counts.pages)} pages`],
+    heroValue: { value: formatPct(counts.specBlockPct), label: "Spec block present" },
     subTab: "Machine Readability",
+    tooltip: { ...EMPTY_TOOLTIP },
+  };
+}
+
+/** Five-bullet share of live Amazon listings. Same figure as the A+ Matrix hero. */
+function aplusFace(counts: BulletCounts | null): SatelliteFace {
+  if (!counts) {
+    return {
+      status: "warning",
+      title: "Amazon A+ Matrix",
+      stats: ["Not available*"],
+      heroValue: { value: "Not available*", label: "Five bullets filled" },
+      subTab: "Amazon A+ Matrix",
+      tooltip: { ...EMPTY_TOOLTIP },
+    };
+  }
+  return {
+    status: counts.short === 0 ? "success" : "danger",
+    title: "Amazon A+ Matrix",
+    stats: [`${formatInt(counts.fullBullets)} of ${formatInt(counts.listings)} listings`],
+    heroValue: { value: formatPct(counts.pct), label: "Five bullets filled" },
+    subTab: "Amazon A+ Matrix",
     tooltip: { ...EMPTY_TOOLTIP },
   };
 }
@@ -119,6 +140,8 @@ export function buildLiveNodes(
   findability: FindabilityRead = { phase: "loading" },
 ): CanvasNode[] {
   const { m } = bundle;
+  const schemaPages = specPageCounts(bundle.specPages);
+  const bullets = bulletCounts(bundle.listingContent);
   const retailFaces = retailBubbleFaces(retail);
   const aiFaces = aiNodeFaces(ai);
   // Main AI Readiness spoke opens the AI Readiness tab and leads with its page-found hero.
@@ -169,17 +192,12 @@ export function buildLiveNodes(
     {
       ...satelliteNode("sat-schema"),
       spokeId: "specs",
-      ...machineReadabilitySatellite(m),
+      ...machineReadabilityFace(schemaPages),
     },
     {
       ...satelliteNode("sat-tables"),
-      status: "neutral",
-      title: "Amazon A+ Matrix",
-      stats: ["Not measured"],
-      heroValue: { value: "Not measured", label: "Comparison tables" },
       spokeId: "specs",
-      subTab: "Amazon A+ Matrix",
-      tooltip: { ...EMPTY_TOOLTIP },
+      ...aplusFace(bullets),
     },
     {
       ...satelliteNode("sat-taylor"),

@@ -24,8 +24,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "schema-coverage",
-      title: "fender.com pages are missing machine-readable spec fields",
-      why: "Machine Readability lists pages from the older spec read whose stored missing fields include additionalProperty. That list is not the Findability result. Findability counts exact official product pages, family pages, finished searches, ambiguous matches, and unchecked listings separately.",
+      title: "fender.com pages are missing machine-readable specs",
+      why: "Machine Readability shows which fender.com product pages carry a spec block that AI engines can read as product data.",
       severity: "high",
       spokeId: "specs",
       subTab: "Machine Readability",
@@ -43,8 +43,8 @@ export const fenderCommandCenter: CommandCenterSpec = {
     },
     {
       id: "aplus-tables",
-      title: "A+ comparison tables have not been measured",
-      why: "Comparison tables have not been measured. Amazon A+ content is the enhanced modules on a product page, including comparison tables. When a comparison table is on the page, Amazon's shopping assistant and other AI models can read the columns and repeat how your lineup steps up.",
+      title: "Amazon listings are missing bullet copy",
+      why: "The Amazon A+ Matrix tab shows which live listings fill all five bullets, and where A+ content and video are confirmed.",
       severity: "moderate",
       spokeId: "specs",
       subTab: "A+",

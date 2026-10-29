@@ -170,8 +170,7 @@ test("the five outcome counts stay distinct and open the listings behind them", 
   await expect(page.getByText("No Defensible Page", { exact: true }).first()).toBeVisible();
   await expect(page.locator("[data-findability-total]")).toHaveAttribute("data-findability-total", "6");
   await expect(page.locator(".findability-note").filter({ hasText: "Each listing is one outcome" })).toBeVisible();
-  await expect(page.locator(".findability-note").filter({ hasText: "JSON-LD was not audited" })).toBeVisible();
-  await expect(page.locator(".findability-note").filter({ hasText: "older spec read" })).toBeVisible();
+  await expect(page.locator(".findability-note").filter({ hasText: "on Machine Readability" })).toBeVisible();
 
   const exact = page.locator("[data-findability-outcome='exact_official_product']");
   await expect(exact.locator("[data-findability-count]")).toHaveAttribute("data-findability-count", "2");

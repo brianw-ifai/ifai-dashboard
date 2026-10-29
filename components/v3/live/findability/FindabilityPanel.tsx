@@ -7,11 +7,10 @@ import { useFindability } from "@/components/v3/live/findability/FindabilityCont
 import {
   DEALER_BUNDLE_NOTE,
   FAMILY_IS_NOT_EXACT,
-  MACHINE_READABILITY_DISTINCTION,
+  MACHINE_READABILITY_POINTER,
   OUTCOME_DEFINITION,
   OUTCOME_LABEL,
   bucketLabel,
-  jsonLdNote,
 } from "@/lib/findability/copy";
 import { formatInt } from "@/lib/fender-canvas/format";
 import {
@@ -165,7 +164,7 @@ export function FindabilityPanel() {
       {shape === "partial" ? (
         <p className="findability-note">Some outcomes are zero in this read. A zero is a real count.</p>
       ) : null}
-      <p className="findability-note">{jsonLdNote(read.rows)} {MACHINE_READABILITY_DISTINCTION}</p>
+      <p className="findability-note">{MACHINE_READABILITY_POINTER}</p>
       {selected ? (
         <div className="content-box" style={{ marginTop: 4 }}>
           <div className="content-box-title">
