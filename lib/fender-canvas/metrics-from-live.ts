@@ -141,22 +141,12 @@ export function buildLiveMetrics(
     m.bundle_reviews == null ? pendingLabel() : formatInt(m.bundle_reviews);
 
   return {
-    catalogSkus: {
-      id: "catalog-skus",
-      spokeId: "hub",
-      label: "Monitored Electric SKUs",
-      value: formatInt(m.catalog_skus),
-      detail: `${formatInt(m.catalog_bundles)} bundles · ${formatInt(bundle.divisions.length || m.division_count)} divisions`,
-      tone: "neutral",
-      subTab: "Performance",
-      provenance: "live",
-    },
     activeOfferCoverage: {
       id: "active-offer-coverage",
       spokeId: "hub",
       label: "Active Amazon Offer Coverage",
       value: formatPct(m.active_offer_coverage_pct),
-      detail: formatRatio(m.bb_total, m.catalog_skus),
+      detail: "Share of this catalog read with an active Amazon offer",
       tone: toneFromPct(m.active_offer_coverage_pct, 35, 50),
       subTab: "Briefing",
       provenance: "live",

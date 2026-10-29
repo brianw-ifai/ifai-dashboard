@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { tabSlug } from "../lib/canvas-sdk/canvas-url-state.ts";
 import {
   catalogBubble,
+  catalogHealthMainFace,
   headlineBubble,
   headlineSentence,
   headlineSurface,
@@ -13,6 +14,7 @@ import {
   shortCoverageLine,
   suppressedBubble,
 } from "../lib/fender-canvas/portfolio-retail-display.ts";
+import { formatPct } from "../lib/fender-canvas/format.ts";
 import {
   MAP_PRICES_NOT_STORED,
   mapLeakageFinding,
@@ -106,8 +108,22 @@ function findings(partial: Partial<PortfolioRetailFindings> = {}): PortfolioReta
   };
 }
 
-function visible(face: { title: string; stats: string[]; meta?: string; tooltip: { title: string; desc: string } }) {
-  return [face.title, face.meta ?? "", face.tooltip.title, face.tooltip.desc, ...face.stats].join(" ");
+function visible(face: {
+  title: string;
+  stats: string[];
+  meta?: string;
+  tooltip: { title: string; desc: string };
+  heroValue?: { value: string; label: string };
+}) {
+  return [
+    face.title,
+    face.meta ?? "",
+    face.tooltip.title,
+    face.tooltip.desc,
+    face.heroValue?.value ?? "",
+    face.heroValue?.label ?? "",
+    ...face.stats,
+  ].join(" ");
 }
 
 test("panel tab labels keep the reading slugs", () => {
@@ -116,6 +132,7 @@ test("panel tab labels keep the reading slugs", () => {
     "Suppressed Listings",
     "MAP",
     "Catalog Governance",
+    "Out of Stock",
   ]);
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.suppressed_listings), "suppressed-listings");
   assert.equal(tabSlug(RETAIL_FINDING_LABELS.map_leakage), "map");
@@ -140,6 +157,11 @@ test("the headline bubble shows the finding and the issue count only", () => {
   assert.doesNotMatch(visible(face), FORBIDDEN);
 
   const satellite = suppressedBubble(source.suppressedListings);
+  // Next-best hero: confirmed high-price share (Catalog Health already leads with Buy Box withheld).
+  assert.equal(satellite.heroValue?.label, "confirmed high-price");
+  assert.match(satellite.heroValue?.value ?? "", /%/);
+  assert.notEqual(satellite.heroValue?.label, face.heroValue?.label ?? "Buy Box withheld");
+  assert.equal(satellite.tooltip.desc, "");
   assert.equal(satellite.stats[0], "1 listing");
   assert.ok((satellite.stats.length ?? 0) > 1);
   assert.notEqual(satellite.stats.join(" "), face.stats.join(" "));
@@ -180,11 +202,17 @@ test("a stored zero stays zero and an unavailable reading names what is missing"
   const zero = suppressedListingsFinding([present()]);
   assert.equal(zero.issueCount, 0);
   const zeroFace = suppressedBubble(zero);
+  assert.equal(zeroFace.heroValue?.value, "0.0%");
+  assert.equal(zeroFace.heroValue?.label, "confirmed high-price");
+  assert.equal(zeroFace.tooltip.desc, "");
   assert.deepEqual(zeroFace.stats, ["0 listings"]);
 
   const missing = suppressedListingsFinding(null);
   const missingFace = suppressedBubble(missing);
   assert.equal(missing.issueCount, null);
+  assert.doesNotMatch(missingFace.heroValue?.value ?? "", /\b0(\.0)?%/);
+  assert.match(missingFace.heroValue?.value ?? "", /not stored a reading/i);
+  assert.equal(missingFace.tooltip.desc, "");
   assert.doesNotMatch(missingFace.stats.join(" "), /\b0\b/);
   assert.match(missingFace.stats.join(" "), /not stored a reading/i);
   assert.equal(missingFace.stats.join(" "), shortCoverageLine(missing.missingMessage));
@@ -195,16 +223,17 @@ test("MAP shows the violation count and the price gap, and catalog does not repe
   const map = mapBubble(source.mapLeakage);
   assert.match(map.stats[0] ?? "", /1 below MAP/);
   assert.match(map.stats.join(" "), /-\$12\.50 gap/);
-  assert.match(map.tooltip.desc, /price gap, not a revenue estimate/i);
+  assert.equal(map.heroValue?.label, "MAP leakage");
+  assert.match(map.heroValue?.value ?? "", /%/);
+  assert.equal(map.tooltip.desc, "");
   assert.equal(map.subTab, "MAP");
 
   const catalog = catalogBubble(source.unnestedBundles);
   assert.match(catalog.stats[0] ?? "", /1 bundle/);
+  assert.equal(catalog.heroValue?.label, "Splintered listings");
+  assert.match(catalog.heroValue?.value ?? "", /%/);
+  assert.equal(catalog.tooltip.desc, "");
   assert.doesNotMatch(visible(catalog), /12\.50|below MAP|listing below/);
-  assert.equal(
-    catalog.tooltip.desc,
-    "Bundle listings that are not nested under a parent ASIN. Nesting keeps their reviews on the parent listing.",
-  );
   assert.equal(catalog.subTab, "Catalog Governance");
 });
 
@@ -217,6 +246,8 @@ test("MAP satellite names missing prices and does not count or average a gap", (
   const text = visible(map);
   assert.equal(reading.missingMessage, MAP_PRICES_NOT_STORED);
   assert.match(text, /Fender MAP prices have not been stored/);
+  assert.equal(map.heroValue?.value, shortCoverageLine(MAP_PRICES_NOT_STORED));
+  assert.equal(map.tooltip.desc, "");
   assert.equal(map.subTab, "MAP");
   assert.doesNotMatch(text, /below MAP|gap|\$|\d/);
 });
@@ -265,6 +296,33 @@ test("the shared headline keeps the count, the missing message, and the command-
   assert.equal(mapHeadline.tab, "MAP");
 });
 
+test("Catalog Health main spoke leads with Buy Box withheld share", () => {
+  const reading = suppressedListingsFinding([
+    {
+      ...suppressed(),
+      competitive_external_price_state: "unavailable",
+      competitive_price_threshold_cents: null,
+    },
+    present(),
+    present(),
+  ]);
+  const face = catalogHealthMainFace({
+    phase: "ready",
+    snapshot: { ...findings({ suppressedListings: reading }), headline: null },
+  });
+  assert.equal(reading.detail?.counts.withheld, 1);
+  assert.equal(reading.detail?.counts.current, 3);
+  assert.deepEqual(face.heroValue, {
+    value: formatPct(100 / 3),
+    label: "Buy Box withheld",
+  });
+  assert.deepEqual(face.stats, []);
+  assert.equal(face.status, "danger");
+  assert.equal(face.subTab, "Retail Overview");
+  const snap = { ...findings({ suppressedListings: reading }), headline: null };
+  assert.equal(retailBubbleFaces({ phase: "ready", snapshot: snap }).main.heroValue?.label, "Buy Box withheld");
+});
+
 test("loading and error faces do not invent a count", () => {
   for (const phase of ["loading", "error"] as const) {
     const faces = retailBubbleFaces({ phase });
@@ -272,6 +330,14 @@ test("loading and error faces do not invent a count", () => {
     assert.doesNotMatch(text, /\d/);
     assert.doesNotMatch(text, FORBIDDEN);
   }
+  assert.deepEqual(retailBubbleFaces({ phase: "loading" }).main.heroValue, {
+    value: "Loading",
+    label: "Buy Box withheld",
+  });
+  assert.deepEqual(retailBubbleFaces({ phase: "error" }).main.heroValue, {
+    value: "Read failed",
+    label: "Buy Box withheld",
+  });
 });
 
 test("channel price cells use a stored Musician's Friend URL or Not available*", async () => {

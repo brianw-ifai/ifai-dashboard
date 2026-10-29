@@ -1,6 +1,6 @@
 /**
- * Satellite hero faces (a title, one big value, a short label) at fixed, readable text
- * sizes. The circle grows to hold the text; the text never shrinks to fit the circle.
+ * Hero faces: satellites grow the circle to hold fixed readable text; main bubbles keep a
+ * fixed radius and shrink the value (not to a crumb) so title, value, and label clear the ring.
  */
 
 export const SATELLITE_HERO_TEXT = { title: 13, value: 30, label: 12.5 } as const;
@@ -10,6 +10,12 @@ const WIDTH_PER_CHAR = { title: 0.62, value: 0.6, valueText: 0.62, label: 0.62 }
 const RING_PAD = 10;
 const TITLE_GAP = 5;
 const LABEL_GAP = 4;
+
+/** Main-bubble ring clearance (icon + title already sit above `startY`). */
+const MAIN_RING_PAD = 14;
+const MAIN_MIN_VALUE = 15;
+const MAIN_MIN_LABEL = 9;
+const MAIN_MAX_VALUE_RATIO = 0.3;
 
 type Row = { text: string; size: number; kind: keyof typeof WIDTH_PER_CHAR };
 
@@ -47,15 +53,28 @@ function splitWords(text: string): string[] {
   return best ?? [text.trim()];
 }
 
+/**
+ * Compact heroes stay large ("61.2%", "+$680K", "90 Days"). Worded loading/empty states
+ * ("Loading run", "No competitor wins") read at label size so they never look like fake zeros.
+ */
+export function isCompactHeroValue(value: string): boolean {
+  const text = value.trim();
+  if (!text) return false;
+  if (!/\s/.test(text)) return true;
+  // Digit-led two-token figures such as "90 Days" still lead the bubble.
+  if (/^[\d$+]/.test(text) && text.split(/\s+/).length <= 2 && text.length <= 14) return true;
+  return false;
+}
+
 function layoutRows(titleLines: string[], value: string, labelLines: string[]): HeroFaceLayout {
   // A worded empty state ("No resolved answers") reads at label size, not as a giant number.
-  const valueRows: Row[] = /\s/.test(value.trim())
-    ? splitWords(value).map((text) => ({ text, size: SATELLITE_HERO_TEXT.label, kind: "valueText" as const }))
-    : [{ text: value, size: SATELLITE_HERO_TEXT.value, kind: "value" as const }];
+  const valueRows: Row[] = isCompactHeroValue(value)
+    ? [{ text: value.trim(), size: SATELLITE_HERO_TEXT.value, kind: "value" as const }]
+    : splitWords(value).map((text) => ({ text, size: SATELLITE_HERO_TEXT.label, kind: "valueText" as const }));
   const rows: Row[] = [
     ...titleLines.map((text) => ({ text, size: SATELLITE_HERO_TEXT.title, kind: "title" as const })),
     ...valueRows,
-    ...labelLines.map((text) => ({ text, size: SATELLITE_HERO_TEXT.label, kind: "label" as const })),
+    ...labelLines.filter((text) => text.trim()).map((text) => ({ text, size: SATELLITE_HERO_TEXT.label, kind: "label" as const })),
   ];
   const gaps = rows.map((row, index) => {
     if (index === 0) return 0;
@@ -87,14 +106,14 @@ function layoutRows(titleLines: string[], value: string, labelLines: string[]): 
  */
 export function satelliteHeroLayout(title: string, value: string, label: string): HeroFaceLayout {
   const titleOptions = [[title.trim()], ...twoLineSplits(title)];
-  const labelOptions = [[label.trim()], ...twoLineSplits(label)];
+  const labelOptions = label.trim() ? [[label.trim()], ...twoLineSplits(label)] : [[""]];
   let best: HeroFaceLayout | null = null;
   let bestScore = Infinity;
   for (const titleLines of titleOptions) {
     for (const labelLines of labelOptions) {
       const next = layoutRows(titleLines, value, labelLines);
       // A one-line title and label read best; a wrap has to save real room to win.
-      const score = next.radius * (1 + 0.12 * (titleLines.length - 1) + 0.12 * (labelLines.length - 1));
+      const score = next.radius * (1 + 0.12 * (titleLines.length - 1) + 0.12 * (Math.max(0, labelLines.filter(Boolean).length - 1)));
       if (score < bestScore) {
         best = next;
         bestScore = score;
@@ -112,4 +131,133 @@ export function satelliteFitRadius(node: {
 }): number {
   if (!node.heroValue) return node.r;
   return Math.max(node.r, satelliteHeroLayout(node.title, node.heroValue.value, node.heroValue.label).radius);
+}
+
+function estimateWidth(text: string, size: number, kind: "value" | "valueText" | "label"): number {
+  return text.length * size * WIDTH_PER_CHAR[kind];
+}
+
+function wrapToWidth(label: string, maxWidth: number, fontSize: number): string[] {
+  const words = label.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const lines: string[] = [];
+  let line = words[0];
+  for (let i = 1; i < words.length; i += 1) {
+    const candidate = `${line} ${words[i]}`;
+    if (estimateWidth(candidate, fontSize, "label") <= maxWidth) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = words[i];
+    }
+  }
+  lines.push(line);
+  return lines;
+}
+
+function boxClearsRing(halfWidth: number, top: number, bottom: number, radius: number): boolean {
+  const clear = radius - MAIN_RING_PAD;
+  if (clear <= 0) return false;
+  return Math.hypot(halfWidth, Math.abs(top)) <= clear && Math.hypot(halfWidth, Math.abs(bottom)) <= clear;
+}
+
+export type MainHeroFit = {
+  valueSize: number;
+  labelSize: number;
+  labelLines: string[];
+  labelLineH: number;
+  valueY: number;
+  labelY: number;
+  /** True when the value is a worded state rendered at label size. */
+  worded: boolean;
+};
+
+/**
+ * Fit one hero value + label inside a main bubble of fixed `radius`, starting at `startY`
+ * (below the icon and title). Shrinks the stack until every glyph clears the ring with
+ * padding, but keeps the value at or above a readable floor whenever the circle allows.
+ */
+/** Horizontal room at a given y inside the circle (chord width minus padding). */
+function chordWidth(radius: number, y: number): number {
+  const clear = Math.max(8, radius - MAIN_RING_PAD);
+  const yClamped = Math.min(Math.abs(y), clear - 1);
+  return 2 * Math.sqrt(Math.max(0, clear * clear - yClamped * yClamped));
+}
+
+export function fitMainHero(value: string, label: string, radius: number, startY: number): MainHeroFit {
+  const trimmed = value.trim() || "—";
+  const worded = !isCompactHeroValue(trimmed);
+  const bottomLimit = radius - MAIN_RING_PAD;
+  const diameterWidth = Math.max(40, radius * 2 - MAIN_RING_PAD * 2);
+
+  const widthFit = (text: string, size: number, kind: "value" | "valueText" | "label", atY: number) => {
+    const maxWidth = Math.min(diameterWidth, Math.max(36, chordWidth(radius, atY)));
+    const width = estimateWidth(text, size, kind);
+    return width > maxWidth ? size * (maxWidth / width) : size;
+  };
+
+  let valueSize = worded
+    ? Math.max(MAIN_MIN_LABEL, Math.min(14, radius * 0.16))
+    : widthFit(trimmed, Math.max(MAIN_MIN_VALUE, radius * MAIN_MAX_VALUE_RATIO), "value", startY + radius * 0.2);
+  let labelSize = worded ? valueSize : Math.max(MAIN_MIN_LABEL, valueSize * 0.36);
+
+  const place = (vSize: number, lSize: number) => {
+    const gap = Math.max(3, vSize * 0.16);
+    const valueTop = startY;
+    const valueBottom = startY + (worded ? vSize * 1.05 : vSize * 0.82);
+    const labelTopGuess = valueBottom + gap;
+    const labelMax = Math.min(
+      diameterWidth,
+      Math.max(36, chordWidth(radius, labelTopGuess + lSize)),
+    );
+    // Prefer a two-line wrap for long labels so the value can stay large near the center.
+    const lines = label.trim() ? wrapToWidth(label, labelMax, lSize) : [];
+    const lineH = lSize + 2;
+    const labelTop = lines.length ? valueBottom + gap : valueBottom;
+    const labelBottom = lines.length ? labelTop + lines.length * lineH : valueBottom;
+    const valueHalf = estimateWidth(trimmed, vSize, worded ? "valueText" : "value") / 2;
+    const labelHalf = lines.length
+      ? Math.max(...lines.map((line) => estimateWidth(line, lSize, "label"))) / 2
+      : 0;
+    const ok =
+      labelBottom <= bottomLimit &&
+      boxClearsRing(valueHalf, valueTop, valueBottom, radius) &&
+      (lines.length === 0 || boxClearsRing(labelHalf, labelTop, labelBottom, radius));
+    return {
+      ok,
+      labelLines: lines,
+      labelLineH: lineH,
+      valueY: worded ? startY + vSize * 0.86 : startY + vSize * 0.78,
+      labelY: lines.length ? valueBottom + gap + lSize * 0.82 : valueBottom,
+    };
+  };
+
+  const floor = worded ? MAIN_MIN_LABEL : MAIN_MIN_VALUE;
+  for (let pass = 0; pass < 12; pass += 1) {
+    const next = place(valueSize, labelSize);
+    if (next.ok || valueSize <= floor) {
+      return {
+        valueSize,
+        labelSize,
+        labelLines: next.labelLines,
+        labelLineH: next.labelLineH,
+        valueY: next.valueY,
+        labelY: next.labelY,
+        worded,
+      };
+    }
+    valueSize = Math.max(floor, valueSize * 0.88);
+    labelSize = worded ? valueSize : Math.max(MAIN_MIN_LABEL, valueSize * 0.36);
+  }
+
+  const fallback = place(valueSize, labelSize);
+  return {
+    valueSize,
+    labelSize,
+    labelLines: fallback.labelLines,
+    labelLineH: fallback.labelLineH,
+    valueY: fallback.valueY,
+    labelY: fallback.labelY,
+    worded,
+  };
 }

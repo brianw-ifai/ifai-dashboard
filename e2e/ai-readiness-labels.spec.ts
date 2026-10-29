@@ -3,7 +3,7 @@ import { Canvas } from "./fixtures";
 import { MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
 
 /**
- * The AI Readiness bubble, its two satellites, and its tabs share one set
+ * The AI Readiness bubble, its satellites, and its tabs share one set
  * of names. A link copied from an earlier tab title still opens the same tab.
  */
 
@@ -37,6 +37,7 @@ test("the bubble, its satellites, and its tabs share one set of names", async ({
   await canvas.open();
 
   await expect(mapNode(page, "AI Readiness")).toHaveCount(1);
+  await expect(mapNode(page, "Findability")).toHaveCount(1);
   await expect(mapNode(page, "Machine Readability")).toHaveCount(1);
   await expect(mapNode(page, "Amazon A+ Matrix")).toHaveCount(1);
   await expect(mapNode(page, "Schema.org")).toHaveCount(0);
@@ -57,7 +58,7 @@ test("each satellite opens the tab that carries its name", async ({ page }) => {
   /* Satellites only take clicks while their parent cluster is revealed, and the
      map collapses to a spoke column once a panel is open, so each satellite is
      reached from a fresh map by hovering AI Readiness first. */
-  for (const satellite of ["Machine Readability", "Amazon A+ Matrix"]) {
+  for (const satellite of ["Findability", "Machine Readability", "Amazon A+ Matrix"]) {
     await page.goto("/dashboard");
     await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
     await expect(async () => {
