@@ -2687,8 +2687,24 @@
       white-space: nowrap;
     }
 
-    .ifai-sort-btn[data-sort-dir="asc"]::after { content: " ↑"; }
-    .ifai-sort-btn[data-sort-dir="desc"]::after { content: " ↓"; }
+    /* Neutral chevron on every sortable header; active column points up/down. */
+    .ifai-sort-btn .ifai-sort-chevron {
+      flex: none;
+      opacity: 0.4;
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 160ms ease, opacity 160ms ease;
+    }
+
+    .ifai-sort-btn[data-sort-dir="asc"] .ifai-sort-chevron {
+      opacity: 1;
+      transform: rotate(180deg);
+    }
+
+    .ifai-sort-btn[data-sort-dir="desc"] .ifai-sort-chevron {
+      opacity: 1;
+      transform: rotate(0deg);
+    }
 
     .resizable-th .ifai-sort-btn {
       white-space: normal;

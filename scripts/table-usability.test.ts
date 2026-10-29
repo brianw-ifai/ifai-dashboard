@@ -113,6 +113,30 @@ test("sort direction is visible to assistive tech and toggles", () => {
   assert.match(resize, /data-sort-dir=/);
   assert.match(resize, /ArrowLeft/);
   assert.match(resize, /ArrowRight/);
+  assert.match(resize, /ifai-sort-chevron/);
+  assert.match(resize, /retail-explore-chevron/);
+  assert.doesNotMatch(resize, /[↑↓]/);
+  const css = read("lib/canvas-sdk/canvas-sdk.css");
+  assert.match(css, /\.ifai-sort-btn\[data-sort-dir="asc"\] \.ifai-sort-chevron/);
+  assert.match(css, /\.ifai-sort-btn\[data-sort-dir="desc"\] \.ifai-sort-chevron/);
+  assert.doesNotMatch(css, /\.ifai-sort-btn\[data-sort-dir="asc"\]::after/);
+  assert.doesNotMatch(css, /content:\s*" ↑"/);
+});
+
+test("Suppressed Listings omits constant Buy Box and Source columns", () => {
+  const row = read("components/v3/live/FeaturedOfferRow.tsx");
+  assert.match(row, /SUPPRESSED_LISTINGS_TABLE_COLUMNS/);
+  assert.match(row, /column\.id !== "state"/);
+  assert.match(row, /column\.id !== "source"/);
+  assert.match(row, /showBuyBox/);
+  assert.match(row, /showSource/);
+  const panel = read("components/v3/live/SuppressedListingsPanel.tsx");
+  assert.match(panel, /SUPPRESSED_LISTINGS_TABLE_COLUMNS/);
+  assert.match(panel, /showBuyBox=\{false\}/);
+  assert.match(panel, /showSource=\{false\}/);
+  assert.doesNotMatch(panel, /FEATURED_OFFER_TABLE_COLUMNS/);
+  assert.doesNotMatch(panel, /columnId === "source"/);
+  assert.match(panel, /Amazon listing read/);
 });
 
 test("simulation dropdowns keep contrast in dark mode and in light mode", () => {
@@ -177,7 +201,8 @@ test("TSX files in this pass stay at or under 400 lines", () => {
     "components/v3/live/ai-search/SimulationsExplorer.tsx",
   ];
   for (const path of files) {
-    const lines = read(path).split("\n").length;
+    // Match wc -l: a trailing newline does not count as an extra blank line.
+    const lines = read(path).replace(/\n$/, "").split("\n").length;
     assert.ok(lines <= 400, `${path} is ${lines} lines`);
   }
 });

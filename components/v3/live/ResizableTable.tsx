@@ -57,6 +57,28 @@ function ColumnHeaderLabel({ column }: { column: RetailColumn }) {
   );
 }
 
+/** Same path as retail-explore-chevron; direction comes from data-sort-dir CSS. */
+function SortChevron() {
+  return (
+    <svg
+      className="retail-explore-chevron ifai-sort-chevron"
+      viewBox="0 0 12 12"
+      width="12"
+      height="12"
+      aria-hidden="true"
+    >
+      <path
+        d="M2.2 4.2 6 8l3.8-3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function readStoredRaw(tableId: string): unknown {
   if (typeof window === "undefined") return null;
   try {
@@ -312,6 +334,7 @@ export function ResizableTable({
                       }}
                     >
                       <ColumnHeaderLabel column={column} />
+                      <SortChevron />
                     </button>
                   ) : (
                     <span className="resizable-th-label">
