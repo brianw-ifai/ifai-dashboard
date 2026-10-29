@@ -7,7 +7,7 @@ import {
   AMAZON_COMPLETENESS_BANDS,
   FENDER_COMPLETENESS_BANDS,
   PAGE_FOUND_BANDS,
-  aiReadinessHeroes,
+  amazonSpecsHeroes,
   averageAcrossRatio,
   averagePercentPie,
   fenderCompletenessTone,
@@ -119,10 +119,11 @@ test("fender completeness bands: under 95 red, 95 and 98 yellow, above 98 green"
   assert.equal(toneColor(fenderCompletenessTone(98.1)), "var(--success-green)");
 });
 
-test("Amazon completeness keeps the average and does not invent listings at 100%", () => {
-  const heroes = aiReadinessHeroes(metrics({}));
-  const amazon = heroes.find((hero) => hero.id === "amazon_completeness");
-  assert.ok(amazon);
+test("Amazon Specs keeps Amazon completeness and does not invent listings at 100%", () => {
+  const heroes = amazonSpecsHeroes(metrics({}));
+  assert.equal(heroes.length, 1);
+  const amazon = heroes[0];
+  assert.equal(amazon.id, "amazon_completeness");
   assert.equal(amazon.percent, formatPct(91.6));
   assert.equal(amazon.ratio, "Across 925 checked SKUs");
   assert.doesNotMatch(amazon.ratio ?? "", /^\d+ of \d+$/);
@@ -136,42 +137,22 @@ test("Amazon completeness keeps the average and does not invent listings at 100%
   assert.equal(amazon.color, "var(--warning-amber)");
 });
 
-test("fender completeness averages over found pages and does not hard-code 7 of 8", () => {
-  const heroes = aiReadinessHeroes(metrics({ spec_fender_found: 11, spec_avg_fender_pct: 55.5 }));
-  const fender = heroes.find((hero) => hero.id === "fender_completeness");
-  assert.ok(fender);
-  assert.equal(fender.percent, formatPct(55.5));
-  assert.equal(fender.ratio, "Across 11 found pages");
-  assert.equal(fender.color, "var(--danger-red)");
-  assert.notEqual(fender.ratio, "7 of 8");
-  assert.ok(fender.pie);
-  assert.equal(fender.pie.slices.find((slice) => slice.key === "matched")?.count, 55.5);
-});
-
-test("missing additionalProperty is missing of found, with that percent and pie", () => {
-  const hero = missingAdditionalPropertyHero(
+test("page-found and fender completeness helpers stay available for the bubble and Findability", () => {
+  const page = pageFoundHero(metrics({}));
+  assert.equal(page.id, "page_found");
+  const fender = missingAdditionalPropertyHero(
     metrics({ spec_fender_found: 8, spec_missing_additional_property: 5 }),
   );
-  assert.equal(hero.percent, formatPct((100 * 5) / 8));
-  assert.equal(hero.ratio, formatRatio(5, 8));
-  assert.equal(hero.color, null);
-  assert.ok(hero.pie);
-  assert.equal(hero.pie.total, 8);
-  assert.deepEqual(
-    hero.pie.slices.map((slice) => [slice.label, slice.count]),
-    [
-      ["Missing additionalProperty", 5],
-      ["Rest of this population", 3],
-    ],
-  );
+  assert.equal(fender.percent, formatPct((100 * 5) / 8));
+  assert.equal(fender.ratio, formatRatio(5, 8));
+  assert.equal(fenderCompletenessTone(94.9), "danger");
 });
 
-test("SKUs checked is not its own hero pie", () => {
-  const heroes = aiReadinessHeroes(metrics({}));
-  assert.equal(heroes.length, 4);
-  assert.equal(
-    heroes.map((hero) => hero.id).includes("skus_checked" as never),
-    false,
+test("Amazon Specs does not ship page-found or brand-site heroes", () => {
+  const heroes = amazonSpecsHeroes(metrics({}));
+  assert.deepEqual(
+    heroes.map((hero) => hero.id),
+    ["amazon_completeness"],
   );
   assert.equal(averageAcrossRatio(925, "checked SKUs"), "Across 925 checked SKUs");
   assert.equal(shareCountPie("x", "t", "a", 1, 0), null);

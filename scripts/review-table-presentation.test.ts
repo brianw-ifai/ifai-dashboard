@@ -19,7 +19,6 @@ const SPEC_COLUMNS = [
   { id: "asin", width: 118, minWidth: 100 },
   { id: "model", width: 200, minWidth: 120 },
   { id: "amazon", width: 140, minWidth: 110 },
-  { id: "found", width: 120, minWidth: 100 },
   { id: "missing", width: 240, minWidth: 160 },
 ];
 
@@ -103,12 +102,12 @@ test("the explore disclosure chevron stays on the keyboard control", () => {
   assert.match(css, /\.retail-explore\[aria-expanded="true"\] \.retail-explore-chevron \{[^}]*rotate\(180deg\)/s);
 });
 
-test("AI Readiness gives leftover width to Missing Amazon fields", () => {
+test("Amazon Specs gives leftover width to Missing Amazon fields", () => {
   const widths = filledColumnWidths(SPEC_COLUMNS, "missing", 1112);
   assert.equal(widths.asin, 118);
   assert.equal(widths.model, 200);
   assert.equal(widths.amazon, 140);
-  assert.equal(widths.found, 120);
+  assert.equal(widths.found, undefined);
   assert.ok(widths.missing > widths.model);
   assert.ok(widths.missing > widths.amazon);
   assert.equal(Object.values(widths).reduce((sum, width) => sum + width, 0), 1112);

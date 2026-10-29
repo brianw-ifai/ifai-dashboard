@@ -391,9 +391,9 @@ function specAction(input: HubSlotInput, fallback: HubSlot): HubSlot {
       input.missingSpecPages == null
         ? fromQueue.detail
         : `${formatInt(input.missingSpecPages)} fender.com product pages carry no machine-readable specs.`,
-    note: "Opens Machine Readability.",
+    note: "Opens Brand-Site Specs.",
     chart: null,
-    subTab: "Machine Readability",
+    subTab: "Brand-Site Specs",
     spokeId: "specs",
   };
 }

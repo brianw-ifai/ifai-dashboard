@@ -2,7 +2,7 @@
 
 import { CitationPieDisc } from "@/components/v3/live/ai-search/CitationPieDisc";
 import {
-  aiReadinessHeroes,
+  amazonSpecsHeroes,
   type AiReadinessHeroModel,
 } from "@/lib/fender-canvas/ai-readiness-lead";
 import type { CanvasBundle } from "@/lib/fender-canvas/types";
@@ -14,6 +14,7 @@ function ReadinessHero({ hero }: { hero: AiReadinessHeroModel }) {
     <div
       className="content-box findability-lead-card"
       data-ai-readiness-hero={hero.id}
+      data-amazon-specs-hero={hero.id}
     >
       <div>
         {hero.definition ? (
@@ -54,14 +55,14 @@ function ReadinessHero({ hero }: { hero: AiReadinessHeroModel }) {
 }
 
 /**
- * AI Readiness top heroes: label, percentage, ratio, and pie disc.
- * Same height family as Findability leads. The page-found hero has no row filter.
+ * Amazon Specs lead: Amazon attribute completeness only.
+ * Page-found and brand-site figures live on the bubble / Brand-Site Specs.
  */
 export function AiReadinessLead({ bundle }: { bundle: CanvasBundle }) {
-  const heroes = aiReadinessHeroes(bundle.m);
+  const heroes = amazonSpecsHeroes(bundle.m);
 
   return (
-    <div className="ai-readiness-lead" data-ai-readiness-lead="">
+    <div className="ai-readiness-lead" data-ai-readiness-lead="" data-amazon-specs-lead="">
       <div className="findability-leads" data-ai-readiness-heroes="">
         {heroes.map((hero) => (
           <ReadinessHero key={hero.id} hero={hero} />

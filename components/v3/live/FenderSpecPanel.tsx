@@ -7,47 +7,29 @@ import { specRowsQuery } from "@/lib/canvasData";
 import { CLIENT_TABLE_PAGE_SIZE, loadFilteredPages } from "@/lib/fender-canvas/full-result-sort";
 import { specReadinessSortValue } from "@/lib/fender-canvas/spec-table-sort";
 import {
-  specFenderFoundLabel,
   specModelTitle,
   type CanvasSpecMissingRow,
   type CanvasSpecReadinessRow,
 } from "@/lib/fender-canvas/types";
 import { formatInt, formatPct } from "@/lib/fender-canvas/format";
 import { presentMissingAmazonFields } from "@/lib/fender-canvas/spec-missing-fields";
-import { schemaPageHref } from "@/lib/fender-canvas/spec-table-sort";
 
 const SPEC_COLUMNS = [
   clientColumn("asin", "ASIN", "text", 118, 100, "asin-col"),
   clientColumn("model", "Model", "text", 200, 120),
   clientColumn("amazon", "Amazon completeness", "number", 140, 110),
-  clientColumn("found", "fender.com found", "text", 120, 100),
   clientColumn("missing", "Missing Amazon fields", "text", 240, 160),
 ];
 
 /** First-visit viewport; page size stays 50. Shorter heroes leave more room for this table. */
 const SPEC_TABLE_MAX_HEIGHT = 420;
 
-/** Yes links when found and fender_url is http(s). No and blank stay plain text. */
-function FenderFoundCell({
-  found,
-  url,
-}: {
-  found: boolean | null | undefined;
-  url: string | null | undefined;
-}) {
-  const label = specFenderFoundLabel(found);
-  if (label !== "Yes") return <>{label}</>;
-  const href = schemaPageHref(url ?? null);
-  if (!href) return <>Yes</>;
-  return (
-    <a className="listing-link" href={href} target="_blank" rel="noopener noreferrer">
-      Yes
-    </a>
-  );
-}
-
 /** The list opens on the two heaviest fields. The title chevron reveals the rest. */
 const MISSING_FIELD_PREVIEW = 2;
+
+function amazonMissingRows(missing: CanvasSpecMissingRow[]): CanvasSpecMissingRow[] {
+  return missing.filter((row) => (row.source ?? "").toLowerCase() === "amazon");
+}
 
 function FieldsChevron() {
   return (
@@ -72,15 +54,18 @@ function FieldsChevron() {
 
 function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
   const [showAll, setShowAll] = useState(false);
-  const maxCount = missing.reduce((max, row) => Math.max(max, row.sku_count ?? 0), 0) || 1;
-  const shown = showAll ? missing : missing.slice(0, MISSING_FIELD_PREVIEW);
-  const rest = missing.length - MISSING_FIELD_PREVIEW;
+  const amazonOnly = amazonMissingRows(missing);
+  const maxCount = amazonOnly.reduce((max, row) => Math.max(max, row.sku_count ?? 0), 0) || 1;
+  const shown = showAll ? amazonOnly : amazonOnly.slice(0, MISSING_FIELD_PREVIEW);
+  const rest = amazonOnly.length - MISSING_FIELD_PREVIEW;
   const collapsed = rest > 0 && !showAll;
+
+  if (amazonOnly.length === 0) return null;
 
   return (
     <div className="content-box spec-missing-fields-box" style={{ marginTop: 12 }}>
       <div className="content-box-title spec-missing-fields-title">
-        <span>Top missing schema fields</span>
+        <span>Top missing Amazon fields</span>
         {rest > 0 ? (
           <button
             type="button"
@@ -89,8 +74,8 @@ function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
             aria-controls="spec-missing-fields"
             aria-label={
               showAll
-                ? "Show fewer missing schema fields"
-                : `Show all ${formatInt(missing.length)} missing schema fields`
+                ? "Show fewer missing Amazon fields"
+                : `Show all ${formatInt(amazonOnly.length)} missing Amazon fields`
             }
             data-spec-missing-fields-toggle={showAll ? "all" : "preview"}
             onClick={() => setShowAll((value) => !value)}
@@ -106,9 +91,7 @@ function MissingFieldList({ missing }: { missing: CanvasSpecMissingRow[] }) {
         {shown.map((row) => (
           <div key={`${row.source}-${row.field}`} className="spec-missing-field-row">
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-              <span>
-                {row.field} ({row.source ?? "n/a"})
-              </span>
+              <span>{row.field}</span>
               <span>{formatInt(row.sku_count)} SKUs</span>
             </div>
             <div className="readiness-progress-bar">
@@ -129,7 +112,7 @@ export function FenderSpecPanel({
   catalogReadiness = false,
 }: {
   missing: CanvasSpecMissingRow[];
-  /** AI Readiness passes this. Machine Readability has its own page panel. */
+  /** Amazon Specs passes this. Brand-Site Specs has its own page panel. */
   catalogReadiness?: boolean;
 }) {
   if (!catalogReadiness) return null;
@@ -186,7 +169,7 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
 
       <div className="content-box" style={{ marginTop: 12 }} id="spec-readiness-by-asin">
         <div className="content-box-title">
-          <span>Spec readiness by ASIN</span>
+          <span>Amazon listings</span>
           {total != null ? (
             <span className="tag-badge tag-neutral">{formatInt(total)} rows</span>
           ) : null}
@@ -204,16 +187,16 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
           <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>Loading…</td>
+                  <td colSpan={4}>Loading…</td>
                 </tr>
               ) : null}
               {!loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>No spec rows in this read.</td>
+                  <td colSpan={4}>No spec rows in this read.</td>
                 </tr>
               ) : null}
               {population.pageRows.map((row) => {
-                const missing = presentMissingAmazonFields(
+                const missingFields = presentMissingAmazonFields(
                   row.amazon_missing_fields,
                   row.amazon_completeness_pct,
                 );
@@ -225,16 +208,13 @@ function CatalogSpecReadiness({ missing }: { missing: CanvasSpecMissingRow[] }) 
                     <td>{specModelTitle(row.title)}</td>
                     <td>{formatPct(row.amazon_completeness_pct)}</td>
                     <td>
-                      <FenderFoundCell found={row.fender_found} url={row.fender_url} />
-                    </td>
-                    <td>
-                      {missing.kind === "fields"
-                        ? missing.fields.map((field) => (
+                      {missingFields.kind === "fields"
+                        ? missingFields.fields.map((field) => (
                             <span key={field} className="tag-badge tag-neutral spec-field-pill">
                               {field}
                             </span>
                           ))
-                        : missing.label}
+                        : missingFields.label}
                     </td>
                   </tr>
                 );

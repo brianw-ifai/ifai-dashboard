@@ -12,6 +12,8 @@
     "ecommerce:Retail Overview": { "x": 1160, "y": 320 },
     "specs": { "x": 440, "y": 680 },
     "specs:Findability": { "x": 160, "y": 580 },
+    "specs:Amazon Specs": { "x": 440, "y": 680 },
+    "specs:Brand-Site Specs": { "x": 230, "y": 720 },
     "specs:AI Readiness": { "x": 440, "y": 680 },
     "specs:Machine Readability": { "x": 230, "y": 720 },
     "specs:Amazon A+ Matrix": { "x": 320, "y": 870 },

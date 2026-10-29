@@ -86,7 +86,7 @@ export function buildLiveCommandCenter(
           : "The fender.com page read could not be loaded.",
         severity: "high",
         spokeId: "specs",
-        subTab: "Machine Readability",
+        subTab: "Brand-Site Specs",
         defaultOwner: "intofocus",
       },
       {

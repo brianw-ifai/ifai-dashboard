@@ -76,7 +76,7 @@ export function buildLiveTourSteps(
           ? `${formatInt(schemaPages.missingSpecBlock)} of ${formatInt(schemaPages.pages)} fender.com pages have no spec block`
           : "fender.com page read not available",
         findabilityTourLine(findability),
-        `${formatInt(bundle.missing.length)} missing-field rows are on AI Readiness`,
+        `${formatInt(bundle.missing.length)} missing-field rows are on Amazon Specs`,
       ],
       value: "Make fender.com the source AI trusts for specs, with fewer wrong answers and fewer returns.",
     },

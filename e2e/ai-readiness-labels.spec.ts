@@ -3,11 +3,12 @@ import { Canvas } from "./fixtures";
 import { MISSING_FIELD_ROWS, mockCanvasRead } from "./spec-read-mock";
 
 /**
- * The AI Readiness bubble, its satellites, and its tabs share one set
- * of names. A link copied from an earlier tab title still opens the same tab.
+ * The AI Readiness bubble keeps its name. Its satellites and tabs share
+ * Amazon Specs / Brand-Site Specs. A link copied from an earlier tab title
+ * still opens the renamed tab.
  */
 
-const TAB_NAMES = ["Findability", "AI Readiness", "Machine Readability", "Amazon A+ Matrix"];
+const TAB_NAMES = ["Findability", "Amazon Specs", "Brand-Site Specs", "Amazon A+ Matrix"];
 
 /** Bubble titles are drawn as separate SVG lines, so the DOM text has no space. */
 function mapNode(page: Page, title: string) {
@@ -19,7 +20,7 @@ function mapNode(page: Page, title: string) {
   return page.locator(".graph-node").filter({ hasText: new RegExp(escaped, "i") });
 }
 
-async function openFirstTab(page: Page) {
+async function openAmazonSpecs(page: Page) {
   const canvas = new Canvas(page);
   await canvas.open();
   await expect(async () => {
@@ -27,7 +28,7 @@ async function openFirstTab(page: Page) {
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
   }).toPass({ timeout: 20_000 });
   await expect(canvas.panel).toBeVisible();
-  await canvas.openTab("AI Readiness");
+  await canvas.openTab("Amazon Specs");
   return canvas;
 }
 
@@ -38,8 +39,9 @@ test("the bubble, its satellites, and its tabs share one set of names", async ({
 
   await expect(mapNode(page, "AI Readiness")).toHaveCount(1);
   await expect(mapNode(page, "Findability")).toHaveCount(1);
-  await expect(mapNode(page, "Machine Readability")).toHaveCount(1);
+  await expect(mapNode(page, "Brand-Site Specs")).toHaveCount(1);
   await expect(mapNode(page, "Amazon A+ Matrix")).toHaveCount(1);
+  await expect(mapNode(page, "Machine Readability")).toHaveCount(0);
   await expect(mapNode(page, "Schema.org")).toHaveCount(0);
   await expect(mapNode(page, "A+ Tables")).toHaveCount(0);
 
@@ -48,6 +50,7 @@ test("the bubble, its satellites, and its tabs share one set of names", async ({
     await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1, { timeout: 2000 });
   }).toPass({ timeout: 20_000 });
   await expect(page.locator(".drilldown-tabs .drilldown-tab-btn")).toHaveText(TAB_NAMES);
+  await expect(canvas.activeTab).toHaveText("Brand-Site Specs");
 });
 
 test("each satellite opens the tab that carries its name", async ({ page }) => {
@@ -58,7 +61,7 @@ test("each satellite opens the tab that carries its name", async ({ page }) => {
   /* Satellites only take clicks while their parent cluster is revealed, and the
      map collapses to a spoke column once a panel is open, so each satellite is
      reached from a fresh map by hovering AI Readiness first. */
-  for (const satellite of ["Findability", "Machine Readability", "Amazon A+ Matrix"]) {
+  for (const satellite of ["Findability", "Brand-Site Specs", "Amazon A+ Matrix"]) {
     await page.goto("/dashboard");
     await expect(page.locator(".ifai-canvas.panel-hidden")).toHaveCount(1);
     await expect(async () => {
@@ -77,8 +80,10 @@ test("a link copied from an earlier tab title still opens the same tab", async (
   await canvas.open();
 
   const aliases: Array<[string, string]> = [
-    ["catalog-readiness-executive-guide", "AI Readiness"],
-    ["machine-readable-schema-org-json-ld-audit", "Machine Readability"],
+    ["catalog-readiness-executive-guide", "Amazon Specs"],
+    ["ai-readiness", "Amazon Specs"],
+    ["machine-readable-schema-org-json-ld-audit", "Brand-Site Specs"],
+    ["machine-readability", "Brand-Site Specs"],
     ["amazon-a-comparison-matrix-blueprint", "Amazon A+ Matrix"],
   ];
 
@@ -89,14 +94,19 @@ test("a link copied from an earlier tab title still opens the same tab", async (
   }
 });
 
-test("the first tab opens on two missing fields and the title chevron reveals the rest", async ({ page }) => {
+test("Amazon Specs opens on Amazon fields and the title chevron reveals the rest", async ({ page }) => {
   await mockCanvasRead(page);
-  await openFirstTab(page);
+  await openAmazonSpecs(page);
+
+  const amazonFieldCount = MISSING_FIELD_ROWS.filter(
+    (row) => String(row.source).toLowerCase() === "amazon",
+  ).length;
 
   const fields = page.locator("#spec-missing-fields > div");
   await expect(fields).toHaveCount(2);
   await expect(fields.first()).toContainText("scale_length");
-  await expect(fields.nth(1)).toContainText("additionalProperty");
+  await expect(fields.nth(1)).toContainText("neck_material");
+  await expect(page.locator("#spec-missing-fields")).not.toContainText("additionalProperty");
   await expect(page.locator("#spec-missing-fields")).toHaveClass(/spec-missing-fields-preview/);
   await expect(page.getByText(/Show all/)).toHaveCount(0);
 
@@ -104,12 +114,12 @@ test("the first tab opens on two missing fields and the title chevron reveals th
   await expect(reveal).toHaveAttribute("aria-expanded", "false");
   await expect(reveal).toHaveAttribute(
     "aria-label",
-    `Show all ${MISSING_FIELD_ROWS.length} missing schema fields`,
+    `Show all ${amazonFieldCount} missing Amazon fields`,
   );
   await reveal.click();
   await expect(reveal).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#spec-missing-fields")).not.toHaveClass(/spec-missing-fields-preview/);
-  await expect(fields).toHaveCount(MISSING_FIELD_ROWS.length);
+  await expect(fields).toHaveCount(amazonFieldCount);
   await expect(fields.last()).toContainText("pickup_configuration");
 
   await reveal.click();
@@ -118,61 +128,85 @@ test("the first tab opens on two missing fields and the title chevron reveals th
   await expect(page.locator("#spec-missing-fields")).toHaveClass(/spec-missing-fields-preview/);
 });
 
-test("the page found hero shows percent, ratio, and pie without a Show/Hide filter", async ({ page }) => {
+test("Amazon Specs shows Amazon completeness only, with no fender.com page-found figure", async ({
+  page,
+}) => {
   await mockCanvasRead(page);
-  await openFirstTab(page);
+  await openAmazonSpecs(page);
 
-  const lead = page.locator("[data-ai-readiness-lead]");
+  const lead = page.locator("[data-amazon-specs-lead]");
   await expect(lead).toBeVisible();
   await expect(page.locator(".spec-summary")).toHaveCount(0);
   await expect(page.getByRole("columnheader", { name: "Metric" })).toHaveCount(0);
   await expect(page.locator("[data-spec-filter]")).toHaveCount(0);
   await expect(page.locator(".spec-found-pill")).toHaveCount(0);
 
-  const pageFound = page.locator("[data-ai-readiness-hero='page_found']");
-  await expect(pageFound.locator("[data-ai-readiness-hero-percent]")).toHaveText("50.0%");
-  await expect(pageFound.locator("[data-ai-readiness-hero-ratio]")).toHaveText("2 of 4");
-  await expect(pageFound.locator("[data-citation-pie-disc]")).toHaveCount(1);
-  await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(4);
-  await expect(pageFound).toHaveClass(/findability-lead-card/);
-
+  await expect(page.locator("[data-ai-readiness-hero]")).toHaveCount(1);
   const amazon = page.locator("[data-ai-readiness-hero='amazon_completeness']");
   await expect(amazon.locator("[data-ai-readiness-hero-percent]")).toHaveText("48.8%");
   await expect(amazon.locator("[data-ai-readiness-hero-ratio]")).toHaveText("Across 4 checked SKUs");
 
-  await expect(lead).not.toContainText("older spec read");
-  await expect(lead).not.toContainText("Official-page outcomes are on the Findability tab");
+  await expect(page.locator("[data-ai-readiness-hero='page_found']")).toHaveCount(0);
+  await expect(page.locator("[data-ai-readiness-hero='fender_completeness']")).toHaveCount(0);
+  await expect(page.locator("[data-ai-readiness-hero='missing_additional_property']")).toHaveCount(0);
+  await expect(lead).not.toContainText("fender.com page found");
+  await expect(lead).not.toContainText("fender.com completeness");
   await expect(page.locator(".ai-readiness-lead-note")).toHaveCount(0);
-  // Mock page-found share is 50% and fender completeness is 40%: both under their red bands.
-  expect(
-    await pageFound.locator("[data-ai-readiness-hero-percent]").evaluate((el) => (el as HTMLElement).style.color),
-  ).toBe("var(--danger-red)");
-  expect(
-    await page
-      .locator("[data-ai-readiness-hero='fender_completeness'] [data-ai-readiness-hero-percent]")
-      .evaluate((el) => (el as HTMLElement).style.color),
-  ).toBe("var(--danger-red)");
-  // Missing additionalProperty keeps no band color.
-  expect(
-    await page
-      .locator("[data-ai-readiness-hero='missing_additional_property'] [data-ai-readiness-hero-percent]")
-      .evaluate((el) => (el as HTMLElement).style.color),
-  ).toBe("");
 
   const catalog = page.locator("#spec-readiness-by-asin");
   await expect(catalog).toContainText("B00MISSING");
   await expect(catalog).toContainText("B00FOUND01");
   await expect(catalog).toContainText("B00NULLFLG");
+  await expect(catalog.getByRole("columnheader", { name: "fender.com found" })).toHaveCount(0);
+  await expect(catalog.getByRole("columnheader", { name: "Amazon completeness" })).toHaveCount(1);
+  await expect(catalog.getByRole("columnheader", { name: "Missing Amazon fields" })).toHaveCount(1);
+});
 
-  const foundHeader = catalog.getByRole("columnheader", { name: "fender.com found" });
-  await foundHeader.click();
-  await expect(foundHeader).toHaveAttribute("aria-sort", /ascending|descending/);
-  await foundHeader.click();
-  await expect(foundHeader).toHaveAttribute("aria-sort", /ascending|descending/);
+test("Brand-Site Specs leads with missing machine-readable specs and no Amazon percentage", async ({
+  page,
+}) => {
+  await mockCanvasRead(page);
+  const canvas = new Canvas(page);
+  // Wide desktop panel: same top-band lead as Amazon A+ Matrix.
+  await page.goto("/dashboard?spoke=specs&tab=brand-site-specs&layout=wide");
+  await expect(page.locator(".ifai-canvas.column-layout")).toHaveCount(1);
+  await expect(canvas.activeTab).toHaveText("Brand-Site Specs");
 
-  const yesLink = catalog.locator('a.listing-link[href="https://www.fender.com/en-US/found"]');
-  await expect(yesLink).toHaveText("Yes");
-  await expect(yesLink).toHaveAttribute("target", "_blank");
-  await expect(catalog.getByText("No", { exact: true })).toHaveCount(1);
-  await expect(catalog.locator("a.listing-link", { hasText: "No" })).toHaveCount(0);
+  const missing = page.locator("[data-machine-hero='missing_specs']");
+  await expect(missing).toBeVisible();
+  await expect(missing.locator("[data-hero-percent]")).toHaveText("50.0%");
+  await expect(missing).toContainText("1 of 2");
+  await expect(missing).toContainText("Found pages missing machine-readable specs");
+  await expect(missing).not.toContainText("additionalProperty");
+  await expect(missing).toContainText("spec block");
+
+  const lead = page.locator("[data-brand-site-specs-lead]");
+  const missingBox = lead.locator("[data-machine-hero='missing_specs']");
+  const basicsBox = lead.locator("[data-machine-hero='product_basics']");
+  const notes = lead.locator("[data-brand-site-specs-notes]");
+  await expect(missingBox).toBeVisible();
+  await expect(basicsBox).toBeVisible();
+  await expect(notes).toBeVisible();
+  const band = await Promise.all([
+    missingBox.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { top: box.top, right: box.right, left: box.left };
+    }),
+    basicsBox.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { top: box.top, right: box.right, left: box.left };
+    }),
+    notes.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return { top: box.top, left: box.left };
+    }),
+  ]);
+  expect(Math.abs(band[0].top - band[1].top)).toBeLessThan(8);
+  expect(Math.abs(band[0].top - band[2].top)).toBeLessThan(8);
+  expect(band[0].right).toBeLessThanOrEqual(band[1].left + 1);
+  expect(band[1].right).toBeLessThanOrEqual(band[2].left + 1);
+
+  await expect(page.locator("[data-ai-readiness-hero='amazon_completeness']")).toHaveCount(0);
+  await expect(lead).not.toContainText("Amazon attribute completeness");
+  await expect(page.locator("#spec-readiness-by-asin")).toHaveCount(0);
 });

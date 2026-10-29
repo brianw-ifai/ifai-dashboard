@@ -158,13 +158,15 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(narrative, /(?<![\w-])title=/);
   assert.doesNotMatch(narrative, forbidden);
 
-  // Two-bar preview with a title chevron; no text button under the bars.
+  // Two-bar preview with a title chevron; Amazon-only fields; no text button under the bars.
   assert.match(panel, /MISSING_FIELD_PREVIEW = 2/);
-  assert.match(panel, /missing\.slice\(0, MISSING_FIELD_PREVIEW\)/);
+  assert.match(panel, /amazonOnly\.slice\(0, MISSING_FIELD_PREVIEW\)/);
+  assert.match(panel, /Top missing Amazon fields/);
   assert.match(panel, /data-spec-missing-fields-toggle/);
   assert.match(panel, /aria-expanded=\{showAll\}/);
   assert.match(panel, /retail-explore-chevron/);
   assert.match(panel, /spec-missing-fields-preview/);
+  assert.doesNotMatch(panel, /fender\.com found/);
   assert.doesNotMatch(panel, /Show all \$\{formatInt\(missing\.length\)\} fields/);
   assert.doesNotMatch(panel, /Show fewer fields/);
   assert.doesNotMatch(panel, /missingPagesOnly/);
@@ -191,7 +193,7 @@ test("the catalog control copy stays on the live rollup and the custom tooltip",
   assert.doesNotMatch(schemaList, forbidden);
   assert.match(schemaList, /dataAttr="data-machine-hero"/);
   assert.match(governance, /data-ifai-open="specs"/);
-  assert.match(governance, /data-ifai-tab="AI Readiness"/);
+  assert.match(governance, /data-ifai-tab="Amazon Specs"/);
   assert.match(governance, /Splintered listings/);
   assert.doesNotMatch(governance, /catalog-specs/);
   assert.doesNotMatch(governance, /Missing Amazon spec fields/);

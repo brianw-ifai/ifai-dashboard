@@ -133,7 +133,7 @@ export const FENDER_METRICS = {
     value: "Loading",
     detail: "Reading the fender.com product pages",
     tone: "neutral",
-    subTab: "Machine Readability",
+    subTab: "Brand-Site Specs",
     provenance: "live",
   },
   missingSchemaFields: {
@@ -143,7 +143,7 @@ export const FENDER_METRICS = {
     value: "Loading",
     detail: "Reading the fender.com product pages",
     tone: "warning",
-    subTab: "Machine Readability",
+    subTab: "Brand-Site Specs",
     provenance: "live",
   },
   beginnerSovGap: {

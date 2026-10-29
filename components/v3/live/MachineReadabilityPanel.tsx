@@ -14,12 +14,13 @@ const PAGES_TABLE_ID = "machine-readability-pages";
 
 type OpenTable = MachineHeroId | "closed";
 
-function MachineReadabilityNotes({ summary }: { summary: SpecPageSummary | null }) {
+function BrandSiteSpecsNotes({ summary }: { summary: SpecPageSummary | null }) {
   const shared = sharedGapSentence(summary);
   return (
     <div
       className="content-box"
       data-machine-readability-notes=""
+      data-brand-site-specs-notes=""
       style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
     >
       <div className="ceo-callout" style={{ margin: 0 }}>
@@ -36,8 +37,12 @@ function MachineReadabilityNotes({ summary }: { summary: SpecPageSummary | null 
   );
 }
 
+/**
+ * Brand-Site Specs: found fender.com pages only.
+ * Lead matches Amazon A+ Matrix: hero cards in one row, explainer to the right.
+ */
 export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary | null }) {
-  const [openTable, setOpenTable] = useState<OpenTable>("spec_block");
+  const [openTable, setOpenTable] = useState<OpenTable>("missing_specs");
   const heroes = machineReadabilityHeroes(summary);
 
   function toggle(which: MachineHeroId) {
@@ -45,9 +50,10 @@ export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary 
   }
 
   return (
-    <div className="readiness-surface" data-machine-readability="">
+    <div className="readiness-surface" data-machine-readability="" data-brand-site-specs="">
       <div
         data-machine-readability-lead=""
+        data-brand-site-specs-lead=""
         style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
@@ -62,7 +68,7 @@ export function MachineReadabilityPanel({ summary }: { summary: SpecPageSummary 
             />
           ))}
         </div>
-        <MachineReadabilityNotes summary={summary} />
+        <BrandSiteSpecsNotes summary={summary} />
       </div>
 
       {summary && openTable !== "closed" ? (

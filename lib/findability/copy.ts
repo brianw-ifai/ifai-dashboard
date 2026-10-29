@@ -40,7 +40,7 @@ const HEADLINE_NOUN: Record<FindabilityOutcome, [string, string]> = {
 };
 
 export const MACHINE_READABILITY_POINTER =
-  "Schema.org product data on each fender.com page is on Machine Readability.";
+  "Schema.org product data on each fender.com page is on Brand-Site Specs.";
 
 export const DEALER_BUNDLE_NOTE =
   "Dealer bundle status comes from the retail read. It can line up with an official-page outcome. That is a correlation, not a proven cause.";
