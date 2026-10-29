@@ -5153,19 +5153,13 @@
     }
 
     /* Out of stock and lost sales. */
-    .stock-loss-hero {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    .stock-loss-lead {
+      width: 100%;
       margin-bottom: 12px;
     }
 
-    .stock-loss-hero-formula {
-      margin: 0;
-      max-width: 720px;
-      font-size: 12px;
-      line-height: 1.55;
-      color: var(--text-muted);
+    .stock-loss-hero .source-tag-estimate.ifai-term {
+      cursor: help;
     }
 
     .stock-loss-row {

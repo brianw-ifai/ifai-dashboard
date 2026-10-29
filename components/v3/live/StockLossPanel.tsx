@@ -94,7 +94,11 @@ function sortValue(row: StockLossRow, columnId: string): SortInput {
 
 function Explanation() {
   return (
-    <div className="ceo-callout" style={{ marginTop: 12 }}>
+    <div
+      className="ceo-callout"
+      data-stock-loss-cost-callout=""
+      style={{ margin: 0, flex: "1 1 240px", minWidth: 200 }}
+    >
       <div className="ceo-callout-header">
         <span>What does an out-of-stock day cost?</span>
       </div>
@@ -263,9 +267,15 @@ export function StockLossPanel() {
         <p className="retail-missing">The stock history could not be loaded.</p>
       ) : null}
       {rows && typeof state === "object" ? (
-        <StockLossHero rows={rows} liveCount={state.liveCount} />
+        <div
+          className="stock-loss-lead"
+          data-stock-loss-lead=""
+          style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
+        >
+          <StockLossHero rows={rows} liveCount={state.liveCount} />
+          <Explanation />
+        </div>
       ) : null}
-      <Explanation />
       <div className="content-box" style={{ marginTop: 12 }}>
         <div className="content-box-title">
           <span className="stock-loss-title">
