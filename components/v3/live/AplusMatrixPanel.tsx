@@ -15,20 +15,14 @@ type OpenTable = ContentHeroId | "closed";
 
 function AplusNotes() {
   return (
-    <div
-      className="content-box"
-      data-aplus-notes=""
-      style={{ flex: "1 1 240px", minWidth: 200, display: "flex", flexDirection: "column", gap: 10 }}
-    >
-      <div className="ceo-callout" style={{ margin: 0 }}>
-        <div className="ceo-callout-header">
-          <span>Why does Amazon listing content matter to AI?</span>
-        </div>
-        <div className="ceo-callout-body">
-          Amazon&apos;s shopping assistant and other AI engines answer from what the listing says.
-          Bullets are the first copy they quote. A+ modules and comparison charts let them explain
-          how one model steps up from another, and a video adds proof a shopper can watch.
-        </div>
+    <div className="ceo-callout" style={{ margin: 0 }} data-aplus-notes="">
+      <div className="ceo-callout-header">
+        <span>Why does Amazon listing content matter to AI?</span>
+      </div>
+      <div className="ceo-callout-body">
+        Amazon&apos;s shopping assistant and other AI engines answer from what the listing says.
+        Bullets are the first copy they quote. A+ modules and comparison charts let them explain
+        how one model steps up from another, and a video adds proof a shopper can watch.
       </div>
     </div>
   );
@@ -46,7 +40,7 @@ export function AplusMatrixPanel({ summary }: { summary: ListingContentSummary |
     <div className="readiness-surface" data-aplus-matrix="">
       <div
         data-aplus-matrix-lead=""
-        style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}
+        style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "stretch" }}
       >
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "stretch" }}>
           {heroes.map((hero) => (
@@ -60,6 +54,13 @@ export function AplusMatrixPanel({ summary }: { summary: ListingContentSummary |
             />
           ))}
         </div>
+        <p
+          className="metric-card-sub"
+          data-aplus-sales-not-estimated=""
+          style={{ margin: 0, maxWidth: 640 }}
+        >
+          The sales effect of missing A+ content is not estimated yet.
+        </p>
         <AplusNotes />
       </div>
 

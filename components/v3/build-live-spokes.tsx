@@ -158,6 +158,8 @@ function wrapSpoke(
       : {}),
     // Findability counts live in the tab body. An empty desc must not leave a gap.
     ...(id === "specs" ? { desc: "" } : {}),
+    // Strategy Roadmap first tab opens on the five finding figures; no retail-headline preface.
+    ...(id === "roadmap" ? { desc: "" } : {}),
     render: (tabIdx) => {
       const custom = overrides[tabIdx]?.(bundle, vars, retail);
       if (custom) return custom;

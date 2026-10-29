@@ -5169,6 +5169,15 @@
     }
 
     /* Out of stock and lost sales. */
+    .stock-loss-lead {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .stock-loss-hero .source-tag-estimate.ifai-term {
+      cursor: help;
+    }
+
     .stock-loss-row {
       cursor: pointer;
     }
